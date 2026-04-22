@@ -1,73 +1,89 @@
-// Freescale — Channel Connector Modal (Inspired by user reference)
+// Freescale — Channel Connector Modal (Refined)
 const connectorStyles = {
   overlay: {
     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-    background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 3000,
-    backdropFilter: 'blur(8px)', animation: 'fadeIn 0.2s ease'
+    background: 'rgba(0,0,0,0.4)', display: 'grid', placeItems: 'center', zIndex: 3000,
+    backdropFilter: 'blur(12px)', animation: 'fadeIn 0.3s ease'
   },
   card: {
-    width: 600, background: '#fff', borderRadius: 32, padding: '40px 48px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.2)', position: 'relative',
-    animation: 'modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+    width: 580, background: '#fff', borderRadius: 28, padding: '48px 40px',
+    boxShadow: '0 30px 100px rgba(0,0,0,0.15)', position: 'relative',
+    animation: 'modalPop 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
   },
   close: {
-    position: 'absolute', top: 32, right: 32, cursor: 'pointer', color: '#111',
-    border: 'none', background: 'none'
+    position: 'absolute', top: 28, right: 28, cursor: 'pointer', color: '#CBD5E1',
+    border: 'none', background: 'none', padding: 8, transition: 'color 0.2s'
   },
-  header: { textAlign: 'center', marginBottom: 48 },
-  title: { fontSize: 28, fontWeight: 800, color: '#111', marginBottom: 12, letterSpacing: '-0.02em' },
-  subtitle: { fontSize: 16, color: '#666', fontWeight: 500 },
+  header: { textAlign: 'center', marginBottom: 44 },
+  title: { fontSize: 26, fontWeight: 800, color: '#111', marginBottom: 12, letterSpacing: '-0.03em' },
+  subtitle: { fontSize: 16, color: '#64748B', fontWeight: 500, maxWidth: 400, margin: '0 auto', lineHeight: 1.5 },
   
   grid: { 
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px 40px' 
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' 
   },
   item: {
-    display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', transition: 'transform 0.2s'
+    padding: '24px', borderRadius: 20, border: '1px solid #F1F5F9',
+    display: 'flex', flexDirection: 'column', gap: 16, cursor: 'pointer',
+    transition: 'all 0.2s ease', background: '#FAFBFC'
   },
   iconBox: {
-    width: 64, height: 64, borderRadius: 18, display: 'grid', placeItems: 'center', flex: 'none'
+    width: 48, height: 48, borderRadius: 12, display: 'grid', placeItems: 'center', flex: 'none',
+    background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
   },
   info: { display: 'flex', flexDirection: 'column', gap: 2 },
-  name: { fontSize: 18, fontWeight: 750, color: '#111' },
-  link: { fontSize: 14, color: '#3B82F6', fontWeight: 600 }
+  name: { fontSize: 16, fontWeight: 750, color: '#111' },
+  link: { fontSize: 13, color: '#3B82F6', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }
 };
 
 function ChannelConnectorModal({ isOpen, onClose, onConnect }) {
   if (!isOpen) return null;
 
   const channels = [
-    { id: 'mail', name: 'Mail', color: '#3B82F6', icon: 'mail', bg: '#0EA5E9' },
-    { id: 'discord', name: 'Discord', color: '#5865F2', icon: 'grid', bg: '#5865F2' },
-    { id: 'instagram', name: 'Instagram', color: '#E4405F', icon: 'camera', bg: '#E4405F' },
-    { id: 'messenger', name: 'Messenger', color: '#0084FF', icon: 'chat', bg: '#0084FF' },
-    { id: 'slack', name: 'Slack', color: '#4A154B', icon: 'grid', bg: '#4A154B' },
-    { id: 'whatsapp', name: 'WhatsApp', color: '#25D366', icon: 'chat', bg: '#25D366' },
+    { id: 'gmail',     name: 'Gmail',     logo: 'assets/channels/gmail.svg' },
+    { id: 'whatsapp',  name: 'WhatsApp',  logo: 'assets/channels/whatsapp.svg' },
+    { id: 'instagram', name: 'Instagram', logo: 'assets/channels/instagram.svg' },
   ];
 
   return (
     <div style={connectorStyles.overlay} onClick={onClose}>
       <div style={connectorStyles.card} onClick={e => e.stopPropagation()}>
-        <button style={connectorStyles.close} onClick={onClose}>
-           <Icon name="x" size={24} />
+        <button 
+          style={connectorStyles.close} 
+          onClick={onClose}
+          onMouseEnter={e => e.currentTarget.style.color = '#000'}
+          onMouseLeave={e => e.currentTarget.style.color = '#CBD5E1'}>
+           <Icon name="x" size={20} />
         </button>
         
         <div style={connectorStyles.header}>
-           <div style={connectorStyles.title}>Connecter vos Canaux clients</div>
-           <div style={connectorStyles.subtitle}>Connecter un canal pour importer vos liste d'ID clients</div>
+           <div style={connectorStyles.title}>Connecter vos Canaux</div>
+           <div style={connectorStyles.subtitle}>Pour importer vos contacts et commencer à synchroniser vos messages.</div>
         </div>
 
         <div style={connectorStyles.grid}>
            {channels.map(c => (
              <div key={c.id} style={connectorStyles.item} 
                onClick={() => onConnect && onConnect(c.id)}
-               onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'}
-               onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}>
-                <div style={{ ...connectorStyles.iconBox, background: c.bg }}>
-                   <Icon name={c.icon} size={32} color="#fff" />
+               onMouseEnter={e => {
+                  e.currentTarget.style.background = '#fff';
+                  e.currentTarget.style.borderColor = '#E2E8F0';
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.04)';
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+               }}
+               onMouseLeave={e => {
+                  e.currentTarget.style.background = '#FAFBFC';
+                  e.currentTarget.style.borderColor = '#F1F5F9';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.transform = 'translateY(0)';
+               }}>
+                <div style={connectorStyles.iconBox}>
+                   <img src={c.logo} alt={c.name} width="28" height="28" />
                 </div>
                 <div style={connectorStyles.info}>
                    <div style={connectorStyles.name}>{c.name}</div>
-                   <div style={connectorStyles.link}>Connecter {c.name}</div>
+                   <div style={connectorStyles.link}>
+                     Connecter {c.name} <Icon name="arrow-right" size={12} />
+                   </div>
                 </div>
              </div>
            ))}
@@ -76,7 +92,7 @@ function ChannelConnectorModal({ isOpen, onClose, onConnect }) {
       
       <style>{`
         @keyframes modalPop {
-          from { opacity: 0; transform: scale(0.9) translateY(20px); }
+          from { opacity: 0; transform: scale(0.96) translateY(10px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
         @keyframes fadeIn {
