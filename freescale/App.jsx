@@ -157,6 +157,7 @@ function FreescaleApp() {
 
   const [copilotOpen, setCopilotOpen] = React.useState(false);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [connectorOpen, setConnectorOpen] = React.useState(false);
 
   return (
     <div style={shellStyles.app}>
@@ -166,7 +167,7 @@ function FreescaleApp() {
         clients={clients} messages={messages} sources={data.sources}
         onOpenSettings={() => setSettingsOpen(true)}
         onAddClient={handleAddClient}
-        onConnectChannel={() => setSettingsOpen(true)}
+        onConnectChannel={() => setConnectorOpen(true)}
         onOpenHelp={() => showToast('Help Center — bientôt disponible')}
       />
       <div style={shellStyles.main}>
@@ -206,6 +207,7 @@ function FreescaleApp() {
       )}
       
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onGmailStatusChange={handleGmailStatusChange} />
+      <ChannelConnectorModal isOpen={connectorOpen} onClose={() => setConnectorOpen(false)} onConnect={(id) => { showToast(`Simulation: Connexion à ${id}`); setConnectorOpen(false); }} />
     </div>
   );
 }
