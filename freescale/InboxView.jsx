@@ -72,6 +72,20 @@ function InboxView({ messages, clients, sources, activeMessageId, onSelectMessag
     <div style={inboxStyles.wrap}>
       {/* List Column */}
       <div style={inboxStyles.listPanel}>
+        <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid #F3F4F6', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          {sources.map(s => (
+            <button key={s.id} title={s.label}
+              style={{
+                width: 30, height: 30, borderRadius: 8, border: 'none', padding: 0,
+                background: 'transparent', cursor: 'pointer', display: 'grid', placeItems: 'center',
+                transition: 'transform 120ms, background 120ms'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+              <img src={s.logo} alt={s.label} width="22" height="22" />
+            </button>
+          ))}
+        </div>
         <div style={inboxStyles.listHead}>
            <div style={inboxStyles.filterBtn}>Open Chats <Icon name="chevronDown" size={10} /></div>
            <div style={inboxStyles.filterBtn}>Unread</div>

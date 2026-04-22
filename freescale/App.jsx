@@ -20,7 +20,7 @@ function FreescaleApp() {
   const [view, setView] = React.useState('today');
   const [activeClient, setActiveClient] = React.useState(null);
   const [activeMessage, setActiveMessage] = React.useState('m1');
-  const [activeSources, setActiveSources] = React.useState(['gmail', 'outlook', 'slack', 'discord', 'whatsapp', 'telegram', 'instagram']);
+  const [activeSources, setActiveSources] = React.useState(['gmail', 'whatsapp', 'instagram']);
   const data = window.FreescaleData;
   const [messages, setMessages] = React.useState(data.messages || []);
   const [tasks, setTasks] = React.useState(data.todayBrief?.focus || []);
@@ -104,7 +104,7 @@ function FreescaleApp() {
         active={view} onNav={setView}
         activeClient={activeClient} onClientSelect={(id) => { setActiveClient(id); setView('inbox'); }}
         sources={data.sources} activeSources={activeSources} onSourceToggle={handleSourceToggle}
-        clients={data.clients}
+        clients={data.clients} messages={messages}
         theme={theme} onTheme={toggleTheme}
         onOpenSettings={() => setSettingsOpen(true)}
       />

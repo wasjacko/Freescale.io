@@ -1,137 +1,136 @@
-// Freescale — Sidebar (nav + clients list + sources ribbon)
+// Freescale — Sidebar (nav + clients list)
 const sidebarStyles = {
   aside: {
-    width: 250, flex: 'none', background: 'var(--bg-1)', borderRadius: 24, margin: '16px 0 16px 16px',
+    width: 290, flex: 'none', background: 'var(--bg-1)', borderRadius: 24, margin: '16px 0 16px 16px',
     display: 'flex', flexDirection: 'column', height: 'calc(100vh - 32px)', fontSize: 13,
     boxShadow: 'var(--shadow-lg)', overflow: 'hidden'
   },
-  dot: { width: 10, height: 10, borderRadius: '50%' },
-  brandName: { fontWeight: 800, fontSize: 15, letterSpacing: '-0.03em', color: 'var(--fg-0)', flex: 1 },
+  brandName: { fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em', color: 'var(--fg-0)', flex: 1 },
   settingsBtn: { color: 'var(--fg-3)', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: 4 },
 
-  sourcesRow: { display: 'flex', justifyContent: 'center', gap: 6, padding: '4px 16px 12px', flexWrap: 'nowrap' },
-  sourceBtn: {
-    width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center',
-    transition: 'transform 150ms cubic-bezier(0.2,0.8,0.2,1)', cursor: 'pointer', flex: 'none'
-  },
-  tabsRow: { display: 'flex', padding: '0 16px', gap: 4, marginBottom: 10 },
-  tabPill: { padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center', whiteSpace: 'nowrap' },
-  tabActive: { background: '#EAEBEF', color: '#323642' },
-  tabInactive: { background: 'transparent', color: '#A0A4AB' },
-
-  search: {
-    margin: '0 16px 8px', position: 'relative'
-  },
+  search: { margin: '4px 16px 10px', position: 'relative' },
   searchInput: {
-    width: '100%', padding: '8px 12px 8px 32px', borderRadius: 8,
-    border: '1px solid #E5E7EB', background: '#F3F4F6', color: '#374151', fontSize: 12, fontFamily: 'inherit', fontWeight: 500
+    width: '100%', padding: '9px 12px 9px 34px', borderRadius: 10,
+    border: '1px solid var(--border-2)', background: 'var(--bg-2)', color: 'var(--fg-1)',
+    fontSize: 12.5, fontFamily: 'inherit', fontWeight: 500, boxSizing: 'border-box'
   },
-  searchIcon: { position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' },
-  
+  searchIcon: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--fg-3)' },
+
   filterRow: { margin: '0 16px 10px', display: 'flex', gap: 6, alignItems: 'center' },
-  filterDropdown: { flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#F9FAFB', fontSize: 12, fontWeight: 600, color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  filterAction: { padding: '4px 6px', color: '#9CA3AF', display: 'flex', alignItems: 'center', cursor: 'pointer' },
-  divider: { height: 1, background: '#F3F4F6', margin: '0 16px' },
+  filterDropdown: {
+    flex: 1, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border-2)',
+    background: 'var(--bg-1)', fontSize: 12, fontWeight: 600, color: 'var(--fg-1)',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'
+  },
+  filterAction: { padding: '4px 6px', color: 'var(--fg-3)', display: 'flex', alignItems: 'center', cursor: 'pointer' },
+  divider: { height: 1, background: 'var(--border-1)', margin: '0 16px' },
 
   clientsLabel: {
-    fontSize: 11, fontWeight: 600,
-    color: 'var(--fg-2)', padding: '16px 16px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+    color: 'var(--fg-3)', padding: '14px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
   },
 
   client: {
-    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 7, margin: '0 8px',
-    cursor: 'pointer'
+    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, margin: '2px 8px',
+    cursor: 'pointer', transition: 'background 120ms'
   },
   avatar: {
-    width: 26, height: 26, borderRadius: 6, flex: 'none',
-    display: 'grid', placeItems: 'center', color: '#fff', fontSize: 10, fontWeight: 700,
+    width: 32, height: 32, borderRadius: 8, flex: 'none',
+    display: 'grid', placeItems: 'center', color: '#fff', fontSize: 11, fontWeight: 700,
     backgroundSize: 'cover', backgroundPosition: 'center'
   },
-  clientName: { fontSize: 12.5, fontWeight: 500, color: 'var(--fg-0)', lineHeight: 1.2 },
+  clientName: { fontSize: 13, fontWeight: 600, color: 'var(--fg-0)', lineHeight: 1.25 },
   clientMeta: { fontSize: 11, color: 'var(--fg-3)', lineHeight: 1.2, marginTop: 2 },
-  unread: {
-    marginLeft: 'auto', minWidth: 18, height: 18, padding: '0 5px', borderRadius: 999,
-    background: 'var(--accent)', color: '#fff', fontSize: 10, fontWeight: 700,
-    display: 'grid', placeItems: 'center'
+
+  badgeRow: { display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end', marginLeft: 'auto' },
+  badge: {
+    display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 7px', borderRadius: 999,
+    fontSize: 10.5, fontWeight: 700, lineHeight: 1.3, whiteSpace: 'nowrap'
   },
+  badgeMsg: { background: '#E0ECFF', color: '#1D4ED8' },
+  badgeTask: { background: '#FFEAD5', color: '#C2410C' },
+
   footer: {
     marginTop: 'auto', padding: '16px 20px 20px', borderTop: 'none',
     display: 'flex', flexDirection: 'column', gap: 16
   },
 };
 
-function Sidebar({ active, onNav, activeClient, onClientSelect, sources, clients, activeSources, onSourceToggle, theme, onTheme, onOpenSettings }) {
+function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, theme, onTheme, onOpenSettings }) {
+  // Compute messages & tasks count per client
+  const stats = React.useMemo(() => {
+    const acc = {};
+    (messages || []).forEach(m => {
+      const s = acc[m.clientId] || { unread: 0, tasks: 0 };
+      if (m.unread) s.unread += 1;
+      s.tasks += (m.extractedTasks?.length || 0);
+      acc[m.clientId] = s;
+    });
+    return acc;
+  }, [messages]);
+
   return (
     <aside style={sidebarStyles.aside}>
-      {/* Header: dots + brand + settings on ONE row */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 16px 12px', gap: 10 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '18px 20px 14px', gap: 10 }}>
         <div style={sidebarStyles.brandName}>Freescale</div>
         <div style={sidebarStyles.settingsBtn} onClick={onOpenSettings}>
-          <Icon name="settings" size={14} />
+          <Icon name="settings" size={15} />
         </div>
-      </div>
-
-      {/* Source icons */}
-      <div style={sidebarStyles.sourcesRow}>
-        {sources.map(s => {
-          const on = activeSources.includes(s.id);
-          return (
-            <button key={s.id}
-              onClick={() => onSourceToggle(s.id)}
-              title={s.label + (on ? ' (actif)' : ' (inactif)')}
-              style={{
-                ...sidebarStyles.sourceBtn,
-                background: on ? s.soft : 'var(--bg-2)',
-                opacity: on ? 1 : 0.55,
-                color: on ? s.color : 'var(--fg-3)'
-              }}>
-              <Icon name={s.glyph} size={12} />
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tabs */}
-      <div style={sidebarStyles.tabsRow}>
-        <div style={{ ...sidebarStyles.tabPill, ...sidebarStyles.tabActive }}>Actifs</div>
-        <div style={{ ...sidebarStyles.tabPill, ...sidebarStyles.tabInactive }}>Archivés</div>
       </div>
 
       <div style={sidebarStyles.search}>
         <div style={sidebarStyles.searchIcon}><Icon name="search" size={14} /></div>
-        <input style={sidebarStyles.searchInput} placeholder={`Search ${clients.length} clients...`} />
+        <input style={sidebarStyles.searchInput} placeholder={`Rechercher parmi ${clients.length} contacts…`} />
       </div>
 
       <div style={sidebarStyles.filterRow}>
-        <div style={sidebarStyles.filterDropdown}>Volume <Icon name="chevron-down" size={12} /></div>
-        <div style={sidebarStyles.filterAction}><Icon name="arrow-up" size={14} /></div>
+        <div style={sidebarStyles.filterDropdown}>Volume <Icon name="chevronDown" size={12} /></div>
+        <div style={sidebarStyles.filterAction}><Icon name="arrowUp" size={14} /></div>
       </div>
 
       <div style={sidebarStyles.divider}></div>
 
       <div style={sidebarStyles.clientsLabel}>
         <span>Contacts actifs</span>
-        <button style={{ color: 'var(--fg-3)' }}><Icon name="plus" size={12} /></button>
+        <button style={{ color: 'var(--fg-3)', cursor: 'pointer' }}><Icon name="plus" size={12} /></button>
       </div>
 
       <div style={{ overflow: 'auto', paddingBottom: 8 }}>
-        {clients.filter(c => c.active).map(c => (
-          <div key={c.id}
-            onClick={() => onClientSelect(c.id)}
-            style={{
-              ...sidebarStyles.client,
-              background: activeClient === c.id ? 'var(--bg-hover)' : 'transparent'
-            }}
-            onMouseEnter={e => { if (activeClient !== c.id) e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={e => { if (activeClient !== c.id) e.currentTarget.style.background = 'transparent'; }}>
-            <div style={{ ...sidebarStyles.avatar, backgroundImage: `url(${c.avatarUrl})` }}></div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={sidebarStyles.clientName}>{c.name}</div>
-              <div style={sidebarStyles.clientMeta}>{c.lastActivity}</div>
+        {clients.filter(c => c.active).map(c => {
+          const s = stats[c.id] || { unread: 0, tasks: 0 };
+          const isActive = activeClient === c.id;
+          return (
+            <div key={c.id}
+              onClick={() => onClientSelect(c.id)}
+              style={{
+                ...sidebarStyles.client,
+                background: isActive ? 'var(--bg-hover)' : 'transparent'
+              }}
+              onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+              onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}>
+              <div style={{ ...sidebarStyles.avatar, backgroundImage: `url(${c.avatarUrl})` }}></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={sidebarStyles.clientName}>{c.name}</div>
+                <div style={sidebarStyles.clientMeta}>{c.lastActivity}</div>
+              </div>
+              {(s.unread > 0 || s.tasks > 0) && (
+                <div style={sidebarStyles.badgeRow}>
+                  {s.unread > 0 && (
+                    <span style={{ ...sidebarStyles.badge, ...sidebarStyles.badgeMsg }} title={`${s.unread} message${s.unread > 1 ? 's' : ''} non lu${s.unread > 1 ? 's' : ''}`}>
+                      <Icon name="chat" size={10} /> {s.unread}
+                    </span>
+                  )}
+                  {s.tasks > 0 && (
+                    <span style={{ ...sidebarStyles.badge, ...sidebarStyles.badgeTask }} title={`${s.tasks} tâche${s.tasks > 1 ? 's' : ''} détectée${s.tasks > 1 ? 's' : ''}`}>
+                      <Icon name="check" size={10} /> {s.tasks}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
-            {c.unread > 0 && <div style={sidebarStyles.unread}>{c.unread}</div>}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div style={sidebarStyles.footer}>

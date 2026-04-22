@@ -11,13 +11,9 @@ window.FreescaleData = (function() {
   ];
 
   const sources = [
-    { id: 'gmail',     label: 'Gmail',     color: 'var(--gmail)',     soft: 'var(--gmail-soft)',     glyph: 'mail' },
-    { id: 'outlook',   label: 'Outlook',   color: 'var(--outlook)',   soft: 'var(--outlook-soft)',   glyph: 'mail' },
-    { id: 'slack',     label: 'Slack',     color: 'var(--slack)',     soft: 'var(--slack-soft)',     glyph: 'hash' },
-    { id: 'discord',   label: 'Discord',   color: 'var(--discord)',   soft: 'var(--discord-soft)',   glyph: 'chat' },
-    { id: 'whatsapp',  label: 'WhatsApp',  color: 'var(--whatsapp)',  soft: 'var(--whatsapp-soft)',  glyph: 'whatsapp' },
-    { id: 'telegram',  label: 'Telegram',  color: 'var(--telegram)',  soft: 'var(--telegram-soft)',  glyph: 'send' },
-    { id: 'instagram', label: 'Instagram', color: 'var(--instagram)', soft: 'var(--instagram-soft)', glyph: 'camera' },
+    { id: 'gmail',     label: 'Gmail',     color: 'var(--gmail)',     soft: 'var(--gmail-soft)',     glyph: 'mail',     logo: 'assets/channels/gmail.svg' },
+    { id: 'whatsapp',  label: 'WhatsApp',  color: 'var(--whatsapp)',  soft: 'var(--whatsapp-soft)',  glyph: 'whatsapp', logo: 'assets/channels/whatsapp.svg' },
+    { id: 'instagram', label: 'Instagram', color: 'var(--instagram)', soft: 'var(--instagram-soft)', glyph: 'camera',   logo: 'assets/channels/instagram.svg' },
   ];
 
   // Messages + extracted tasks (signature feature)
