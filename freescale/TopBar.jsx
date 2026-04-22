@@ -43,7 +43,6 @@ function TopBar({ title, subtitle, active, onNav, unreadCount }) {
         <div style={topbarStyles.navPills}>
           {[
             { id: 'today', label: 'Dashboard' },
-            { id: 'inbox', label: 'Inbox' },
             { id: 'clients', label: 'Mes projets' }
           ].map(item => (
             <button key={item.id} onClick={() => onNav(item.id)} style={{ ...topbarStyles.nPill, ...(active === item.id ? topbarStyles.nPillActive : {}) }}>

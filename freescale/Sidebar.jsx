@@ -18,7 +18,7 @@ const sidebarStyles = {
   }
 };
 
-function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, sources, onOpenSettings, onAddClient, onOpenHelp, onConnectChannel }) {
+function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, sources, onOpenSettings, onAddClient, onOpenHelp, onConnectChannel, gmailConnected }) {
   const [query, setQuery] = React.useState('');
 
   // Compute total notifications per client (unread msgs + tasks)
@@ -130,17 +130,31 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
 
               {/* Name */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{
-                  fontSize: 13, lineHeight: 1.2, display: 'block',
-                  fontWeight: 500, color: 'var(--fg-1)',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                }}>
-                  {c.name}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{
+                    fontSize: 13, lineHeight: 1.2,
+                    fontWeight: hasNotif ? 700 : 500, color: hasNotif ? 'var(--fg-0)' : 'var(--fg-1)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                  }}>
+                    {c.name}
+                  </span>
+                  {hasNotif && (
+                    <div style={{ 
+                      width: 6, height: 6, borderRadius: '50%', 
+                      background: s.tasks > 0 ? 'var(--accent)' : '#3B82F6',
+                      flex: 'none'
+                    }} />
+                  )}
+                </div>
+                {hasNotif && (
+                  <div style={{ fontSize: 10.5, color: s.tasks > 0 ? 'var(--accent)' : '#3B82F6', fontWeight: 600, marginTop: 1 }}>
+                    {s.tasks > 0 ? 'Nouvelle tâche détectée' : 'Nouveau message'}
+                  </div>
+                )}
               </div>
 
               {/* Timestamp */}
-              <span style={{ fontSize: 10.5, color: 'var(--fg-3)', fontWeight: 500, whiteSpace: 'nowrap', flex: 'none' }}>
+              <span style={{ fontSize: 10.5, color: hasNotif ? 'var(--accent)' : 'var(--fg-3)', fontWeight: hasNotif ? 700 : 500, whiteSpace: 'nowrap', flex: 'none' }}>
                 {c.lastActivity.replace('il y a ', '')}
               </span>
             </div>
@@ -154,27 +168,38 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
           Canaux connectés
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          {(sources || []).map(s => (
-            <div key={s.id} title={s.label}
-              style={{
-                width: 44, height: 44, cursor: 'pointer',
-                display: 'grid', placeItems: 'center'
-              }}>
-              <img src={s.logo} alt={s.label} width="44" height="44" style={{ display: 'block' }} />
-            </div>
-          ))}
+          {(sources || []).map(s => {
+            const isGmail = s.id === 'gmail';
+            const isConnected = isGmail ? gmailConnected : (s.id === 'whatsapp' || s.id === 'instagram');
+            
+            return (
+              <div key={s.id} title={s.label} onClick={() => onOpenSettings && onOpenSettings()}
+                style={{
+                  width: 36, height: 36, cursor: 'pointer',
+                  display: 'grid', placeItems: 'center', position: 'relative',
+                  opacity: isConnected ? 1 : 0.4, transition: 'opacity 0.2s'
+                }}>
+                <img src={s.logo} alt={s.label} width="36" height="36" style={{ display: 'block' }} />
+                <div style={{ 
+                  position: 'absolute', bottom: 0, right: 0, width: 8, height: 8, 
+                  borderRadius: '50%', background: isConnected ? '#22C55E' : '#D1D5DB',
+                  border: '2px solid var(--bg-2)'
+                }} />
+              </div>
+            );
+          })}
           <button
             onClick={() => (onConnectChannel ? onConnectChannel() : onOpenSettings && onOpenSettings())}
             title="Connecter un canal"
             style={{
-              width: 44, height: 44, borderRadius: 12,
+              width: 36, height: 36, borderRadius: 10,
               background: 'transparent', border: '1.5px dashed var(--border-2)',
               color: 'var(--fg-3)', cursor: 'pointer',
               display: 'grid', placeItems: 'center', padding: 0
             }}
             onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
             onMouseLeave={e => { e.currentTarget.style.color = 'var(--fg-3)'; e.currentTarget.style.borderColor = 'var(--border-2)'; }}>
-            <Icon name="plus" size={18} />
+            <Icon name="plus" size={16} />
           </button>
         </div>
       </div>
