@@ -1,6 +1,6 @@
 // Freescale — App shell + state wiring
 const shellStyles = {
-  app: { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: 'var(--bg-2)' },
+  app: { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: 'var(--bg-1)' },
   main: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden' },
   content: { flex: 1, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column', borderRadius: 24 }
 };
@@ -18,10 +18,11 @@ function FreescaleApp() {
     try { return localStorage.getItem('freescale.theme') || 'light'; } catch { return 'light'; }
   });
   const [view, setView] = React.useState('today');
-  const [activeClient, setActiveClient] = React.useState(null);
+  const [activeClient, setActiveClient] = React.useState('acme');
   const [activeMessage, setActiveMessage] = React.useState('m1');
   const [activeSources, setActiveSources] = React.useState(['gmail', 'whatsapp', 'instagram']);
   const data = window.FreescaleData;
+  const [clients, setClients] = React.useState(data.clients || []);
   const [messages, setMessages] = React.useState(data.messages || []);
   const [tasks, setTasks] = React.useState(data.todayBrief?.focus || []);
   const [nudges, setNudges] = React.useState(data.todayBrief?.nudges || []);
@@ -97,6 +98,20 @@ function FreescaleApp() {
     showToast('Alerte traitée');
   };
 
+  const handleAddClient = () => {
+    const name = window.prompt('Nom du nouveau contact');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    const id = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `c${Date.now()}`;
+    const initials = trimmed.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const palette = ['#5B5BF0','#F59E0B','#16A349','#E11D48','#0EA5E9','#7C3AED','#DB2777','#059669'];
+    const color = palette[clients.length % palette.length];
+    const seed = Math.floor(Math.random() * 90);
+    const gender = Math.random() > 0.5 ? 'women' : 'men';
+    setClients(prev => [{ id, name: trimmed, color, avatar: initials, avatarUrl: `https://randomuser.me/api/portraits/${gender}/${seed}.jpg`, tags: ['Nouveau'], rate: 0, active: true, lastActivity: "à l'instant", unread: 0, value: 0, status: 'ongoing' }, ...prev]);
+    showToast(`${trimmed} ajouté aux contacts`);
+  };
+
   const handleSourceToggle = (id) => {
     setActiveSources(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
   };
@@ -130,8 +145,8 @@ function FreescaleApp() {
   const renderView = () => {
     switch (view) {
       case 'today':     return <TodayView tasks={tasks} nudges={nudges} unreadCount={unreadCount} sources={data.sources} onGenerate={handleGenerateTasks} onComplete={handleCompleteTask} onDismissNudge={handleDismissNudge} />;
-      case 'inbox':     return <InboxView messages={messages} clients={data.clients} sources={data.sources}
-                                  activeMessageId={activeMessage} onSelectMessage={setActiveMessage}
+      case 'inbox':     return <InboxView messages={messages} clients={clients} sources={data.sources}
+                                  activeClientId={activeClient}
                                   acceptedTasks={acceptedTasks} onAcceptTask={(id) => { setAcceptedTasks(prev => [...prev, id]); showToast('Tâche ajoutée au planning'); }} onDismissTask={(id) => setAcceptedTasks(prev => [...prev, id + '_dismissed'])} />;
       case 'tasks':     return <TasksView brief={data.todayBrief} acceptedTasks={acceptedTasks} />;
       case 'clients':   return <ClientsView clients={data.clients} />;
@@ -148,11 +163,11 @@ function FreescaleApp() {
       <Sidebar
         active={view} onNav={setView}
         activeClient={activeClient} onClientSelect={(id) => { setActiveClient(id); setView('inbox'); }}
-        sources={data.sources} activeSources={activeSources} onSourceToggle={handleSourceToggle}
-        clients={data.clients} messages={messages}
-        theme={theme} onTheme={toggleTheme}
+        clients={clients} messages={messages} sources={data.sources}
         onOpenSettings={() => setSettingsOpen(true)}
-        gmailConnected={gmailConnected}
+        onAddClient={handleAddClient}
+        onConnectChannel={() => setSettingsOpen(true)}
+        onOpenHelp={() => showToast('Help Center — bientôt disponible')}
       />
       <div style={shellStyles.main}>
         <TopBar title={titleBar.t} subtitle={titleBar.s} active={view} onNav={setView} unreadCount={unreadCount} />

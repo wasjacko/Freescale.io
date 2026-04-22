@@ -57,71 +57,16 @@ const inboxStyles = {
   }
 };
 
-function InboxView({ messages, clients, sources, activeMessageId, onSelectMessage, acceptedTasks, onAcceptTask, onDismissTask }) {
+function InboxView({ messages, clients, sources, activeClientId, acceptedTasks, onAcceptTask, onDismissTask }) {
   const clientMap = Object.fromEntries(clients.map(c => [c.id, c]));
   const srcMap = Object.fromEntries(sources.map(s => [s.id, s]));
-  const active = messages.find(m => m.id === activeMessageId) || messages[0];
+  const active = messages.find(m => m.clientId === activeClientId) || messages[0];
   const activeClient = clientMap[active.clientId];
   const activeSrc = srcMap[active.source];
-  const unreadCount = messages.filter(m => m.unread).length;
-
-  const [tab, setTab] = React.useState('all');
-  const filtered = tab === 'unread' ? messages.filter(m => m.unread) : messages;
 
   return (
     <div style={inboxStyles.wrap}>
-      {/* List Column */}
-      <div style={inboxStyles.listPanel}>
-        <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid #F3F4F6', display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          {sources.map(s => (
-            <button key={s.id} title={s.label}
-              style={{
-                width: 30, height: 30, borderRadius: 8, border: 'none', padding: 0,
-                background: 'transparent', cursor: 'pointer', display: 'grid', placeItems: 'center',
-                transition: 'transform 120ms, background 120ms'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}>
-              <img src={s.logo} alt={s.label} width="22" height="22" />
-            </button>
-          ))}
-        </div>
-        <div style={inboxStyles.listHead}>
-           <div style={inboxStyles.filterBtn}>Open Chats <Icon name="chevronDown" size={10} /></div>
-           <div style={inboxStyles.filterBtn}>Unread</div>
-           <div style={{ ...inboxStyles.filterBtn, marginLeft: 'auto', padding: 6, width: 28, height: 28, display: 'grid', placeItems: 'center' }}>
-             <Icon name="plus" size={14} />
-           </div>
-        </div>
-        <div style={inboxStyles.messages}>
-          {filtered.map(m => {
-            const c = clientMap[m.clientId];
-            const isActive = m.id === active.id;
-            return (
-              <div key={m.id} onClick={() => onSelectMessage(m.id)}
-                style={{ ...inboxStyles.msgItem, ...(isActive ? inboxStyles.msgActive : {}) }}>
-                <div style={inboxStyles.avatar}>
-                  {c?.avatarUrl ? (
-                    <img src={c.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>{c?.avatar || m.from[0]}</div>
-                  )}
-                </div>
-                <div style={inboxStyles.msgInfo}>
-                  <div style={inboxStyles.msgFrom}>
-                    {m.from}
-                    <span style={inboxStyles.msgTime}>{m.time}</span>
-                  </div>
-                  <div style={inboxStyles.msgPreview}>{m.subject || m.body}</div>
-                </div>
-                {m.unread && <div style={inboxStyles.unreadDot}></div>}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Detail Column */}
+      {/* Detail Column (plein écran) */}
       <div style={inboxStyles.detailArea}>
         <div style={inboxStyles.detailHead}>
           <div style={{ ...inboxStyles.avatar, width: 32, height: 32 }}>

@@ -1,13 +1,17 @@
 // Freescale — fake data for prototype
 window.FreescaleData = (function() {
   const clients = [
-    { id: 'acme',     name: 'Acme Corp',        color: '#5B5BF0', avatar: 'AC', avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg', tags: ['SaaS B2B', 'React'], rate: 75, active: true, lastActivity: 'il y a 12 min', unread: 4, value: 8400, status: 'ongoing' },
-    { id: 'lumen',    name: 'Lumen Studio',     color: '#F59E0B', avatar: 'LS', avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg', tags: ['Design', 'Next.js'], rate: 95, active: true, lastActivity: 'il y a 2h', unread: 2, value: 12600, status: 'ongoing' },
-    { id: 'northp',   name: 'North Park Agency',color: '#16A349', avatar: 'NP', avatarUrl: 'https://randomuser.me/api/portraits/women/68.jpg', tags: ['Agency'], rate: 70, active: true, lastActivity: 'hier', unread: 0, value: 4200, status: 'ongoing' },
-    { id: 'peli',     name: 'Pelican Labs',     color: '#E11D48', avatar: 'PL', avatarUrl: 'https://randomuser.me/api/portraits/women/17.jpg', tags: ['Lead', 'IA'], rate: 0, active: false, lastActivity: 'il y a 3j', unread: 1, value: 0, status: 'deal' },
-    { id: 'orion',    name: 'Orion Robotics',   color: '#0EA5E9', avatar: 'OR', avatarUrl: 'https://randomuser.me/api/portraits/men/75.jpg', tags: ['Hardware'], rate: 85, active: true, lastActivity: 'il y a 4h', unread: 0, value: 6800, status: 'ongoing' },
-    { id: 'fable',    name: 'Fable & Co',       color: '#7C3AED', avatar: 'FC', avatarUrl: 'https://randomuser.me/api/portraits/men/22.jpg', tags: ['E-commerce'], rate: 60, active: true, lastActivity: 'il y a 1j', unread: 0, value: 2100, status: 'ongoing' },
-    { id: 'kite',     name: 'Kite Mobile',      color: '#0B8276', avatar: 'KM', avatarUrl: 'https://randomuser.me/api/portraits/men/46.jpg', tags: ['Lead'], rate: 0, active: false, lastActivity: 'il y a 6j', unread: 0, value: 0, status: 'deal' },
+    { id: 'acme',     name: 'Sarah Kline',      color: '#5B5BF0', avatar: 'SK', avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg', tags: ['SaaS B2B', 'React'], rate: 75, active: true, lastActivity: 'il y a 12 min', unread: 4, value: 8400, status: 'ongoing' },
+    { id: 'lumen',    name: 'Marc Lavigne',     color: '#F59E0B', avatar: 'ML', avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg', tags: ['Design', 'Next.js'], rate: 95, active: true, lastActivity: 'il y a 2h', unread: 2, value: 12600, status: 'ongoing' },
+    { id: 'northp',   name: 'Léa Bonnet',       color: '#16A349', avatar: 'LB', avatarUrl: 'https://randomuser.me/api/portraits/women/68.jpg', tags: ['Agency'], rate: 70, active: true, lastActivity: 'hier', unread: 0, value: 4200, status: 'ongoing' },
+    { id: 'peli',     name: 'Julie Cassan',     color: '#E11D48', avatar: 'JC', avatarUrl: 'https://randomuser.me/api/portraits/women/17.jpg', tags: ['Lead', 'IA'], rate: 0, active: false, lastActivity: 'il y a 3j', unread: 1, value: 0, status: 'deal' },
+    { id: 'orion',    name: 'Tomás Fernandez',  color: '#0EA5E9', avatar: 'TF', avatarUrl: 'https://randomuser.me/api/portraits/men/75.jpg', tags: ['Hardware'], rate: 85, active: true, lastActivity: 'il y a 4h', unread: 0, value: 6800, status: 'ongoing' },
+    { id: 'fable',    name: 'Hugo Marquis',     color: '#7C3AED', avatar: 'HM', avatarUrl: 'https://randomuser.me/api/portraits/men/22.jpg', tags: ['E-commerce'], rate: 60, active: true, lastActivity: 'il y a 1j', unread: 0, value: 2100, status: 'ongoing' },
+    { id: 'kite',     name: 'Emma Rodriguez',   color: '#0B8276', avatar: 'ER', avatarUrl: 'https://randomuser.me/api/portraits/women/46.jpg', tags: ['Lead'], rate: 0, active: true, lastActivity: 'il y a 6j', unread: 0, value: 0, status: 'deal' },
+    { id: 'noah',     name: 'Noah Bensimon',    color: '#8B5CF6', avatar: 'NB', avatarUrl: 'https://randomuser.me/api/portraits/men/12.jpg', tags: ['Freelance'], rate: 80, active: true, lastActivity: 'il y a 3h', unread: 0, value: 3200, status: 'ongoing' },
+    { id: 'chloe',    name: 'Chloé Marchetti',  color: '#EC4899', avatar: 'CM', avatarUrl: 'https://randomuser.me/api/portraits/women/25.jpg', tags: ['Brand'], rate: 65, active: true, lastActivity: 'il y a 2j', unread: 0, value: 1800, status: 'ongoing' },
+    { id: 'raj',      name: 'Raj Patel',        color: '#F97316', avatar: 'RP', avatarUrl: 'https://randomuser.me/api/portraits/men/55.jpg', tags: ['SaaS'], rate: 90, active: true, lastActivity: 'il y a 5j', unread: 0, value: 5400, status: 'ongoing' },
+    { id: 'ines',     name: 'Inès Dubois',      color: '#14B8A6', avatar: 'ID', avatarUrl: 'https://randomuser.me/api/portraits/women/81.jpg', tags: ['Startup'], rate: 70, active: true, lastActivity: 'il y a 8j', unread: 0, value: 2400, status: 'ongoing' },
   ];
 
   const sources = [
