@@ -10,11 +10,17 @@
 
 <body>
   <div id="root"></div>
+  <style>
+    html, body { overflow: hidden; height: 100vh; }
+    #error-box:empty { display: none; }
+  </style>
   <pre id="error-box"
-    style="color: red; padding: 20px; font-family: monospace; white-space: pre-wrap; font-size: 14px; background: #fee;"></pre>
+    style="display: none; position: fixed; bottom: 0; left: 0; right: 0; max-height: 200px; overflow: auto; color: red; padding: 20px; font-family: monospace; white-space: pre-wrap; font-size: 14px; background: #fee; z-index: 9999; border-top: 2px solid red;"></pre>
   <script>
     window.addEventListener('error', function (e) {
-      document.getElementById('error-box').textContent += e.message + '\n' + e.filename + ':' + e.lineno + ':' + e.colno + '\n' + (e.error ? e.error.stack : '') + '\n\n';
+      const box = document.getElementById('error-box');
+      box.style.display = 'block';
+      box.textContent += e.message + '\n' + e.filename + ':' + e.lineno + ':' + e.colno + '\n' + (e.error ? e.error.stack : '') + '\n\n';
     });
   </script>
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"

@@ -176,60 +176,6 @@ function FreescaleApp() {
         </div>
       </div>
 
-      {/* Floating Copilot Bubble */}
-      <div style={{
-          position: 'fixed', bottom: 24, right: 24, width: 56, height: 56, borderRadius: '50%',
-          background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center',
-          boxShadow: '0 8px 32px rgba(234, 88, 12, 0.4)', cursor: 'pointer', zIndex: 1000,
-          transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-      }} 
-      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-      onClick={() => setCopilotOpen(!copilotOpen)}>
-         <Icon name="sparkles" size={24} />
-         {unreadCount > 0 && (
-           <div style={{ position: 'absolute', top: -2, right: -2, width: 20, height: 20, borderRadius: '50%', background: 'black', border: '2px solid var(--accent)', color: 'white', fontSize: 10, fontWeight: 800, display: 'grid', placeItems: 'center' }}>
-             {unreadCount}
-           </div>
-         )}
-      </div>
-
-      {copilotOpen && (
-          <div style={{
-              position: 'fixed', bottom: 92, right: 24, width: 340, background: 'var(--bg-1)',
-              borderRadius: 20, boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-1)',
-              zIndex: 1000, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-              animation: 'copilotSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}>
-              <div style={{ padding: '20px 24px', background: 'var(--accent)', color: '#fff' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <Icon name="sparkles" size={18} />
-                    <div style={{ fontSize: 16, fontWeight: 700 }}>Copilote Freescale</div>
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.9 }}>Ton expert-comptable & secrétaire personnel.</div>
-              </div>
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', display: 'grid', placeItems: 'center', flex: 'none' }}>
-                      <Icon name="chat" size={14} color="var(--accent)" />
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--fg-1)', lineHeight: 1.5, background: 'var(--bg-2)', padding: '12px 14px', borderRadius: '0 14px 14px 14px' }}>
-                      "Sarah Kline t'a envoyé un message urgent sur Instagram. J'ai analysé sa demande : c'est un bug bloquant. Je l'ai ajouté à ton focus d'aujourd'hui."
-                    </div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                    <button style={{ flex: 1, background: 'var(--fg-0)', color: 'white', padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: 'none' }}>
-                        Voir la tâche
-                    </button>
-                    <button style={{ width: 40, height: 40, background: 'var(--bg-2)', borderRadius: 10, display: 'grid', placeItems: 'center' }}>
-                      <Icon name="check" size={16} />
-                    </button>
-                  </div>
-              </div>
-          </div>
-      )}
-
       {toast && (
         <div style={{
           position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)',
