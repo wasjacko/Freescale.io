@@ -18,7 +18,7 @@ const sidebarStyles = {
   }
 };
 
-function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, sources, onOpenSettings, onAddClient, onOpenHelp, onConnectChannel, gmailConnected }) {
+function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, sources, onOpenSettings, onAddClient, onOpenHelp, onConnectChannel, gmailConnected, whatsappConnected, instagramConnected }) {
   const [query, setQuery] = React.useState('');
 
   // Compute total notifications per client (unread msgs + tasks)
@@ -169,21 +169,24 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           {(sources || []).map(s => {
-            const isGmail = s.id === 'gmail';
-            const isConnected = isGmail ? gmailConnected : (s.id === 'whatsapp' || s.id === 'instagram');
+            let isConnected = false;
+            if (s.id === 'gmail') isConnected = gmailConnected;
+            if (s.id === 'whatsapp') isConnected = whatsappConnected;
+            if (s.id === 'instagram') isConnected = instagramConnected;
             
             return (
               <div key={s.id} title={s.label} onClick={() => onOpenSettings && onOpenSettings()}
                 style={{
                   width: 36, height: 36, cursor: 'pointer',
                   display: 'grid', placeItems: 'center', position: 'relative',
-                  opacity: isConnected ? 1 : 0.4, transition: 'opacity 0.2s'
+                  opacity: isConnected ? 1 : 0.4, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}>
                 <img src={s.logo} alt={s.label} width="36" height="36" style={{ display: 'block' }} />
                 <div style={{ 
                   position: 'absolute', bottom: 0, right: 0, width: 8, height: 8, 
                   borderRadius: '50%', background: isConnected ? '#22C55E' : '#D1D5DB',
-                  border: '2px solid var(--bg-2)'
+                  border: '2px solid var(--bg-2)',
+                  boxShadow: isConnected ? '0 0 10px rgba(34, 197, 94, 0.5)' : 'none'
                 }} />
               </div>
             );

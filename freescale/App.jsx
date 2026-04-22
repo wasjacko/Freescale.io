@@ -31,6 +31,8 @@ function FreescaleApp() {
   const [acceptedTasks, setAcceptedTasks] = React.useState([]);
   const [toast, setToast] = React.useState(null);
   const [gmailConnected, setGmailConnected] = React.useState(false);
+  const [whatsappConnected, setWhatsappConnected] = React.useState(false);
+  const [instagramConnected, setInstagramConnected] = React.useState(false);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
 
@@ -77,6 +79,24 @@ function FreescaleApp() {
       loadGmailMessages();
     }
   }
+
+  const handleChannelConnect = (id) => {
+    if (id === 'gmail') {
+      FreescaleGmail.connect();
+      setConnectorOpen(false);
+    } else if (id === 'whatsapp' || id === 'instagram') {
+       // Start connection process
+       showToast(`Initialisation de ${id}...`);
+       setConnectorOpen(false);
+       
+       // Simulate a scan delay
+       setTimeout(() => {
+          if (id === 'whatsapp') setWhatsappConnected(true);
+          if (id === 'instagram') setInstagramConnected(true);
+          showToast(`${id.charAt(0).toUpperCase() + id.slice(1)} connecté avec succès !`);
+       }, 2500);
+    }
+  };
 
   const handleGenerateTasks = () => {
     const generated = [
@@ -165,6 +185,9 @@ function FreescaleApp() {
         active={view} onNav={setView}
         activeClient={activeClient} onClientSelect={(id) => { setActiveClient(id); setView('inbox'); }}
         clients={clients} messages={messages} sources={data.sources}
+        gmailConnected={gmailConnected}
+        whatsappConnected={whatsappConnected}
+        instagramConnected={instagramConnected}
         onOpenSettings={() => setSettingsOpen(true)}
         onAddClient={handleAddClient}
         onConnectChannel={() => setConnectorOpen(true)}
@@ -207,7 +230,7 @@ function FreescaleApp() {
       )}
       
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onGmailStatusChange={handleGmailStatusChange} />
-      <ChannelConnectorModal isOpen={connectorOpen} onClose={() => setConnectorOpen(false)} onConnect={(id) => { showToast(`Simulation: Connexion à ${id}`); setConnectorOpen(false); }} />
+      <ChannelConnectorModal isOpen={connectorOpen} onClose={() => setConnectorOpen(false)} onConnect={handleChannelConnect} />
     </div>
   );
 }
