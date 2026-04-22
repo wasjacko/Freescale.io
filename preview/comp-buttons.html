@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-surface); font-family: var(--font-sans); }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding: 10px 18px; border-radius: var(--r-md); font-size: 15px; font-weight: 600; cursor: pointer; border: 0; transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out); line-height: 1; font-family: inherit; }
+  .btn-primary { background: var(--gray-800); color: var(--white); }
+  .btn-primary:hover { background: #2E2E2E; }
+  .btn-secondary { background: var(--white); color: var(--fg-1); border: 1px solid var(--border-2); }
+  .btn-secondary:hover { background: var(--gray-50); }
+  .btn-ghost { background: transparent; color: var(--fg-1); }
+  .btn-ghost:hover { background: var(--bg-hover); }
+  .btn-accent { background: #2D7FF9; color: var(--white); }
+  .btn-accent:hover { background: #1F6FEB; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: var(--r-sm); }
+  .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .lbl { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); min-width: 80px; }
+</style></head>
+<body>
+  <div class="row"><div class="lbl">Primary</div><button class="btn btn-primary">Get started for free</button><button class="btn btn-primary">Book demo</button><button class="btn btn-sm btn-primary">Sign up</button></div>
+  <div class="row"><div class="lbl">Secondary</div><button class="btn btn-secondary">Book demo</button><button class="btn btn-secondary">Learn more</button><button class="btn btn-sm btn-secondary">Cancel</button></div>
+  <div class="row"><div class="lbl">Accent</div><button class="btn btn-accent">Create</button><button class="btn btn-sm btn-accent">+ Add</button><button class="btn btn-ghost">Sign in</button></div>
+</body></html>

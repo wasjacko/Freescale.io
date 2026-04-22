@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:20px; background:var(--bg-surface); font-family: var(--font-sans); }
+  .row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+  .cell { display:flex; flex-direction: column; align-items:center; gap: 6px; }
+  .box { background: var(--gray-100); border: 1px solid var(--border-1); width: 64px; height: 48px; }
+  .n { font-size: 11px; font-weight: 600; color: var(--fg-1); }
+  .v { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="cell"><div class="box" style="border-radius:3px"></div><div class="n">xs</div><div class="v">3px</div></div>
+    <div class="cell"><div class="box" style="border-radius:6px"></div><div class="n">sm</div><div class="v">6px</div></div>
+    <div class="cell"><div class="box" style="border-radius:8px"></div><div class="n">md</div><div class="v">8px</div></div>
+    <div class="cell"><div class="box" style="border-radius:12px"></div><div class="n">lg</div><div class="v">12px</div></div>
+    <div class="cell"><div class="box" style="border-radius:16px"></div><div class="n">xl</div><div class="v">16px</div></div>
+    <div class="cell"><div class="box" style="border-radius:20px"></div><div class="n">2xl</div><div class="v">20px</div></div>
+    <div class="cell"><div class="box" style="border-radius:999px"></div><div class="n">pill</div><div class="v">999px</div></div>
+  </div>
+</body></html>

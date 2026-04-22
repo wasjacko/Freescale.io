@@ -1,0 +1,25 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-app); font-family: var(--font-sans); }
+  .sheet { background: var(--white); border: 1px solid var(--border-1); border-radius: var(--r-sm); overflow:hidden; }
+  .hdr { display:grid; grid-template-columns: 36px 1.6fr 1fr 1fr 1fr; background: #F7F7F7; font-size:11px; color: var(--fg-3); font-weight: 600; }
+  .hdr > div, .row > div { padding: 8px 10px; border-right: 1px solid var(--border-1); display:flex; align-items:center; gap: 6px; }
+  .row { display:grid; grid-template-columns: 36px 1.6fr 1fr 1fr 1fr; border-top: 1px solid var(--border-1); font-size: 13px; color: var(--fg-1); }
+  .row:hover { background: var(--gray-50); }
+  .num { color: var(--fg-3); font-size: 11px; justify-content:center; }
+  .chip { padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 500; }
+  .avatar { width:20px; height:20px; border-radius: 999px; background: #2D7FF9; color: #fff; font-size: 10px; font-weight: 600; display:inline-flex; align-items:center; justify-content:center; margin-right: 6px; }
+</style></head>
+<body>
+  <div class="sheet">
+    <div class="hdr">
+      <div>#</div><div>⛓ Name</div><div>🏷 Status</div><div>👤 Owner</div><div>📅 Due</div>
+    </div>
+    <div class="row"><div class="num">1</div><div>Q2 launch plan</div><div><span class="chip" style="background:#D1F7C4;color:#178A3A">Shipped</span></div><div><span class="avatar">AY</span>Angela Y.</div><div>May 14</div></div>
+    <div class="row"><div class="num">2</div><div>Pricing page refresh</div><div><span class="chip" style="background:#FFEAB6;color:#9A7100">Blocked</span></div><div><span class="avatar" style="background:#F82B60">MR</span>Marco R.</div><div>May 21</div></div>
+    <div class="row"><div class="num">3</div><div>Agent eval framework</div><div><span class="chip" style="background:#CFDFFF;color:#1F5DC7">Planning</span></div><div><span class="avatar" style="background:#7C37EF">JN</span>Jess N.</div><div>Jun 02</div></div>
+    <div class="row"><div class="num">4</div><div>HyperDB cost audit</div><div><span class="chip" style="background:#FFDCE5;color:#D12851">Urgent</span></div><div><span class="avatar" style="background:#20C933">TL</span>Tomás L.</div><div>Apr 28</div></div>
+  </div>
+</body></html>

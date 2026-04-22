@@ -1,0 +1,27 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:18px; background:var(--bg-surface); font-family: var(--font-sans); }
+  .grid { display:grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
+  .pair { display:flex; flex-direction:column; gap:3px; }
+  .pill { border-radius: var(--r-xs); height: 36px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; }
+  .lbl { font-size: 10px; color: var(--fg-3); text-align:center; font-weight:500; }
+</style></head>
+<body>
+  <div class="grid">
+    <div class="pair"><div class="pill" style="background:#FFDCE5; color:#F82B60">Red</div><div class="pill" style="background:#F82B60; color:#fff">Red</div></div>
+    <div class="pair"><div class="pill" style="background:#FEE2D5; color:#FF6F2C">Orange</div><div class="pill" style="background:#FF6F2C; color:#fff">Orange</div></div>
+    <div class="pair"><div class="pill" style="background:#FFEAB6; color:#B27800">Yellow</div><div class="pill" style="background:#FCB400; color:#fff">Yellow</div></div>
+    <div class="pair"><div class="pill" style="background:#D1F7C4; color:#178A3A">Green</div><div class="pill" style="background:#20C933; color:#fff">Green</div></div>
+    <div class="pair"><div class="pill" style="background:#C2F5E9; color:#0B8276">Teal</div><div class="pill" style="background:#20D9D2; color:#fff">Teal</div></div>
+    <div class="pair"><div class="pill" style="background:#D0F0FD; color:#0B93C8">Cyan</div><div class="pill" style="background:#18BFFF; color:#fff">Cyan</div></div>
+    <div class="pair"><div class="pill" style="background:#CFDFFF; color:#1F6FEB">Blue</div><div class="pill" style="background:#2D7FF9; color:#fff">Blue</div></div>
+    <div class="pair"><div class="pill" style="background:#EDE2FE; color:#7C37EF">Purple</div><div class="pill" style="background:#8B46FF; color:#fff">Purple</div></div>
+    <div class="pair"><div class="pill" style="background:#FFDAF6; color:#C30C97">Pink</div><div class="pill" style="background:#FF08C2; color:#fff">Pink</div></div>
+    <div class="pair"><div class="pill" style="background:#EEEEEE; color:#666">Gray</div><div class="pill" style="background:#666666; color:#fff">Gray</div></div>
+  </div>
+  <div class="grid" style="margin-top: 10px">
+    <div class="lbl">red</div><div class="lbl">orange</div><div class="lbl">yellow</div><div class="lbl">green</div><div class="lbl">teal</div><div class="lbl">cyan</div><div class="lbl">blue</div><div class="lbl">purple</div><div class="lbl">pink</div><div class="lbl">gray</div>
+  </div>
+</body></html>

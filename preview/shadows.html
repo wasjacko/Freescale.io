@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-page); font-family: var(--font-sans); }
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .card { background: var(--bg-surface); border-radius: var(--r-xl); padding: 16px; height: 80px; display:flex; flex-direction:column; justify-content:space-between; }
+  .n { font-size: 12px; font-weight: 600; color: var(--fg-1); }
+  .v { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+  .s-xs { box-shadow: var(--shadow-xs); }
+  .s-sm { box-shadow: var(--shadow-sm); }
+  .s-md { box-shadow: var(--shadow-md); }
+  .s-lg { box-shadow: var(--shadow-lg); }
+  .s-xl { box-shadow: var(--shadow-xl); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="card s-xs"><div class="n">xs</div><div class="v">hairline</div></div>
+    <div class="card s-sm"><div class="n">sm</div><div class="v">default card</div></div>
+    <div class="card s-md"><div class="n">md</div><div class="v">hover / popover</div></div>
+    <div class="card s-lg"><div class="n">lg</div><div class="v">modal</div></div>
+    <div class="card s-xl"><div class="n">xl</div><div class="v">peak elevation</div></div>
+  </div>
+</body></html>

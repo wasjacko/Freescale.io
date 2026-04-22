@@ -1,0 +1,124 @@
+/* ============================================================
+   Orbit — SaaS copilot pour freelances tech
+   Design tokens (light + dark via [data-theme])
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Typography */
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Brand — a calm indigo-violet with warm accents */
+  --accent:        #5B5BF0;   /* primary */
+  --accent-soft:   #EEEEFE;
+  --accent-ink:    #3939C7;
+
+  --ok:            #16A349;
+  --ok-soft:       #DCFCE7;
+  --warn:          #F59E0B;
+  --warn-soft:     #FEF3C7;
+  --danger:        #E11D48;
+  --danger-soft:   #FFE4E6;
+  --info:          #0EA5E9;
+  --info-soft:     #E0F2FE;
+
+  /* Source brand chips (pastel pair) */
+  --gmail-soft:    #FEE2E2; --gmail: #EA4335;
+  --outlook-soft:  #DBEAFE; --outlook: #0078D4;
+  --slack-soft:    #F3E8FF; --slack: #4A154B;
+  --discord-soft:  #E0E7FF; --discord: #5865F2;
+  --whatsapp-soft: #DCFCE7; --whatsapp: #25D366;
+  --telegram-soft: #DBEAFE; --telegram: #29A9EA;
+  --instagram-soft:#FCE7F3; --instagram: #E1306C;
+}
+
+/* LIGHT theme (default) */
+:root, [data-theme="light"] {
+  --bg-0:        #FAFAFB;     /* page / canvas */
+  --bg-1:        #FFFFFF;     /* surface / card */
+  --bg-2:        #F4F4F6;     /* subtle panel */
+  --bg-hover:    #F0F0F3;
+  --bg-active:   #E8E8EC;
+
+  --fg-0:        #0B0D12;     /* primary text */
+  --fg-1:        #323642;     /* body */
+  --fg-2:        #6B7280;     /* secondary */
+  --fg-3:        #9AA0AC;     /* muted / icons */
+  --fg-4:        #C3C7D0;
+
+  --border-1:    #ECECEF;
+  --border-2:    #E2E2E7;
+  --border-3:    #D4D4DA;
+
+  --shadow-xs:   0 1px 0 rgba(11,13,18,0.03);
+  --shadow-sm:   0 1px 2px rgba(11,13,18,0.04), 0 0 0 1px rgba(11,13,18,0.03);
+  --shadow-md:   0 6px 20px rgba(11,13,18,0.06), 0 0 0 1px rgba(11,13,18,0.04);
+  --shadow-lg:   0 20px 50px rgba(11,13,18,0.10), 0 2px 8px rgba(11,13,18,0.05);
+  --shadow-focus:0 0 0 3px rgba(91,91,240,0.25);
+}
+
+/* DARK theme */
+[data-theme="dark"] {
+  --bg-0:        #0B0C10;
+  --bg-1:        #14161C;
+  --bg-2:        #1B1E26;
+  --bg-hover:    #22252F;
+  --bg-active:   #2A2E39;
+
+  --fg-0:        #F3F4F7;
+  --fg-1:        #D1D3DA;
+  --fg-2:        #9AA0AC;
+  --fg-3:        #6B7280;
+  --fg-4:        #4A4F5A;
+
+  --border-1:    #23262F;
+  --border-2:    #2F333D;
+  --border-3:    #3B404B;
+
+  --accent-soft: #1E1E3F;
+  --ok-soft:     #0E2A1D;
+  --warn-soft:   #3A2A10;
+  --danger-soft: #3A1520;
+  --info-soft:   #0E2838;
+
+  --gmail-soft:    #3A1818; --gmail: #F47563;
+  --outlook-soft:  #12243A; --outlook: #6DA9F0;
+  --slack-soft:    #2A1838; --slack: #C795D6;
+  --discord-soft:  #1B1F3B; --discord: #8C95F7;
+  --whatsapp-soft: #0F2A1A; --whatsapp: #4FD787;
+  --telegram-soft: #0F2738; --telegram: #6FC2ED;
+  --instagram-soft:#3B1A2A; --instagram: #EC6EA0;
+
+  --shadow-xs:   0 1px 0 rgba(0,0,0,0.3);
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-md:   0 6px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-lg:   0 20px 50px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-focus:0 0 0 3px rgba(91,91,240,0.35);
+}
+
+/* Radii */
+:root {
+  --r-xs: 4px; --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 18px; --r-2xl: 24px; --r-pill: 999px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 999px; border: 2px solid var(--bg-0); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-3); }

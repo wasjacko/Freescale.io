@@ -1,0 +1,24 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:20px; background:var(--bg-surface); font-family: var(--font-sans); }
+  .scale { display:flex; align-items:flex-end; gap: 10px; }
+  .bar { background: var(--fg-1); border-radius: 3px; position: relative; width: 38px; display:flex; justify-content:center; align-items:flex-end; }
+  .bar span { position: absolute; bottom: -22px; font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+  .lbl { margin-bottom: 28px; font-size: 11px; color: var(--fg-2); }
+</style></head>
+<body>
+  <div class="lbl">Spacing scale · 4-pt base</div>
+  <div class="scale">
+    <div class="bar" style="height:4px"><span>4 / s-1</span></div>
+    <div class="bar" style="height:8px"><span>8 / s-2</span></div>
+    <div class="bar" style="height:12px"><span>12 / s-3</span></div>
+    <div class="bar" style="height:16px"><span>16 / s-4</span></div>
+    <div class="bar" style="height:24px"><span>24 / s-6</span></div>
+    <div class="bar" style="height:32px"><span>32 / s-8</span></div>
+    <div class="bar" style="height:48px"><span>48 / s-12</span></div>
+    <div class="bar" style="height:64px"><span>64 / s-16</span></div>
+    <div class="bar" style="height:96px"><span>96 / s-24</span></div>
+  </div>
+</body></html>

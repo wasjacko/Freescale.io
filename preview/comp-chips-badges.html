@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-surface); font-family: var(--font-sans); }
+  .wrap { display:flex; flex-wrap:wrap; gap: 6px; }
+  .chip { padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+  .badge { display:inline-flex; align-items:center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+  .new { padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; background: #F82B60; color: #fff; text-transform: uppercase; }
+  h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-3); margin: 0 0 8px; font-weight: 600; }
+</style></head>
+<body>
+  <h4>Field select chips</h4>
+  <div class="wrap" style="margin-bottom:16px">
+    <span class="chip" style="background:#FFDCE5; color:#D12851">Urgent</span>
+    <span class="chip" style="background:#FEE2D5; color:#D45A1F">In review</span>
+    <span class="chip" style="background:#FFEAB6; color:#9A7100">Blocked</span>
+    <span class="chip" style="background:#D1F7C4; color:#178A3A">Shipped</span>
+    <span class="chip" style="background:#C2F5E9; color:#0B7F76">QA</span>
+    <span class="chip" style="background:#CFDFFF; color:#1F5DC7">Planning</span>
+    <span class="chip" style="background:#EDE2FE; color:#6B27E0">Research</span>
+    <span class="chip" style="background:#FFDAF6; color:#C30C97">Design</span>
+  </div>
+  <h4>Status badges</h4>
+  <div class="wrap" style="margin-bottom:16px">
+    <span class="badge" style="background:#D1F7C4; color:#178A3A"><span class="dot"></span>Live</span>
+    <span class="badge" style="background:#FFEAB6; color:#9A7100"><span class="dot"></span>Syncing</span>
+    <span class="badge" style="background:#FFDCE5; color:#D12851"><span class="dot"></span>Failed</span>
+    <span class="badge" style="background:#EEEEEE; color:#555"><span class="dot"></span>Draft</span>
+    <span class="new">New</span>
+    <span class="new" style="background:#1D1F25">Beta</span>
+  </div>
+</body></html>

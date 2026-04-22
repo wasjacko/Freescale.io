@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-surface); font-family: var(--font-sans); }
+  .row { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  label { display:block; font-size: 12px; font-weight: 500; color: var(--fg-2); margin-bottom: 6px; }
+  .input { width:100%; padding: 9px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-2); background: var(--white); font-size: 14px; font-family: inherit; color: var(--fg-1); box-sizing:border-box; }
+  .input:focus { outline: none; border-color: var(--border-focus); box-shadow: var(--shadow-focus); }
+  .select { display:flex; align-items:center; justify-content:space-between; padding: 9px 12px; border-radius: var(--r-sm); border:1px solid var(--border-2); font-size: 14px; color: var(--fg-1); background: var(--white); }
+  .select svg { color: var(--fg-3); }
+  .search { position:relative; }
+  .search svg { position:absolute; left:10px; top:50%; transform: translateY(-50%); color: var(--fg-3); }
+  .search .input { padding-left: 32px; }
+  .toggle { display:flex; align-items:center; gap: 10px; }
+  .switch { width: 32px; height: 18px; background: #2D7FF9; border-radius: 999px; position: relative; }
+  .switch::after { content:''; position:absolute; right: 2px; top: 2px; width: 14px; height: 14px; border-radius: 999px; background: #fff; }
+  .switch.off { background: var(--gray-300); }
+  .switch.off::after { left: 2px; right: auto; }
+</style></head>
+<body>
+  <div class="row">
+    <div>
+      <label>Workspace name</label>
+      <input class="input" value="Product Central" />
+    </div>
+    <div>
+      <label>Plan</label>
+      <div class="select">Team <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <div>
+      <label>Search</label>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="input" placeholder="Search records, views…" />
+      </div>
+    </div>
+    <div>
+      <label>Notifications</label>
+      <div class="toggle"><div class="switch"></div><span style="font-size:13px; color:var(--fg-2)">Enabled</span></div>
+    </div>
+  </div>
+</body></html>

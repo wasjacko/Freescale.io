@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; padding:20px; background:var(--bg-surface); }
+  .row { display:grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .sw { border-radius: var(--r-sm); overflow: hidden; border:1px solid var(--border-1); }
+  .chip { height: 60px; display:flex; align-items:flex-end; padding: 6px 8px; color: var(--fg-1); font-size:10px; font-weight:600; }
+  .dark .chip { color: var(--white); }
+  .meta { padding: 6px 8px; background: var(--bg-surface); }
+  .name { font-size: 11px; font-weight: 600; color: var(--fg-1); }
+  .hex { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+</style></head>
+<body>
+  <div class="row">
+    <div class="sw"><div class="chip" style="background:#FFFFFF; border-bottom:1px solid var(--border-1)"></div><div class="meta"><div class="name">white</div><div class="hex">#FFFFFF</div></div></div>
+    <div class="sw"><div class="chip" style="background:#F9F9F7"></div><div class="meta"><div class="name">off-white</div><div class="hex">#F9F9F7</div></div></div>
+    <div class="sw"><div class="chip" style="background:#F1EFE8"></div><div class="meta"><div class="name">cream</div><div class="hex">#F1EFE8</div></div></div>
+    <div class="sw"><div class="chip" style="background:#E9E5DA"></div><div class="meta"><div class="name">sand</div><div class="hex">#E9E5DA</div></div></div>
+    <div class="sw"><div class="chip" style="background:#F4F5F7"></div><div class="meta"><div class="name">gray-50</div><div class="hex">#F4F5F7</div></div></div>
+    <div class="sw"><div class="chip" style="background:#EEEEEE"></div><div class="meta"><div class="name">gray-100</div><div class="hex">#EEEEEE</div></div></div>
+    <div class="sw"><div class="chip" style="background:#DDDDDD"></div><div class="meta"><div class="name">gray-200</div><div class="hex">#DDDDDD</div></div></div>
+    <div class="sw"><div class="chip" style="background:#C4C4C4"></div><div class="meta"><div class="name">gray-300</div><div class="hex">#C4C4C4</div></div></div>
+    <div class="sw"><div class="chip" style="background:#9C9C9C"></div><div class="meta"><div class="name">gray-400</div><div class="hex">#9C9C9C</div></div></div>
+    <div class="sw dark"><div class="chip" style="background:#6E6E6E"></div><div class="meta"><div class="name">gray-500</div><div class="hex">#6E6E6E</div></div></div>
+    <div class="sw dark"><div class="chip" style="background:#4D4D4D"></div><div class="meta"><div class="name">gray-600</div><div class="hex">#4D4D4D</div></div></div>
+    <div class="sw dark"><div class="chip" style="background:#2E2E2E"></div><div class="meta"><div class="name">gray-700</div><div class="hex">#2E2E2E</div></div></div>
+    <div class="sw dark"><div class="chip" style="background:#1D1F25"></div><div class="meta"><div class="name">gray-800</div><div class="hex">#1D1F25</div></div></div>
+    <div class="sw dark"><div class="chip" style="background:#0E0E10"></div><div class="meta"><div class="name">gray-900</div><div class="hex">#0E0E10</div></div></div>
+    <div class="sw"><div class="chip" style="background:linear-gradient(135deg,#F9F9F7 50%, #1D1F25 50%)"></div><div class="meta"><div class="name">page↔text</div><div class="hex">#F9F9F7/#1D1F25</div></div></div>
+  </div>
+</body></html>
