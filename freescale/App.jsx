@@ -1,0 +1,207 @@
+// Freescale — App shell + state wiring
+const shellStyles = {
+  app: { display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', background: 'var(--bg-2)' },
+  main: { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden' },
+  content: { flex: 1, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column', borderRadius: 24 }
+};
+
+const TITLES = {
+  today: { t: "Hello, Wacil!", s: "4 connected channels · 17 contacts · See Insights" },
+  inbox: { t: 'Inbox', s: 'Manage your communications' },
+  tasks: { t: 'Tâches', s: 'Planning auto-généré depuis tes messages' },
+  clients: { t: 'Clients', s: 'Vue d\'ensemble' },
+  analytics: { t: 'Analytics', s: 'Performance' }
+};
+
+function FreescaleApp() {
+  const [theme, setTheme] = React.useState(() => {
+    try { return localStorage.getItem('freescale.theme') || 'light'; } catch { return 'light'; }
+  });
+  const [view, setView] = React.useState('today');
+  const [activeClient, setActiveClient] = React.useState(null);
+  const [activeMessage, setActiveMessage] = React.useState('m1');
+  const [activeSources, setActiveSources] = React.useState(['gmail', 'outlook', 'slack', 'discord', 'whatsapp', 'telegram', 'instagram']);
+  const data = window.FreescaleData;
+  const [messages, setMessages] = React.useState(data.messages || []);
+  const [tasks, setTasks] = React.useState(data.todayBrief?.focus || []);
+  const [nudges, setNudges] = React.useState(data.todayBrief?.nudges || []);
+  
+  const unreadCount = messages.filter(m => m.unread).length;
+  const [acceptedTasks, setAcceptedTasks] = React.useState([]);
+  const [toast, setToast] = React.useState(null);
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+
+  const handleGenerateTasks = () => {
+    const generated = [
+      { id: 'gen1', title: 'Répondre à Orion Robotics sur Whatsapp', client: 'Orion Robotics', clientColor: '#0EA5E9', due: "Aujourd'hui, 14:00", source: 'whatsapp', from: 'Paul T.', est: '10 min', priority: 'high' },
+      { id: 'gen2', title: 'Envoyer moodboard préliminaire', client: 'Lumen Studio', clientColor: '#F97316', due: "Demain, 10:00", source: 'discord', from: 'Marc L.', est: '45 min', priority: 'med' }
+    ];
+    setTasks(prev => [...generated, ...prev]);
+    setMessages(prev => prev.map(m => ({ ...m, unread: false })));
+    showToast('Tâches générées et messages marqués lus');
+  };
+
+  const handleCompleteTask = (id) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    showToast('Tâche terminée !');
+  };
+
+  const handleDismissNudge = (id) => {
+    setNudges(prev => prev.filter(n => n.id !== id));
+    showToast('Alerte traitée');
+  };
+
+  const handleSourceToggle = (id) => {
+    setActiveSources(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
+  };
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('freescale.theme', theme); } catch {}
+  }, [theme]);
+
+  // Edit mode (tweaks) integration
+  React.useEffect(() => {
+    const handler = (e) => {
+      const t = e.data?.type;
+      if (t === '__activate_edit_mode') setTweaksOpen(true);
+      if (t === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent?.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+  const [tweaksOpen, setTweaksOpen] = React.useState(false);
+
+  const toggleTheme = () => setTheme(t => t === 'light' ? 'dark' : 'light');
+
+
+  let titleBar = TITLES[view];
+  if (view === 'inbox') {
+    titleBar = { t: 'Inbox unifiée', s: `7 sources connectées · ${unreadCount} non lus` };
+  }
+
+  const renderView = () => {
+    switch (view) {
+      case 'today':     return <TodayView tasks={tasks} nudges={nudges} unreadCount={unreadCount} sources={data.sources} onGenerate={handleGenerateTasks} onComplete={handleCompleteTask} onDismissNudge={handleDismissNudge} />;
+      case 'inbox':     return <InboxView messages={messages} clients={data.clients} sources={data.sources}
+                                  activeMessageId={activeMessage} onSelectMessage={setActiveMessage}
+                                  acceptedTasks={acceptedTasks} onAcceptTask={(id) => { setAcceptedTasks(prev => [...prev, id]); showToast('Tâche ajoutée au planning'); }} onDismissTask={(id) => setAcceptedTasks(prev => [...prev, id + '_dismissed'])} />;
+      case 'tasks':     return <TasksView brief={data.todayBrief} acceptedTasks={acceptedTasks} />;
+      case 'clients':   return <ClientsView clients={data.clients} />;
+      case 'analytics': return <AnalyticsView kpis={data.kpis} />;
+      default: return null;
+    }
+  };
+
+  const [copilotOpen, setCopilotOpen] = React.useState(false);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+
+  return (
+    <div style={shellStyles.app}>
+      <Sidebar
+        active={view} onNav={setView}
+        activeClient={activeClient} onClientSelect={(id) => { setActiveClient(id); setView('inbox'); }}
+        sources={data.sources} activeSources={activeSources} onSourceToggle={handleSourceToggle}
+        clients={data.clients}
+        theme={theme} onTheme={toggleTheme}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+      <div style={shellStyles.main}>
+        <TopBar title={titleBar.t} subtitle={titleBar.s} active={view} onNav={setView} unreadCount={unreadCount} />
+        <div style={shellStyles.content}>
+          {renderView()}
+        </div>
+      </div>
+
+      {/* Floating Copilot Bubble */}
+      <div style={{
+          position: 'fixed', bottom: 24, right: 24, width: 56, height: 56, borderRadius: '50%',
+          background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center',
+          boxShadow: '0 8px 32px rgba(234, 88, 12, 0.4)', cursor: 'pointer', zIndex: 1000,
+          transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+      }} 
+      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+      onClick={() => setCopilotOpen(!copilotOpen)}>
+         <Icon name="sparkles" size={24} />
+         {unreadCount > 0 && (
+           <div style={{ position: 'absolute', top: -2, right: -2, width: 20, height: 20, borderRadius: '50%', background: 'black', border: '2px solid var(--accent)', color: 'white', fontSize: 10, fontWeight: 800, display: 'grid', placeItems: 'center' }}>
+             {unreadCount}
+           </div>
+         )}
+      </div>
+
+      {copilotOpen && (
+          <div style={{
+              position: 'fixed', bottom: 92, right: 24, width: 340, background: 'var(--bg-1)',
+              borderRadius: 20, boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border-1)',
+              zIndex: 1000, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+              animation: 'copilotSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}>
+              <div style={{ padding: '20px 24px', background: 'var(--accent)', color: '#fff' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                    <Icon name="sparkles" size={18} />
+                    <div style={{ fontSize: 16, fontWeight: 700 }}>Copilote Freescale</div>
+                  </div>
+                  <div style={{ fontSize: 12, opacity: 0.9 }}>Ton expert-comptable & secrétaire personnel.</div>
+              </div>
+              <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', display: 'grid', placeItems: 'center', flex: 'none' }}>
+                      <Icon name="chat" size={14} color="var(--accent)" />
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--fg-1)', lineHeight: 1.5, background: 'var(--bg-2)', padding: '12px 14px', borderRadius: '0 14px 14px 14px' }}>
+                      "Sarah Kline t'a envoyé un message urgent sur Instagram. J'ai analysé sa demande : c'est un bug bloquant. Je l'ai ajouté à ton focus d'aujourd'hui."
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <button style={{ flex: 1, background: 'var(--fg-0)', color: 'white', padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: 'none' }}>
+                        Voir la tâche
+                    </button>
+                    <button style={{ width: 40, height: 40, background: 'var(--bg-2)', borderRadius: 10, display: 'grid', placeItems: 'center' }}>
+                      <Icon name="check" size={16} />
+                    </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)',
+          background: 'var(--fg-0)', color: 'var(--bg-1)', padding: '10px 16px', borderRadius: 10,
+          fontSize: 13, fontWeight: 500, boxShadow: 'var(--shadow-lg)', zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 8
+        }}>
+          <Icon name="check" size={13} color="var(--ok)" /> {toast}
+        </div>
+      )}
+
+      {tweaksOpen && (
+        <div style={{
+          position: 'fixed', right: 20, bottom: 20, width: 240, background: 'var(--bg-1)',
+          border: '1px solid var(--border-2)', borderRadius: 12, boxShadow: 'var(--shadow-lg)', zIndex: 200, overflow: 'hidden'
+        }}>
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-1)', fontWeight: 600, fontSize: 13, color: 'var(--fg-0)' }}>Tweaks</div>
+          <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-1)' }}>
+              <span>Thème</span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button onClick={() => setTheme('light')} style={{ padding: '4px 10px', borderRadius: 6, background: theme === 'light' ? 'var(--accent-soft)' : 'var(--bg-2)', color: theme === 'light' ? 'var(--accent-ink)' : 'var(--fg-2)', fontSize: 12, fontWeight: 600 }}>Light</button>
+                <button onClick={() => setTheme('dark')} style={{ padding: '4px 10px', borderRadius: 6, background: theme === 'dark' ? 'var(--accent-soft)' : 'var(--bg-2)', color: theme === 'dark' ? 'var(--accent-ink)' : 'var(--fg-2)', fontSize: 12, fontWeight: 600 }}>Dark</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<FreescaleApp />);

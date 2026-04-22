@@ -1,13 +1,13 @@
-// Orbit — fake data for prototype
-window.OrbitData = (function() {
+// Freescale — fake data for prototype
+window.FreescaleData = (function() {
   const clients = [
-    { id: 'acme',     name: 'Acme Corp',        color: '#5B5BF0', avatar: 'AC', tags: ['SaaS B2B', 'React'], rate: 75, active: true, lastActivity: 'il y a 12 min', unread: 4, value: 8400, status: 'ongoing' },
-    { id: 'lumen',    name: 'Lumen Studio',     color: '#F59E0B', avatar: 'LS', tags: ['Design', 'Next.js'], rate: 95, active: true, lastActivity: 'il y a 2h', unread: 2, value: 12600, status: 'ongoing' },
-    { id: 'northp',   name: 'North Park Agency',color: '#16A349', avatar: 'NP', tags: ['Agency'], rate: 70, active: true, lastActivity: 'hier', unread: 0, value: 4200, status: 'ongoing' },
-    { id: 'peli',     name: 'Pelican Labs',     color: '#E11D48', avatar: 'PL', tags: ['Lead', 'IA'], rate: 0, active: false, lastActivity: 'il y a 3j', unread: 1, value: 0, status: 'deal' },
-    { id: 'orion',    name: 'Orion Robotics',   color: '#0EA5E9', avatar: 'OR', tags: ['Hardware'], rate: 85, active: true, lastActivity: 'il y a 4h', unread: 0, value: 6800, status: 'ongoing' },
-    { id: 'fable',    name: 'Fable & Co',       color: '#7C3AED', avatar: 'FC', tags: ['E-commerce'], rate: 60, active: true, lastActivity: 'il y a 1j', unread: 0, value: 2100, status: 'ongoing' },
-    { id: 'kite',     name: 'Kite Mobile',      color: '#0B8276', avatar: 'KM', tags: ['Lead'], rate: 0, active: false, lastActivity: 'il y a 6j', unread: 0, value: 0, status: 'deal' },
+    { id: 'acme',     name: 'Acme Corp',        color: '#5B5BF0', avatar: 'AC', avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg', tags: ['SaaS B2B', 'React'], rate: 75, active: true, lastActivity: 'il y a 12 min', unread: 4, value: 8400, status: 'ongoing' },
+    { id: 'lumen',    name: 'Lumen Studio',     color: '#F59E0B', avatar: 'LS', avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg', tags: ['Design', 'Next.js'], rate: 95, active: true, lastActivity: 'il y a 2h', unread: 2, value: 12600, status: 'ongoing' },
+    { id: 'northp',   name: 'North Park Agency',color: '#16A349', avatar: 'NP', avatarUrl: 'https://randomuser.me/api/portraits/women/68.jpg', tags: ['Agency'], rate: 70, active: true, lastActivity: 'hier', unread: 0, value: 4200, status: 'ongoing' },
+    { id: 'peli',     name: 'Pelican Labs',     color: '#E11D48', avatar: 'PL', avatarUrl: 'https://randomuser.me/api/portraits/women/17.jpg', tags: ['Lead', 'IA'], rate: 0, active: false, lastActivity: 'il y a 3j', unread: 1, value: 0, status: 'deal' },
+    { id: 'orion',    name: 'Orion Robotics',   color: '#0EA5E9', avatar: 'OR', avatarUrl: 'https://randomuser.me/api/portraits/men/75.jpg', tags: ['Hardware'], rate: 85, active: true, lastActivity: 'il y a 4h', unread: 0, value: 6800, status: 'ongoing' },
+    { id: 'fable',    name: 'Fable & Co',       color: '#7C3AED', avatar: 'FC', avatarUrl: 'https://randomuser.me/api/portraits/men/22.jpg', tags: ['E-commerce'], rate: 60, active: true, lastActivity: 'il y a 1j', unread: 0, value: 2100, status: 'ongoing' },
+    { id: 'kite',     name: 'Kite Mobile',      color: '#0B8276', avatar: 'KM', avatarUrl: 'https://randomuser.me/api/portraits/men/46.jpg', tags: ['Lead'], rate: 0, active: false, lastActivity: 'il y a 6j', unread: 0, value: 0, status: 'deal' },
   ];
 
   const sources = [
