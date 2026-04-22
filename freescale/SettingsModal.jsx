@@ -83,114 +83,71 @@ const gmailCardStyles = {
   }
 };
 
-function GmailConnectionCard({ gmailStatus, gmailProfile, onConnect, onDisconnect, backendAlive }) {
-  const isConnected = gmailStatus?.connected;
-  const isConfigured = gmailStatus?.configured;
+function GmailConfigFlow({ status, backendAlive }) {
+   const isConnected = status?.connected;
+   const isConfigured = status?.configured;
 
-  return (
-    <div style={gmailCardStyles.container}>
-      <div style={gmailCardStyles.header}>
-        <div style={{ ...gmailCardStyles.icon, background: '#FEE2E2' }}>
-          <Icon name="mail" size={20} color="#D93025" />
+   return (
+     <div style={{ padding: 16, background: '#fff', borderRadius: 12, border: '1px solid var(--border-1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+           <div style={{ width: 8, height: 8, borderRadius: '50%', background: isConnected ? '#22C55E' : (!backendAlive ? '#EF4444' : '#D1D5DB') }} />
+           <span style={{ fontSize: 13, fontWeight: 700 }}>
+              {isConnected ? 'Compte Gmail Synchronisé' : (!backendAlive ? 'Erreur: Backend non détecté' : 'Configuration requise')}
+           </span>
         </div>
-        <div style={gmailCardStyles.info}>
-          <div style={gmailCardStyles.title}>Gmail</div>
-          <div style={gmailCardStyles.desc}>
-            {isConnected
-              ? `Connecté en tant que ${gmailProfile?.email || '...'}`
-              : isConfigured
-                ? 'Prêt à être connecté'
-                : 'Identifiants non configurés'
-            }
+        
+        {!isConfigured && backendAlive && (
+          <div style={{ fontSize: 12, color: 'var(--fg-2)', lineHeight: 1.8 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--fg-0)' }}>⚡ Setup rapide :</div>
+            <div>• URI de redirection : <code style={{ background: 'var(--bg-2)', padding: '2px 4px', borderRadius: 4 }}>http://localhost:3001/auth/google/callback</code></div>
+            <div>• Colle le Client ID & Secret dans <code style={{ background: 'var(--bg-2)', padding: '2px 4px', borderRadius: 4 }}>backend/.env</code></div>
           </div>
-        </div>
-
-        {isConnected ? (
-          <button
-            onClick={onDisconnect}
-            style={{
-              ...gmailCardStyles.connectBtn,
-              background: '#FEE2E2', color: '#DC2626'
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#FECACA'}
-            onMouseLeave={e => e.currentTarget.style.background = '#FEE2E2'}
-          >
-            <Icon name="x" size={14} />
-            Déconnecter
-          </button>
-        ) : (
-          <button
-            onClick={onConnect}
-            disabled={!isConfigured || !backendAlive}
-            style={{
-              ...gmailCardStyles.connectBtn,
-              background: isConfigured && backendAlive ? '#111' : '#E5E7EB',
-              color: isConfigured && backendAlive ? '#fff' : '#9CA3AF',
-              cursor: isConfigured && backendAlive ? 'pointer' : 'not-allowed'
-            }}
-            onMouseEnter={e => { if (isConfigured && backendAlive) e.currentTarget.style.transform = 'scale(1.02)'; }}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <Icon name="mail" size={14} />
-            Connecter Gmail
-          </button>
         )}
-      </div>
 
-      {/* Status bar */}
-      <div style={{
-        ...gmailCardStyles.statusBar,
-        background: isConnected ? '#F0FDF4' : (!backendAlive ? '#FEF2F2' : '#F9FAFB')
-      }}>
-        <div style={{
-          ...gmailCardStyles.statusDot,
-          background: isConnected ? '#22C55E' : (!backendAlive ? '#EF4444' : '#D1D5DB')
-        }} />
-        <span style={{ color: isConnected ? '#16A34A' : (!backendAlive ? '#DC2626' : '#6B7280'), fontWeight: 600 }}>
-          {isConnected
-            ? 'Connecté — les emails sont synchronisés'
-            : !backendAlive
-              ? 'Backend non disponible — lance: cd backend && npm run dev'
-              : !isConfigured
-                ? 'Configure backend/.env avec tes identifiants Google'
-                : 'Non connecté — clique pour autoriser l\'accès'
-          }
-        </span>
-      </div>
-
-      {/* Connected: show profile */}
-      {isConnected && gmailProfile && (
-        <div style={{
-          padding: '12px 20px', borderTop: '1px solid var(--border-1)',
-          display: 'flex', alignItems: 'center', gap: 12
-        }}>
-          {gmailProfile.picture && (
-            <img src={gmailProfile.picture} style={{ width: 28, height: 28, borderRadius: '50%' }} />
-          )}
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' }}>{gmailProfile.name}</div>
-            <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>{gmailProfile.email}</div>
-          </div>
+        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+           {isConnected ? (
+             <button onClick={() => FreescaleGmail.disconnect()} style={{ padding: '8px 16px', background: '#FEE2E2', color: '#D93025', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Déconnecter</button>
+           ) : (
+             <button onClick={() => FreescaleGmail.connect()} disabled={!isConfigured || !backendAlive} style={{ padding: '8px 24px', background: isConfigured && backendAlive ? '#111' : '#E5E7EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Autoriser l'accès</button>
+           )}
         </div>
-      )}
+     </div>
+   );
+}
 
-      {/* Not configured: show setup steps */}
-      {!isConfigured && backendAlive && (
-        <div style={{
-          padding: '16px 20px', borderTop: '1px solid var(--border-1)',
-          fontSize: 12, color: 'var(--fg-2)', lineHeight: 1.8
-        }}>
-          <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--fg-0)' }}>⚡ Setup rapide :</div>
-          <div>1. Va sur <strong>console.cloud.google.com</strong></div>
-          <div>2. Crée un projet → Active l'<strong>API Gmail</strong></div>
-          <div>3. Crée des identifiants <strong>OAuth 2.0</strong> (Application Web)</div>
-          <div>4. URI de redirection : <code style={{ background: 'var(--bg-2)', padding: '2px 6px', borderRadius: 4 }}>http://localhost:3001/auth/google/callback</code></div>
-          <div>5. Colle le Client ID & Secret dans <code style={{ background: 'var(--bg-2)', padding: '2px 6px', borderRadius: 4 }}>backend/.env</code></div>
-          <div>6. Relance le backend → clique sur "Connecter Gmail"</div>
+function IntegrationCard({ id, name, icon, color, bg, status, onAction, profile, backendAlive }) {
+    const isSoon = status === 'soon';
+    return (
+        <div style={{ 
+            padding: 20, background: '#fff', borderRadius: 20, border: '1px solid var(--border-1)',
+            display: 'flex', flexDirection: 'column', gap: 16, opacity: isSoon ? 0.6 : 1,
+            transition: 'all 0.2s', cursor: isSoon ? 'default' : 'pointer'
+        }}
+        onClick={() => !isSoon && onAction()}
+        onMouseEnter={e => { if(!isSoon) e.currentTarget.style.borderColor = color; }}
+        onMouseLeave={e => { if(!isSoon) e.currentTarget.style.borderColor = 'var(--border-1)'; }}
+        >
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ width: 44, height: 44, background: bg, borderRadius: 12, display: 'grid', placeItems: 'center' }}>
+                 <Icon name={icon} size={22} color={color} />
+              </div>
+              <div style={{ 
+                  fontSize: 10, fontWeight: 850, padding: '4px 8px', borderRadius: 6, 
+                  background: status === 'connected' ? '#DCFCE7' : (status === 'soon' ? '#F3F4F6' : '#F9731615'), 
+                  color: status === 'connected' ? '#166534' : (status === 'soon' ? '#6B7280' : color),
+                  textTransform: 'uppercase'
+              }}>
+                {status === 'connected' ? 'Connecté' : (status === 'soon' ? 'Bientôt' : (status === 'available' ? 'Connecter' : 'Setup'))}
+              </div>
+           </div>
+           <div>
+              <div style={{ fontSize: 15, fontWeight: 750, color: 'var(--fg-0)' }}>{name}</div>
+              <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 4 }}>
+                 {profile ? profile.email : `Synchronise tes flux ${name}`}
+              </div>
+           </div>
         </div>
-      )}
-    </div>
-  );
+    );
 }
 
 function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
@@ -198,14 +155,10 @@ function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
   const [gmailStatus, setGmailStatus] = React.useState(null);
   const [gmailProfile, setGmailProfile] = React.useState(null);
   const [backendAlive, setBackendAlive] = React.useState(false);
+  const [activeIntegration, setActiveIntegration] = React.useState(null);
   const [enabledSources, setEnabledSources] = React.useState({
     'WhatsApp': true,
-    'iMessage': false,
-    'Snapchat': false,
     'Instagram': true,
-    'Telegram': true,
-    'TikTok': false,
-    'Messenger': false
   });
 
   // Check Gmail status on mount and when modal opens
@@ -283,33 +236,61 @@ function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
                      <div style={settingsStyles.viewTitle}>Sources & Intégrations</div>
                   </div>
                   <div style={settingsStyles.viewSub}>
-                     Connecte tes outils pour centraliser tes communications.
+                     Connecte tes outils pour centraliser tes communications et automatiser tes tâches.
                   </div>
 
-                  {/* Gmail — REAL integration */}
-                  <GmailConnectionCard
-                    gmailStatus={gmailStatus}
-                    gmailProfile={gmailProfile}
-                    onConnect={handleGmailConnect}
-                    onDisconnect={handleGmailDisconnect}
-                    backendAlive={backendAlive}
-                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+                     <IntegrationCard 
+                        id="gmail" name="Gmail" icon="mail" color="#D93025" bg="#FCE8E6"
+                        status={gmailStatus?.connected ? 'connected' : (gmailStatus?.configured ? 'available' : 'setup')}
+                        onAction={() => gmailStatus?.connected ? handleGmailDisconnect() : setActiveIntegration({ id: 'gmail', name: 'Gmail', icon: 'mail', color: '#D93025', bg: '#FCE8E6' })}
+                        profile={gmailProfile}
+                        backendAlive={backendAlive}
+                     />
 
-                  {/* Other sources (coming soon) */}
-                  {['WhatsApp', 'Instagram', 'Telegram', 'iMessage', 'Snapchat', 'TikTok', 'Messenger'].map(src => (
-                    <div key={src} style={settingsStyles.settingRow}>
-                      <div style={settingsStyles.settingInfo}>
-                        <div style={settingsStyles.settingLabel}>{src}</div>
-                        <div style={settingsStyles.settingDesc}>Bientôt disponible</div>
-                      </div>
-                      <div
-                        onClick={() => setEnabledSources(prev => ({ ...prev, [src]: !prev[src] }))}
-                        style={{ ...settingsStyles.toggle, ...(enabledSources[src] ? settingsStyles.toggleActive : {}), opacity: 0.4, pointerEvents: 'none' }}
-                      >
-                        <div style={{ ...settingsStyles.toggleThumb, ...(enabledSources[src] ? settingsStyles.toggleThumbActive : {}) }} />
-                      </div>
-                    </div>
-                  ))}
+                     <IntegrationCard 
+                        id="whatsapp" name="WhatsApp" icon="chat" color="#25D366" bg="#DCF8C6"
+                        status={enabledSources['WhatsApp'] ? 'connected' : 'available'}
+                        onAction={() => enabledSources['WhatsApp'] ? setEnabledSources(prev => ({ ...prev, 'WhatsApp': false })) : setActiveIntegration({ id: 'whatsapp', name: 'WhatsApp', icon: 'chat', color: '#25D366', bg: '#DCF8C6' })}
+                     />
+
+                     <IntegrationCard 
+                        id="instagram" name="Instagram" icon="camera" color="#E4405F" bg="#FDECF0"
+                        status={enabledSources['Instagram'] ? 'connected' : 'available'}
+                        onAction={() => enabledSources['Instagram'] ? setEnabledSources(prev => ({ ...prev, 'Instagram': false })) : setActiveIntegration({ id: 'instagram', name: 'Instagram', icon: 'camera', color: '#E4405F', bg: '#FDECF0' })}
+                     />
+
+                     {['Telegram', 'iMessage', 'Slack', 'Discord'].map(s => (
+                        <IntegrationCard key={s} id={s.toLowerCase()} name={s} icon="grid" color="#999" bg="#F3F4F6" status="soon" />
+                     ))}
+                   </div>
+
+                   {activeIntegration && (
+                     <div style={{ marginTop: 40, padding: 24, border: '1px solid var(--border-1)', borderRadius: 16, background: '#F9FAFB' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                          <div style={{ width: 32, height: 32, background: activeIntegration.bg, borderRadius: 8, display: 'grid', placeItems: 'center' }}>
+                            <Icon name={activeIntegration.icon} size={16} color={activeIntegration.color} />
+                          </div>
+                          <div style={{ fontWeight: 700 }}>Configuration {activeIntegration.name}</div>
+                          <button onClick={() => setActiveIntegration(null)} style={{ marginLeft: 'auto', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--fg-3)' }}><Icon name="x" size={14} /></button>
+                        </div>
+                        {activeIntegration.id === 'gmail' ? (
+                          <GmailConfigFlow status={gmailStatus} backendAlive={backendAlive} />
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                            <div style={{ fontSize: 13, color: 'var(--fg-2)', marginBottom: 20 }}>
+                              Pour connecter {activeIntegration.name}, scannez le QR code avec votre application mobile.
+                            </div>
+                            <div style={{ width: 140, height: 140, margin: '0 auto', background: '#fff', border: '8px solid #fff', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'grid', placeItems: 'center' }}>
+                               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=freescale_${activeIntegration.id}`} width="120" height="120" style={{ opacity: 0.8 }} />
+                            </div>
+                            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 700, color: '#D93025', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              En attente de connexion...
+                            </div>
+                          </div>
+                        )}
+                     </div>
+                   )}
                 </>
               )}
 
