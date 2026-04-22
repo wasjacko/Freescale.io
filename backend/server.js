@@ -259,6 +259,73 @@ app.get('/api/gmail/messages/:id', async (req, res) => {
   }
 });
 
+// ─── WHATSAPP BUSINESS API (META CLOUD) ───────────────────
+
+// Verification endpoint for Meta Webhooks
+app.get('/api/whatsapp/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode && token) {
+    if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+      console.log('✅ WhatsApp Webhook vérifié');
+      res.status(200).send(challenge);
+    } else {
+      res.sendStatus(403);
+    }
+  }
+});
+
+// Receive messages from WhatsApp
+app.post('/api/whatsapp/webhook', (req, res) => {
+  const body = req.body;
+  if (body.object === 'whatsapp_business_account') {
+    if (body.entry && body.entry[0].changes && body.entry[0].changes[0].value.messages) {
+      const msg = body.entry[0].changes[0].value.messages[0];
+      const from = msg.from; // Phone number
+      const text = msg.text?.body;
+      console.log(`📩 Nouveau message WhatsApp de ${from}: ${text}`);
+    }
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(404);
+  }
+});
+
+// Send message via WhatsApp
+app.post('/api/whatsapp/send', async (req, res) => {
+  const { to, message } = req.body;
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_ID;
+
+  if (!token || !phoneId) {
+    return res.status(400).json({ error: 'WhatsApp non configuré dans .env' });
+  }
+
+  try {
+    const response = await fetch(`https://graph.facebook.com/v19.0/${phoneId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: { body: message }
+      })
+    });
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error('WhatsApp send error:', err.message);
+    res.status(500).json({ error: 'Échec de l\'envoi WhatsApp' });
+  }
+});
+
+
 // ─── START ──────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n  🚀 Freescale backend running on http://localhost:${PORT}`);
