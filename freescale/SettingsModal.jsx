@@ -234,13 +234,14 @@ function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
                   <div style={settingsStyles.viewHead}>
                      <Icon name="hash" size={24} color="var(--fg-0)" />
                      <div style={settingsStyles.viewTitle}>Sources & Intégrations</div>
+                  </div>
                   <div style={settingsStyles.viewSub}>
                      Connecte tes outils pour centraliser tes communications et automatiser tes tâches.
                   </div>
 
                   {/* WhatsApp Business Section */}
-                  <div style={{ padding: 20, borderRadius: 16, border: '1px solid var(--border-2)', background: 'var(--bg-2)', marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                  <div style={{ padding: 24, borderRadius: 16, border: '1px solid var(--border-2)', background: 'var(--bg-2)', marginBottom: 32 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
                       <img src="assets/channels/whatsapp.svg" width="32" height="32" />
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 16 }}>WhatsApp Business (Meta)</div>
@@ -248,19 +249,31 @@ function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--fg-2)', marginBottom: 4, textTransform: 'uppercase' }}>Phone Number ID</label>
-                        <input 
-                          type="text" 
-                          placeholder="Ex: 1092837465..."
-                          defaultValue={localStorage.getItem('whatsapp_phone_id') || ''}
-                          onChange={(e) => localStorage.setItem('whatsapp_phone_id', e.target.value)}
-                          style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-1)', background: 'var(--bg-1)', color: 'var(--fg-0)', fontSize: 13 }} 
-                        />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--fg-2)', marginBottom: 6, textTransform: 'uppercase' }}>Phone Number ID</label>
+                          <input 
+                            type="text" 
+                            placeholder="Ex: 1092837465..."
+                            defaultValue={localStorage.getItem('whatsapp_phone_id') || ''}
+                            onChange={(e) => localStorage.setItem('whatsapp_phone_id', e.target.value)}
+                            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-1)', background: 'var(--bg-1)', color: 'var(--fg-0)', fontSize: 13 }} 
+                          />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--fg-2)', marginBottom: 6, textTransform: 'uppercase' }}>Verify Token (Webhook)</label>
+                          <input 
+                            type="text" 
+                            placeholder="Secret_Meta_123"
+                            defaultValue={localStorage.getItem('whatsapp_verify_token') || ''}
+                            onChange={(e) => localStorage.setItem('whatsapp_verify_token', e.target.value)}
+                            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-1)', background: 'var(--bg-1)', color: 'var(--fg-0)', fontSize: 13 }} 
+                          />
+                        </div>
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--fg-2)', marginBottom: 4, textTransform: 'uppercase' }}>Permanent Access Token</label>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--fg-2)', marginBottom: 6, textTransform: 'uppercase' }}>Permanent Access Token</label>
                         <input 
                           type="password" 
                           placeholder="EAAB..."
@@ -271,10 +284,10 @@ function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
                       </div>
                       <button 
                         onClick={() => {
-                          showToast('WhatsApp config sauvegardée localement. Assurez-vous de relancer le backend avec ces clés dans .env');
+                          showToast('WhatsApp config sauvegardée localement. Mise à jour du backend requise.');
                         }}
-                        style={{ alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 8, background: 'var(--accent-primary)', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
-                        Tester la connexion
+                        style={{ alignSelf: 'flex-start', padding: '10px 20px', borderRadius: 8, background: '#111', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                        Enregistrer la configuration
                       </button>
                     </div>
                   </div>
@@ -290,8 +303,8 @@ function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
 
                      <IntegrationCard 
                         id="whatsapp" name="WhatsApp" icon="chat" color="#25D366" bg="#DCF8C6"
-                        status={enabledSources['WhatsApp'] ? 'connected' : 'available'}
-                        onAction={() => enabledSources['WhatsApp'] ? setEnabledSources(prev => ({ ...prev, 'WhatsApp': false })) : setActiveIntegration({ id: 'whatsapp', name: 'WhatsApp', icon: 'chat', color: '#25D366', bg: '#DCF8C6' })}
+                        status={localStorage.getItem('whatsapp_token') ? 'connected' : 'available'}
+                        onAction={() => setActiveIntegration({ id: 'whatsapp', name: 'WhatsApp', icon: 'chat', color: '#25D366', bg: '#DCF8C6' })}
                      />
 
                      <IntegrationCard 
@@ -304,6 +317,7 @@ function SettingsModal({ isOpen, onClose, onGmailStatusChange }) {
                         <IntegrationCard key={s} id={s.toLowerCase()} name={s} icon="grid" color="#999" bg="#F3F4F6" status="soon" />
                      ))}
                    </div>
+
 
                    {activeIntegration && (
                      <div style={{ marginTop: 40, padding: 24, border: '1px solid var(--border-1)', borderRadius: 16, background: '#F9FAFB' }}>
