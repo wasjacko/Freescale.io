@@ -56,7 +56,7 @@ const sidebarStyles = {
   },
 };
 
-function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, theme, onTheme, onOpenSettings }) {
+function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, theme, onTheme, onOpenSettings, sources, gmailConnected }) {
   // Compute messages & tasks count per client
   const stats = React.useMemo(() => {
     const acc = {};
@@ -91,9 +91,45 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
 
       <div style={sidebarStyles.divider}></div>
 
+      {/* New Visible Channels Section */}
+      <div style={sidebarStyles.clientsLabel}>
+        <span>Canaux connectés</span>
+        <button onClick={onOpenSettings} style={{ color: 'var(--accent)', cursor: 'pointer', background: 'none', border: 'none', fontSize: 10, fontWeight: 800 }}>GÉRER</button>
+      </div>
+      <div style={{ display: 'flex', gap: 8, padding: '0 20px 14px', overflowX: 'auto' }}>
+        {sources.map(s => {
+          const isGmail = s.id === 'gmail';
+          const isConnected = isGmail ? gmailConnected : (s.id === 'whatsapp' || s.id === 'instagram'); 
+          
+          return (
+            <div key={s.id} onClick={onOpenSettings} title={s.label} style={{ 
+              position: 'relative', cursor: 'pointer', flex: 'none',
+              width: 36, height: 36, borderRadius: 10, background: 'var(--bg-2)',
+              display: 'grid', placeItems: 'center', border: `1px solid ${isConnected ? s.color + '40' : 'var(--border-1)'}`,
+              opacity: isConnected ? 1 : 0.4, transition: 'all 0.2s'
+            }}>
+              <img src={s.logo} alt={s.label} width="22" height="22" style={{ filter: isConnected ? 'none' : 'grayscale(1)' }} />
+              <div style={{ 
+                position: 'absolute', bottom: -2, right: -2, width: 10, height: 10, 
+                borderRadius: '50%', background: isConnected ? '#22C55E' : '#D1D5DB',
+                border: '2px solid var(--bg-1)'
+              }} />
+            </div>
+          );
+        })}
+        <button onClick={onOpenSettings} style={{ 
+          width: 36, height: 36, borderRadius: 10, border: '1px dashed var(--border-2)', 
+          background: 'transparent', color: 'var(--fg-3)', cursor: 'pointer', display: 'grid', placeItems: 'center'
+        }}>
+          <Icon name="plus" size={14} />
+        </button>
+      </div>
+
+      <div style={sidebarStyles.divider}></div>
+
       <div style={sidebarStyles.clientsLabel}>
         <span>Contacts actifs</span>
-        <button style={{ color: 'var(--fg-3)', cursor: 'pointer' }}><Icon name="plus" size={12} /></button>
+        <button style={{ color: 'var(--fg-3)', cursor: 'pointer', background: 'none', border: 'none' }}><Icon name="plus" size={12} /></button>
       </div>
 
       <div style={{ overflow: 'auto', paddingBottom: 8 }}>

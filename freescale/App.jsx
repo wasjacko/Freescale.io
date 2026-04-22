@@ -152,6 +152,7 @@ function FreescaleApp() {
         clients={data.clients} messages={messages}
         theme={theme} onTheme={toggleTheme}
         onOpenSettings={() => setSettingsOpen(true)}
+        gmailConnected={gmailConnected}
       />
       <div style={shellStyles.main}>
         <TopBar title={titleBar.t} subtitle={titleBar.s} active={view} onNav={setView} unreadCount={unreadCount} />
