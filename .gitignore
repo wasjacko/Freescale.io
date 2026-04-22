@@ -1,0 +1,11 @@
+# OS
+.DS_Store
+
+# Backend secrets & tokens
+backend/.env
+backend/.tokens.json
+backend/node_modules/
+
+# IDE
+.claude/
+.vscode/

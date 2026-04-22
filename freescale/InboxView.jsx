@@ -101,14 +101,18 @@ function InboxView({ messages, clients, sources, activeMessageId, onSelectMessag
               <div key={m.id} onClick={() => onSelectMessage(m.id)}
                 style={{ ...inboxStyles.msgItem, ...(isActive ? inboxStyles.msgActive : {}) }}>
                 <div style={inboxStyles.avatar}>
-                  {c.avatarUrl ? <img src={c.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.avatar}
+                  {c?.avatarUrl ? (
+                    <img src={c.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{c?.avatar || m.from[0]}</div>
+                  )}
                 </div>
                 <div style={inboxStyles.msgInfo}>
                   <div style={inboxStyles.msgFrom}>
                     {m.from}
                     <span style={inboxStyles.msgTime}>{m.time}</span>
                   </div>
-                  <div style={inboxStyles.msgPreview}>{m.body}</div>
+                  <div style={inboxStyles.msgPreview}>{m.subject || m.body}</div>
                 </div>
                 {m.unread && <div style={inboxStyles.unreadDot}></div>}
               </div>
@@ -121,9 +125,14 @@ function InboxView({ messages, clients, sources, activeMessageId, onSelectMessag
       <div style={inboxStyles.detailArea}>
         <div style={inboxStyles.detailHead}>
           <div style={{ ...inboxStyles.avatar, width: 32, height: 32 }}>
-            {activeClient.avatarUrl ? <img src={activeClient.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : activeClient.avatar}
+            {activeClient?.avatarUrl ? (
+              <img src={activeClient.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ fontSize: 12, fontWeight: 700 }}>{activeClient?.avatar || active.from[0]}</div>
+            )}
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{active.from}</div>
+          {active.fromEmail && <div style={{ fontSize: 11, color: '#9CA3AF', marginLeft: 4 }}>&lt;{active.fromEmail}&gt;</div>}
           <Icon name="chevronDown" size={12} color="#6B7280" />
           
           <div style={inboxStyles.detailActions}>
@@ -138,32 +147,30 @@ function InboxView({ messages, clients, sources, activeMessageId, onSelectMessag
           <div style={inboxStyles.dateDivider}>13 Mar 2026, 13:50</div>
           
           <div style={inboxStyles.conversationWrap}>
-             {/* Received */}
+             {/* Received (Placeholder previous) */}
              <div style={{ ...inboxStyles.msgRow, ...inboxStyles.rowReceived, position: 'relative' }} className="msg-bubble-group">
                 <div style={{ ...inboxStyles.avatar, width: 28, height: 28 }}>
-                  <img src={activeClient.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {activeClient?.avatarUrl ? <img src={activeClient.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div>{active.from[0]}</div>}
                 </div>
                 <div style={{ ...inboxStyles.bubble, ...inboxStyles.bubbleReceived }}>
-                  Hello Emma, j'espère que tu vas bien. Est-ce que tu as pu avancer sur le PR du checkout ?
-                </div>
-                <div className="magic-action" style={{ position: 'absolute', right: -32, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--accent)', opacity: 0.6 }}>
-                  <Icon name="sparkles" size={16} />
+                  Hello, j'ai bien reçu ton message. Voici ce qu'il en est...
                 </div>
              </div>
 
-             {/* Sent */}
+             {/* Sent (Placeholder) */}
              <div style={{ ...inboxStyles.msgRow, ...inboxStyles.rowSent }}>
                 <div style={{ ...inboxStyles.bubble, ...inboxStyles.bubbleSent }}>
-                   Hello ! Oui, je suis en train de finaliser les tests sur Safari mobile. Je devrais pouvoir pousser ça d'ici demain matin.
+                   Ok, je regarde ça tout de suite.
                 </div>
              </div>
 
-             {/* Received (Active) */}
+             {/* Dynamic Current Message */}
              <div style={{ ...inboxStyles.msgRow, ...inboxStyles.rowReceived, position: 'relative' }} className="msg-bubble-group">
                 <div style={{ ...inboxStyles.avatar, width: 28, height: 28 }}>
-                  <img src={activeClient.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                   {activeClient?.avatarUrl ? <img src={activeClient.avatarUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div>{active.from[0]}</div>}
                 </div>
                 <div style={{ ...inboxStyles.bubble, ...inboxStyles.bubbleReceived }}>
+                   {active.subject && <div style={{ fontWeight: 800, marginBottom: 4 }}>{active.subject}</div>}
                    {active.body}
                 </div>
                 <div className="magic-action" style={{ position: 'absolute', right: -32, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--accent)', opacity: 0.6 }}>

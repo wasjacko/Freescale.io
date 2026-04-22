@@ -29,8 +29,53 @@ function FreescaleApp() {
   const unreadCount = messages.filter(m => m.unread).length;
   const [acceptedTasks, setAcceptedTasks] = React.useState([]);
   const [toast, setToast] = React.useState(null);
+  const [gmailConnected, setGmailConnected] = React.useState(false);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+
+  // ─── Gmail: detect OAuth callback & load emails ───────
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmail_connected') === 'true') {
+      showToast('✅ Gmail connecté avec succès !');
+      window.history.replaceState({}, '', window.location.pathname);
+      loadGmailMessages();
+    } else if (params.get('gmail_error')) {
+      showToast('❌ Erreur de connexion Gmail : ' + params.get('gmail_error'));
+      window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      // Check on startup if already connected
+      loadGmailMessages();
+    }
+  }, []);
+
+  async function loadGmailMessages() {
+    if (!window.FreescaleGmail) return;
+    const status = await FreescaleGmail.getStatus();
+    setGmailConnected(status.connected);
+    if (!status.connected) return;
+
+    const result = await FreescaleGmail.getMessages(15);
+    if (result.error) return;
+
+    const gmailMsgs = result.messages.map((m, i) => FreescaleGmail.toFreescaleMessage(m, i));
+    // Merge: put Gmail messages first, then keep existing non-gmail messages
+    setMessages(prev => {
+      const nonGmail = prev.filter(m => !m.id.startsWith('gmail_'));
+      return [...gmailMsgs, ...nonGmail];
+    });
+    showToast(`📧 ${gmailMsgs.length} emails Gmail chargés`);
+  }
+
+  function handleGmailStatusChange(connected) {
+    setGmailConnected(connected);
+    if (!connected) {
+      setMessages(prev => prev.filter(m => !m.id.startsWith('gmail_')));
+      showToast('Gmail déconnecté');
+    } else {
+      loadGmailMessages();
+    }
+  }
 
   const handleGenerateTasks = () => {
     const generated = [
@@ -198,7 +243,7 @@ function FreescaleApp() {
         </div>
       )}
       
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} onGmailStatusChange={handleGmailStatusChange} />
     </div>
   );
 }

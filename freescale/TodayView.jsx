@@ -69,21 +69,25 @@ function PriorityBadge({ priority }) {
   return <span style={{ ...todayStyles.prio, background: m.bg, color: m.fg }}>{m.label}</span>;
 }
 
-function TodayView({ tasks, onComplete }) {
+function TodayView({ tasks, onComplete, onGenerate }) {
   const [scanning, setScanning] = React.useState(false);
   const [scanStep, setScanStep] = React.useState(0);
 
   const steps = [
     "Connexion aux canaux sécurisée...",
-    "Analyse de 42 nouveaux messages...",
+    "Analyse des nouveaux messages...",
     "Extraction des tâches prioritaires...",
     "Mise à jour de l'Espace de travail..."
   ];
 
   const srcMap = {
-    slack: { glyph: 'message-circle', color: '#4A154B', soft: '#F3E8F3' },
+    slack: { glyph: 'chat', color: '#4A154B', soft: '#F3E8F3' },
     gmail: { glyph: 'mail', color: '#D93025', soft: '#FCE8E6' },
-    notion: { glyph: 'file-text', color: '#000000', soft: '#F3F3F3' }
+    whatsapp: { glyph: 'chat', color: '#25D366', soft: '#DCF8C6' },
+    instagram: { glyph: 'camera', color: '#E4405F', soft: '#FDECF0' },
+    discord: { glyph: 'chat', color: '#5865F2', soft: '#EEF0FD' },
+    notion: { glyph: 'file', color: '#000000', soft: '#F3F3F3' },
+    telegram: { glyph: 'send', color: '#0088CC', soft: '#E0F2FA' }
   };
 
   const handleScan = () => {
@@ -122,8 +126,8 @@ function TodayView({ tasks, onComplete }) {
         <div style={todayStyles.movesStack}>
           {[
             { id: 'm1', icon: 'mail', label: 'Communication', title: 'Répondre à Lucas', color: 'var(--accent)', action: 'Répondre', reason: 'Délai < 2h', score: '98%', impact: 'Client VIP' },
-            { id: 'm2', icon: 'file-text', label: 'Finance', title: 'Facturer Freescale v2', color: '#10B981', action: 'Facturer', reason: 'J+1 Livraison', score: '92%', impact: 'Cashflow' },
-            { id: 'm3', icon: 'message-circle', label: 'Réseau', title: 'Relancer #design', color: '#8B5CF6', action: 'Envoyer', reason: 'Inactif 3j', score: '85%', impact: 'Visibilité' }
+            { id: 'm2', icon: 'file', label: 'Finance', title: 'Facturer Freescale v2', color: '#10B981', action: 'Facturer', reason: 'J+1 Livraison', score: '92%', impact: 'Cashflow' },
+            { id: 'm3', icon: 'chat', label: 'Réseau', title: 'Relancer #design', color: '#8B5CF6', action: 'Envoyer', reason: 'Inactif 3j', score: '85%', impact: 'Visibilité' }
           ].map((m, i) => (
             <div key={i} style={todayStyles.moveRow} onMouseEnter={e => {
                 e.currentTarget.style.background = '#F9FAFB';

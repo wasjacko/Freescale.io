@@ -1,4 +1,4 @@
-// Orbit — Icon set (simple line icons, 16/20/24px)
+// Freescale — Icon set (simple line icons, 16/20/24px)
 const Icon = ({ name, size = 16, color = 'currentColor', strokeWidth = 1.75 }) => {
   const s = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round' };
   const paths = {
