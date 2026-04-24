@@ -48,17 +48,17 @@ function TasksView({ brief, acceptedTasks }) {
   const cols = {
     todo: { title: 'À faire', icon: 'check', color: 'var(--fg-2)', items: brief.focus.filter(f => f.priority !== 'low') },
     doing: { title: 'En cours', icon: 'clock', color: 'var(--accent)', items: [
-      { id: 'x1', title: 'Review PR #284 — Acme Corp', client: 'Acme Corp', clientColor: '#5B5BF0', est: '1h', billable: true },
-      { id: 'x2', title: 'Intégration Stripe Connect', client: 'Fable & Co', clientColor: '#7C3AED', est: '3h', billable: true }
+      { id: 'x1', title: 'Review PR #284 — Acme Corp', client: 'Acme Corp', clientColor: '#111', est: '1h', billable: true },
+      { id: 'x2', title: 'Intégration Stripe Connect', client: 'Fable & Co', clientColor: '#333', est: '3h', billable: true }
     ]},
     review: { title: 'En attente client', icon: 'chat', color: 'var(--warn)', items: [
-      { id: 'x3', title: 'Validation maquettes v3', client: 'Lumen Studio', clientColor: '#F59E0B', due: '2 jours', billable: false },
-      { id: 'x4', title: 'Confirmer périmètre MVP', client: 'Pelican Labs', clientColor: '#E11D48', due: 'hier', billable: false, overdue: true }
+      { id: 'x3', title: 'Validation maquettes v3', client: 'Lumen Studio', clientColor: '#555', due: '2 jours', billable: false },
+      { id: 'x4', title: 'Confirmer périmètre MVP', client: 'Pelican Labs', clientColor: '#777', due: 'hier', billable: false, overdue: true }
     ]},
     done: { title: 'Terminé (7j)', icon: 'check', color: 'var(--ok)', items: [
-      { id: 'x5', title: 'Migration BDD reporting', client: 'North Park', clientColor: '#16A349', est: '4h', billable: true, billed: true },
-      { id: 'x6', title: 'Design system audit', client: 'Orion', clientColor: '#0EA5E9', est: '2h30', billable: true, billed: true },
-      { id: 'x7', title: 'Call kickoff — Fable', client: 'Fable & Co', clientColor: '#7C3AED', est: '30 min', billable: false }
+      { id: 'x5', title: 'Migration BDD reporting', client: 'North Park', clientColor: '#222', est: '4h', billable: true, billed: true },
+      { id: 'x6', title: 'Design system audit', client: 'Orion', clientColor: '#444', est: '2h30', billable: true, billed: true },
+      { id: 'x7', title: 'Call kickoff — Fable', client: 'Fable & Co', clientColor: '#333', est: '30 min', billable: false }
     ]}
   };
   return (
@@ -102,26 +102,156 @@ function TasksView({ brief, acceptedTasks }) {
   );
 }
 
-function ClientsView({ clients }) {
-  return (
-    <div style={viewStyles.clientsGrid}>
-      {clients.map(c => (
-        <div key={c.id} style={viewStyles.clientCard}>
-          <div style={viewStyles.clientHead}>
-            <div style={{ ...viewStyles.clientAv, background: c.color }}>{c.avatar}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-0)' }}>{c.name}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--fg-2)' }}>{c.tags.join(' · ')}</div>
+function ClientsView({ clients = [], messages = [], onOpen, onAdd, onConnectChannel }) {
+  const [query, setQuery] = React.useState('');
+
+  // Compute per-client stats from live messages
+  const stats = React.useMemo(() => {
+    const m = {};
+    (messages || []).forEach(msg => {
+      if (!msg.clientId) return;
+      if (!m[msg.clientId]) m[msg.clientId] = { total: 0, unread: 0, last: null, sources: new Set() };
+      m[msg.clientId].total += 1;
+      if (msg.unread) m[msg.clientId].unread += 1;
+      if (msg.source) m[msg.clientId].sources.add(msg.source);
+      if (!m[msg.clientId].last) m[msg.clientId].last = msg.time || '';
+    });
+    return m;
+  }, [messages]);
+
+  const q = query.trim().toLowerCase();
+  const filtered = (clients || []).filter(c => !q || (c.name || '').toLowerCase().includes(q));
+
+  // Empty state
+  if ((clients || []).length === 0) {
+    return (
+      <div style={{ padding: 32, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
+          <div style={{ textAlign: 'center', maxWidth: 380 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--accent-soft)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
+              <Icon name="briefcase" size={22} color="var(--accent)" />
             </div>
-            <span style={c.status === 'deal' ? CHIP('var(--info-soft)', 'var(--info)') : CHIP('var(--ok-soft)', 'var(--ok)')}>{c.status === 'deal' ? 'Deal' : 'Actif'}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={viewStyles.clientStat}><span>TJM</span><span style={viewStyles.clientStatV}>{c.rate ? c.rate + '0 €' : '—'}</span></div>
-            <div style={viewStyles.clientStat}><span>Revenu 2026</span><span style={viewStyles.clientStatV}>{c.value.toLocaleString('fr-FR')} €</span></div>
-            <div style={viewStyles.clientStat}><span>Dernière activité</span><span style={viewStyles.clientStatV}>{c.lastActivity}</span></div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg-0)', marginBottom: 6 }}>Aucun projet pour l'instant</div>
+            <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.5, marginBottom: 18 }}>
+              Connecte une messagerie pour créer automatiquement un projet à partir de chaque client, ou ajoute-en un manuellement.
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button onClick={onConnectChannel}
+                style={{ padding: '10px 16px', borderRadius: 10, background: 'var(--fg-0)', color: 'var(--bg-1)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Icon name="link" size={12} /> Connecter un canal
+              </button>
+              <button onClick={onAdd}
+                style={{ padding: '10px 16px', borderRadius: 10, background: 'transparent', color: 'var(--fg-1)', fontSize: 13, fontWeight: 600, border: '1px solid var(--border-2)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Icon name="plus" size={12} /> Nouveau projet
+              </button>
+            </div>
           </div>
         </div>
-      ))}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '8px 32px 32px', display: 'flex', flexDirection: 'column', gap: 18, height: '100%', overflowY: 'auto' }}>
+
+      {/* Toolbar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 10, padding: '8px 12px', maxWidth: 360 }}>
+          <Icon name="search" size={13} color="var(--fg-3)" />
+          <input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Rechercher un projet…"
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 13, color: 'var(--fg-0)', fontFamily: 'inherit' }}
+          />
+        </div>
+        <div style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--fg-2)', fontWeight: 600 }}>
+          {filtered.length} projet{filtered.length > 1 ? 's' : ''}
+        </div>
+        <button onClick={onAdd}
+          style={{ padding: '8px 14px', borderRadius: 10, background: 'var(--fg-0)', color: 'var(--bg-1)', fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Icon name="plus" size={12} /> Nouveau projet
+        </button>
+      </div>
+
+      {/* Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        {filtered.map(c => {
+          const s = stats[c.id] || { total: 0, unread: 0, sources: new Set() };
+          const sources = Array.from(s.sources);
+          return (
+            <div key={c.id}
+              onClick={() => onOpen && onOpen(c.id)}
+              style={{
+                background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 14,
+                padding: 16, display: 'flex', flexDirection: 'column', gap: 14,
+                cursor: 'pointer', transition: 'border-color 120ms, transform 120ms, box-shadow 120ms'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.04)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-1)'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {c.avatarUrl
+                  ? <img src={c.avatarUrl} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover', flex: 'none' }} />
+                  : <div style={{ width: 40, height: 40, borderRadius: 10, display: 'grid', placeItems: 'center', color: '#fff', fontSize: 13, fontWeight: 700, background: c.color, flex: 'none' }}>{c.avatar}</div>}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-0)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--fg-2)', marginTop: 2 }}>
+                    {(c.tags || []).join(' · ') || 'Contact'}
+                  </div>
+                </div>
+                {s.unread > 0 && (
+                  <span style={{ padding: '3px 8px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 10.5, fontWeight: 700 }}>
+                    {s.unread}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-2)' }}>
+                  <span>Messages</span>
+                  <span style={{ color: 'var(--fg-0)', fontWeight: 600 }}>{s.total}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-2)' }}>
+                  <span>Dernière activité</span>
+                  <span style={{ color: 'var(--fg-0)', fontWeight: 600 }}>{c.lastActivity || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-2)', alignItems: 'center' }}>
+                  <span>Canaux</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {sources.length === 0 && <span style={{ color: 'var(--fg-3)' }}>—</span>}
+                    {sources.map(src => (
+                      <span key={src} style={{ padding: '1px 7px', borderRadius: 5, fontSize: 10.5, fontWeight: 600, background: 'var(--bg-2)', color: 'var(--fg-1)' }}>{src}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpen && onOpen(c.id); }}
+                style={{ padding: '8px 10px', borderRadius: 9, background: 'var(--bg-2)', color: 'var(--fg-1)', fontSize: 12, fontWeight: 600, border: '1px solid var(--border-1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Icon name="mail" size={11} /> Ouvrir la conversation
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Add card */}
+        <button
+          onClick={onAdd}
+          style={{
+            background: 'transparent', border: '1px dashed var(--border-2)', borderRadius: 14,
+            padding: 16, minHeight: 180, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer',
+            color: 'var(--fg-3)', fontFamily: 'inherit', transition: 'border-color 120ms, color 120ms'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.color = 'var(--fg-3)'; }}
+        >
+          <Icon name="plus" size={18} />
+          <span style={{ fontSize: 12.5, fontWeight: 600 }}>Nouveau projet</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -203,7 +333,7 @@ function CopilotPanel({ onClose, suggestions, onCommand }) {
   return (
     <aside style={viewStyles.copilot}>
       <div style={viewStyles.copHead}>
-        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, var(--accent), #8D6DF6)', display: 'grid', placeItems: 'center' }}>
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--fg-0)', display: 'grid', placeItems: 'center' }}>
           <Icon name="sparkles" size={14} color="#fff" />
         </div>
         <div style={{ flex: 1 }}>

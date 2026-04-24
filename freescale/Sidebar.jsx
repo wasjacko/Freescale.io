@@ -18,8 +18,9 @@ const sidebarStyles = {
   }
 };
 
-function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, sources, onOpenSettings, onAddClient, onOpenHelp, onConnectChannel, gmailConnected, whatsappConnected, instagramConnected }) {
+function Sidebar({ active, onNav, activeClient, onClientSelect, clients, messages, sources, onOpenSettings, onAddClient, onOpenHelp, onConnectChannel, onDisconnectGmail, gmailConnected, whatsappConnected, instagramConnected }) {
   const [query, setQuery] = React.useState('');
+  const [confirmPrompt, setConfirmPrompt] = React.useState(false);
 
   // Compute total notifications per client (unread msgs + tasks)
   const stats = React.useMemo(() => {
@@ -65,6 +66,21 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
 
       {/* Search + Add */}
       <div style={{ padding: '0 12px 12px' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+          <button onClick={() => onNav('today')}
+            style={{ flex: 1, padding: '8px 10px', borderRadius: 8, background: active === 'today' ? 'var(--bg-1)' : 'transparent', border: '1px solid', borderColor: active === 'today' ? 'var(--border-2)' : 'transparent', color: active === 'today' ? 'var(--fg-0)' : 'var(--fg-3)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 150ms' }}
+            onMouseEnter={e => { if (active !== 'today') e.currentTarget.style.color = 'var(--fg-1)'; }}
+            onMouseLeave={e => { if (active !== 'today') e.currentTarget.style.color = 'var(--fg-3)'; }}>
+            <Icon name="check" size={14} /> Dashboard
+          </button>
+          <button onClick={() => onNav('inbox')}
+            style={{ flex: 1, padding: '8px 10px', borderRadius: 8, background: active === 'inbox' ? 'var(--bg-1)' : 'transparent', border: '1px solid', borderColor: active === 'inbox' ? 'var(--border-2)' : 'transparent', color: active === 'inbox' ? 'var(--fg-0)' : 'var(--fg-3)', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', transition: 'all 150ms' }}
+            onMouseEnter={e => { if (active !== 'inbox') e.currentTarget.style.color = 'var(--fg-1)'; }}
+            onMouseLeave={e => { if (active !== 'inbox') e.currentTarget.style.color = 'var(--fg-3)'; }}>
+            <Icon name="mail" size={14} /> Inbox
+          </button>
+        </div>
+
         <div style={{
           position: 'relative', display: 'flex', alignItems: 'center',
           background: 'var(--bg-1)', borderRadius: 8,
@@ -101,13 +117,30 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
       </div>
 
       {/* Client list */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', paddingBottom: 10 }}>
         {query && visibleClients.length === 0 && (
           <div style={{ padding: '20px 18px', fontSize: 12, color: 'var(--fg-3)', textAlign: 'center', lineHeight: 1.6 }}>
             Aucun résultat pour<br /><em style={{ color: 'var(--fg-1)' }}>"{query}"</em>
           </div>
         )}
-        {visibleClients.map(c => {
+        {!query && clients.filter(c => c.active).length === 0 && (
+          <button
+            onClick={onConnectChannel}
+            style={{
+              flex: 1, margin: '12px 10px',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 6, padding: '24px 16px',
+              background: 'transparent', border: '1px dashed var(--border-2)',
+              borderRadius: 10, cursor: 'pointer', color: 'var(--fg-3)',
+              fontFamily: 'inherit', transition: 'all 120ms'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.color = 'var(--fg-3)'; }}>
+            <Icon name="plus" size={14} />
+            <span style={{ fontSize: 12, fontWeight: 600 }}>Aucun contact pour l'instant</span>
+          </button>
+        )}
+        {visibleClients.map((c, idx) => {
           const s = stats[c.id] || { unread: 0, tasks: 0 };
           const total = s.unread + s.tasks;
           const hasNotif = total > 0;
@@ -118,15 +151,27 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
               onClick={() => onClientSelect(c.id)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 11,
-                padding: '8px 12px', margin: '1px 6px', borderRadius: 8,
+                padding: '8px 12px', margin: '2px 8px', borderRadius: 8,
                 cursor: 'pointer', transition: 'background 100ms',
-                background: isActive ? 'var(--bg-hover)' : 'transparent'
+                background: isActive ? 'var(--bg-hover)' : 'transparent',
+                animation: `slideInRight 0.4s cubic-bezier(0.16,1,0.3,1) ${idx * 0.08}s both`
               }}
               onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)'; }}
               onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}>
 
-              {/* Avatar */}
-              <div style={{ ...sidebarStyles.avatar, backgroundImage: `url(${c.avatarUrl})` }} />
+              {/* Avatar with Channel Badge */}
+              <div style={{ position: 'relative', flex: 'none' }}>
+                <div style={{ ...sidebarStyles.avatar, backgroundImage: `url(${c.avatarUrl})` }} />
+                {c.source && (
+                  <div style={{
+                    position: 'absolute', bottom: -2, right: -2, width: 14, height: 14,
+                    background: '#fff', borderRadius: '50%', border: '1px solid var(--border-1)',
+                    display: 'grid', placeItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}>
+                    <img src={`assets/channels/${c.source}.svg`} alt={c.source} width="10" height="10" />
+                  </div>
+                )}
+              </div>
 
               {/* Name */}
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -141,14 +186,14 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
                   {hasNotif && (
                     <div style={{ 
                       width: 6, height: 6, borderRadius: '50%', 
-                      background: s.tasks > 0 ? 'var(--accent)' : '#3B82F6',
+                      background: s.tasks > 0 ? 'var(--accent)' : 'var(--fg-1)',
                       flex: 'none'
                     }} />
                   )}
                 </div>
                 {hasNotif && (
-                  <div style={{ fontSize: 10.5, color: s.tasks > 0 ? 'var(--accent)' : '#3B82F6', fontWeight: 600, marginTop: 1 }}>
-                    {s.tasks > 0 ? 'Nouvelle tâche détectée' : 'Nouveau message'}
+                  <div style={{ fontSize: 10.5, color: s.tasks > 0 ? 'var(--accent)' : 'var(--fg-1)', fontWeight: 600, marginTop: 1 }}>
+                    {s.tasks > 0 ? (s.tasks > 1 ? `${s.tasks} tâches IA à valider` : `1 tâche IA à valider`) : 'Non lu'}
                   </div>
                 )}
               </div>
@@ -174,8 +219,16 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
             if (s.id === 'whatsapp') isConnected = whatsappConnected;
             if (s.id === 'instagram') isConnected = instagramConnected;
             
+            const handleChannelClick = () => {
+              if (s.id === 'gmail' && isConnected && onDisconnectGmail) {
+                setConfirmPrompt(true);
+                return;
+              }
+              if (!isConnected && onConnectChannel) return onConnectChannel();
+              onOpenSettings && onOpenSettings();
+            };
             return (
-              <div key={s.id} title={s.label} onClick={() => onOpenSettings && onOpenSettings()}
+              <div key={s.id} title={isConnected ? `${s.label} — connecté (clic pour déconnecter)` : `Connecter ${s.label}`} onClick={handleChannelClick}
                 style={{
                   width: 36, height: 36, cursor: 'pointer',
                   display: 'grid', placeItems: 'center', position: 'relative',
@@ -223,16 +276,24 @@ function Sidebar({ active, onNav, activeClient, onClientSelect, clients, message
             onClick={() => onOpenSettings && onOpenSettings()} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-0)', letterSpacing: '-0.01em' }}>Wacil Corio</div>
-            <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>Admin</div>
+            <div style={{ fontSize: 11.5, color: 'var(--fg-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>wacil@freescale.io</div>
           </div>
-          <button onClick={onOpenSettings} title="Paramètres"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-3)', display: 'flex', padding: 4, borderRadius: 6 }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'var(--fg-0)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'var(--fg-3)'; e.currentTarget.style.background = 'none'; }}>
-            <Icon name="settings" size={15} />
+          <button style={{ background: 'none', border: 'none', color: 'var(--fg-2)', cursor: 'pointer', padding: 4 }} onClick={() => onOpenSettings && onOpenSettings()}>
+            <Icon name="more-horizontal" size={16} />
           </button>
         </div>
       </div>
+
+      <window.ActionModal 
+        isOpen={confirmPrompt} 
+        type="confirm" 
+        title="Déconnecter Gmail ?" 
+        message="Êtes-vous sûr de vouloir déconnecter ce canal ?" 
+        confirmText="Déconnecter" 
+        cancelText="Annuler" 
+        onConfirm={() => { onDisconnectGmail(); setConfirmPrompt(false); }} 
+        onCancel={() => setConfirmPrompt(false)} 
+      />
     </aside>
   );
 }

@@ -119,40 +119,41 @@ const AI_PHRASES = [
   'Tâches prêtes ✓',
 ];
 
-function MessageCard({ msg, onAddTask }) {
+function ClientMessagesCard({ clientMessages, onAddTask }) {
   const [status, setStatus]       = React.useState('idle');   // idle | loading | ready | done
   const [loadPct, setLoadPct]     = React.useState(0);
   const [phraseIdx, setPhraseIdx] = React.useState(0);
   const [validated, setValidated] = React.useState(new Set());
 
+  const msgCount = clientMessages.length;
+  const firstMsg = clientMessages[0];
   const clients = window.FreescaleData?.clients || [];
-  const client  = clients.find(c => c.id === msg.clientId) || {};
-  const srcColor = SOURCE_COLORS[msg.source] || '#888';
-  const srcGlyph = SOURCE_GLYPHS[msg.source] || 'chat';
+  const client  = clients.find(c => c.id === firstMsg.clientId) || {};
+  const srcColor = SOURCE_COLORS[firstMsg.source] || '#888';
+  const srcGlyph = SOURCE_GLYPHS[firstMsg.source] || 'chat';
+
+  const allTasks = clientMessages.flatMap(m => m.extractedTasks || []);
 
   const startLoading = () => {
     setStatus('loading');
     setLoadPct(0);
     setPhraseIdx(0);
-
-    // barre de progression sur 1.6s par paliers
     const steps = [15, 35, 60, 80, 95, 100];
     const delays = [100, 350, 600, 950, 1250, 1600];
     steps.forEach((pct, i) => setTimeout(() => setLoadPct(pct), delays[i]));
-
-    // phrases qui défilent
     [1, 2, 3].forEach(i => setTimeout(() => setPhraseIdx(i), i * 450));
-
-    // fin du chargement
     setTimeout(() => setStatus('ready'), 1750);
   };
+
+  const handleIgnore = () => setStatus('ignored');
+  if (status === 'ignored') return null;
 
   const validateOne = (et) => {
     setValidated(prev => {
       const next = new Set(prev);
       next.add(et.id);
       onAddTask(et, client);
-      if (next.size === msg.extractedTasks.length) {
+      if (next.size === allTasks.length) {
         setTimeout(() => setStatus('done'), 500);
       }
       return next;
@@ -160,85 +161,92 @@ function MessageCard({ msg, onAddTask }) {
   };
 
   const validateAll = () => {
-    const all = new Set(msg.extractedTasks.map(t => t.id));
+    const all = new Set(allTasks.map(t => t.id));
     setValidated(all);
-    msg.extractedTasks.forEach(et => onAddTask(et, client));
+    allTasks.forEach(et => onAddTask(et, client));
     setTimeout(() => setStatus('done'), 600);
   };
 
   return (
-    <div style={{
-      flex: 'none', width: 236,
-      background: status === 'done' ? 'var(--ok-soft)' : 'var(--bg-0)',
-      border: `1px solid ${status === 'done' ? 'var(--ok)' : 'var(--border-1)'}`,
-      borderRadius: 12, padding: 14,
-      display: 'flex', flexDirection: 'column', gap: 10,
-      transition: 'background 0.4s, border 0.4s',
-      animation: 'cardIn 0.3s cubic-bezier(0.16,1,0.3,1) both',
-    }}>
+    <div 
+      style={{
+        flex: 'none', width: 320,
+        background: status === 'done' ? 'var(--ok-soft)' : 'var(--bg-0)',
+        border: `1px solid ${status === 'done' ? 'var(--ok)' : 'var(--border-1)'}`,
+        borderRadius: 12, padding: 14,
+        display: 'flex', flexDirection: 'column', gap: 10,
+        transition: 'background 0.4s, border 0.4s',
+        animation: 'cardIn 0.3s cubic-bezier(0.16,1,0.3,1) both'
+      }}>
 
-      {/* En-tête message */}
+      {/* En-tête : N nouveaux messages de Client */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ width: 28, height: 28, borderRadius: 8, background: srcColor + '15', display: 'grid', placeItems: 'center', flex: 'none' }}>
           <Icon name={srcGlyph} size={13} color={srcColor} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--fg-0)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{msg.from}</div>
-          <div style={{ fontSize: 10, color: 'var(--fg-3)' }}>{msg.source} · {msg.time}</div>
+          <div style={{ fontSize: 13, fontWeight: 750, color: 'var(--fg-0)' }}>
+            {msgCount} message{msgCount > 1 ? 's' : ''} de {client.name || firstMsg.from}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--fg-3)' }}>{firstMsg.source} · {firstMsg.time}</div>
         </div>
-        {msg.unread && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', flex: 'none' }} />}
+        {firstMsg.unread && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', flex: 'none' }} />}
       </div>
 
-      {/* Corps du message */}
-      <div style={{
-        fontSize: 11.5, color: 'var(--fg-2)', lineHeight: 1.5, fontStyle: 'italic',
-        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-      }}>
-        "{msg.body}"
+      {/* Preview des messages — Fixe */}
+      <div 
+        style={{
+          fontSize: 11, color: 'var(--fg-2)', lineHeight: 1.4, padding: '10px 12px', background: 'var(--bg-1)', borderRadius: 10, border: '1px solid var(--border-1)',
+          maxHeight: 76, overflow: 'hidden', cursor: 'default'
+        }}>
+        {clientMessages.map((m, i) => (
+          <div key={m.id} style={{ marginBottom: i < clientMessages.length - 1 ? 8 : 0, fontStyle: 'italic' }}>
+            "{m.body.length > 100 ? m.body.slice(0, 100) + '...' : m.body}"
+          </div>
+        ))}
       </div>
 
-      {/* ── État IDLE : bouton CTA ── */}
+      {/* ── État IDLE : bouton d'action ── */}
       {status === 'idle' && (
-        <button onClick={startLoading} style={{
-          width: '100%', padding: '9px 0', borderRadius: 8,
-          background: 'var(--fg-0)', color: 'var(--bg-1)',
-          border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-          transition: 'opacity 150ms',
-        }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-          <Icon name="sparkles" size={13} color="var(--bg-1)" /> Transformer en tâche
-        </button>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button onClick={startLoading} style={{
+            flex: 1, padding: '10px 0', borderRadius: 8,
+            background: 'var(--fg-0)', color: 'var(--bg-1)',
+            border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+          }}>
+            Extraire les tâches
+          </button>
+          <button onClick={handleIgnore} style={{
+            padding: '10px 14px', borderRadius: 8,
+            background: 'transparent', border: '1px solid var(--border-2)', color: 'var(--fg-3)',
+            cursor: 'pointer', fontSize: 11, fontWeight: 600,
+          }}>
+            Ignorer
+          </button>
+        </div>
       )}
 
-      {/* ── État LOADING : jauge animée ── */}
+      {/* ── État LOADING ── */}
       {status === 'loading' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, minHeight: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0' }}>
+          <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
             <Icon name="sparkles" size={11} color="var(--accent)" />
             <span style={{ animation: 'fadePhrase 0.3s ease' }} key={phraseIdx}>{AI_PHRASES[phraseIdx]}</span>
           </div>
           <div style={{ background: 'var(--bg-2)', borderRadius: 99, height: 6, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 99,
-              background: 'linear-gradient(90deg, var(--accent), #f97316)',
-              width: `${loadPct}%`,
-              transition: 'width 0.4s cubic-bezier(0.4,0,0.2,1)',
-              boxShadow: '0 0 8px rgba(234,88,12,0.4)',
-            }} />
+            <div style={{ height: '100%', borderRadius: 99, background: 'var(--accent)', width: `${loadPct}%`, transition: 'width 0.4s' }} />
           </div>
-          <div style={{ fontSize: 10, color: 'var(--fg-3)', textAlign: 'right' }}>{loadPct}%</div>
         </div>
       )}
 
-      {/* ── État READY : tâches à valider ── */}
+      {/* ── État READY : tâches extraites ── */}
       {status === 'ready' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, animation: 'fadeIn 0.4s' }}>
           <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
-            {msg.extractedTasks.length} tâche{msg.extractedTasks.length > 1 ? 's' : ''} suggérée{msg.extractedTasks.length > 1 ? 's' : ''}
+            {allTasks.length} tâche{allTasks.length > 1 ? 's' : ''} identifiée{allTasks.length > 1 ? 's' : ''}
           </div>
-          {msg.extractedTasks.map((et, i) => {
+          {allTasks.map((et, i) => {
             const isValidated = validated.has(et.id);
             return (
               <div key={et.id} style={{
@@ -246,48 +254,29 @@ function MessageCard({ msg, onAddTask }) {
                 padding: '8px 10px', borderRadius: 8,
                 background: isValidated ? 'var(--ok-soft)' : 'var(--bg-1)',
                 border: `1px solid ${isValidated ? 'var(--ok)' : 'var(--border-1)'}`,
-                transition: 'background 0.3s, border 0.3s, opacity 0.3s',
                 opacity: isValidated ? 0.65 : 1,
-                animation: `taskReveal 0.35s cubic-bezier(0.16,1,0.3,1) ${i * 160}ms both`,
+                animation: `taskReveal 0.35s cubic-bezier(0.16,1,0.3,1) ${i * 100}ms both`,
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--fg-0)', lineHeight: 1.4, textDecoration: isValidated ? 'line-through' : 'none' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-0)', lineHeight: 1.4, textDecoration: isValidated ? 'line-through' : 'none' }}>
                     {et.title}
                   </div>
-                  <div style={{ display: 'flex', gap: 5, marginTop: 4, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 5, marginTop: 4 }}>
                     {et.est && <span style={CHIP('var(--bg-2)', 'var(--fg-3)')}>{et.est}</span>}
                     {et.billable && <span style={CHIP('var(--ok-soft)', 'var(--ok)')}>€</span>}
                   </div>
                 </div>
-                {!isValidated ? (
-                  <button onClick={() => validateOne(et)} style={{
-                    padding: '4px 9px', borderRadius: 6, border: 'none',
-                    background: 'var(--ok)', color: '#fff',
-                    fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                    display: 'flex', alignItems: 'center', gap: 4, flex: 'none',
-                    transition: 'transform 100ms',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-                    <Icon name="check" size={10} color="#fff" /> Valider
+                {!isValidated && (
+                  <button onClick={() => validateOne(et)} style={{ padding: '4px 9px', borderRadius: 6, border: 'none', background: 'var(--ok)', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                    Valider
                   </button>
-                ) : (
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--ok)', display: 'grid', placeItems: 'center', flex: 'none', animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1)' }}>
-                    <Icon name="check" size={12} color="#fff" />
-                  </div>
                 )}
               </div>
             );
           })}
-          {validated.size < msg.extractedTasks.length && (
-            <button onClick={validateAll} style={{
-              width: '100%', marginTop: 2, padding: '8px 0', borderRadius: 8,
-              background: 'var(--accent)', color: '#fff',
-              border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-              animation: `taskReveal 0.35s cubic-bezier(0.16,1,0.3,1) ${msg.extractedTasks.length * 160 + 80}ms both`,
-            }}>
-              <Icon name="check" size={12} color="#fff" /> Tout valider ({msg.extractedTasks.length - validated.size})
+          {validated.size < allTasks.length && (
+            <button onClick={validateAll} style={{ width: '100%', marginTop: 2, padding: '9px 0', borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+              Tout valider ({allTasks.length - validated.size})
             </button>
           )}
         </div>
@@ -295,11 +284,9 @@ function MessageCard({ msg, onAddTask }) {
 
       {/* ── État DONE ── */}
       {status === 'done' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: 'var(--ok-soft)', animation: 'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)' }}>
-          <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--ok)', display: 'grid', placeItems: 'center', flex: 'none' }}>
-            <Icon name="check" size={12} color="#fff" />
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ok)' }}>{msg.extractedTasks.length} tâche{msg.extractedTasks.length > 1 ? 's' : ''} ajoutée{msg.extractedTasks.length > 1 ? 's' : ''} au kanban</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: 'var(--ok-soft)' }}>
+          <Icon name="check" size={14} color="var(--ok)" />
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ok)' }}>{allTasks.length} tâches ajoutées au kanban</span>
         </div>
       )}
     </div>
@@ -307,25 +294,75 @@ function MessageCard({ msg, onAddTask }) {
 }
 
 function MessageTasksSection({ messages, onAddTask }) {
-  const [collapsed, setCollapsed] = React.useState(false);
-  const msgsToShow = messages.filter(m => m.extractedTasks && m.extractedTasks.length > 0);
+  const [phase, setPhase] = React.useState('idle'); // idle | scanning | ready
+  const [progress, setProgress] = React.useState(0);
+
+  const msgsWithTasks = (messages || []).filter(m => m.extractedTasks && m.extractedTasks.length > 0);
+  
+  // Group by client
+  const groups = {};
+  msgsWithTasks.forEach(m => {
+    if (!groups[m.clientId]) groups[m.clientId] = [];
+    groups[m.clientId].push(m);
+  });
+  const clientIds = Object.keys(groups);
+
+  const handleScan = () => {
+    setPhase('scanning');
+    setProgress(0);
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p >= 100) { clearInterval(interval); setPhase('ready'); return 100; }
+        return p + 5;
+      });
+    }, 80);
+  };
+
+  if (phase === 'idle') {
+    return (
+      <div style={{ flex: 'none', background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 14, padding: '24px 32px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--accent-soft)', display: 'grid', placeItems: 'center' }}>
+          <Icon name="sparkles" size={24} color="var(--accent)" />
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 750, color: 'var(--fg-0)' }}>Copilote Intelligent</div>
+          <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 4 }}>
+            13 nouveaux messages lus sur Gmail et WhatsApp. Extraire les tâches ?
+          </div>
+        </div>
+        <button 
+          onClick={handleScan}
+          style={{ padding: '10px 24px', borderRadius: 10, background: 'var(--fg-0)', color: 'var(--bg-1)', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon name="sparkles" size={14} color="var(--bg-1)" /> Analyser les messages
+        </button>
+      </div>
+    );
+  }
+
+  if (phase === 'scanning') {
+    return (
+      <div style={{ flex: 'none', background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 14, padding: '32px', textAlign: 'center' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-0)', marginBottom: 12 }}>Analyse en cours...</div>
+        <div style={{ width: '100%', maxWidth: 300, height: 6, background: 'var(--bg-2)', borderRadius: 99, margin: '0 auto', overflow: 'hidden' }}>
+          <div style={{ height: '100%', background: 'var(--accent)', width: `${progress}%`, transition: 'width 0.1s' }} />
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 8 }}>{progress}%</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 'none', background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 14, overflow: 'hidden' }}>
-      <div onClick={() => setCollapsed(c => !c)}
-        style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderBottom: collapsed ? 'none' : '1px solid var(--border-1)' }}>
-        <Icon name="message-square" size={13} color="var(--accent)" />
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' }}>Messages → Tâches</span>
-        <span style={CHIP('var(--accent-soft)', 'var(--accent-ink)')}>{msgsToShow.length} nouveau{msgsToShow.length > 1 ? 'x' : ''}</span>
-        <Icon name={collapsed ? 'chevron-down' : 'chevron-up'} size={13} color="var(--fg-3)" style={{ marginLeft: 'auto' }} />
+      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--border-1)' }}>
+        <Icon name="sparkles" size={14} color="var(--accent)" />
+        <span style={{ fontSize: 14, fontWeight: 750, color: 'var(--fg-0)' }}>Copilote Intelligent</span>
+        <span style={CHIP('var(--accent-soft)', 'var(--accent-ink)')}>{clientIds.length} contact{clientIds.length > 1 ? 's' : ''} identifiés</span>
       </div>
-      {!collapsed && (
-        <div style={{ display: 'flex', gap: 10, padding: '12px 14px', overflowX: 'auto', paddingBottom: 14 }}>
-          {msgsToShow.map(msg => (
-            <MessageCard key={msg.id} msg={msg} onAddTask={onAddTask} />
-          ))}
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 12, padding: '14px', overflowX: 'auto', paddingBottom: 16 }}>
+        {clientIds.map(cid => (
+          <ClientMessagesCard key={cid} clientMessages={groups[cid]} onAddTask={onAddTask} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -377,24 +414,14 @@ function ArchivesPanel({ archived, onClose, onRestore }) {
 }
 
 // ─── TodayView ────────────────────────────────────────────────────────────────
-function TodayView({ tasks, nudges, brief, onComplete, onValidateTask, messages }) {
+function TodayView({ tasks, nudges, brief, onComplete, onValidateTask, messages, onConnectChannel, anyChannelConnected }) {
   const focus = brief?.focus || tasks || [];
 
   const initialCols = {
-    todo: focus.filter(f => f.priority === 'high' || f.priority === 'med'),
-    doing: [
-      { id: 'x1', title: 'Review PR #284 — Acme Corp',  client: 'Acme Corp',    clientColor: '#5B5BF0', est: '1h',     billable: true },
-      { id: 'x2', title: 'Intégration Stripe Connect',  client: 'Fable & Co',   clientColor: '#7C3AED', est: '3h',     billable: true },
-    ],
-    review: [
-      { id: 'x3', title: 'Validation maquettes v3',     client: 'Lumen Studio', clientColor: '#F59E0B', due: '2 jours', billable: false },
-      { id: 'x4', title: 'Confirmer périmètre MVP',     client: 'Pelican Labs',  clientColor: '#E11D48', due: 'hier',    billable: false, overdue: true },
-    ],
-    done: [
-      { id: 'x5', title: 'Migration BDD reporting',     client: 'North Park',   clientColor: '#16A349', est: '4h',     billable: true, billed: true },
-      { id: 'x6', title: 'Design system audit',         client: 'Orion',        clientColor: '#0EA5E9', est: '2h30',   billable: true, billed: true },
-      { id: 'x7', title: 'Call kickoff — Fable',        client: 'Fable & Co',   clientColor: '#7C3AED', est: '30 min', billable: false },
-    ],
+    todo: [],
+    doing: [],
+    review: [],
+    done: [],
   };
 
   const [colItems, setColItems]       = React.useState(initialCols);
@@ -510,6 +537,22 @@ function TodayView({ tasks, nudges, brief, onComplete, onValidateTask, messages 
   };
   const handleDragEnd = () => { setDragState(null); setDragOver(null); };
 
+  const [taskPrompt, setTaskPrompt] = React.useState({ open: false, colKey: null });
+
+  // Ajout manuel d'une tâche dans une colonne
+  const handleAddBlank = (colKey) => {
+    setTaskPrompt({ open: true, colKey });
+  };
+
+  const handleConfirmTask = (title) => {
+    const colKey = taskPrompt.colKey;
+    setTaskPrompt({ open: false, colKey: null });
+    if (!title || typeof title !== 'string') return;
+    const id = 'blank_' + Date.now();
+    const newTask = { id, title: title.trim(), client: 'Perso', clientColor: '#6B7280', est: '', billable: false };
+    setColItems(prev => ({ ...prev, [colKey]: [...prev[colKey], newTask] }));
+  };
+
   const colDefs = [
     { key: 'todo',   title: 'À faire',          icon: 'check', color: 'var(--fg-2)' },
     { key: 'doing',  title: 'En cours',          icon: 'clock', color: 'var(--accent)' },
@@ -519,78 +562,141 @@ function TodayView({ tasks, nudges, brief, onComplete, onValidateTask, messages 
 
   const msgsToShow = (messages || []).filter(m => m.extractedTasks && m.extractedTasks.length > 0);
 
+  const hasTasks = colItems.todo.length > 0 || colItems.doing.length > 0 || colItems.review.length > 0 || colItems.done.length > 0;
+
   return (
     <div style={{ padding: '8px 32px 32px', display: 'flex', flexDirection: 'column', gap: 14, position: 'relative' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--fg-0)', margin: 0, letterSpacing: '-0.01em' }}>Tâches</h2>
-        <span style={CHIP('var(--accent-soft)', 'var(--accent-ink)')}>Auto-générées par le copilote</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => setShowArchives(true)}
-            style={{ padding: '7px 12px', borderRadius: 9, background: 'var(--bg-2)', color: 'var(--fg-1)', fontSize: 12.5, fontWeight: 600, border: '1px solid var(--border-1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="archive" size={12} /> Archives {archived.length > 0 && <span style={{ background: 'var(--fg-0)', color: 'var(--bg-1)', borderRadius: 99, fontSize: 10, fontWeight: 700, padding: '1px 6px' }}>{archived.length}</span>}
-          </button>
-          <button style={{ padding: '7px 14px', borderRadius: 9, background: 'var(--fg-0)', color: 'var(--bg-1)', fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="plus" size={12} /> Nouvelle tâche
-          </button>
-        </div>
-      </div>
-
-      {/* Messages → Tâches */}
-      {msgsToShow.length > 0 && (
-        <MessageTasksSection messages={msgsToShow} onAddTask={handleAddFromMessage} />
-      )}
-
-      {/* Kanban */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, minHeight: 480 }}>
-        {colDefs.map(col => {
-          const items = colItems[col.key];
-          const isOver = dragOver === col.key;
-          return (
-            <div key={col.key}
-              onDragOver={(e) => handleDragOver(e, col.key)}
-              onDrop={(e) => handleDrop(e, col.key)}
-              onDragLeave={(e) => handleDragLeave(e, col.key)}
-              style={{
-                background: isOver ? 'var(--accent-soft)' : 'var(--bg-1)',
-                border: isOver ? '2px dashed var(--accent)' : '1px solid var(--border-1)',
-                borderRadius: 14, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                transition: 'background 150ms, border 150ms',
-              }}>
-              <div style={{ padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${isOver ? 'var(--accent)' : 'var(--border-1)'}` }}>
-                <Icon name={col.icon} size={13} color={col.color} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' }}>{col.title}</span>
-                <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fg-2)', fontFamily: 'var(--font-mono)' }}>{items.length}</span>
-                {col.key === 'done' && items.length > 0 && (
-                  <button onClick={handleArchiveAll} title="Archiver toutes les tâches terminées"
-                    style={{ marginLeft: 4, padding: '2px 7px', borderRadius: 5, fontSize: 10.5, fontWeight: 600, background: 'var(--bg-2)', color: 'var(--fg-2)', border: '1px solid var(--border-1)', cursor: 'pointer' }}>
-                    Archiver tout
-                  </button>
-                )}
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+        {/* Main Left Content */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          
+          {/* Messages → Tâches */}
+          {msgsToShow.length > 0 ? (
+            <MessageTasksSection messages={msgsToShow} onAddTask={handleAddFromMessage} />
+          ) : (
+            <div style={{ flex: 'none', background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--accent-soft)', display: 'grid', placeItems: 'center', flex: 'none' }}>
+                <Icon name="sparkles" size={20} color="var(--accent)" />
               </div>
-              <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {items.map(t => (
-                  <KanbanCard key={t.id} task={t}
-                    onValidate={(task) => handleValidate(task, col.key)}
-                    onArchive={(task) => handleArchive(task, col.key)}
-                    onDragStart={(e, task) => handleDragStart(e, task, col.key)}
-                    onDragEnd={handleDragEnd}
-                    isDragging={dragState?.task?.id === t.id}
-                  />
-                ))}
-                {isOver && dragState && dragState.fromCol !== col.key && (
-                  <div style={{ height: 44, borderRadius: 10, border: '2px dashed var(--accent)', opacity: 0.4 }} />
-                )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--fg-0)', marginBottom: 2 }}>Extraction IA en attente</div>
+                <div style={{ fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.4 }}>Connecte ton compte Gmail ou ajoute des contacts. L'IA scannera tes messages et te proposera automatiquement des tâches à valider.</div>
               </div>
+              <button onClick={onConnectChannel} style={{ flex: 'none', padding: '9px 16px', borderRadius: 8, background: 'var(--fg-0)', color: 'var(--bg-1)', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'transform 100ms' }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.03)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                Connecter à un outil
+              </button>
             </div>
-          );
-        })}
+          )}
+
+          {/* Kanban */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, minHeight: 480 }}>
+            {colDefs.map(col => {
+              const items = colItems[col.key];
+              const isOver = dragOver === col.key;
+              return (
+                <div key={col.key}
+                  onDragOver={(e) => handleDragOver(e, col.key)}
+                  onDrop={(e) => handleDrop(e, col.key)}
+                  onDragLeave={(e) => handleDragLeave(e, col.key)}
+                  style={{
+                    background: isOver ? 'var(--accent-soft)' : 'rgba(234, 88, 12, 0.08)',
+                    border: isOver ? '2px dashed var(--accent)' : '1px solid var(--border-1)',
+                    borderRadius: 14, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                    transition: 'background 150ms, border 150ms',
+                  }}>
+                  <div style={{ padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${isOver ? 'var(--accent)' : 'var(--border-1)'}` }}>
+                    <Icon name={col.icon} size={13} color={col.color} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' }}>{col.title}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--fg-2)', fontFamily: 'var(--font-mono)' }}>{items.length}</span>
+                    {col.key === 'done' && items.length > 0 && (
+                      <button onClick={handleArchiveAll} title="Archiver toutes les tâches terminées"
+                        style={{ marginLeft: 4, padding: '2px 7px', borderRadius: 5, fontSize: 10.5, fontWeight: 600, background: 'var(--bg-2)', color: 'var(--fg-2)', border: '1px solid var(--border-1)', cursor: 'pointer' }}>
+                        Archiver tout
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {items.map(t => (
+                      <KanbanCard key={t.id} task={t}
+                        onValidate={(task) => handleValidate(task, col.key)}
+                        onArchive={(task) => handleArchive(task, col.key)}
+                        onDragStart={(e, task) => handleDragStart(e, task, col.key)}
+                        onDragEnd={handleDragEnd}
+                        isDragging={dragState?.task?.id === t.id}
+                      />
+                    ))}
+                    {isOver && dragState && dragState.fromCol !== col.key && (
+                      <div style={{ height: 44, borderRadius: 10, border: '2px dashed var(--accent)', opacity: 0.4 }} />
+                    )}
+                    <button
+                      onClick={() => handleAddBlank(col.key)}
+                      style={{
+                        marginTop: 2, padding: '9px 10px', borderRadius: 10,
+                        background: 'transparent', border: '1px dashed var(--border-2)',
+                        color: 'var(--fg-3)', fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        fontFamily: 'inherit', transition: 'border-color 120ms, color 120ms'
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-2)'; e.currentTarget.style.color = 'var(--fg-3)'; }}>
+                      <Icon name="plus" size={12} /> Nouvelle tâche
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Sidebar: Copilot Feature */}
+        {anyChannelConnected && hasTasks && (
+          <div style={{ width: 260, flex: 'none', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ background: 'var(--accent-soft)', padding: 6, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="sparkles" size={14} color="var(--accent)" />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg-0)' }}>Copilote IA</div>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--fg-2)', lineHeight: 1.5 }}>
+                Le copilote scanne en permanence tes échanges et t'aide à prioriser.
+              </div>
+              <div style={{ padding: '12px', borderRadius: 10, background: 'var(--bg-0)', display: 'flex', flexDirection: 'column', gap: 10, border: '1px solid var(--border-1)' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ok)', marginTop: 5, flex: 'none' }} />
+                  <div style={{ fontSize: 11.5, color: 'var(--fg-1)', lineHeight: 1.4 }}>Projet <strong style={{ color: 'var(--fg-0)' }}>Capucine</strong> prêt à être facturé (2h).</div>
+                </div>
+                <div style={{ height: 1, background: 'var(--border-1)' }} />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warn)', marginTop: 5, flex: 'none' }} />
+                  <div style={{ fontSize: 11.5, color: 'var(--fg-1)', lineHeight: 1.4 }}>Aucune date définie pour <strong style={{ color: 'var(--fg-0)' }}>Victor</strong>.</div>
+                </div>
+              </div>
+              <button style={{ padding: '8px 0', borderRadius: 8, background: 'transparent', border: '1px solid var(--border-2)', color: 'var(--fg-2)', fontSize: 11.5, fontWeight: 600, cursor: 'not-allowed', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Icon name="message-square" size={12} /> Discuter avec le Copilote (bientôt)
+              </button>
+            </div>
+          </div>
+        )}
+
+
       </div>
 
       {/* Notification progression projet */}
       {notification && <ProjectNotification notif={notification} onClose={() => setNotification(null)} />}
+
+      <window.ActionModal 
+        isOpen={taskPrompt?.open} 
+        type="prompt" 
+        title="Nouvelle tâche" 
+        placeholder="Titre de la tâche..." 
+        confirmText="Ajouter" 
+        onConfirm={handleConfirmTask} 
+        onCancel={() => setTaskPrompt({ open: false, colKey: null })} 
+      />
 
       {/* Toast ajout kanban */}
       {addToast && (

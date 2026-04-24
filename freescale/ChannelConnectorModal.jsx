@@ -32,7 +32,7 @@ const connectorStyles = {
   },
   info: { display: 'flex', flexDirection: 'column', gap: 2 },
   name: { fontSize: 16, fontWeight: 750, color: '#111' },
-  link: { fontSize: 13, color: '#3B82F6', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }
+  link: { fontSize: 13, color: 'var(--fg-0)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }
 };
 
 function ChannelConnectorModal({ isOpen, onClose, onConnect }) {
