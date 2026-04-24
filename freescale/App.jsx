@@ -108,29 +108,6 @@ function FreescaleApp() {
       window.history.replaceState({}, '', window.location.pathname);
     }
 
-    // Add more mock messages for variety (at least 4 cards)
-    if (messages.length === 0) {
-      const mockMsgs = [
-        { id: 'm1', clientId: 'victor_croyst', from: 'Victor Croyst', body: "Salut, on peut se caler un point demain à 10h pour le logo ?", source: 'gmail', time: '10:00', unread: true, extractedTasks: [{ id: 'et1', title: 'Point logo avec Victor', est: '30 min', billable: false }] },
-        { id: 'm2', clientId: 'matilda_l', from: 'Matilda L.', body: "Hello ! J'ai bien reçu le devis, je le valide. On commence quand ?", source: 'whatsapp', time: '11:30', unread: true, extractedTasks: [{ id: 'et2', title: 'Démarrage projet Matilda', est: '1h', billable: true }] },
-        { id: 'm3', clientId: 'lumen_studio', from: 'Lumen Studio', body: "Le retour sur la v2 est prêt. Il y a quelques modifs sur la typo.", source: 'gmail', time: '14:15', unread: true, extractedTasks: [{ id: 'et3', title: 'Modifs typo v2 — Lumen', est: '45 min', billable: true }] },
-        { id: 'm4', clientId: 'capucine_s', from: 'Capucine Spohn', body: "Peux-tu m'envoyer la facture d'acompte stp ?", source: 'gmail', time: '15:00', unread: true, extractedTasks: [{ id: 'et4', title: 'Envoyer facture acompte Capucine', est: '10 min', billable: false }] }
-      ];
-      setMessages(mockMsgs);
-
-      // Ensure clients exist
-      setClients(prev => {
-        const ids = new Set(prev.map(c => c.id));
-        const newC = [
-          { id: 'victor_croyst', name: 'Victor Croyst', color: '#111', avatar: 'VC', active: true, source: 'gmail', lastActivity: 'hier' },
-          { id: 'matilda_l', name: 'Matilda L.', color: '#E11D48', avatar: 'ML', active: true, source: 'whatsapp', lastActivity: '2h' },
-          { id: 'lumen_studio', name: 'Lumen Studio', color: '#0EA5E9', avatar: 'LS', active: true, source: 'gmail', lastActivity: '15:30' },
-          { id: 'capucine_s', name: 'Capucine Spohn', color: '#16A349', avatar: 'CS', active: true, source: 'gmail', lastActivity: '12:00' }
-        ].filter(c => !ids.has(c.id));
-        return [...prev, ...newC];
-      });
-    }
-
     // Check backend status. If Gmail is connected, trigger the scan — ALWAYS.
     (async () => {
       if (!window.FreescaleGmail) {

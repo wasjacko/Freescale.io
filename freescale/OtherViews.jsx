@@ -2,7 +2,7 @@
 const viewStyles = {
   wrap: { padding: 24, display: 'flex', flexDirection: 'column', gap: 16, height: '100%', minHeight: 0 },
   kanban: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, flex: 1, minHeight: 0 },
-  col: { background: 'var(--bg-1)', border: '1px solid var(--border-1)', borderRadius: 14, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  col: { background: 'rgba(234, 88, 12, 0.05)', border: '1px solid var(--border-1)', borderRadius: 14, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   colHead: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--border-1)' },
   colTitle: { fontSize: 13, fontWeight: 600, color: 'var(--fg-0)' },
   colCount: { marginLeft: 'auto', fontSize: 11, color: 'var(--fg-2)', fontFamily: 'var(--font-mono)' },
@@ -66,8 +66,12 @@ function TasksView({ brief, acceptedTasks }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--fg-0)', margin: 0, letterSpacing: '-0.01em' }}>Tâches</h2>
         <span style={CHIP('var(--accent-soft)', 'var(--accent-ink)')}>Auto-générées par le copilote</span>
-        <button style={{ marginLeft: 'auto', padding: '7px 12px', borderRadius: 8, background: 'var(--fg-0)', color: 'var(--bg-1)', fontSize: 12.5, fontWeight: 600 }}>
-          <Icon name="plus" size={12} /> Nouvelle tâche
+        <button style={{ 
+          marginLeft: 'auto', padding: '7px 12px', borderRadius: 8, 
+          background: 'var(--accent)', color: '#fff', 
+          fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer' 
+        }}>
+          <Icon name="plus" size={12} color="#fff" /> Nouvelle tâche
         </button>
       </div>
       <div style={viewStyles.kanban}>
