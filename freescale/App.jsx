@@ -143,7 +143,6 @@ function FreescaleApp() {
     setScanResults(results);
     setScanPhase('review');
   }
-  }
 
   // Manual trigger
   async function handleRescanGmail() {
