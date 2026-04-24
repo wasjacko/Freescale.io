@@ -1,0 +1,10 @@
+
+> freescale-backend@1.0.0 start
+> node server.js
+
+
+  🚀 Freescale backend running on http://localhost:3001
+  📧 Gmail OAuth:  http://localhost:3001/auth/google
+  📊 API Status:   http://localhost:3001/api/gmail/status
+  💡 Health:       http://localhost:3001/api/health
+
