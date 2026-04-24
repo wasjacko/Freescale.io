@@ -1,5 +1,5 @@
 // Freescale — Gmail API connector (frontend helper)
-const BACKEND_URL = 'http://localhost:3001';
+const BACKEND_URL = 'https://smart-cases-love.loca.lt';
 
 window.FreescaleGmail = {
   // Check if Gmail is connected
