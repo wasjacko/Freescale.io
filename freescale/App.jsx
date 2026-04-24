@@ -139,6 +139,34 @@ function FreescaleApp() {
        if (['Amazon','LinkedIn'].some(n => s.name.includes(n))) cat = 'promo';
        return { ...s, category: cat, confidence: 0.95 };
     });
+
+    // Populate pending messages for validation
+    pendingMessagesRef.current = mockSenders.map(s => {
+      let extractedTasks = [];
+      let body = "Bonjour, j'aimerais qu'on discute de la suite du projet.";
+      if (s.name.includes('Victor')) {
+        body = "Salut ! L'équipe a validé les maquettes. Peux-tu intégrer les retours sur la home et lancer le module de paiement ?";
+        extractedTasks = [
+          { id: 'sim_t1', title: 'Intégrer retours home page', est: '2h', billable: true },
+          { id: 'sim_t2', title: 'Initier module paiement', est: '1j', billable: true }
+        ];
+      } else if (s.name.includes('Capucine')) {
+        body = "Bonjour, nous avons bien reçu votre devis. Serait-il possible de détailler un peu plus la partie maintenance ?";
+        extractedTasks = [
+          { id: 'sim_t3', title: 'Détailler offre maintenance', est: '1h', billable: true }
+        ];
+      }
+      return {
+        id: 'sim_msg_' + s.email,
+        from: s.name,
+        fromEmail: s.email,
+        subject: s.subjects[0],
+        body: body,
+        time: 'À l\'instant',
+        unread: true,
+        extractedTasks: extractedTasks
+      };
+    });
     
     setScanResults(results);
     setScanPhase('review');
@@ -161,7 +189,6 @@ function FreescaleApp() {
     const chosenEmails = new Set(chosen.map(c => c.email.toLowerCase()));
     const rawMsgs = pendingMessagesRef.current || [];
 
-    // Keep only messages from the validated senders
     const filteredMsgs = rawMsgs.filter(m =>
       chosenEmails.has((m.fromEmail || '').toLowerCase())
     );
@@ -171,7 +198,6 @@ function FreescaleApp() {
 
     const gmailMsgs = filteredMsgs.map(m => ({ ...m, clientId: emailToClientId(m.fromEmail || m.from) }));
 
-    // Pick newest message per sender
     const senderOrder = [];
     const senderLatest = {};
     gmailMsgs.forEach(m => {
@@ -180,27 +206,6 @@ function FreescaleApp() {
         senderOrder.push(m.clientId);
       }
     });
-
-    // Avatars: Google photos > Gravatar > initials
-    const googlePhotos = await FreescaleGmail.getContactPhotos();
-    const probeImg = (url) => new Promise(resolve => {
-      if (!url) return resolve(false);
-      const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.src = url;
-    });
-    const resolvedAvatars = {};
-    await Promise.all(senderOrder.map(async (cid, i) => {
-      const m = senderLatest[cid];
-      const email = (m.fromEmail || '').toLowerCase();
-      const name = m.from || m.fromEmail || 'Contact Gmail';
-      const color = palette[i % palette.length];
-      const fallback = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(email || name)}&backgroundColor=${color.slice(1)}`;
-      if (email && googlePhotos[email]) { resolvedAvatars[cid] = googlePhotos[email]; return; }
-      if (await probeImg(m.avatarUrl)) { resolvedAvatars[cid] = m.avatarUrl; return; }
-      resolvedAvatars[cid] = fallback;
-    }));
 
     // Merge into clients
     setClients(prev => {
@@ -214,7 +219,7 @@ function FreescaleApp() {
           const color = palette[(prev.length + i) % palette.length];
           newOnes.push({
             id: cid, name, color, avatar: initials,
-            avatarUrl: resolvedAvatars[cid],
+            avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=${color.slice(1).replace('#','')}`,
             tags: ['Gmail'], rate: 0, active: true,
             lastActivity: m.time || "à l'instant",
             unread: m.unread ? 1 : 0, value: 0, status: 'ongoing',
@@ -234,20 +239,9 @@ function FreescaleApp() {
     if (senderOrder.length > 0) {
       const firstId = senderOrder[0];
       setActiveClient(firstId);
-      // Proactively preload the conversation for the first contact so messages are ready
-      // Pass the client object directly (state hasn't refreshed yet)
-      const firstMsg = senderLatest[firstId];
-      const firstClient = {
-        id: firstId,
-        name: firstMsg.from || firstMsg.fromEmail,
-        email: firstMsg.fromEmail
-      };
-      loadConversationFor(firstId, firstClient);
     }
 
     showToast(`✅ ${senderOrder.length} contact${senderOrder.length > 1 ? 's' : ''} ajouté${senderOrder.length > 1 ? 's' : ''}`);
-
-    // Close modal and redirect to dashboard
     setScanPhase(null);
     setScanResults([]);
     setScanSenders([]);
@@ -255,108 +249,37 @@ function FreescaleApp() {
     setView('today');
   }
 
-  // Fetch full conversation (all sent+received emails) with a given client
-  // Accepts optional clientObj arg so it can be called right after setClients (before state refresh)
+  // Fetch full conversation (simulated)
   async function loadConversationFor(clientId, clientObj) {
-    console.log('[Freescale] loadConversationFor:', clientId);
-    if (!clientId || !window.FreescaleGmail) return;
     const client = clientObj || clients.find(c => c.id === clientId);
-    if (!client) {
-      console.warn('[Freescale] client not found for id:', clientId);
-      return;
-    }
-    if (!client.email) {
-      console.warn('[Freescale] client has no email:', client);
-      return;
-    }
-    // Cache: skip if already loaded
-    if (conversations[clientId] && conversations[clientId].length > 0) {
-      console.log('[Freescale] conversation cached for', clientId);
-      return;
-    }
+    if (!client) return;
 
     setConversationsLoading(prev => ({ ...prev, [clientId]: true }));
+    
+    // SIMULATION
+    setTimeout(() => {
+      const history = [];
+      const baseTime = Date.now();
+      const DayMs = 24 * 60 * 60 * 1000;
 
-    // DEMO RIG: Return mock conversations for our fake clients immediately
-    if (['victor@croyst.com', 'matilda@design.com'].includes(client.email) || 
-        client.name.toLowerCase().includes('victor') || 
-        client.name.toLowerCase().includes('matilda')) {
-      setTimeout(() => {
-        let history = [];
-        const baseTime = Date.now();
-        const DayMs = 24 * 60 * 60 * 1000;
-        const HourMs = 60 * 60 * 1000;
+      history.push({
+        id: 'msg_1', from: client.name, fromEmail: client.email,
+        subject: 'Re: Suivi projet', date: 'Hier',
+        bodyText: `Bonjour, je reviens vers vous concernant ${client.name.split(' ')[0]}. Tout me semble correct pour la suite.`,
+        snippet: 'Bonjour, je reviens vers vous...',
+        unread: false, direction: 'received'
+      });
+      history.push({
+        id: 'msg_2', from: 'Moi', fromEmail: 'wacil@freescale.io',
+        subject: 'Re: Suivi projet', date: 'Hier',
+        bodyText: "Parfait, je prépare les prochaines étapes.",
+        snippet: 'Parfait, je prépare...',
+        unread: false, direction: 'sent'
+      });
 
-        if (client.name.includes('Victor')) {
-          for (let i=0; i<20; i++) {
-            const isMe = (i % 2 === 0);
-            const t = baseTime - (25 - i) * DayMs + (i * 2 * HourMs);
-            history.push({
-              id: 'mock_vic_' + i, threadId: 'vic_thread',
-              from: isMe ? 'Moi' : client.name, fromEmail: isMe ? 'moi@mail.com' : client.email,
-              to: isMe ? client.name : 'Moi', toEmails: [],
-              subject: 'Re: Refonte Web',
-              bodyText: 'Point d\'étape ' + (i+1) + ' sur la plateforme.',
-              bodyHtml: '<p>Point d\'étape ' + (i+1) + ' sur la plateforme.</p>',
-              snippet: 'Point d\'étape ' + (i+1),
-              date: new Date(t).toISOString(), dateMs: t, attachments: [], unread: false, direction: isMe ? 'sent' : 'received'
-            });
-          }
-          history.push({
-              id: 'mock_vic_last', threadId: 'vic_thread',
-              from: client.name, fromEmail: client.email, to: 'Moi', toEmails: [],
-              subject: 'Refonte de la plateforme Web',
-              bodyText: 'Bonjour, l\'équipe a validé les maquettes ! Il faudrait juste intégrer les retours sur la page d\'accueil et lancer le développement du module de paiement.',
-              bodyHtml: '<p>Bonjour, l\'équipe a validé les maquettes ! Il faudrait juste intégrer les retours sur la page d\'accueil et lancer le développement du module de paiement.</p>',
-              snippet: 'Bonjour, l\'équipe a validé les maquettes !',
-              date: new Date(baseTime - 1000).toISOString(), dateMs: baseTime - 1000, attachments: [], unread: false, direction: 'received'
-          });
-        }
-        
-        else if (client.name.includes('Matilda')) {
-          for (let i=0; i<28; i++) {
-            const isMe = (i % 2 !== 0);
-            const t = baseTime - (40 - i) * DayMs + (i * HourMs / 2);
-            history.push({
-              id: 'mock_mat_' + i, threadId: 'mat_thread',
-              from: isMe ? 'Moi' : client.name, fromEmail: isMe ? 'moi@mail.com' : client.email,
-              to: isMe ? client.name : 'Moi', toEmails: [],
-              subject: 'Re: Identité visuelle',
-              bodyText: 'Échange concernant le logo - partie ' + (i+1),
-              bodyHtml: '<p>Échange concernant le logo - partie ' + (i+1) + '</p>',
-              snippet: 'Échange concernant le logo...',
-              date: new Date(t).toISOString(), dateMs: t, attachments: [], unread: false, direction: isMe ? 'sent' : 'received'
-            });
-          }
-          history.push({
-              id: 'mock_mat_last', threadId: 'mat_thread',
-              from: client.name, fromEmail: client.email, to: 'Moi', toEmails: [],
-              subject: 'Identité visuelle et charte graphique',
-              bodyText: 'Coucou, j\'ai regardé les moodboards que tu as envoyés. J\'adore la direction artistique. Pourrait-on se faire un point rapide demain matin pour trancher sur le logo ?',
-              bodyHtml: '<p>Coucou, j\'ai regardé les moodboards que tu as envoyés. J\'adore la direction artistique. Pourrait-on se faire un point rapide demain matin pour trancher sur le logo ?</p>',
-              snippet: 'Coucou, j\'ai regardé les moodboards...',
-              date: new Date(baseTime - 1000).toISOString(), dateMs: baseTime - 1000, attachments: [], unread: false, direction: 'received'
-          });
-        }
-
-        setConversationsLoading(prev => ({ ...prev, [clientId]: false }));
-        setConversations(prev => ({
-          ...prev,
-          [clientId]: history
-        }));
-      }, 500);
-      return;
-    }
-
-    const data = await FreescaleGmail.getConversation(client.email, 100);
-    console.log('[Freescale] conversation result for', client.email, ':', data?.error || `${data?.messages?.length || 0} msgs`);
-    setConversationsLoading(prev => ({ ...prev, [clientId]: false }));
-    if (data.error) {
-      showToast('⚠️ Conversation a échoué : ' + data.error);
-      return;
-    }
-    if (data.myEmail) setMyGmail(data.myEmail);
-    setConversations(prev => ({ ...prev, [clientId]: data.messages || [] }));
+      setConversationsLoading(prev => ({ ...prev, [clientId]: false }));
+      setConversations(prev => ({ ...prev, [clientId]: history }));
+    }, 600);
   }
 
   // When a client is selected in sidebar, trigger conversation load
