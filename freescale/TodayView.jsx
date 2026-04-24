@@ -208,7 +208,7 @@ function ClientMessagesCard({ clientMessages, onAddTask, sectionStatus }) {
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                   <div style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--fg-0)', lineHeight: 1.4, textDecoration: isValidated ? 'line-through' : 'none' }}>
-                    {isSeen || isValidated ? et.title : "Tâche masquée"}
+                    {isSeen || isValidated ? et.title : `Tâche ${i + 1}`}
                   </div>
                   {!isValidated && (
                     <button 
