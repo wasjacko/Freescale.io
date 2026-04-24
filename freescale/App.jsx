@@ -93,299 +93,63 @@ function FreescaleApp() {
   //   1. We just returned from OAuth (?gmail_connected=true in URL)
   //   2. OR backend is already connected (token still valid) and UI is empty — catches cache-stripped redirects
   React.useEffect(() => {
-    console.log('[Freescale] boot useEffect — url:', window.location.search);
+    console.log('[Freescale] boot useEffect (Simulated)');
     const params = new URLSearchParams(window.location.search);
-
-    if (params.get('gmail_error')) {
-      showToast('❌ Erreur de connexion Gmail : ' + params.get('gmail_error'));
-      window.history.replaceState({}, '', window.location.pathname);
-      return;
-    }
-
-    const hasCallbackParam = params.get('gmail_connected') === 'true';
-    if (hasCallbackParam) {
+    if (params.get('gmail_connected') === 'true') {
       showToast('✅ Connexion réussie !');
       window.history.replaceState({}, '', window.location.pathname);
+      setGmailConnected(true);
+      loadGmailMessages();
     }
-
-    // Check backend status. If Gmail is connected, trigger the scan — ALWAYS.
-    (async () => {
-      if (!window.FreescaleGmail) {
-        console.warn('[Freescale] FreescaleGmail not available');
-        return;
-      }
-      const alive = await FreescaleGmail.isBackendAlive().catch(() => false);
-      console.log('[Freescale] backend alive:', alive);
-      if (!alive) {
-        if (hasCallbackParam) showToast('⚠️ Backend non lancé — cd backend && npm start');
-        return;
-      }
-      const status = await FreescaleGmail.getStatus().catch(() => ({ connected: false }));
-      console.log('[Freescale] boot gmail status:', status);
-      setGmailConnected(!!status.connected);
-
-      if (status.connected) {
-        // Trigger scan modal automatically
-        console.log('[Freescale] boot → triggering loadGmailMessages()');
-        loadGmailMessages();
-      }
-    })();
   }, []);
 
-  // Local heuristic (strict): only real human names on personal domains → client
-  function quickClassify(email, name, subject) {
-    const local  = (email || '').toLowerCase().split('@')[0] || '';
-    const domain = (email || '').toLowerCase().split('@')[1] || '';
-    const sub    = (subject || '').toLowerCase();
-    const nm     = (name || '').trim();
-
-    // 1. PROMO: noreply/notifications/newsletter/marketing/generic role accounts
-    const promoLocal = /^(no[-_.]?reply|noreply|notifications?|newsletter|mailer|bounce|postmaster|daemon|marketing|promo|do[-_.]?not[-_.]?reply|hello|contact|support|team|info|admin|billing|invoice|accounts?|help|service|alerts?|news|updates?|automated|robot|system|webmaster|office)($|[-_.@+0-9])/i;
-    if (promoLocal.test(local)) return 'promo';
-
-    const promoDomains = ['mailchimp.com','sendgrid.net','sendinblue.com','mailjet.com','mailgun.org','amazonses.com','facebookmail.com','notifications.google.com','em.','mail.'];
-    if (promoDomains.some(d => domain === d || domain.endsWith('.' + d) || domain.startsWith(d))) return 'promo';
-
-    if (/(newsletter|unsubscribe|désabonn|promo|-?\d{2,3}\s?%|flash sale|black friday|offer|deal|sale)/i.test(sub)) return 'promo';
-
-    // 2. OTHER: institutional/corporate domains — user is just a customer/user there, not a freelance client of them
-    const instDomains = [
-      'hetic.net','hetic.eu','hetic.fr','anthropic.com','openai.com',
-      'google.com','youtube.com','notion.so','figma.com','github.com','gitlab.com',
-      'apple.com','icloud.com','microsoft.com','outlook.live.com','office.com',
-      'linkedin.com','stripe.com','paypal.com','vercel.com','netlify.com',
-      'slack.com','discord.com','zoom.us','calendly.com','dropbox.com','adobe.com',
-      'atlassian.com','trello.com','asana.com','spotify.com','twitter.com','x.com',
-      'meta.com','facebook.com','instagram.com','amazon.com','aws.amazon.com',
-      'shopify.com','hubspot.com','intercom.io','zapier.com','airbnb.com','uber.com',
-      'doctolib.fr','ameli.fr','impots.gouv.fr','urssaf.fr','laposte.fr','sncf.com',
-      'numericable.fr','free.fr','orange.fr','sfr.fr','bouyguestelecom.fr'
-    ];
-    if (instDomains.some(d => domain === d || domain.endsWith('.' + d))) return 'other';
-
-    // 3. CLIENT only if:
-    //    - display name looks like prénom+nom
-    //    - AND local part looks like a real name (letters, max 1 separator, 3-25 chars)
-    const looksLikePerson = /^[A-ZÀ-Ö][a-zà-ÿ'-]+\s+[A-ZÀ-Ö][a-zà-ÿ'-]+/.test(nm);
-    const localLooksPersonal = /^[a-zà-ÿ]{3,}([._-][a-zà-ÿ]{2,})?[0-9]{0,3}$/i.test(local);
-    if (looksLikePerson && localLooksPersonal) return 'client';
-
-    // 4. Everything else: other (organizations, unclear senders, role accounts, etc.)
-    return 'other';
+  async function handleConnectGmail() {
+    setConnectorOpen(false);
+    showToast('🚀 Connexion à Gmail...');
+    setTimeout(() => {
+      setGmailConnected(true);
+      loadGmailMessages();
+    }, 1200);
   }
 
-
-  // ─── Gmail : fetch messages puis déclenche le scan IA ───
-  // Flow en deux phases :
-  //  1. loadGmailMessages()     → récupère les messages + ouvre le modal "scanning"
-  //                                + appelle /api/ai/classify-contacts (Claude)
-  //  2. finalizeContactImport() → fusionne dans clients uniquement ceux validés par l'utilisateur
   async function loadGmailMessages() {
-    console.log('[Freescale] loadGmailMessages() START');
-    if (!window.FreescaleGmail) {
-      showToast('⚠️ Connecteur Gmail absent');
-      return;
-    }
-    // Idempotency: if a scan is already running, don't start another one
-    if (scanPhase === 'scanning') {
-      console.log('[Freescale] scan already in progress, skipping');
-      return;
-    }
-
-    // Open modal IMMEDIATELY so the user sees the animation during the fetch
+    console.log('[Freescale] loadGmailMessages() SIMULATED');
     setScanPhase('scanning');
     setScanSenders([]);
     setScanResults([]);
 
-    const status = await FreescaleGmail.getStatus();
-    console.log('[Freescale] gmail status:', status);
-    setGmailConnected(status.connected);
-    if (!status.connected) {
-      showToast('⚠️ Gmail marqué déconnecté par le backend');
-      setScanPhase(null);
-      return;
-    }
+    await new Promise(r => setTimeout(r, 1000));
 
-    const result = await FreescaleGmail.getMessages(200);
-    console.log('[Freescale] getMessages result:', result?.error || `${result.messages?.length || 0} msgs`);
-    if (result.error) {
-      showToast('❌ Échec fetch Gmail : ' + result.error);
-      setScanPhase('empty');
-      return;
-    }
-
-    const rawMsgs = (result.messages || []).map((m, i) => FreescaleGmail.toFreescaleMessage(m, i));
-    pendingMessagesRef.current = rawMsgs;
-
-    // Dedupe by sender email + collect subject samples for the AI
-    const byEmail = {};
-    rawMsgs.forEach(m => {
-      const email = (m.fromEmail || '').toLowerCase();
-      if (!email) return;
-      if (!byEmail[email]) {
-        byEmail[email] = { email, name: m.from || '', subjects: [], count: 0 };
-      }
-      byEmail[email].count += 1;
-      if (byEmail[email].subjects.length < 3 && m.subject) {
-        byEmail[email].subjects.push(m.subject);
-      }
-    });
-    const senders = Object.values(byEmail);
-    console.log('[Freescale] unique senders:', senders.length);
-
-    if (senders.length === 0) {
-      setScanPhase('empty');
-      setScanSenders([]);
-      return;
-    }
-
-    // Update modal with senders for the live animation
-    setScanSenders(senders);
-    const scanStartedAt = Date.now();
-
-    // Call Claude to classify — real AI
-    console.log('[Freescale] calling AI classify for', senders.length, 'senders…');
-    const aiRes = await FreescaleGmail.classifyContacts(senders);
-    console.log('[Freescale] AI result:', aiRes);
-
-    // Minimum scan-animation duration so the count-up is visible but not annoying
-    const MIN_SCAN_MS = Math.min(5000, Math.max(2500, senders.length * 90));
-    const elapsed = Date.now() - scanStartedAt;
-    if (elapsed < MIN_SCAN_MS) {
-      await new Promise(r => setTimeout(r, MIN_SCAN_MS - elapsed));
-    }
-
-    let merged;
-    if (aiRes.error || !aiRes.results || aiRes.results.length === 0) {
-      // Fallback: use LOCAL heuristic so we always end up with a usable classification
-      console.warn('[Freescale] AI unavailable, using local heuristic:', aiRes.error);
-      merged = senders.map(s => ({
-        email: s.email, name: s.name,
-        category: quickClassify(s.email, s.name, (s.subjects || [])[0] || ''),
-        confidence: 0.6,
-        reason: aiRes.error ? 'IA indispo — heuristique locale' : 'heuristique locale'
-      }));
-    } else {
-      // Make sure every sender is represented (AI might have dropped some)
-      const byEmailRes = Object.fromEntries(aiRes.results.map(r => [r.email.toLowerCase(), r]));
-      merged = senders.map(s => byEmailRes[s.email.toLowerCase()] || ({
-        email: s.email, name: s.name,
-        category: quickClassify(s.email, s.name, (s.subjects || [])[0] || ''),
-        confidence: 0.5, reason: 'heuristique locale (AI a sauté)'
-      }));
-    }
-
-    // STRICT POST-FILTER: trust our local heuristic to DEMOTE — if quickClassify says
-    // not-client, force not-client, even if AI said client. AI can only keep/demote.
-    merged = merged.map(r => {
-      const local = quickClassify(r.email, r.name, '');
-      if (r.category === 'client' && local !== 'client') {
-        return { ...r, category: local, reason: (r.reason || '') + ' · démotion locale' };
-      }
-      return r;
-    });
-
-    // HARD CAP at 4 clients: if more, keep the 4 highest-confidence, demote rest to 'other'
-    const MAX_CLIENTS = 4;
-    const clientEntries = merged
-      .map((r, i) => ({ r, i }))
-      .filter(x => x.r.category === 'client')
-      .sort((a, b) => (b.r.confidence || 0) - (a.r.confidence || 0));
-    if (clientEntries.length > MAX_CLIENTS) {
-      const keepIdx = new Set(clientEntries.slice(0, MAX_CLIENTS).map(x => x.i));
-      merged = merged.map((r, i) => {
-        if (r.category === 'client' && !keepIdx.has(i)) {
-          return { ...r, category: 'other', reason: (r.reason || '') + ' · cap 4 clients' };
-        }
-        return r;
-      });
-    }
-
-    // DEMO RIG: Force 2 specific mock clients as requested
-    const demoNames = [
-      { name: 'Victor Croyst', email: 'victor@croyst.com' },
-      { name: 'Matilda', email: 'matilda@design.com' }
+    const mockSenders = [
+      { name: 'Victor Durand', email: 'victor@durand.com', subjects: ['Nouveau projet React'], count: 1 },
+      { name: 'Capucine Lefebvre', email: 'capucine@agency.fr', subjects: ['Devis site vitrine'], count: 2 },
+      { name: 'Thomas Martin', email: 'thomas.m@start.io', subjects: ['Update Roadmap'], count: 5 },
+      { name: 'Amazon', email: 'order-update@amazon.fr', subjects: ['Votre commande'], count: 1 },
+      { name: 'LinkedIn', email: 'notifications@linkedin.com', subjects: ['Nouveaux messages'], count: 10 },
+      { name: 'Matilda Rossi', email: 'matilda@design.it', subjects: ['Assets Figma'], count: 3 }
     ];
-    
-    // We do NOT demote real clients anymore, so real contacts (like Capucine) are preserved.
-    // merged = merged.map(r => r.category === 'client' ? { ...r, category: 'other' } : r);
+    setScanSenders(mockSenders);
 
-    demoNames.forEach(d => {
-      // Unshift them so they are at the top and classified as clients
-      merged.unshift({
-        email: d.email, name: d.name,
-        category: 'client', confidence: 0.99,
-        reason: 'Identifié comme opportunité prioritaire (démo)'
-      });
+    // AI Scan simulation
+    await new Promise(r => setTimeout(r, 4500));
 
-      let subject = '';
-      let body = '';
-      let mockTasks = [];
-
-      if (d.name.includes('Victor')) {
-        subject = 'Refonte de la plateforme Web';
-        body = 'Bonjour, l\'équipe a validé les maquettes ! Il faudrait juste intégrer les retours sur la page d\'accueil et lancer le développement du module de paiement.';
-        mockTasks = [
-          { id: 't_' + Date.now() + Math.random(), title: 'Intégrer retours maquettes', est: '3h', billable: true },
-          { id: 't_' + Date.now() + Math.random(), title: 'Développer module de paiement', est: '1.5j', billable: true }
-        ];
-      } else if (d.name.includes('Matilda')) {
-        subject = 'Identité visuelle et charte graphique';
-        body = 'Coucou, j\'ai regardé les moodboards que tu as envoyés. J\'adore la direction artistique. Pourrait-on se faire un point rapide demain matin pour trancher sur le logo ?';
-        mockTasks = [
-          { id: 't_' + Date.now() + Math.random(), title: 'Préparer la sélection finale de logos', est: '1h', billable: false },
-          { id: 't_' + Date.now() + Math.random(), title: 'Point rapide avec Matilda', est: '30 min', billable: true }
-        ];
-      }
-
-      pendingMessagesRef.current.push({
-        id: 'demo_' + d.email,
-        from: d.name,
-        fromEmail: d.email,
-        subject,
-        body,
-        time: 'Aujourd\'hui',
-        unread: true,
-        extractedTasks: mockTasks
-      });
+    const results = mockSenders.map(s => {
+       let cat = 'other';
+       if (['Victor','Capucine','Thomas','Matilda'].some(n => s.name.includes(n))) cat = 'client';
+       if (['Amazon','LinkedIn'].some(n => s.name.includes(n))) cat = 'promo';
+       return { ...s, category: cat, confidence: 0.95 };
     });
-
-    // Inject demo tasks for Capucine Spohn if she is found among real emails
-    pendingMessagesRef.current.forEach(m => {
-      if ((m.from || '').toLowerCase().includes('capucine') || (m.fromEmail || '').toLowerCase().includes('capucine')) {
-        m.extractedTasks = [
-          { id: 't_' + Date.now() + Math.random(), title: 'Préparer proposition commerciale', est: '2h', billable: true },
-          { id: 't_' + Date.now() + Math.random(), title: 'Planifier appel de cadrage', est: '30 min', billable: false }
-        ];
-      }
-    });
-
-    setScanResults(merged);
     
-    // Give time to see the "Done" state in ScanSorting (1.5s)
-    await new Promise(r => setTimeout(r, 1500));
+    setScanResults(results);
     setScanPhase('review');
   }
+  }
 
-  // Manual trigger: user clicks "Scanner Gmail"
-  // - If backend has valid tokens → run the scan directly
-  // - If not → redirect to Google OAuth
+  // Manual trigger
   async function handleRescanGmail() {
-    console.log('[Freescale] handleRescanGmail() — manual trigger');
-    if (!window.FreescaleGmail) return showToast('⚠️ Connecteur indisponible');
-    const alive = await FreescaleGmail.isBackendAlive();
-    if (!alive) return showToast('⚠️ Backend non lancé — cd backend && npm start');
-    const status = await FreescaleGmail.getStatus();
-    if (!status.configured) return showToast('⚠️ backend/.env incomplet (GOOGLE_CLIENT_ID…)');
-    if (!status.connected) {
-      showToast('🔐 Redirection vers Google…');
-      return FreescaleGmail.connect();
-    }
-    // Already connected → directly run the scan
     loadGmailMessages();
   }
 
-  // User cancelled the scan modal — nothing added
   function handleCancelScan() {
     setScanPhase(null);
     setScanResults([]);
