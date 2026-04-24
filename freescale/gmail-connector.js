@@ -1,6 +1,5 @@
 // Freescale — Gmail API connector (frontend helper)
-const BACKEND_URL = 'https://beige-camels-tease.loca.lt';
-const GOOGLE_REDIRECT_URI = 'https://beige-camels-tease.loca.lt/auth/google/callback';
+const BACKEND_URL = 'http://localhost:3001';
 
 window.FreescaleGmail = {
   // Check if Gmail is connected
