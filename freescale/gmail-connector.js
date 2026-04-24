@@ -1,188 +1,83 @@
-// Freescale — Gmail API connector (frontend helper)
+// Freescale — Gmail API connector (SIMULATED)
 const BACKEND_URL = 'http://localhost:3001';
 
 window.FreescaleGmail = {
-  // Check if Gmail is connected
   async getStatus() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/gmail/status`);
-      return await res.json();
-    } catch {
-      return { configured: false, connected: false };
-    }
+    return { configured: true, connected: true };
   },
 
-  // Get user profile
   async getProfile() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/gmail/profile`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
-    }
+    return { email: 'moi@freescale.io', name: 'Moi' };
   },
 
-  // Fetch emails from Gmail
   async getMessages(max = 20, query = 'in:inbox') {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/gmail/messages?max=${max}&q=${encodeURIComponent(query)}`);
-      if (!res.ok) {
-        if (res.status === 401) return { error: 'disconnected', messages: [] };
-        return { error: 'fetch_failed', messages: [] };
-      }
-      return await res.json();
-    } catch {
-      return { error: 'network', messages: [] };
-    }
+    return { messages: [], error: null };
   },
 
-  // Get full message body
   async getMessage(id) {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/gmail/messages/${id}`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch {
-      return null;
-    }
+    return null;
   },
 
-  // Get the complete conversation (sent + received) with one email
   async getConversation(email, max = 100) {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/gmail/conversation?email=${encodeURIComponent(email)}&max=${max}`);
-      if (!res.ok) return { messages: [], error: 'fetch_failed' };
-      return await res.json();
-    } catch {
-      return { messages: [], error: 'network' };
-    }
+    return { messages: [], error: null };
   },
 
-  // Build an attachment URL (served by backend)
   attachmentUrl(messageId, attachmentId, filename, mime) {
-    return `${BACKEND_URL}/api/gmail/messages/${messageId}/attachments/${attachmentId}?filename=${encodeURIComponent(filename)}&mime=${encodeURIComponent(mime || 'application/octet-stream')}`;
+    return '#';
   },
 
-  // Send (or reply to) an email. attachments: [{ filename, mimeType, dataBase64 }]
   async sendEmail({ to, subject, body, attachments = [], threadId, inReplyTo }) {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/gmail/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, subject, body, attachments, threadId, inReplyTo })
-      });
-      const data = await res.json();
-      if (!res.ok) return { error: data?.error || 'send_failed' };
-      return data;
-    } catch (err) {
-      return { error: err.message };
-    }
+    return { id: 'sim_sent_' + Date.now() };
   },
 
-  // AI : classify senders into client / promo / other
   async classifyContacts(senders) {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/ai/classify-contacts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senders })
-      });
-      const data = await res.json();
-      if (!res.ok) return { error: data?.error || 'classify_failed', results: [] };
-      return data;
-    } catch (err) {
-      return { error: err.message, results: [] };
-    }
+    // Simulated classification results
+    const results = senders.map(s => {
+       let cat = 'other';
+       if (['Victor','Capucine','Thomas','Matilda'].some(n => s.name.includes(n))) cat = 'client';
+       if (['Amazon','LinkedIn'].some(n => s.name.includes(n))) cat = 'promo';
+       return { email: s.email, name: s.name, category: cat, confidence: 0.95 };
+    });
+    return { results };
   },
 
-  // AI endpoints — call backend → Claude
   async ai(kind, { conversation, contactName, intent }) {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/ai/${kind}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation, contactName, intent })
-      });
-      const data = await res.json();
-      if (!res.ok) return { error: data?.error || 'ai_failed' };
-      return data;
-    } catch (err) {
-      return { error: err.message };
-    }
+    return { result: "Réponse IA simulée." };
   },
 
-  // Fetch real Google profile photos for all contacts
   async getContactPhotos() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/google/contact-photos`);
-      if (!res.ok) return {};
-      const data = await res.json();
-      return data.photos || {};
-    } catch {
-      return {};
-    }
+    return {};
   },
 
-  // Disconnect Gmail
   async disconnect() {
-    try {
-      await fetch(`${BACKEND_URL}/api/gmail/disconnect`, { method: 'POST' });
-      return true;
-    } catch {
-      return false;
-    }
+    return true;
   },
 
-  // Start OAuth flow (opens Google consent in current window)
   connect() {
-    window.location.href = `${BACKEND_URL}/auth/google`;
+    console.log('[Freescale] Simulated connect');
+    window.location.search = '?gmail_connected=true';
   },
 
-  // Check if backend is running
   async isBackendAlive() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/health`);
-      return res.ok;
-    } catch {
-      return false;
-    }
+    return true; // Always alive in simulation
   },
 
-  // Convert Gmail message to Freescale message format
   toFreescaleMessage(gmailMsg, index) {
-    const dateStr = gmailMsg.date;
-    let timeDisplay = '';
-    try {
-      const d = new Date(dateStr);
-      const now = new Date();
-      const diffMs = now - d;
-      const diffMin = Math.floor(diffMs / 60000);
-      const diffH = Math.floor(diffMs / 3600000);
-      const diffD = Math.floor(diffMs / 86400000);
-      if (diffMin < 60) timeDisplay = `il y a ${diffMin} min`;
-      else if (diffH < 24) timeDisplay = `il y a ${diffH}h`;
-      else if (diffD === 1) timeDisplay = 'hier';
-      else timeDisplay = `il y a ${diffD}j`;
-    } catch {
-      timeDisplay = dateStr;
-    }
-
     return {
       id: `gmail_${gmailMsg.id}`,
       gmailId: gmailMsg.id,
-      clientId: null,               // Will be matched by contact matching later
+      clientId: null,
       source: 'gmail',
       channel: gmailMsg.subject,
       from: gmailMsg.from,
       fromEmail: gmailMsg.fromEmail,
-      avatarUrl: gmailMsg.avatarUrl, // Gravatar URL from backend
+      avatarUrl: gmailMsg.avatarUrl,
       role: '',
-      time: timeDisplay,
+      time: 'À l\'instant',
       unread: gmailMsg.unread,
       body: gmailMsg.snippet,
       subject: gmailMsg.subject,
-      extractedTasks: []           // Placeholder for future AI extraction
+      extractedTasks: []
     };
   }
 };
