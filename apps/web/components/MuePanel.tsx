@@ -3,6 +3,7 @@
 import { useApp } from "@/lib/store";
 import { CONVERSATIONS } from "@/lib/data/conversations";
 import { TASKS, UPCOMING } from "@/lib/data/tasks";
+import type { CurrentUser } from "@/lib/auth";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { MueAvatar } from "@/components/MueAvatar";
@@ -15,10 +16,11 @@ function greeting() {
   return "Good evening";
 }
 
-export function MuePanel() {
+export function MuePanel({ user }: { user?: CurrentUser | null }) {
   const { view, activeConvId } = useApp();
   const conv = CONVERSATIONS.find((c) => c.id === activeConvId);
-  const firstName = conv?.name.split(/[ –-]/)[0]?.trim() ?? "";
+  const contactName = conv?.name.split(/[ –-]/)[0]?.trim() ?? "";
+  const userName = user?.firstName ?? "there";
 
   return (
     <aside className="copilot" aria-label="Mue AI copilot">
@@ -44,7 +46,7 @@ export function MuePanel() {
 
             {view === "inbox" && (
               <div className="yuka-inbox">
-                <h2>Hey, I&apos;m right here<br />with you and {firstName}.</h2>
+                <h2>Hey, I&apos;m right here<br />with you and {contactName}.</h2>
                 <p>I&apos;m listening to every word of your chat. Whenever you need me, I can summarize the thread, draft a kind reply, or turn ideas into tasks — just ask.</p>
               </div>
             )}
@@ -56,7 +58,7 @@ export function MuePanel() {
             )}
             {view === "calendar" && (
               <div className="yuka-cal">
-                <h2>{greeting()},<br />Alexandre 👋</h2>
+                <h2>{greeting()},<br />{userName} 👋</h2>
                 <p>You have 3 events scheduled today.</p>
               </div>
             )}

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
+import type { CurrentUser } from "@/lib/auth";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { ChannelPicker } from "@/components/ChannelPicker";
 
@@ -29,12 +30,14 @@ const DEFAULT_CHANNELS = [
   { id: "discord", label: "Discord", count: 1 },
 ];
 
-export function Sidebar() {
+export function Sidebar({ user }: { user: CurrentUser | null }) {
   const { view, setView, toggleSidebar } = useApp();
   const push = useToast((s) => s.push);
   const [extraChannels, setExtraChannels] = useState<Array<{ id: string; label: string }>>([]);
   const [pickerAnchor, setPickerAnchor] = useState<HTMLElement | null>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const addBtnRef = useRef<HTMLButtonElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   const connectedIds = new Set<string>([
     ...DEFAULT_CHANNELS.map((c) => c.id),
@@ -124,24 +127,58 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="account">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="account" ref={accountRef} style={{ position: "relative" }}>
         <span className="avatar">
-          <img src="https://i.pravatar.cc/120?img=68" alt="Alexandre" />
+          {user?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
+          ) : (
+            user?.name
+              .split(" ")
+              .map((p) => p[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase() ?? "?"
+          )}
         </span>
         <div className="account-info">
-          <div className="account-name">Alexandre</div>
-          <div className="account-role">Freelance Designer</div>
+          <div className="account-name">{user?.firstName ?? "Guest"}</div>
+          <div className="account-role">{user?.email ?? "Not signed in"}</div>
         </div>
         <button
           className="settings-btn"
           type="button"
-          aria-label="Settings"
-          data-tip="Settings"
-          onClick={() => push({ text: "Settings — coming soon ⚙" })}
+          aria-label="Account menu"
+          data-tip="Account"
+          onClick={() => setAccountMenuOpen((v) => !v)}
         >
           <Icon name="i-settings" />
         </button>
+
+        {accountMenuOpen && (
+          <div
+            className="ctx-menu"
+            style={{ position: "absolute", left: 8, bottom: 64, width: 220 }}
+            onMouseLeave={() => setAccountMenuOpen(false)}
+          >
+            <button
+              className="ctx-item"
+              type="button"
+              onClick={() => {
+                setAccountMenuOpen(false);
+                push({ text: "Settings — coming soon ⚙" });
+              }}
+            >
+              <Icon name="i-settings" /> Settings
+            </button>
+            <div className="ctx-divider" />
+            <form action="/auth/sign-out" method="post" style={{ margin: 0 }}>
+              <button className="ctx-item is-danger" type="submit" style={{ width: "100%" }}>
+                <Icon name="i-arrow-up" /> Sign out
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       {pickerAnchor && (

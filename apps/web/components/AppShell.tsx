@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useApp } from "@/lib/store";
 import { CONVERSATIONS } from "@/lib/data/conversations";
+import type { CurrentUser } from "@/lib/auth";
 import { Sprite } from "@/components/icons/Sprite";
 import { Sidebar } from "@/components/Sidebar";
 import { Inbox } from "@/components/Inbox";
@@ -15,7 +16,7 @@ import { Toaster } from "@/components/ui/Toaster";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 
-export function AppShell() {
+export function AppShell({ user }: { user: CurrentUser | null }) {
   const { view, sidebarCollapsed, setActiveConv, activeConvId, toggleSidebar } = useApp();
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -118,7 +119,7 @@ export function AppShell() {
       </a>
       <Sprite />
       <div className={appClasses}>
-        <Sidebar />
+        <Sidebar user={user} />
         <div className="workspace">
           <div className="conv-shell">
             <Inbox />
@@ -127,7 +128,7 @@ export function AppShell() {
           <TasksView />
           <CalendarView />
           <AIKnowledgeView />
-          <MuePanel />
+          <MuePanel user={user} />
         </div>
       </div>
 
