@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useApp } from "@/lib/store";
+import { useToast } from "@/lib/hooks/useToast";
 import { CONVERSATIONS, MESSAGES } from "@/lib/data/conversations";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
@@ -37,11 +38,15 @@ export function Thread() {
   const { activeConvId } = useApp();
   const conv = CONVERSATIONS.find((c) => c.id === activeConvId);
   const baseMessages = MESSAGES[activeConvId] ?? [];
+  const push = useToast((s) => s.push);
 
   const [sent, setSent] = useState<Record<string, Message[]>>({});
   const [input, setInput] = useState("");
   const messagesEl = useRef<HTMLElement>(null);
+  const sendBtnRef = useRef<HTMLButtonElement>(null);
+  const starBtnRef = useRef<HTMLButtonElement>(null);
   const [isStarred, setIsStarred] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const messages = useMemo(
     () => [...baseMessages, ...(sent[activeConvId] ?? [])],
@@ -49,6 +54,13 @@ export function Thread() {
   );
 
   const groups = useMemo(() => groupMessages(messages), [messages]);
+
+  // Skeleton flash on conv switch
+  useEffect(() => {
+    setIsLoading(true);
+    const t = setTimeout(() => setIsLoading(false), 180);
+    return () => clearTimeout(t);
+  }, [activeConvId]);
 
   // Auto-scroll to bottom on conv change or send
   useEffect(() => {
@@ -64,6 +76,9 @@ export function Thread() {
   const handleSend = () => {
     const text = input.trim();
     if (!text) return;
+    sendBtnRef.current?.classList.add("is-sending");
+    setTimeout(() => sendBtnRef.current?.classList.remove("is-sending"), 500);
+
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
     setSent((prev) => ({
       ...prev,
@@ -76,6 +91,30 @@ export function Thread() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleStarClick = () => {
+    const next = !isStarred;
+    setIsStarred(next);
+    if (next && starBtnRef.current) {
+      // Particle burst
+      const burst = document.createElement("span");
+      burst.className = "star-burst";
+      const angles = 8;
+      const colors = ["#F59E0B", "#EC4899", "#A78BFA", "#FCA5A5", "#FBBF24"];
+      for (let i = 0; i < angles; i++) {
+        const a = (Math.PI * 2 * i) / angles + (Math.random() - 0.5) * 0.4;
+        const r = 22 + Math.random() * 10;
+        const p = document.createElement("i");
+        p.style.background = colors[i % colors.length] ?? "#FBBF24";
+        p.style.setProperty("--bx", `${Math.cos(a) * r}px`);
+        p.style.setProperty("--by", `${Math.sin(a) * r}px`);
+        burst.appendChild(p);
+      }
+      starBtnRef.current.appendChild(burst);
+      setTimeout(() => burst.remove(), 600);
+      push({ text: `★ Starred ${conv.name}`, duration: 1800 });
     }
   };
 
@@ -95,28 +134,35 @@ export function Thread() {
           </div>
         </div>
         <div className="head-actions">
-          <button className="icon-btn" type="button" aria-label="Tag" data-tip="Add tag">
+          <button className="icon-btn" type="button" aria-label="Tag" data-tip="Add tag" onClick={() => push({ text: "Tags — coming soon" })}>
             <Icon name="i-tag" />
           </button>
           <button
+            ref={starBtnRef}
             className={`icon-btn ${isStarred ? "is-on" : ""}`}
             type="button"
             aria-label="Favorite"
             data-tip="Star"
-            onClick={() => setIsStarred((v) => !v)}
-            style={{ color: isStarred ? "#F59E0B" : undefined }}
+            onClick={handleStarClick}
+            style={{ color: isStarred ? "#F59E0B" : undefined, position: "relative" }}
           >
             <svg className="icon" style={{ fill: isStarred ? "#F59E0B" : "none" }}>
               <use href="#i-star" />
             </svg>
           </button>
-          <button className="icon-btn" type="button" aria-label="More" data-tip="More actions">
+          <button className="icon-btn" type="button" aria-label="More" data-tip="More actions" onClick={() => push({ text: "More actions — coming soon" })}>
             <Icon name="i-more" />
           </button>
         </div>
       </header>
 
-      <section className="messages" id="thread-content" ref={messagesEl} aria-live="polite">
+      <section
+        className={`messages ${isLoading ? "is-loading" : ""}`}
+        id="thread-content"
+        ref={messagesEl}
+        aria-live="polite"
+        tabIndex={-1}
+      >
         {groups.map((g, gi) => {
           const isOut = g.dir === "out";
           const lastTime = g.items[g.items.length - 1]?.time ?? "";
@@ -196,6 +242,7 @@ export function Thread() {
               <button className="icon-btn" type="button" aria-label="More" data-tip="More tools"><Icon name="i-more" /></button>
             </div>
             <button
+              ref={sendBtnRef}
               className="btn btn-primary btn-send"
               type="button"
               aria-label="Send"

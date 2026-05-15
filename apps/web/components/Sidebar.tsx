@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { useApp } from "@/lib/store";
+import { useToast } from "@/lib/hooks/useToast";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
+import { ChannelPicker } from "@/components/ChannelPicker";
 
 type NavItem = {
   id: "inbox" | "tasks" | "calendar" | "ai-knowledge";
@@ -18,16 +21,30 @@ const NAV_ITEMS: NavItem[] = [
   { id: "ai-knowledge", label: "AI Knowledge", icon: "i-spark", beta: true },
 ];
 
-const CHANNELS = [
+const DEFAULT_CHANNELS = [
   { id: "gmail", label: "Gmail", count: 12 },
   { id: "instagram", label: "Instagram", count: 6 },
   { id: "whatsapp", label: "WhatsApp", count: 2 },
   { id: "slack", label: "Slack", count: 3 },
   { id: "discord", label: "Discord", count: 1 },
-] as const;
+];
 
 export function Sidebar() {
   const { view, setView, toggleSidebar } = useApp();
+  const push = useToast((s) => s.push);
+  const [extraChannels, setExtraChannels] = useState<Array<{ id: string; label: string }>>([]);
+  const [pickerAnchor, setPickerAnchor] = useState<HTMLElement | null>(null);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
+
+  const connectedIds = new Set<string>([
+    ...DEFAULT_CHANNELS.map((c) => c.id),
+    ...extraChannels.map((c) => c.id),
+  ]);
+
+  const handleConnect = (id: string, name: string) => {
+    setExtraChannels((prev) => [...prev, { id, label: name }]);
+    push({ text: `✓ ${name} connected` });
+  };
 
   return (
     <aside className="sidebar">
@@ -38,6 +55,8 @@ export function Sidebar() {
           className="sidebar-toggle"
           type="button"
           aria-label="Toggle sidebar"
+          data-tip="Collapse sidebar"
+          data-tip-side="right"
           onClick={toggleSidebar}
         >
           <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
@@ -70,17 +89,37 @@ export function Sidebar() {
       <nav className="nav-section" id="channels-section">
         <div className="nav-section-head">
           <div className="nav-label">Channels</div>
-          <button className="add-channel-btn" type="button" aria-label="Add channel">
+          <button
+            ref={addBtnRef}
+            className="add-channel-btn"
+            type="button"
+            aria-label="Add channel"
+            data-tip="Add channel"
+            data-tip-side="right"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPickerAnchor(pickerAnchor ? null : addBtnRef.current);
+            }}
+          >
             <Icon name="i-plus" />
           </button>
         </div>
-        {CHANNELS.map((ch) => (
+        {DEFAULT_CHANNELS.map((ch) => (
           <button key={ch.id} type="button" className="nav-item">
             <span className="nav-left">
               <ChannelLogo channel={ch.id} />
               <span className="nav-text">{ch.label}</span>
             </span>
             <span className="count">{ch.count}</span>
+          </button>
+        ))}
+        {extraChannels.map((ch) => (
+          <button key={ch.id} type="button" className="nav-item">
+            <span className="nav-left">
+              <ChannelLogo channel={ch.id} />
+              <span className="nav-text">{ch.label}</span>
+            </span>
+            <span className="count">·</span>
           </button>
         ))}
       </nav>
@@ -94,10 +133,25 @@ export function Sidebar() {
           <div className="account-name">Alexandre</div>
           <div className="account-role">Freelance Designer</div>
         </div>
-        <button className="settings-btn" type="button" aria-label="Settings">
+        <button
+          className="settings-btn"
+          type="button"
+          aria-label="Settings"
+          data-tip="Settings"
+          onClick={() => push({ text: "Settings — coming soon ⚙" })}
+        >
           <Icon name="i-settings" />
         </button>
       </div>
+
+      {pickerAnchor && (
+        <ChannelPicker
+          anchor={pickerAnchor}
+          connectedIds={connectedIds}
+          onClose={() => setPickerAnchor(null)}
+          onConnect={handleConnect}
+        />
+      )}
     </aside>
   );
 }
