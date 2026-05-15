@@ -43,34 +43,36 @@ export default async function LandingPage() {
           <div className="land-hero-inner">
             <span className="land-eyebrow">
               <span className="land-eyebrow-dot" />
-              Private beta — May 2026
+              Beta privée · Mai 2026
             </span>
 
             <h1 className="land-h1">
-              The inbox that thinks<br />
-              <span className="land-h1-accent">with you.</span>
+              Une demande client par message.<br />
+              Une autre par email.<br />
+              Une tâche oubliée sur un post-it.<br />
+              <span className="land-h1-accent">Vous arrivez à suivre ?</span>
             </h1>
 
             <p className="land-sub">
-              Freescale unifies email, social DMs and team chat in one calm timeline.
-              Mue, your AI copilot, listens and turns the noise into focused replies.
+              Freescale réunit tous vos canaux dans une seule inbox calme.
+              Mue, votre copilote IA, écoute et transforme le bruit en actions ciblées.
             </p>
 
             <div className="land-hero-cta">
               <Link href="/signup" className="land-btn land-btn-primary land-btn-lg">
-                Start free
+                Démarrer gratuitement
               </Link>
               <Link href="/login" className="land-btn land-btn-ghost land-btn-lg">
-                Sign in
+                Se connecter
               </Link>
             </div>
 
             <div className="land-meta">
-              <span>No credit card</span>
+              <span>Sans carte bancaire</span>
               <span className="land-meta-sep" />
-              <span>5 channels included</span>
+              <span>5 canaux inclus</span>
               <span className="land-meta-sep" />
-              <span>2-minute setup</span>
+              <span>Prêt en 2 minutes</span>
             </div>
           </div>
 
