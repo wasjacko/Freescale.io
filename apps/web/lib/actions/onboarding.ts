@@ -40,19 +40,14 @@ export async function completeOnboarding(payload: OnboardingPayload) {
   const fullName =
     [payload.firstName, payload.lastName].filter(Boolean).join(" ").trim() || null;
 
-  const trialEnd = new Date();
-  trialEnd.setDate(trialEnd.getDate() + 30);
-
   await supabase
     .from("profiles")
     .update({
       full_name: fullName,
       ...(payload.avatarUrl ? { avatar_url: payload.avatarUrl } : {}),
-      trial_ends_at: trialEnd.toISOString(),
       onboarded_at: new Date().toISOString(),
     })
     .eq("id", user.id);
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/", "layout");
 }

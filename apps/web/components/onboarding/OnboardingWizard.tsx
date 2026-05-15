@@ -12,8 +12,8 @@ type Initial = {
   email: string;
 };
 
-type StepId = "profile" | "connect" | "trial" | "import";
-const STEPS: StepId[] = ["profile", "connect", "trial", "import"];
+type StepId = "profile" | "connect" | "import";
+const STEPS: StepId[] = ["profile", "connect", "import"];
 
 export function OnboardingWizard({ initial }: { initial: Initial }) {
   const [step, setStep] = useState<StepId>("profile");
@@ -52,6 +52,9 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
         importHistory,
         shared,
       });
+      // Hard navigation avoids any RSC cache mismatch between the onboarding
+      // tree (which renders AppShell behind the modal) and the real "/" tree.
+      window.location.href = "/";
     });
   };
 
@@ -176,33 +179,6 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
             <button className="onb-btn" type="button" onClick={goBack}>Back</button>
             <button className="onb-btn onb-btn-primary" type="button" onClick={goNext}>
               Next
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === "trial" && (
-        <div className="onb-body">
-          <h1 className="onb-title">Enjoy a 30-day trial of Freescale Pro</h1>
-          <p className="onb-sub">
-            Mue&apos;s full intelligence, multi-channel sync, AI Knowledge.
-            Continue free or upgrade when the trial ends.
-          </p>
-
-          <div className="onb-info">
-            <span className="onb-info-icon"><Icon name="i-clock" /></span>
-            <span>
-              During the trial, history is capped at <strong>15 days</strong> and the workspace
-              supports <strong>3 teammates</strong>.
-            </span>
-          </div>
-
-          <div className="onb-actions">
-            <button className="onb-btn onb-btn-quiet" type="button" onClick={goBack}>
-              Back
-            </button>
-            <button className="onb-btn onb-btn-primary" type="button" onClick={goNext}>
-              Start free trial
             </button>
           </div>
         </div>
