@@ -47,10 +47,9 @@ export default async function LandingPage() {
             </span>
 
             <h1 className="land-h1">
-              Une demande client par message.<br />
-              Une autre par email.<br />
-              Une tâche oubliée sur un post-it.<br />
-              <span className="land-h1-accent">Vous arrivez à suivre ?</span>
+              Une demande par message,<br />
+              une autre par mail,<br />
+              <span className="land-h1-accent">vous arrivez à suivre ?</span>
             </h1>
 
             <p className="land-sub">
