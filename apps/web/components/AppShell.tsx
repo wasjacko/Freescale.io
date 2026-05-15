@@ -6,6 +6,9 @@ import { Sidebar } from "@/components/Sidebar";
 import { Inbox } from "@/components/Inbox";
 import { Thread } from "@/components/Thread";
 import { MuePanel } from "@/components/MuePanel";
+import { TasksView } from "@/components/TasksView";
+import { CalendarView } from "@/components/CalendarView";
+import { AIKnowledgeView } from "@/components/AIKnowledgeView";
 
 export function AppShell() {
   const { view, sidebarCollapsed } = useApp();
@@ -28,6 +31,9 @@ export function AppShell() {
             <Inbox />
             <Thread />
           </div>
+          <TasksView />
+          <CalendarView />
+          <AIKnowledgeView />
           <MuePanel />
         </div>
       </div>

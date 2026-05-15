@@ -17,7 +17,9 @@ export const EVENTS: CalEvent[] = [
   { id: "e11", title: "Schedule content call",    day: 5, startMinutes: 360, durationMinutes: 30, color: "blue",   channel: "instagram" },
 ];
 
-export const DAY_LABELS = [
+type DayLabel = { abbr: string; num: number; isToday?: boolean };
+
+export const DAY_LABELS: DayLabel[] = [
   { abbr: "Sun", num: 18 },
   { abbr: "Mon", num: 19 },
   { abbr: "Tue", num: 20, isToday: true },
@@ -25,6 +27,6 @@ export const DAY_LABELS = [
   { abbr: "Thu", num: 22 },
   { abbr: "Fri", num: 23 },
   { abbr: "Sat", num: 24 },
-] as const;
+];
 
 export const HOURS = ["8 AM", "9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM"];
