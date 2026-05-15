@@ -1,0 +1,104 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
+export type ProfileUpdate = {
+  fullName: string;
+  timezone: string;
+  locale: string;
+};
+
+export async function savePersonalProfile(input: ProfileUpdate) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
+
+  await supabase
+    .from("profiles")
+    .update({
+      full_name: input.fullName.trim() || null,
+      timezone: input.timezone || "Europe/Paris",
+      locale: input.locale || "fr",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id);
+
+  revalidatePath("/app", "layout");
+}
+
+/**
+ * Upload an avatar to Supabase Storage under the user's own folder, then
+ * persist the public URL on their profile. The form sends raw bytes via
+ * FormData; we infer the extension from the content-type.
+ */
+export async function uploadAvatar(form: FormData): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
+
+  const file = form.get("file");
+  if (!(file instanceof File) || file.size === 0) return null;
+  if (file.size > 2 * 1024 * 1024) {
+    throw new Error("Avatar trop lourd (max 2 Mo).");
+  }
+
+  const ext = (() => {
+    const t = file.type;
+    if (t === "image/png") return "png";
+    if (t === "image/jpeg") return "jpg";
+    if (t === "image/webp") return "webp";
+    if (t === "image/gif") return "gif";
+    throw new Error("Format non supporté (PNG, JPG, WEBP, GIF uniquement).");
+  })();
+
+  const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, {
+      contentType: file.type,
+      cacheControl: "3600",
+      upsert: true,
+    });
+  if (uploadError) throw uploadError;
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(path);
+
+  await supabase
+    .from("profiles")
+    .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  revalidatePath("/app", "layout");
+  return publicUrl;
+}
+
+export async function removeAvatar() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
+
+  // Best-effort: list & delete the user's folder; ignore failures.
+  const { data: list } = await supabase.storage.from("avatars").list(user.id);
+  if (list && list.length) {
+    await supabase.storage
+      .from("avatars")
+      .remove(list.map((f) => `${user.id}/${f.name}`));
+  }
+
+  await supabase
+    .from("profiles")
+    .update({ avatar_url: null, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+
+  revalidatePath("/app", "layout");
+}

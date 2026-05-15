@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
 import type { CurrentUser } from "@/lib/auth";
@@ -161,16 +162,13 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             style={{ position: "absolute", left: 8, bottom: 64, width: 220 }}
             onMouseLeave={() => setAccountMenuOpen(false)}
           >
-            <button
+            <Link
+              href="/app/settings/profile"
               className="ctx-item"
-              type="button"
-              onClick={() => {
-                setAccountMenuOpen(false);
-                push({ text: "Settings — coming soon ⚙" });
-              }}
+              onClick={() => setAccountMenuOpen(false)}
             >
-              <Icon name="i-settings" /> Settings
-            </button>
+              <Icon name="i-settings" /> Paramètres
+            </Link>
             <div className="ctx-divider" />
             <form action="/auth/sign-out" method="post" style={{ margin: 0 }}>
               <button className="ctx-item is-danger" type="submit" style={{ width: "100%" }}>
