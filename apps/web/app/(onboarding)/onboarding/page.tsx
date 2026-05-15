@@ -1,9 +1,5 @@
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
-import { DataProvider } from "@/lib/contexts/DataContext";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
-import { getInboxData } from "@/lib/data/queries";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 
 export default async function OnboardingPage() {
@@ -15,30 +11,24 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, avatar_url, onboarded_at, email")
+    .select("full_name, avatar_url, email")
     .eq("id", user.id)
     .maybeSingle();
-  if (profile?.onboarded_at) redirect("/app");
 
+  // Note: we intentionally do NOT short-circuit when onboarded_at is set.
+  // During dev we want to walk through this flow even on an existing account.
   const fullName = (profile?.full_name as string) ?? "";
   const [firstName = "", ...rest] = fullName.split(/\s+/);
   const lastName = rest.join(" ");
 
-  const [authUser, data] = await Promise.all([getCurrentUser(), getInboxData()]);
-
   return (
-    <>
-      <DataProvider initial={data}>
-        <AppShell user={authUser} initialActiveConvId={data.conversations[0]?.id ?? ""} />
-      </DataProvider>
-      <OnboardingWizard
-        initial={{
-          firstName,
-          lastName,
-          avatarUrl: (profile?.avatar_url as string | null) ?? null,
-          email: (profile?.email as string) ?? user.email ?? "",
-        }}
-      />
-    </>
+    <OnboardingWizard
+      initial={{
+        firstName,
+        lastName,
+        avatarUrl: (profile?.avatar_url as string | null) ?? null,
+        email: (profile?.email as string) ?? user.email ?? "",
+      }}
+    />
   );
 }

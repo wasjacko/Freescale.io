@@ -1,3 +1,10 @@
+import { Sprite } from "@/components/icons/Sprite";
+
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <div className="onb-page">
+      <Sprite />
+      {children}
+    </div>
+  );
 }

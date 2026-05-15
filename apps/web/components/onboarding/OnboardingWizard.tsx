@@ -64,31 +64,27 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
     "?";
 
   return (
-    <div className="onb-overlay" role="dialog" aria-modal="true" aria-label="Onboarding">
-      <div className="onb-card">
-      <div className="onb-card-head">
+    <div className="onb-stage">
+      <header className="onb-stage-head">
         <div className="onb-mue">
           <MueAvatar />
         </div>
-        <div className="onb-progress" aria-label={`Step ${idx + 1} of ${STEPS.length}`}>
-          {STEPS.map((s, i) => (
-            <span key={s} className={`onb-dot ${i <= idx ? "is-on" : ""}`} />
-          ))}
-        </div>
-        <div className="onb-step-tag">Step {idx + 1} of {STEPS.length}</div>
-      </div>
+        <span className="onb-step-tag">Étape {idx + 1} sur {STEPS.length}</span>
+      </header>
+
+      <main className="onb-stage-main">
 
       {step === "profile" && (
         <div className="onb-body">
-          <h1 className="onb-title">Get started with your profile</h1>
+          <h1 className="onb-title">Commençons par vous.</h1>
           <p className="onb-sub">
-            Create the face your team and contacts will see across Freescale.
+            Le visage que verront votre équipe et vos contacts dans Freescale.
           </p>
 
           <div className="onb-form">
             <div className="onb-row">
               <label className="onb-field">
-                <span>First name</span>
+                <span>Prénom</span>
                 <input
                   type="text"
                   value={firstName}
@@ -97,7 +93,7 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
                 />
               </label>
               <label className="onb-field">
-                <span>Last name</span>
+                <span>Nom</span>
                 <input
                   type="text"
                   value={lastName}
@@ -118,7 +114,7 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
               </div>
               <div className="onb-avatar-meta">
                 <div className="onb-avatar-title">Avatar</div>
-                <div className="onb-avatar-help">Synced from your Google account.</div>
+                <div className="onb-avatar-help">Synchronisé depuis votre compte Google.</div>
               </div>
             </div>
           </div>
@@ -130,7 +126,7 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
               disabled={!firstName.trim() || pending}
               onClick={handleNextFromProfile}
             >
-              Next
+              Continuer
             </button>
           </div>
         </div>
@@ -138,8 +134,8 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
 
       {step === "connect" && (
         <div className="onb-body">
-          <h1 className="onb-title">Connect your first channel</h1>
-          <p className="onb-sub">Which channel would you like to plug in first?</p>
+          <h1 className="onb-title">Connectez votre premier canal.</h1>
+          <p className="onb-sub">Par quel canal voulez-vous commencer ?</p>
 
           <div className="onb-options">
             <ChannelOption
@@ -176,9 +172,9 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
           </div>
 
           <div className="onb-actions">
-            <button className="onb-btn" type="button" onClick={goBack}>Back</button>
+            <button className="onb-btn" type="button" onClick={goBack}>Retour</button>
             <button className="onb-btn onb-btn-primary" type="button" onClick={goNext}>
-              Next
+              Continuer
             </button>
           </div>
         </div>
@@ -186,58 +182,66 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
 
       {step === "import" && (
         <div className="onb-body">
-          <h1 className="onb-title">Configure import options</h1>
-          <p className="onb-sub">Tune how data flows in.</p>
+          <h1 className="onb-title">Vos préférences d&apos;import.</h1>
+          <p className="onb-sub">Quelques réglages pour démarrer du bon pied.</p>
 
           <div className="onb-form">
             <label className="onb-field">
-              <span>Email import history</span>
+              <span>Historique à importer</span>
               <select
                 value={importHistory}
                 onChange={(e) => setImportHistory(e.target.value)}
               >
-                <option value="15d">15 days</option>
-                <option value="1m">1 month</option>
-                <option value="6m">6 months</option>
-                <option value="1y">1 year</option>
-                <option value="all">All time</option>
+                <option value="15d">15 jours</option>
+                <option value="1m">1 mois</option>
+                <option value="6m">6 mois</option>
+                <option value="1y">1 an</option>
+                <option value="all">Tout l&apos;historique</option>
               </select>
             </label>
             <p className="onb-helper">
-              Actual import is capped at 15 days during the trial. Upgrade to lift the limit.
+              Pendant la beta, l&apos;import réel est limité à 15 jours.
             </p>
 
-            <div className="onb-section-label">Should messages be shared?</div>
+            <div className="onb-section-label">Workspace partagé ou personnel ?</div>
             <RadioCard
               checked={shared === true}
               onSelect={() => setShared(true)}
               icon="i-user"
-              title="Yes, share this account"
-              desc="Visible to teammates you invite to this workspace."
+              title="Workspace partagé"
+              desc="Visible par les coéquipiers que vous invitez."
             />
             <RadioCard
               checked={shared === false}
               onSelect={() => setShared(false)}
               icon="i-lock"
-              title="No, it's a personal account"
-              desc="Private unless you explicitly share a thread."
+              title="Compte personnel"
+              desc="Privé sauf si vous partagez explicitement un fil."
             />
           </div>
 
           <div className="onb-actions">
-            <button className="onb-btn" type="button" onClick={goBack}>Back</button>
+            <button className="onb-btn" type="button" onClick={goBack}>Retour</button>
             <button
               className="onb-btn onb-btn-primary"
               type="button"
               onClick={handleFinish}
               disabled={pending}
             >
-              {pending ? "Finishing…" : "Enter Freescale"}
+              {pending ? "Finalisation…" : "Entrer dans Freescale"}
             </button>
           </div>
         </div>
       )}
-      </div>
+      </main>
+
+      <footer className="onb-stage-foot">
+        <div className="onb-progress" aria-label={`Étape ${idx + 1} sur ${STEPS.length}`}>
+          {STEPS.map((s, i) => (
+            <span key={s} className={`onb-dot ${i <= idx ? "is-on" : ""}`} />
+          ))}
+        </div>
+      </footer>
     </div>
   );
 }
