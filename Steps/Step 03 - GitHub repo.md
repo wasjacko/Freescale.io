@@ -46,22 +46,56 @@ tags:
 
 ## 🔧 CI workflow
 
+> [!warning] À ajouter manuellement par toi
+> Le push automatique a été refusé : `refusing to allow an OAuth App to create or update workflow` — l'OAuth Claude n'a pas le scope `workflow` (sécurité GitHub).
+>
+> Le fichier est sauvegardé localement dans `.ci-future/ci.yml` (gitignored).
+
+**Comment l'ajouter sur GitHub** :
+1. Aller sur https://github.com/wasjacko/Freescale.io
+2. Click **Add file** → **Create new file**
+3. Nom du fichier : `.github/workflows/ci.yml`
+4. Coller le contenu ci-dessous :
+
 ```yaml
-# .github/workflows/ci.yml
 name: CI
-on: [pull_request, push]
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
+    name: Lint · Typecheck · Test
     runs-on: ubuntu-latest
     steps:
-      - checkout
-      - setup pnpm 9 + Node 20
-      - pnpm install --frozen-lockfile
-      - pnpm lint / typecheck / test
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        continue-on-error: true
+      - run: pnpm lint
+        continue-on-error: true
+      - run: pnpm typecheck
+        continue-on-error: true
+      - run: pnpm test
+        continue-on-error: true
 ```
 
+5. Commit directement sur `main` (avec message `ci: add GitHub Actions workflow`)
+
 > [!info] Mode soft pour le démarrage
-> Les jobs sont en `continue-on-error: true` tant qu'il n'y a pas de code à vérifier — sinon chaque PR serait rouge alors qu'il n'y a rien à linter. À retirer dès qu'on aura un lockfile + premier code TS.
+> Les jobs sont en `continue-on-error: true` tant qu'il n'y a pas de code à vérifier. À retirer dès qu'on aura un lockfile + premier code TS.
 
 ## ➡️ Prochaine étape
 
