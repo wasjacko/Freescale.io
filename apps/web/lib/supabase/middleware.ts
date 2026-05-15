@@ -50,22 +50,27 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
-    pathname === "/login" ||
-    pathname === "/signup" ||
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
     pathname.startsWith("/auth/");
-  const isPublic = pathname === "/" || isAuthRoute || pathname.startsWith("/preview/");
+  const isPublic =
+    pathname === "/" ||
+    isAuthRoute ||
+    pathname.startsWith("/preview/");
 
-  // Authed users on auth/landing routes → dashboard
-  if (user && isAuthRoute && pathname !== "/auth/callback" && pathname !== "/auth/sign-out") {
+  // Authed users on the sign-in page → straight to /app. We deliberately let
+  // them stay on /sign-up so they can re-run the wizard during dev, and the
+  // wizard itself short-circuits to /app once it has a session.
+  if (user && pathname === "/sign-in") {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     return NextResponse.redirect(url);
   }
 
-  // Anon users on protected routes → login
+  // Anon users on protected routes → /sign-in
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/sign-in";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }

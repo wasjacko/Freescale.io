@@ -16,7 +16,7 @@ export default async function HomePage() {
       .select("onboarded_at")
       .eq("id", user.id)
       .maybeSingle();
-    if (!profile?.onboarded_at) redirect("/onboarding");
+    if (!profile?.onboarded_at) redirect("/sign-up");
   }
 
   const [authUser, data] = await Promise.all([getCurrentUser(), getInboxData()]);

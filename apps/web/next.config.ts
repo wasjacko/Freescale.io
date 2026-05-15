@@ -5,6 +5,13 @@ const config: NextConfig = {
   experimental: {
     typedRoutes: true,
   },
+  async redirects() {
+    return [
+      { source: "/login", destination: "/sign-in", permanent: true },
+      { source: "/signup", destination: "/sign-up", permanent: true },
+      { source: "/onboarding", destination: "/sign-up", permanent: true },
+    ];
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "i.pravatar.cc" },
