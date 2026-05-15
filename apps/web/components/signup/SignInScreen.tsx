@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MueAvatar } from "@/components/MueAvatar";
-import { OtpInput } from "@/components/signup/OtpInput";
 
 export function SignInScreen() {
   const router = useRouter();
@@ -14,45 +13,18 @@ export function SignInScreen() {
   const next = searchParams.get("next") ?? "/app";
 
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [phase, setPhase] = useState<"email" | "code">("email");
-  const [loading, setLoading] = useState<"send" | "verify" | "google" | null>(null);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState<"password" | "google" | null>(null);
   const [msg, setMsg] = useState<{ kind: "error" | "info"; text: string } | null>(null);
 
-  const sendCode = async (e: React.FormEvent) => {
+  const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsg(null);
-    setLoading("send");
+    setLoading("password");
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        },
-      });
-      if (error) throw error;
-      setPhase("code");
-      setMsg({ kind: "info", text: `Code envoyé à ${email.trim()}.` });
-    } catch (err) {
-      setMsg({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Envoi du code impossible.",
-      });
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const verifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMsg(null);
-    setLoading("verify");
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: code.trim(),
-        type: "email",
+        password,
       });
       if (error) throw error;
       router.replace(next as never);
@@ -60,7 +32,7 @@ export function SignInScreen() {
     } catch (err) {
       setMsg({
         kind: "error",
-        text: err instanceof Error ? err.message : "Code invalide ou expiré.",
+        text: err instanceof Error ? err.message : "Connexion impossible.",
       });
       setLoading(null);
     }
@@ -97,111 +69,72 @@ export function SignInScreen() {
 
       <main className="onb-stage-main">
         <div className="onb-body">
-          {phase === "email" ? (
-            <>
-              <h1 className="onb-title">Bon retour.</h1>
-              <p className="onb-sub">Recevez un code pour vous connecter à votre inbox.</p>
+          <h1 className="onb-title">Bon retour.</h1>
+          <p className="onb-sub">Accédez à votre inbox unifiée.</p>
 
-              <div className="onb-auth-providers">
-                <button
-                  type="button"
-                  className="onb-provider"
-                  disabled={loading !== null}
-                  onClick={handleGoogle}
-                >
-                  <GoogleIcon />
-                  {loading === "google" ? "Redirection…" : "Continuer avec Google"}
-                </button>
-                <button type="button" className="onb-provider" disabled>
-                  <AppleIcon />
-                  Continuer avec Apple
-                  <span className="onb-provider-tag">Bientôt</span>
-                </button>
+          <div className="onb-auth-providers">
+            <button
+              type="button"
+              className="onb-provider"
+              disabled={loading !== null}
+              onClick={handleGoogle}
+            >
+              <GoogleIcon />
+              {loading === "google" ? "Redirection…" : "Continuer avec Google"}
+            </button>
+            <button type="button" className="onb-provider" disabled>
+              <AppleIcon />
+              Continuer avec Apple
+              <span className="onb-provider-tag">Bientôt</span>
+            </button>
+          </div>
+
+          <div className="onb-divider"><span>ou</span></div>
+
+          <form className="onb-form" onSubmit={handlePassword}>
+            <label className="onb-field">
+              <span>Email</span>
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="vous@example.com"
+              />
+            </label>
+            <label className="onb-field">
+              <div className="onb-field-label-row">
+                <span>Mot de passe</span>
+                <Link href="/forgot-password" className="onb-link onb-link-tiny">
+                  Oublié ?
+                </Link>
               </div>
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Votre mot de passe"
+              />
+            </label>
+            <button
+              type="submit"
+              className="onb-btn onb-btn-primary onb-btn-block"
+              disabled={loading !== null}
+            >
+              {loading === "password" ? "Connexion…" : "Se connecter"}
+            </button>
+          </form>
 
-              <div className="onb-divider"><span>ou</span></div>
+          {msg && <div className={`auth-msg auth-msg-${msg.kind}`}>{msg.text}</div>}
 
-              <form className="onb-form" onSubmit={sendCode}>
-                <label className="onb-field">
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    required
-                    autoFocus
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="vous@example.com"
-                  />
-                </label>
-                <button
-                  type="submit"
-                  className="onb-btn onb-btn-primary onb-btn-block"
-                  disabled={loading !== null || !email.includes("@")}
-                >
-                  {loading === "send" ? "Envoi…" : "Recevoir un code"}
-                </button>
-              </form>
-
-              {msg && <div className={`auth-msg auth-msg-${msg.kind}`}>{msg.text}</div>}
-
-              <p className="onb-fine onb-fine-center">
-                Pas encore de compte ?{" "}
-                <Link href="/sign-up" className="onb-link">Démarrer</Link>
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="onb-title">Entrez votre code.</h1>
-              <p className="onb-sub">
-                On vient d&apos;envoyer un code à 6 chiffres à <strong>{email}</strong>. Il expire dans 10 minutes.
-              </p>
-
-              <form className="onb-form onb-otp-form" onSubmit={verifyCode}>
-                <OtpInput
-                  value={code}
-                  onChange={setCode}
-                  onComplete={() => {
-                    requestAnimationFrame(() => {
-                      const form = document.querySelector<HTMLFormElement>(".onb-otp-form");
-                      form?.requestSubmit();
-                    });
-                  }}
-                />
-                <button
-                  type="submit"
-                  className="onb-btn onb-btn-primary onb-btn-block"
-                  disabled={loading !== null || code.length !== 6}
-                >
-                  {loading === "verify" ? "Vérification…" : "Vérifier le code"}
-                </button>
-              </form>
-
-              {msg && <div className={`auth-msg auth-msg-${msg.kind}`}>{msg.text}</div>}
-
-              <div className="onb-actions onb-actions-between">
-                <button
-                  className="onb-btn onb-btn-quiet"
-                  type="button"
-                  onClick={() => {
-                    setPhase("email");
-                    setCode("");
-                    setMsg(null);
-                  }}
-                >
-                  Changer d&apos;email
-                </button>
-                <button
-                  className="onb-btn onb-btn-quiet"
-                  type="button"
-                  onClick={(e) => sendCode(e as never)}
-                  disabled={loading !== null}
-                >
-                  Renvoyer le code
-                </button>
-              </div>
-            </>
-          )}
+          <p className="onb-fine onb-fine-center">
+            Pas encore de compte ?{" "}
+            <Link href="/sign-up" className="onb-link">Démarrer</Link>
+          </p>
         </div>
       </main>
 

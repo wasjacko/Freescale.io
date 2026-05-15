@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { savePersonalProfile, uploadAvatar, removeAvatar } from "@/lib/actions/profile";
+import { createClient } from "@/lib/supabase/client";
 
 type Initial = {
   fullName: string;
@@ -57,6 +58,7 @@ function initialsOf(name: string, fallback: string) {
 }
 
 export function ProfileForm({ initial }: { initial: Initial }) {
+  const supabase = createClient();
   const [fullName, setFullName] = useState(initial.fullName);
   const [timezone, setTimezone] = useState(initial.timezone);
   const [locale, setLocale] = useState(initial.locale);
@@ -65,6 +67,53 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Password change state
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdToast, setPwdToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdToast(null);
+    if (newPwd.length < 8) {
+      setPwdToast({ kind: "err", text: "Au moins 8 caractères." });
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      setPwdToast({ kind: "err", text: "Les deux mots de passe ne correspondent pas." });
+      return;
+    }
+    setPwdLoading(true);
+    try {
+      // Re-auth with the current password first (Supabase requires it before
+      // updating the password for password-based accounts).
+      const { error: reauthErr } = await supabase.auth.signInWithPassword({
+        email: initial.email,
+        password: currentPwd,
+      });
+      if (reauthErr) {
+        setPwdToast({ kind: "err", text: "Mot de passe actuel incorrect." });
+        setPwdLoading(false);
+        return;
+      }
+      const { error } = await supabase.auth.updateUser({ password: newPwd });
+      if (error) throw error;
+      setPwdToast({ kind: "ok", text: "Mot de passe mis à jour." });
+      setCurrentPwd("");
+      setNewPwd("");
+      setConfirmPwd("");
+    } catch (err) {
+      setPwdToast({
+        kind: "err",
+        text: err instanceof Error ? err.message : "Mise à jour impossible.",
+      });
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
   const dirty =
     fullName !== initial.fullName ||
@@ -267,6 +316,85 @@ export function ProfileForm({ initial }: { initial: Initial }) {
           {pending ? "Enregistrement…" : "Enregistrer"}
         </button>
       </div>
+
+      <header className="settings-head">
+        <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em" }}>
+          Mot de passe
+        </h2>
+        <p>Changez votre mot de passe. Vous resterez connecté ici, mais déconnecté sur les autres appareils.</p>
+      </header>
+
+      <form className="settings-card" onSubmit={handlePasswordChange}>
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Mot de passe actuel</h3>
+          </div>
+          <div className="settings-row-control">
+            <input
+              type="password"
+              className="settings-input"
+              autoComplete="current-password"
+              value={currentPwd}
+              onChange={(e) => setCurrentPwd(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+        </div>
+        <div className="settings-divider" />
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Nouveau mot de passe</h3>
+            <p>Au moins 8 caractères.</p>
+          </div>
+          <div className="settings-row-control">
+            <input
+              type="password"
+              className="settings-input"
+              autoComplete="new-password"
+              minLength={8}
+              value={newPwd}
+              onChange={(e) => setNewPwd(e.target.value)}
+              placeholder="Au moins 8 caractères"
+              required
+            />
+          </div>
+        </div>
+        <div className="settings-divider" />
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Confirmer</h3>
+          </div>
+          <div className="settings-row-control">
+            <input
+              type="password"
+              className="settings-input"
+              autoComplete="new-password"
+              value={confirmPwd}
+              onChange={(e) => setConfirmPwd(e.target.value)}
+              placeholder="Retapez le nouveau mot de passe"
+              required
+            />
+          </div>
+        </div>
+        <div className="settings-row" style={{ paddingTop: 0 }}>
+          <div />
+          <div className="settings-row-control" style={{ justifyContent: "flex-end", width: "100%" }}>
+            {pwdToast && (
+              <div className={`settings-toast ${pwdToast.kind === "ok" ? "is-ok" : "is-err"}`}>
+                {pwdToast.text}
+              </div>
+            )}
+            <button
+              type="submit"
+              className="settings-btn settings-btn-primary"
+              disabled={pwdLoading || !currentPwd || !newPwd || !confirmPwd}
+            >
+              {pwdLoading ? "Mise à jour…" : "Mettre à jour le mot de passe"}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }

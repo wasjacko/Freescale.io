@@ -65,6 +65,7 @@ export function SignupWizard() {
   const [step, setStep] = useState<StepId>("role");
   const [hydrated, setHydrated] = useState(false);
   const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
   const [authCode, setAuthCode] = useState("");
   const [authPhase, setAuthPhase] = useState<"email" | "code">("email");
   const [authLoading, setAuthLoading] = useState<"send" | "verify" | "google" | null>(null);
@@ -157,14 +158,19 @@ export function SignupWizard() {
     setAuthMsg(null);
     setAuthLoading("send");
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signUp({
         email: authEmail.trim(),
+        password: authPassword,
         options: {
-          shouldCreateUser: true,
           emailRedirectTo: `${window.location.origin}/auth/callback?next=/sign-up`,
         },
       });
       if (error) throw error;
+      // If email confirmation is disabled, we get a session right away.
+      if (data.session) {
+        await finishWithSession();
+        return;
+      }
       setAuthPhase("code");
       setAuthMsg({
         kind: "info",
@@ -173,7 +179,7 @@ export function SignupWizard() {
     } catch (err) {
       setAuthMsg({
         kind: "error",
-        text: err instanceof Error ? err.message : "Envoi du code impossible.",
+        text: err instanceof Error ? err.message : "Inscription impossible.",
       });
     } finally {
       setAuthLoading(null);
@@ -188,7 +194,7 @@ export function SignupWizard() {
       const { error } = await supabase.auth.verifyOtp({
         email: authEmail.trim(),
         token: authCode.trim(),
-        type: "email",
+        type: "signup",
       });
       if (error) throw error;
       await finishWithSession();
@@ -197,6 +203,26 @@ export function SignupWizard() {
         kind: "error",
         text: err instanceof Error ? err.message : "Code invalide ou expiré.",
       });
+      setAuthLoading(null);
+    }
+  };
+
+  const resendCode = async () => {
+    setAuthMsg(null);
+    setAuthLoading("send");
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: authEmail.trim(),
+      });
+      if (error) throw error;
+      setAuthMsg({ kind: "info", text: "Nouveau code envoyé." });
+    } catch (err) {
+      setAuthMsg({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Renvoi impossible.",
+      });
+    } finally {
       setAuthLoading(null);
     }
   };
@@ -393,12 +419,29 @@ export function SignupWizard() {
                       placeholder="vous@example.com"
                     />
                   </label>
+                  <label className="onb-field">
+                    <span>Mot de passe</span>
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      minLength={8}
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder="Au moins 8 caractères"
+                    />
+                  </label>
                   <button
                     type="submit"
                     className="onb-btn onb-btn-primary onb-btn-block"
-                    disabled={authLoading !== null || pending || !authEmail.includes("@")}
+                    disabled={
+                      authLoading !== null ||
+                      pending ||
+                      !authEmail.includes("@") ||
+                      authPassword.length < 8
+                    }
                   >
-                    {authLoading === "send" ? "Envoi…" : "Recevoir un code"}
+                    {authLoading === "send" ? "Création…" : "Créer mon compte"}
                   </button>
                 </form>
 
@@ -455,10 +498,10 @@ export function SignupWizard() {
                   <button
                     className="onb-btn onb-btn-quiet"
                     type="button"
-                    onClick={(e) => sendCode(e as never)}
+                    onClick={resendCode}
                     disabled={authLoading !== null}
                   >
-                    Renvoyer le code
+                    {authLoading === "send" ? "Envoi…" : "Renvoyer le code"}
                   </button>
                 </div>
               </>
