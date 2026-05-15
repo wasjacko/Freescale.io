@@ -3774,31 +3774,36 @@
 /* =============================================================================
    Onboarding wizard — centered card
    ============================================================================= */
-.onb-shell {
-  min-height: 100vh;
+.onb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
   display: grid;
   place-items: center;
-  padding: 32px 24px;
-  background:
-    radial-gradient(circle at 18% 12%, rgba(255, 200, 220, 0.30), transparent 50%),
-    radial-gradient(circle at 85% 14%, rgba(196, 215, 255, 0.35), transparent 50%),
-    radial-gradient(circle at 50% 95%, rgba(220, 200, 255, 0.30), transparent 55%),
-    linear-gradient(#FBF8FF, #F0F4FF);
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: onb-overlay-in 220ms var(--ease-out-soft);
+}
+@keyframes onb-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .onb-card {
   position: relative;
   width: 100%;
-  max-width: 480px;
-  padding: 28px 30px 26px;
-  background: rgba(255, 255, 255, 0.96);
+  max-width: 420px;
+  padding: 22px 24px 22px;
+  background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 22px;
+  border-radius: 18px;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.96) inset,
-    0 18px 48px rgba(91, 108, 255, 0.10),
-    0 2px 8px rgba(15, 23, 42, 0.04);
-  backdrop-filter: blur(14px);
+    0 24px 60px rgba(15, 23, 42, 0.24),
+    0 4px 14px rgba(15, 23, 42, 0.10);
+  animation: onb-card-in 320ms var(--ease-spring);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -4071,3 +4076,8 @@
   border-color: var(--accent-deep);
 }
 .onb-btn-quiet { border-color: transparent; background: transparent; color: var(--body); }
+
+@keyframes onb-card-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

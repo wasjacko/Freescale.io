@@ -61,7 +61,8 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
     "?";
 
   return (
-    <div className="onb-card">
+    <div className="onb-overlay" role="dialog" aria-modal="true" aria-label="Onboarding">
+      <div className="onb-card">
       <div className="onb-card-head">
         <div className="onb-mue">
           <MueAvatar />
@@ -260,6 +261,7 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
