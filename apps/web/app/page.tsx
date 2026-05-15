@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MueAvatar } from "@/components/MueAvatar";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Sprite } from "@/components/icons/Sprite";
+import { AuthSheetTrigger } from "@/components/auth/AuthSheet";
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -29,8 +30,12 @@ export default async function LandingPage() {
           <a href="#pricing">Pricing</a>
         </nav>
         <div className="land-cta">
-          <Link href="/login" className="land-btn land-btn-ghost">Sign in</Link>
-          <Link href="/signup" className="land-btn land-btn-primary">Get started</Link>
+          <AuthSheetTrigger mode="login" className="land-btn land-btn-ghost">
+            Se connecter
+          </AuthSheetTrigger>
+          <AuthSheetTrigger mode="signup" className="land-btn land-btn-primary">
+            Démarrer
+          </AuthSheetTrigger>
         </div>
       </header>
 
@@ -58,12 +63,18 @@ export default async function LandingPage() {
             </p>
 
             <div className="land-hero-cta">
-              <Link href="/signup" className="land-btn land-btn-primary land-btn-lg">
+              <AuthSheetTrigger
+                mode="signup"
+                className="land-btn land-btn-primary land-btn-lg"
+              >
                 Démarrer gratuitement
-              </Link>
-              <Link href="/login" className="land-btn land-btn-ghost land-btn-lg">
+              </AuthSheetTrigger>
+              <AuthSheetTrigger
+                mode="login"
+                className="land-btn land-btn-ghost land-btn-lg"
+              >
                 Se connecter
-              </Link>
+              </AuthSheetTrigger>
             </div>
 
             <div className="land-meta">
@@ -203,8 +214,10 @@ export default async function LandingPage() {
                 like a machine.
               </p>
               <div className="land-mue-cta">
-                <Link href="/signup" className="land-btn land-btn-primary">Try Mue</Link>
-                <a href="#features" className="land-btn land-btn-ghost">See features</a>
+                <AuthSheetTrigger mode="signup" className="land-btn land-btn-primary">
+                  Essayer Mue
+                </AuthSheetTrigger>
+                <a href="#features" className="land-btn land-btn-ghost">Voir les fonctionnalités</a>
               </div>
             </div>
           </div>
@@ -215,9 +228,12 @@ export default async function LandingPage() {
           <div className="land-cta-glow" aria-hidden />
           <h2 className="land-h2">Get started in two minutes.</h2>
           <p>Free during the private beta. Connect one channel, see Mue work, decide later.</p>
-          <Link href="/signup" className="land-btn land-btn-primary land-btn-lg">
-            Create your workspace
-          </Link>
+          <AuthSheetTrigger
+            mode="signup"
+            className="land-btn land-btn-primary land-btn-lg"
+          >
+            Créer mon workspace
+          </AuthSheetTrigger>
         </section>
       </main>
 
@@ -229,7 +245,9 @@ export default async function LandingPage() {
           </span>
           <div className="land-foot-links">
             <a href="mailto:hello@freescale.app">hello@freescale.app</a>
-            <Link href="/login">Sign in</Link>
+            <AuthSheetTrigger mode="login" className="land-foot-link-btn">
+              Se connecter
+            </AuthSheetTrigger>
             <span className="land-foot-meta">© 2026</span>
           </div>
         </div>

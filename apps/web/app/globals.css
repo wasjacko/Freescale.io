@@ -4763,3 +4763,123 @@
   .land-foot-inner { padding: 20px; }
   .land-strip-row { gap: 22px; font-size: 13px; }
 }
+
+/* =============================================================================
+   Auth modal (AuthSheet) — opens over the landing
+   ============================================================================= */
+.auth-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.34);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: auth-overlay-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes auth-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+
+.auth-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: 26px 28px 22px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 22px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.96) inset,
+    0 24px 60px rgba(15, 23, 42, 0.22),
+    0 4px 14px rgba(15, 23, 42, 0.08);
+  animation: auth-sheet-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes auth-sheet-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.auth-sheet-close {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 28px; height: 28px;
+  border-radius: 10px;
+  border: 0;
+  background: rgba(15, 23, 42, 0.05);
+  color: #5B6475;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 160ms, color 160ms;
+}
+.auth-sheet-close:hover { background: rgba(15, 23, 42, 0.08); color: #0F172A; }
+
+.auth-sheet-mue {
+  width: 56px;
+  height: 56px;
+  margin: 4px auto 14px;
+}
+.auth-sheet-mue svg {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 10px 22px rgba(91, 108, 255, 0.32));
+}
+
+.auth-sheet-tabs {
+  display: flex;
+  padding: 4px;
+  background: rgba(15, 23, 42, 0.05);
+  border-radius: 11px;
+  gap: 2px;
+  margin: 0 auto 14px;
+  width: max-content;
+}
+.auth-sheet-tab {
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5B6475;
+  cursor: pointer;
+  letter-spacing: -0.005em;
+  transition: background 160ms, color 160ms;
+}
+.auth-sheet-tab.is-active {
+  background: #fff;
+  color: #0F172A;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.auth-sheet-sub {
+  text-align: center;
+  font-size: 13px;
+  color: #5B6475;
+  margin-bottom: 18px;
+  letter-spacing: -0.005em;
+}
+
+.auth-sheet-oauth { margin-bottom: 4px; }
+
+.auth-sheet-fine {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 11.5px;
+  color: #8B93A4;
+  letter-spacing: -0.005em;
+}
+
+.land-foot-link-btn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--land-body, #5B6475);
+  cursor: pointer;
+  transition: color 180ms;
+}
+.land-foot-link-btn:hover { color: var(--land-ink, #0F172A); }
