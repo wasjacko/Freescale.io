@@ -3,7 +3,8 @@ title: Step 04 — Monorepo Turborepo
 type: roadmap-step
 phase: 1
 step: 4
-status: in-progress
+status: done
+completed: 2026-05-15
 started: 2026-05-15
 tags:
   - step/in-progress
@@ -13,7 +14,7 @@ tags:
 
 # Step 04 — Monorepo Turborepo
 
-> [!info] Statut : scaffolding committed, install à faire
+> [!info] ✅ Done — 2026-05-15 · lockfile généré, build Vercel ✓
 > Structure de fichiers en place. `pnpm install` doit être lancé pour générer le lockfile.
 
 ## 🎯 Objectif
