@@ -49,5 +49,5 @@ export async function completeOnboarding(payload: OnboardingPayload) {
     })
     .eq("id", user.id);
 
-  revalidatePath("/", "layout");
+  revalidatePath("/app", "layout");
 }

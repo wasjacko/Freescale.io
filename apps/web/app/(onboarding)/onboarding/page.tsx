@@ -18,7 +18,7 @@ export default async function OnboardingPage() {
     .select("full_name, avatar_url, onboarded_at, email")
     .eq("id", user.id)
     .maybeSingle();
-  if (profile?.onboarded_at) redirect("/");
+  if (profile?.onboarded_at) redirect("/app");
 
   const fullName = (profile?.full_name as string) ?? "";
   const [firstName = "", ...rest] = fullName.split(/\s+/);

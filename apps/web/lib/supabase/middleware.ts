@@ -53,14 +53,17 @@ export async function updateSession(request: NextRequest) {
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname.startsWith("/auth/");
+  const isPublic = pathname === "/" || isAuthRoute;
 
+  // Authed users on auth/landing routes → dashboard
   if (user && isAuthRoute && pathname !== "/auth/callback" && pathname !== "/auth/sign-out") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/app";
     return NextResponse.redirect(url);
   }
 
-  if (!user && !isAuthRoute) {
+  // Anon users on protected routes → login
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);

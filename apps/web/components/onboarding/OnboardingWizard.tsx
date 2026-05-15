@@ -54,7 +54,7 @@ export function OnboardingWizard({ initial }: { initial: Initial }) {
       });
       // Hard navigation avoids any RSC cache mismatch between the onboarding
       // tree (which renders AppShell behind the modal) and the real "/" tree.
-      window.location.href = "/";
+      window.location.href = "/app";
     });
   };
 

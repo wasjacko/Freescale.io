@@ -29,7 +29,7 @@ const TAGLINE: Record<Mode, { title: string; subtitle: string; cta: string; alt:
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/app";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState<"email" | "google" | "apple" | null>(null);
