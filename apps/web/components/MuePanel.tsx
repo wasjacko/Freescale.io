@@ -1,8 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/store";
-import { CONVERSATIONS } from "@/lib/data/conversations";
-import { TASKS, UPCOMING } from "@/lib/data/tasks";
+import { useData } from "@/lib/contexts/DataContext";
 import type { CurrentUser } from "@/lib/auth";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
@@ -18,7 +17,8 @@ function greeting() {
 
 export function MuePanel({ user }: { user?: CurrentUser | null }) {
   const { view, activeConvId } = useApp();
-  const conv = CONVERSATIONS.find((c) => c.id === activeConvId);
+  const { conversations, tasks, upcoming } = useData();
+  const conv = conversations.find((c) => c.id === activeConvId);
   const contactName = conv?.name.split(/[ –-]/)[0]?.trim() ?? "";
   const userName = user?.firstName ?? "there";
 
@@ -69,7 +69,7 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
               <section className="yuka-cal" aria-label="Today's schedule">
                 <div className="section-label">Today&apos;s schedule</div>
                 <div className="schedule-list">
-                  {TASKS.slice(0, 3).map((t) => (
+                  {tasks.slice(0, 3).map((t) => (
                     <button key={t.id} className="sched-card" type="button">
                       <span className="sched-av">
                         <Avatar avatar={t.avatar} />
@@ -91,7 +91,7 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
 
                 <div className="section-label" style={{ marginTop: 22 }}>Upcoming</div>
                 <div className="up-list">
-                  {UPCOMING.map((u) => (
+                  {upcoming.map((u) => (
                     <div key={u.id} className="up-card">
                       <ChannelLogo channel={u.channel} />
                       <span className="up-body">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useApp } from "@/lib/store";
-import { CONVERSATIONS } from "@/lib/data/conversations";
+import { useData } from "@/lib/contexts/DataContext";
 import type { CurrentUser } from "@/lib/auth";
 import { Sprite } from "@/components/icons/Sprite";
 import { Sidebar } from "@/components/Sidebar";
@@ -16,10 +16,25 @@ import { Toaster } from "@/components/ui/Toaster";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 
-export function AppShell({ user }: { user: CurrentUser | null }) {
+export function AppShell({
+  user,
+  initialActiveConvId,
+}: {
+  user: CurrentUser | null;
+  initialActiveConvId: string;
+}) {
   const { view, sidebarCollapsed, setActiveConv, activeConvId, toggleSidebar } = useApp();
+  const { conversations } = useData();
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Bootstrap the active conversation if none is selected (or persisted id is stale)
+  useEffect(() => {
+    const exists = conversations.some((c) => c.id === activeConvId);
+    if (!exists && initialActiveConvId) {
+      setActiveConv(initialActiveConvId);
+    }
+  }, [activeConvId, conversations, initialActiveConvId, setActiveConv]);
 
   // OS class for keyboard hints
   useEffect(() => {
@@ -85,7 +100,7 @@ export function AppShell({ user }: { user: CurrentUser | null }) {
         const ids = visibleConvs
           .map((el) => {
             const name = el.querySelector(".conv-name")?.textContent?.trim() ?? "";
-            return CONVERSATIONS.find((c) => c.name === name)?.id;
+            return conversations.find((c) => c.name === name)?.id;
           })
           .filter((id): id is string => Boolean(id));
         const idx = ids.indexOf(activeConvId);
@@ -102,7 +117,7 @@ export function AppShell({ user }: { user: CurrentUser | null }) {
 
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [view, activeConvId, cmdkOpen, shortcutsOpen, setActiveConv, toggleSidebar]);
+  }, [view, activeConvId, cmdkOpen, shortcutsOpen, setActiveConv, toggleSidebar, conversations]);
 
   const appClasses = [
     "app",

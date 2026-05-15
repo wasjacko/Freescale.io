@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
-import { CONVERSATIONS, MESSAGES } from "@/lib/data/conversations";
+import { useData } from "@/lib/contexts/DataContext";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import type { Message } from "@/lib/types";
@@ -36,11 +36,10 @@ function groupMessages(messages: Message[]): MsgGroup[] {
 
 export function Thread() {
   const { activeConvId } = useApp();
-  const conv = CONVERSATIONS.find((c) => c.id === activeConvId);
-  const baseMessages = MESSAGES[activeConvId] ?? [];
+  const { conversations, messagesByConv, appendOutgoingMessage } = useData();
+  const conv = conversations.find((c) => c.id === activeConvId);
   const push = useToast((s) => s.push);
 
-  const [sent, setSent] = useState<Record<string, Message[]>>({});
   const [input, setInput] = useState("");
   const messagesEl = useRef<HTMLElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
@@ -48,9 +47,9 @@ export function Thread() {
   const [isStarred, setIsStarred] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const messages = useMemo(
-    () => [...baseMessages, ...(sent[activeConvId] ?? [])],
-    [baseMessages, sent, activeConvId]
+  const messages = useMemo<Message[]>(
+    () => messagesByConv[activeConvId] ?? [],
+    [messagesByConv, activeConvId]
   );
 
   const groups = useMemo(() => groupMessages(messages), [messages]);
@@ -78,12 +77,7 @@ export function Thread() {
     if (!text) return;
     sendBtnRef.current?.classList.add("is-sending");
     setTimeout(() => sendBtnRef.current?.classList.remove("is-sending"), 500);
-
-    const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
-    setSent((prev) => ({
-      ...prev,
-      [activeConvId]: [...(prev[activeConvId] ?? []), { id: crypto.randomUUID(), dir: "out", text, time }],
-    }));
+    void appendOutgoingMessage(activeConvId, text);
     setInput("");
   };
 

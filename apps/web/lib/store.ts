@@ -17,7 +17,7 @@ export const useApp = create<State>()(
   persist(
     (set) => ({
       view: "inbox",
-      activeConvId: "sarah",
+      activeConvId: "",
       sidebarCollapsed: false,
       setView: (view) => set({ view }),
       setActiveConv: (activeConvId) => set({ activeConvId }),

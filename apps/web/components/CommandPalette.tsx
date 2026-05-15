@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
-import { CONVERSATIONS } from "@/lib/data/conversations";
+import { useData } from "@/lib/contexts/DataContext";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 
@@ -17,6 +17,7 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const { setView, setActiveConv } = useApp();
+  const { conversations } = useData();
   const push = useToast((s) => s.push);
 
   const actions = useMemo(
@@ -31,10 +32,10 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
 
   const q = query.trim().toLowerCase();
   const matchedConvs = q
-    ? CONVERSATIONS.filter(
+    ? conversations.filter(
         (c) => c.name.toLowerCase().includes(q) || c.preview.toLowerCase().includes(q)
       ).slice(0, 6)
-    : CONVERSATIONS.slice(0, 6);
+    : conversations.slice(0, 6);
   const matchedActions = q ? actions.filter((a) => a.name.toLowerCase().includes(q)) : actions;
   const total = matchedConvs.length + matchedActions.length;
 

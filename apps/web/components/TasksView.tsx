@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { TASKS } from "@/lib/data/tasks";
+import { useData } from "@/lib/contexts/DataContext";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 
@@ -13,23 +13,20 @@ const TAB_STATUSES = [
 ] as const;
 
 export function TasksView() {
+  const { tasks, toggleTask } = useData();
   const [activeTab, setActiveTab] = useState<string>("todo");
-  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
   const counts = {
-    todo: TASKS.filter((t) => t.status === "todo").length,
-    "in-progress": 2,
-    "awaiting-reply": 2,
-    done: 12,
+    todo: tasks.filter((t) => t.status === "todo").length,
+    "in-progress": tasks.filter((t) => t.status === "in-progress").length,
+    "awaiting-reply": tasks.filter((t) => t.status === "awaiting-reply").length,
+    done: tasks.filter((t) => t.status === "done").length,
   };
 
-  const toggleCheck = (id: string) => {
-    setCheckedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const visible = tasks.filter((t) => t.status === activeTab);
+
+  const toggleCheck = (id: string, currentlyDone: boolean) => {
+    void toggleTask(id, !currentlyDone);
   };
 
   return (
@@ -65,15 +62,20 @@ export function TasksView() {
       </div>
 
       <ul className="task-list">
-        {TASKS.map((task) => {
-          const isDone = checkedIds.has(task.id);
+        {visible.length === 0 && (
+          <li className="task-item" style={{ justifyContent: "center", opacity: 0.6 }}>
+            No tasks here.
+          </li>
+        )}
+        {visible.map((task) => {
+          const isDone = !!task.isDone;
           return (
             <li key={task.id} className={`task-item ${isDone ? "is-done" : ""}`}>
               <button
                 className={`task-check ${isDone ? "is-done" : ""}`}
                 type="button"
                 aria-label="Mark done"
-                onClick={() => toggleCheck(task.id)}
+                onClick={() => toggleCheck(task.id, isDone)}
               />
               <span className="task-avatar">
                 <Avatar avatar={task.avatar} />

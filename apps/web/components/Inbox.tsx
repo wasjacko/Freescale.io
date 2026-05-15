@@ -3,7 +3,7 @@
 import { useState, useRef, useMemo } from "react";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
-import { CONVERSATIONS } from "@/lib/data/conversations";
+import { useData } from "@/lib/contexts/DataContext";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
@@ -18,10 +18,10 @@ const GROUP_LABELS: Record<string, string> = {
 
 export function Inbox() {
   const { activeConvId, setActiveConv } = useApp();
+  const { conversations, archived, archive: archiveConv, unarchive, markRead, markUnread } = useData();
   const push = useToast((s) => s.push);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [extraUnread, setExtraUnread] = useState<Set<string>>(new Set());
-  const [archived, setArchived] = useState<Set<string>>(new Set());
   const [starred, setStarred] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FilterMode>("all");
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
@@ -37,10 +37,11 @@ export function Inbox() {
   const handleSelect = (id: string) => {
     setActiveConv(id);
     setReadIds((prev) => new Set(prev).add(id));
+    void markRead(id);
   };
 
   const onContextAction = (convId: string, action: ContextAction) => {
-    const conv = CONVERSATIONS.find((c) => c.id === convId);
+    const conv = conversations.find((c) => c.id === convId);
     if (!conv) return;
     switch (action) {
       case "open":
@@ -53,6 +54,7 @@ export function Inbox() {
           next.delete(convId);
           return next;
         });
+        void markRead(convId);
         push({ text: "Marked as read" });
         break;
       case "mark-unread":
@@ -62,6 +64,7 @@ export function Inbox() {
           return next;
         });
         setExtraUnread((prev) => new Set(prev).add(convId));
+        void markUnread(convId);
         push({ text: "Marked as unread" });
         break;
       case "star":
@@ -74,34 +77,25 @@ export function Inbox() {
         push({ text: `★ Starred ${conv.name}` });
         break;
       case "archive":
-        setArchived((prev) => new Set(prev).add(convId));
+        archiveConv(convId);
         push({
           text: `${conv.name} archived`,
-          action: {
-            label: "Undo",
-            fn: () =>
-              setArchived((prev) => {
-                const next = new Set(prev);
-                next.delete(convId);
-                return next;
-              }),
-          },
+          action: { label: "Undo", fn: () => unarchive(convId) },
         });
         break;
     }
   };
 
   const filteredConvs = useMemo(() => {
-    return CONVERSATIONS.filter((c) => {
+    return conversations.filter((c) => {
       if (archived.has(c.id)) return false;
       if (filter === "unread") return isUnread(c.id, c.unread);
-      if (filter === "mentions") return false; // demo
+      if (filter === "mentions") return false;
       return true;
     });
-  }, [archived, filter, extraUnread, readIds]);
+  }, [conversations, archived, filter, extraUnread, readIds]);
 
-  // Group by `group` property
-  const groups: Record<string, typeof CONVERSATIONS> = {
+  const groups: Record<string, typeof conversations> = {
     today: [],
     yesterday: [],
     "this-week": [],
@@ -112,9 +106,9 @@ export function Inbox() {
   }
 
   const counts = {
-    all: CONVERSATIONS.filter((c) => !archived.has(c.id)).length,
-    unread: CONVERSATIONS.filter((c) => !archived.has(c.id) && isUnread(c.id, c.unread)).length,
-    mentions: 2,
+    all: conversations.filter((c) => !archived.has(c.id)).length,
+    unread: conversations.filter((c) => !archived.has(c.id) && isUnread(c.id, c.unread)).length,
+    mentions: 0,
   };
 
   return (
@@ -207,7 +201,7 @@ export function Inbox() {
         <ContextMenu
           x={ctx.x}
           y={ctx.y}
-          isUnread={isUnread(ctx.convId, CONVERSATIONS.find((c) => c.id === ctx.convId)?.unread)}
+          isUnread={isUnread(ctx.convId, conversations.find((c) => c.id === ctx.convId)?.unread)}
           onClose={() => setCtx(null)}
           onAction={(action) => onContextAction(ctx.convId, action)}
         />

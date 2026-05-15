@@ -1,19 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import { EVENTS, DAY_LABELS, HOURS } from "@/lib/data/events";
+import { useMemo, useState } from "react";
+import { useData } from "@/lib/contexts/DataContext";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
+
+const HOURS = ["8 AM", "9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM"];
+
+function buildWeekLabels() {
+  const now = new Date();
+  const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const abbrs = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return abbrs.map((abbr, i) => {
+    const d = new Date(sunday);
+    d.setDate(sunday.getDate() + i);
+    return {
+      abbr,
+      num: d.getDate(),
+      isToday:
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate(),
+    };
+  });
+}
+
+function weekRangeLabel() {
+  const now = new Date();
+  const sun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const sat = new Date(sun);
+  sat.setDate(sun.getDate() + 6);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString([], { month: "short", day: "numeric" });
+  return `${fmt(sun)} – ${fmt(sat)}, ${sat.getFullYear()}`;
+}
 
 const ROW_HEIGHT = 32; // px per 30-min slot
 
 export function CalendarView() {
-  const [weekRange] = useState("May 18 – 24, 2026");
+  const { events } = useData();
+  const dayLabels = useMemo(buildWeekLabels, []);
+  const weekRange = useMemo(weekRangeLabel, []);
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
 
-  // Now line — assume 10:21 AM = 60+30+30/2 = 141 minutes from 8AM
-  // Each 30 min = 32px, so 141 min = 141/30 * 32 ≈ 150 px from top
-  const nowMinutes = 141;
-  const nowTop = (nowMinutes / 30) * ROW_HEIGHT + 4; // small offset
+  const now = new Date();
+  const nowMinutes = Math.max(0, now.getHours() * 60 + now.getMinutes() - 8 * 60);
+  const nowTime = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const nowTop = (nowMinutes / 30) * ROW_HEIGHT + 4;
 
   return (
     <section className="calendar-view" aria-label="Calendar">
@@ -56,8 +88,8 @@ export function CalendarView() {
 
       <div className="cal-days">
         <div className="cal-tz">GMT+2</div>
-        {DAY_LABELS.map((d) => (
-          <div key={d.num} className={`cal-day ${d.isToday ? "is-today" : ""}`}>
+        {dayLabels.map((d) => (
+          <div key={`${d.abbr}-${d.num}`} className={`cal-day ${d.isToday ? "is-today" : ""}`}>
             {d.abbr} <span className="daynum">{d.num}</span>
           </div>
         ))}
@@ -71,7 +103,7 @@ export function CalendarView() {
             </div>
           ))}
 
-          {EVENTS.map((ev) => {
+          {events.map((ev) => {
             // startMinutes in [0, 660] (8AM-7PM range)
             const rowStart = ev.startMinutes / 30 + 1;
             const rowSpan = ev.durationMinutes / 30;
@@ -96,7 +128,7 @@ export function CalendarView() {
           })}
         </div>
 
-        <div className="cal-now" data-time="10:21 AM" style={{ top: `${nowTop}px` }} />
+        <div className="cal-now" data-time={nowTime} style={{ top: `${nowTop}px` }} />
       </div>
     </section>
   );
