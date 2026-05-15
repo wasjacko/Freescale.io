@@ -4973,3 +4973,34 @@
   border-radius: 999px;
   background: #fff;
 }
+
+/* OTP 6-digit input */
+.onb-otp {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin: 4px 0;
+}
+.onb-otp-cell {
+  width: 100%;
+  height: 56px;
+  text-align: center;
+  font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: #0F172A;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  -moz-appearance: textfield;
+}
+.onb-otp-cell::-webkit-outer-spin-button,
+.onb-otp-cell::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.onb-otp-cell:focus {
+  border-color: rgba(91, 108, 255, 0.5);
+  box-shadow: 0 0 0 4px rgba(91, 108, 255, 0.12);
+}
