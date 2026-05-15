@@ -320,6 +320,11 @@
       font-feature-settings: "ss01", "cv11";
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+    }
+    /* Clip overflow only when the dashboard shell or onboarding modal is mounted,
+       so public pages (landing, auth, etc.) can scroll normally. */
+    body:has(.app),
+    body:has(.onb-overlay) {
       overflow: hidden;
     }
 
