@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0F172A;
+  --color-body: #5B6475;
+  --color-muted: #8B93A4;
+  --color-accent: #5B6CFF;
+  --color-violet: #8B5CF6;
+}
+
+body {
+  font-family: "Geist", "SF Pro Display", -apple-system, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #FAFAFC;
+  color: var(--color-ink);
+}

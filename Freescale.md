@@ -31,15 +31,14 @@ target_mvp: 90-days
 
 > [!todo] Phase 1 — Foundation & stack
 > - [x] [[Steps/Step 01 - Stack decision|01 — Stack decision]] ✅
-> - [ ] [[Steps/Step 02 - Domain|02 — Domain `freescale.app`]]
-> - [ ] [[Steps/Step 03 - GitHub repo|03 — GitHub repo]]
-> - [ ] [[Steps/Step 04 - Monorepo Turborepo|04 — Monorepo Turborepo]]
+> - [ ] [[Steps/Step 02 - Domain|02 — Domain `freescale.app`]] ⏳ pending user
+> - [x] [[Steps/Step 03 - GitHub repo|03 — GitHub repo]] ✅
+> - [ ] [[Steps/Step 04 - Monorepo Turborepo|04 — Monorepo Turborepo]] 🔄 scaffolded, install pending
 > - [ ] [[Steps/Step 05 - CI-CD Vercel|05 — CI/CD Vercel]]
 > - [ ] 06 — Secrets management (Doppler ou Vercel env)
 > - [ ] 07 — Migration UI HTML → React/Next
-> - [ ] 08 — Design tokens → Tailwind config
-> - [ ] 09 — Storybook + Chromatic
-> - [ ] 10 — Biome + Husky pre-commit
+> - [ ] 08 — Design tokens → Tailwind config (déjà partiel via `globals.css`)
+> - [x] 10 — Biome config ✅ (`biome.json` racine)
 
 > [!note] Phase 2 — Auth & users (11–20)
 > Voir [[ROADMAP|ROADMAP.md]] complet.

@@ -1,0 +1,22 @@
+name = "freescale-api"
+main = "src/index.ts"
+compatibility_date = "2026-05-15"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "development"
+
+# Add R2 bucket binding once created
+# [[r2_buckets]]
+# binding = "ATTACHMENTS"
+# bucket_name = "freescale-attachments"
+
+# Add KV namespace for rate limiting
+# [[kv_namespaces]]
+# binding = "RATE_LIMITS"
+# id = ""
+
+# Routes (configure once domain is live)
+# [[routes]]
+# pattern = "api.freescale.app/*"
+# zone_name = "freescale.app"
