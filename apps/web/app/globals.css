@@ -1,5 +1,77 @@
 @import "tailwindcss";
 
+/* =============================================================================
+   Design tokens — Tailwind v4 @theme block
+   These generate utility classes automatically:
+   - --color-ink → text-ink, bg-ink, border-ink
+   - --radius-xl → rounded-xl
+   - --shadow-soft → shadow-soft
+   - --font-sans → font-sans
+   Reference: https://tailwindcss.com/docs/theme
+   ============================================================================= */
+
+@theme {
+  /* === Colors === */
+  /* Surfaces */
+  --color-bg: #FAFAFC;
+  --color-bg-soft: #F6F7FB;
+  --color-bg-tint: #F8F8FD;
+  --color-canvas: #FFFFFF;
+
+  /* Text */
+  --color-ink: #0F172A;
+  --color-ink-soft: #111827;
+  --color-body: #5B6475;
+  --color-muted: #8B93A4;
+  --color-faint: #B8BDC9;
+
+  /* Brand accent (used everywhere — bubble sent, active states, glow) */
+  --color-accent: #5B6CFF;
+  --color-accent-deep: #4A52E6;
+  --color-violet: #8B7BFF;
+  --color-rose: #FFB5C8;
+  --color-peach: #FFD5B5;
+  --color-mint: #C8F0D8;
+
+  /* Status pastels */
+  --color-pastel-blue: #E7ECFF;
+  --color-pastel-blue-ink: #3F49C9;
+  --color-pastel-green: #E4F5EA;
+  --color-pastel-green-ink: #2F7A4F;
+  --color-pastel-amber: #FFF1DC;
+  --color-pastel-amber-ink: #8A5A12;
+  --color-pastel-rose: #FFE6EC;
+  --color-pastel-rose-ink: #B23A5C;
+
+  /* Hairlines — semi-transparent slate */
+  --color-line: oklch(from #0F172A l c h / 0.06);
+  --color-line-soft: oklch(from #0F172A l c h / 0.04);
+
+  /* === Radii === */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* === Shadows === */
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.03), 0 4px 14px rgba(15, 23, 42, 0.04);
+  --shadow-floating: 0 10px 40px rgba(88, 92, 255, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+
+  /* === Typography === */
+  --font-sans: "Geist", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* === Motion timing (referenced from animation utilities) === */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* =============================================================================
+   Legacy CSS variables — mirror the @theme tokens above for the existing
+   3500-line custom CSS that uses var(--ink), var(--r-xl), var(--ease), etc.
+   When a component is rewritten to use Tailwind utilities, the corresponding
+   legacy var can be dropped.
+   ============================================================================= */
     :root {
       color-scheme: light;
       /* Surfaces */

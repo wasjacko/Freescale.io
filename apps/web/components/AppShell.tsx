@@ -134,6 +134,9 @@ export function AppShell() {
       <Toaster />
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {/* Token smoke test — invisible probe to verify @theme → Tailwind utilities */}
+      <div className="fixed inset-x-0 bottom-0 h-0 opacity-0 pointer-events-none bg-accent text-canvas rounded-xl shadow-soft font-sans" aria-hidden />
     </>
   );
 }
