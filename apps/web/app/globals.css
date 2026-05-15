@@ -67,6 +67,188 @@
 }
 
 /* =============================================================================
+   Auth pages (login / signup)
+   ============================================================================= */
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 200, 220, 0.30), transparent 50%),
+    radial-gradient(circle at 85% 14%, rgba(196, 215, 255, 0.35), transparent 50%),
+    radial-gradient(circle at 50% 95%, rgba(220, 200, 255, 0.30), transparent 55%),
+    linear-gradient(#FBF8FF, #F0F4FF);
+}
+
+.auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: 36px 32px 28px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 24px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.96) inset,
+    0 18px 48px rgba(91, 108, 255, 0.10),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(14px);
+}
+
+.auth-avatar {
+  width: 84px; height: 84px;
+  margin: 0 auto 18px;
+}
+.auth-avatar svg {
+  width: 100%; height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 12px 24px rgba(91, 108, 255, 0.24));
+}
+
+.auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #0F172A;
+  text-align: center;
+  line-height: 1.2;
+}
+.auth-subtitle {
+  margin-top: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #5B6475;
+  text-align: center;
+  letter-spacing: -0.005em;
+}
+
+.auth-oauth {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+}
+.auth-oauth-btn {
+  width: 100%;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: #0F172A;
+  cursor: pointer;
+  transition: background 160ms, border-color 160ms, transform 100ms;
+}
+.auth-oauth-btn:hover:not(:disabled) {
+  background: #FAFAFC;
+  border-color: rgba(15, 23, 42, 0.14);
+}
+.auth-oauth-btn:active:not(:disabled) { transform: translateY(0.5px); }
+.auth-oauth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.auth-divider {
+  position: relative;
+  margin: 22px 0 18px;
+  text-align: center;
+}
+.auth-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: rgba(15, 23, 42, 0.08);
+}
+.auth-divider span {
+  position: relative;
+  padding: 0 12px;
+  background: #fff;
+  font-size: 12px;
+  color: #8B93A4;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 12px; }
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+.auth-field > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0F172A;
+  letter-spacing: -0.005em;
+}
+.auth-field input {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  border-radius: 11px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0F172A;
+  transition: border-color 160ms, box-shadow 160ms;
+  outline: none;
+}
+.auth-field input::placeholder { color: #B0B5C0; }
+.auth-field input:focus {
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.10);
+}
+
+.auth-submit {
+  margin-top: 6px;
+  height: 44px;
+  border: 0;
+  border-radius: 11px;
+  background: #4F46E5;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  transition: background 160ms, transform 100ms, box-shadow 160ms;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.24);
+}
+.auth-submit:hover:not(:disabled) {
+  background: #6366F1;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.30);
+  transform: translateY(-0.5px);
+}
+.auth-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auth-msg {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.auth-msg-error { background: #FEE2E2; color: #B91C1C; }
+.auth-msg-info  { background: #E0F2FE; color: #0369A1; }
+
+.auth-alt {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 13px;
+  color: #5B6475;
+  letter-spacing: -0.005em;
+}
+.auth-alt a {
+  color: #4F46E5;
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-alt a:hover { text-decoration: underline; }
+
+/* =============================================================================
    Legacy CSS variables — mirror the @theme tokens above for the existing
    3500-line custom CSS that uses var(--ink), var(--r-xl), var(--ease), etc.
    When a component is rewritten to use Tailwind utilities, the corresponding
