@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "Unified multi-channel inbox with AI copilot Mue",
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=20"
+    "node": "20.x",
+    "pnpm": ">=9.15.0"
   },
   "scripts": {
     "dev": "turbo dev",
