@@ -53,7 +53,7 @@ export async function updateSession(request: NextRequest) {
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname.startsWith("/auth/");
-  const isPublic = pathname === "/" || isAuthRoute;
+  const isPublic = pathname === "/" || isAuthRoute || pathname.startsWith("/preview/");
 
   // Authed users on auth/landing routes → dashboard
   if (user && isAuthRoute && pathname !== "/auth/callback" && pathname !== "/auth/sign-out") {
