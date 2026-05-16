@@ -31,13 +31,12 @@ function avatarUrlFor(email: string): string {
     // the UI fall back to colored initials. Better than a generic identicon.
     return `https://www.gravatar.com/avatar/${md5}?s=160&d=404`;
   }
-  // Business domain → DuckDuckGo's favicon service. Returns the REAL favicon
-  // for almost any indexed site, and (crucially) a true 404 with no body
-  // when the site isn't known — so our <img onError> fallback to initials
-  // actually fires. Google's faviconV2 returns 404 *with* a generic planet
-  // PNG, which the browser happily renders, making every unknown sender
-  // look identical (the bug we just had).
-  return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  // Business domain → icon.horse. Returns up to 256x256 PNG of the real
+  // logo for known sites, or a clean letter-avatar (colored monogram) if the
+  // domain has no favicon. Way sharper than DuckDuckGo's 16-32px favicons,
+  // and the letter-fallback is per-domain unique (not a single generic
+  // placeholder like Google's faviconV2 returns).
+  return `https://icon.horse/icon/${domain}`;
 }
 
 export type SyncReport = {

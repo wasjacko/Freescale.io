@@ -27,6 +27,7 @@ const config: NextConfig = {
       { protocol: "https", hostname: "t2.gstatic.com" },
       { protocol: "https", hostname: "t3.gstatic.com" },
       { protocol: "https", hostname: "icons.duckduckgo.com" },
+      { protocol: "https", hostname: "icon.horse" },
     ],
   },
 };
