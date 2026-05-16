@@ -24,15 +24,14 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
 
   return (
     <aside className="copilot" aria-label="Mue AI copilot">
-      <div className="yuka-panel">
-        <header className="yuka-header copilot-head">
-          <div className="ai-brand">
-            <span className="ai-name">Mue</span>
-            <span className="ai-pill">AI Copilot</span>
-          </div>
-        </header>
+      <header className="copilot-head">
+        <div className="ai-brand">
+          <span className="ai-name">Mue</span>
+          <span className="ai-pill">AI Copilot</span>
+        </div>
+      </header>
 
-        <div className="yuka-scroll copilot-inner">
+      <div className="copilot-inner">
           <section className="hero">
             <div className="hero-avatar" id="yuka-canvas">
               <MueAvatar />
@@ -150,7 +149,6 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
             </div>
           </div>
         </div>
-      </div>
     </aside>
   );
 }

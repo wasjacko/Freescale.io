@@ -3335,10 +3335,11 @@
     .copilot-inner {
       position: relative;
       z-index: 1;
-      flex: 1;
+      flex: 1 1 0;
       min-height: 0;
-      overflow: auto;
-      padding: 24px 24px 24px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 8px 22px 22px;
       display: flex;
       flex-direction: column;
       scrollbar-width: none;
@@ -3526,10 +3527,14 @@
     .yuka-task-arrow .icon { width: 13px; height: 13px; }
 
     .copilot-head {
+      position: relative;
+      z-index: 2;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      padding: 18px 22px 4px;
+      flex-shrink: 0;
     }
 
     .ai-brand {
@@ -3573,13 +3578,23 @@
     .hero {
       margin-top: 16px;
       text-align: center;
+      max-width: 100%;
     }
     .hero-avatar {
       position: relative;
-      width: 112px; height: 112px;
+      width: 112px;
+      height: 112px;
+      max-width: 100%;
       margin: 0 auto 24px;
-      display: grid; place-items: center;
+      display: grid;
+      place-items: center;
       perspective: 600px;
+      flex-shrink: 0;
+    }
+    .hero-avatar > svg,
+    .hero-avatar > div > svg {
+      max-width: 100%;
+      max-height: 100%;
     }
     .hero-context {
       position: absolute;
