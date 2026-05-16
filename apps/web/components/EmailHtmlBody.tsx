@@ -22,7 +22,7 @@ export function EmailHtmlBody({ html }: { html: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const mod = await import("isomorphic-dompurify");
+        const mod = await import("dompurify");
         if (cancelled) return;
         const DOMPurify = mod.default ?? (mod as unknown as { sanitize: (s: string, o?: object) => string });
         const sanitized = DOMPurify.sanitize(html, {
