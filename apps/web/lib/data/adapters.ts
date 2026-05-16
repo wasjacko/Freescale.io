@@ -94,16 +94,30 @@ export function adaptConversation(row: Row): Conversation {
     channel: toChannel(channelAccount?.kind),
     unread: ((row.unread_count as number) ?? 0) > 0,
     group: groupFor(lastAt),
+    ...((row.subject as string) ? { subject: row.subject as string } : {}),
+    ...((contact?.email as string) ? { contactEmail: contact!.email as string } : {}),
   };
 }
 
 export function adaptMessage(row: Row): Message {
   const sent = (row.sent_at as string) ?? new Date().toISOString();
+  const meta = (row.metadata ?? {}) as Record<string, unknown>;
+  const from = (meta.from ?? null) as { name?: string; email?: string } | null;
   return {
     id: row.id as string,
     dir: (row.direction as Message["dir"]) ?? "in",
     text: (row.body_text as string) ?? "",
     time: new Date(sent).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    ...(meta.subject ? { subject: meta.subject as string } : {}),
+    ...(from?.name ? { senderName: from.name } : {}),
+    ...(from?.email ? { senderEmail: from.email } : {}),
+    dateLong: new Date(sent).toLocaleString("fr-FR", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    }),
   };
 }
 

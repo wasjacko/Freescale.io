@@ -52,7 +52,7 @@ export async function getInboxData(): Promise<InboxData> {
     supabase
       .from("conversations")
       .select(
-        "id, preview, last_message_at, unread_count, archived, contacts(display_name, avatar_url), channel_accounts(kind)"
+        "id, preview, subject, last_message_at, unread_count, archived, contacts(display_name, avatar_url, email), channel_accounts(kind)"
       )
       .eq("workspace_id", workspaceId)
       .eq("archived", false)
@@ -83,7 +83,7 @@ export async function getInboxData(): Promise<InboxData> {
     const convIds = convs.map((c) => c.id as string);
     const { data: msgs } = await supabase
       .from("messages")
-      .select("id, conversation_id, direction, body_text, sent_at")
+      .select("id, conversation_id, direction, body_text, sent_at, metadata")
       .in("conversation_id", convIds)
       .order("sent_at", { ascending: true });
     messagesByConv = ((msgs ?? []) as Record<string, unknown>[]).reduce<Record<string, Message[]>>(

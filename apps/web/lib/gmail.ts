@@ -206,6 +206,48 @@ function decodeBase64Url(input: string): string {
   }
 }
 
+/**
+ * Decode quoted-printable text (RFC 2045) and return UTF-8. Necessary because
+ * Gmail returns each part with the original Content-Transfer-Encoding, and the
+ * vast majority of text/* parts are quoted-printable wrapped. Without this you
+ * see things like `=C2=A0` (a non-breaking space) and `=3D` (a literal `=`)
+ * everywhere in the rendered body.
+ */
+function decodeQuotedPrintable(input: string): string {
+  // Drop soft line breaks ("=" at end of line)
+  const cleaned = input.replace(/=\r?\n/g, "");
+  const bytes: number[] = [];
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === "=" && i + 2 < cleaned.length) {
+      const hex = cleaned.slice(i + 1, i + 3);
+      if (/^[0-9A-Fa-f]{2}$/.test(hex)) {
+        bytes.push(parseInt(hex, 16));
+        i += 2;
+        continue;
+      }
+    }
+    bytes.push(cleaned.charCodeAt(i) & 0xff);
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: false }).decode(Uint8Array.from(bytes));
+  } catch {
+    return cleaned;
+  }
+}
+
+function getHeader(part: GmailMessagePart, name: string): string | undefined {
+  return part.headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
+}
+
+function decodePart(part: GmailMessagePart): string {
+  const raw = part.body?.data ? decodeBase64Url(part.body.data) : "";
+  if (!raw) return "";
+  const enc = (getHeader(part, "content-transfer-encoding") ?? "").toLowerCase();
+  if (enc === "quoted-printable") return decodeQuotedPrintable(raw);
+  // For 7bit / 8bit / binary, the base64url-decoded string IS the body.
+  return raw;
+}
+
 function findPart(
   part: GmailMessagePart | undefined,
   predicate: (p: GmailMessagePart) => boolean
@@ -251,8 +293,8 @@ export function extractMessageContent(message: GmailMessage): {
 
   const textPart = findPart(message.payload, (p) => p.mimeType === "text/plain" && !!p.body?.data);
   const htmlPart = findPart(message.payload, (p) => p.mimeType === "text/html" && !!p.body?.data);
-  const text = textPart?.body?.data ? decodeBase64Url(textPart.body.data) : (message.snippet ?? "");
-  const html = htmlPart?.body?.data ? decodeBase64Url(htmlPart.body.data) : "";
+  const text = textPart ? decodePart(textPart) : (message.snippet ?? "");
+  const html = htmlPart ? decodePart(htmlPart) : "";
 
   return { text, html, from, to, subject, date };
 }

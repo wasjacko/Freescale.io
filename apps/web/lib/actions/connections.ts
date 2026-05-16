@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +10,16 @@ import {
   getValidAccessToken,
   listRecentMessages,
 } from "@/lib/gmail";
+
+/**
+ * Pre-built Gravatar URL for an email address. `d=identicon` guarantees a
+ * deterministic geometric placeholder if the address isn't on Gravatar — never
+ * a broken image, never a default avatar that looks accidental.
+ */
+function gravatarFor(email: string, size = 160): string {
+  const md5 = createHash("md5").update(email.trim().toLowerCase()).digest("hex");
+  return `https://www.gravatar.com/avatar/${md5}?s=${size}&d=identicon`;
+}
 
 export type SyncReport = {
   fetched: number;
@@ -136,6 +147,7 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
             workspace_id: account.workspace_id,
             display_name: contactName || contactEmail,
             email: contactEmail,
+            avatar_url: gravatarFor(contactEmail),
           })
           .select("id")
           .single();

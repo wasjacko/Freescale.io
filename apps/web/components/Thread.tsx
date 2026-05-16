@@ -52,6 +52,7 @@ export function Thread() {
     [messagesByConv, activeConvId]
   );
 
+  const isEmail = conv?.channel === "gmail";
   const groups = useMemo(() => groupMessages(messages), [messages]);
 
   // Skeleton flash on conv switch
@@ -123,8 +124,11 @@ export function Thread() {
             <span className="status-dot" />
           </span>
           <div>
-            <h1>{conv.name}</h1>
-            <div className="contact-sub">{conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}</div>
+            <h1>{conv.subject || conv.name}</h1>
+            <div className="contact-sub">
+              {conv.name}
+              {conv.contactEmail ? <span style={{ opacity: 0.55 }}> · {conv.contactEmail}</span> : null}
+            </div>
           </div>
         </div>
         <div className="head-actions">
@@ -151,56 +155,44 @@ export function Thread() {
       </header>
 
       <section
-        className={`messages ${isLoading ? "is-loading" : ""}`}
+        className={`messages ${isEmail ? "is-email" : ""} ${isLoading ? "is-loading" : ""}`}
         id="thread-content"
         ref={messagesEl}
         aria-live="polite"
         tabIndex={-1}
       >
-        {groups.map((g, gi) => {
-          const isOut = g.dir === "out";
-          const lastTime = g.items[g.items.length - 1]?.time ?? "";
-          return (
-            <div key={gi} className={`msg-group ${isOut ? "out" : "in"}`}>
-              {g.items.map((m, idx) => {
-                const isLast = idx === g.items.length - 1;
-                const hidden = !isLast;
-                if (m.shots) {
-                  return (
-                    <div key={m.id} className="msg-row">
-                      {!isOut && (
-                        <div className={`msg-avatar${hidden ? " hidden" : ""}`}>
-                          <Avatar avatar={conv.avatar} className="" />
-                        </div>
-                      )}
-                      <div className="preview-grid">
-                        {[1, 2, 3].map((i) => (
-                          <div key={i} className="shot">
-                            <svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
-                              <rect width="120" height="160" fill="#F4F4F6" />
-                              <text x="60" y="80" textAnchor="middle" fill="#94A3B8" fontSize="10">screenshot {i}</text>
-                            </svg>
+        {isEmail
+          ? messages.map((m) => (
+              <EmailCard
+                key={m.id}
+                message={m}
+                fallbackName={m.dir === "out" ? "Moi" : conv.name}
+                fallbackAvatar={m.dir === "out" ? null : conv.avatar}
+              />
+            ))
+          : groups.map((g, gi) => {
+              const isOut = g.dir === "out";
+              const lastTime = g.items[g.items.length - 1]?.time ?? "";
+              return (
+                <div key={gi} className={`msg-group ${isOut ? "out" : "in"}`}>
+                  {g.items.map((m, idx) => {
+                    const isLast = idx === g.items.length - 1;
+                    const hidden = !isLast;
+                    return (
+                      <div key={m.id} className="msg-row">
+                        {!isOut && (
+                          <div className={`msg-avatar${hidden ? " hidden" : ""}`}>
+                            <Avatar avatar={conv.avatar} className="" />
                           </div>
-                        ))}
+                        )}
+                        <div className="bubble"><p>{m.text}</p></div>
                       </div>
-                    </div>
-                  );
-                }
-                return (
-                  <div key={m.id} className="msg-row">
-                    {!isOut && (
-                      <div className={`msg-avatar${hidden ? " hidden" : ""}`}>
-                        <Avatar avatar={conv.avatar} className="" />
-                      </div>
-                    )}
-                    <div className="bubble"><p>{m.text}</p></div>
-                  </div>
-                );
-              })}
-              <span className="msg-time" style={isOut ? { textAlign: "right" } : undefined}>{lastTime}</span>
-            </div>
-          );
-        })}
+                    );
+                  })}
+                  <span className="msg-time" style={isOut ? { textAlign: "right" } : undefined}>{lastTime}</span>
+                </div>
+              );
+            })}
       </section>
 
       <footer className="composer">
@@ -249,5 +241,66 @@ export function Thread() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function EmailCard({
+  message,
+  fallbackName,
+  fallbackAvatar,
+}: {
+  message: Message;
+  fallbackName: string;
+  fallbackAvatar: import("@/lib/types").Avatar | null;
+}) {
+  const name = message.senderName || fallbackName;
+  const email = message.senderEmail || "";
+  const avatarSrc =
+    message.senderAvatarUrl ||
+    (fallbackAvatar && fallbackAvatar.kind === "img" ? fallbackAvatar.src : null);
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || (email[0]?.toUpperCase() ?? "?");
+
+  // Strip the long auto-footers (=== separator, "View this email in browser"…)
+  // for a tighter preview. Keep the first ~80 lines / 4000 chars max.
+  const cleaned = (message.text || "").replace(/ /g, " ").trim();
+
+  return (
+    <article className={`email-card ${message.dir === "out" ? "is-out" : ""}`}>
+      <header className="email-card-head">
+        <div className="email-card-avatar">
+          {avatarSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarSrc}
+              alt=""
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <span>{initials}</span>
+          )}
+        </div>
+        <div className="email-card-meta">
+          <div className="email-card-line">
+            <span className="email-card-name">{name}</span>
+            {email && <span className="email-card-email">&lt;{email}&gt;</span>}
+          </div>
+          <div className="email-card-date">{message.dateLong || message.time}</div>
+        </div>
+      </header>
+      <div className="email-card-body">
+        {cleaned ? (
+          <pre>{cleaned}</pre>
+        ) : (
+          <p style={{ opacity: 0.5, fontStyle: "italic" }}>(Aucun contenu textuel)</p>
+        )}
+      </div>
+    </article>
   );
 }

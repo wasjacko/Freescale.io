@@ -28,6 +28,8 @@ export type Conversation = {
   channel: ChannelId;
   unread?: boolean;
   group: "today" | "yesterday" | "this-week" | "earlier";
+  subject?: string;
+  contactEmail?: string;
 };
 
 export type MessageDirection = "in" | "out";
@@ -39,6 +41,12 @@ export type Message = {
   time: string;
   /** For incoming messages with image attachments */
   shots?: boolean;
+  /** Email-only fields, populated when the message is part of an email thread */
+  subject?: string;
+  senderName?: string;
+  senderEmail?: string;
+  senderAvatarUrl?: string;
+  dateLong?: string;
 };
 
 export type Priority = "high" | "medium" | "low";
