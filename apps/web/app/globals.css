@@ -5249,7 +5249,15 @@
   flex-direction: column;
   gap: 16px;
   background: #FBFAFF;
+  /* Scroll guarantees on the email layout. The parent .thread is flex column
+     with min-height: 0, so flex:1 + overflow-y: auto here actually scrolls. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+.email-card { max-width: 100%; }
+.email-card-body { overflow: hidden; }
 
 .email-card {
   background: #fff;

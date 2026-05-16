@@ -111,6 +111,7 @@ export function adaptMessage(row: Row): Message {
     ...(meta.subject ? { subject: meta.subject as string } : {}),
     ...(from?.name ? { senderName: from.name } : {}),
     ...(from?.email ? { senderEmail: from.email } : {}),
+    ...((row.body_html as string) ? { bodyHtml: row.body_html as string } : {}),
     dateLong: new Date(sent).toLocaleString("fr-FR", {
       weekday: "short",
       day: "numeric",

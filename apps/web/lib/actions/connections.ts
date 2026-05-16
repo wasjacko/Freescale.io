@@ -11,14 +11,29 @@ import {
   listRecentMessages,
 } from "@/lib/gmail";
 
-/**
- * Pre-built Gravatar URL for an email address. `d=identicon` guarantees a
- * deterministic geometric placeholder if the address isn't on Gravatar — never
- * a broken image, never a default avatar that looks accidental.
- */
-function gravatarFor(email: string, size = 160): string {
-  const md5 = createHash("md5").update(email.trim().toLowerCase()).digest("hex");
-  return `https://www.gravatar.com/avatar/${md5}?s=${size}&d=identicon`;
+// Personal email providers — for those we want a Gravatar (real photo if the
+// owner has one, otherwise a colored initial via UI fallback). For any other
+// domain we treat the sender as a business and pull the favicon, which
+// produces a real company logo for things like noreply@mobbin.com.
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  "gmail.com", "googlemail.com", "yahoo.com", "yahoo.fr", "outlook.com",
+  "hotmail.com", "hotmail.fr", "live.com", "icloud.com", "me.com",
+  "mac.com", "aol.com", "proton.me", "protonmail.com", "pm.me",
+  "free.fr", "orange.fr", "wanadoo.fr", "sfr.fr", "laposte.net",
+]);
+
+function avatarUrlFor(email: string): string {
+  const domain = email.split("@")[1]?.toLowerCase().trim() ?? "";
+  if (!domain) return "";
+  if (PERSONAL_EMAIL_DOMAINS.has(domain)) {
+    const md5 = createHash("md5").update(email.trim().toLowerCase()).digest("hex");
+    // d=404 so the <img> fires onerror when no real Gravatar exists, letting
+    // the UI fall back to colored initials. Better than a generic identicon.
+    return `https://www.gravatar.com/avatar/${md5}?s=160&d=404`;
+  }
+  // Business domain → company favicon. Google's favicons.googleusercontent.com
+  // returns a real logo for almost every known site, no auth, no rate limit.
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 }
 
 export type SyncReport = {
@@ -147,7 +162,7 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
             workspace_id: account.workspace_id,
             display_name: contactName || contactEmail,
             email: contactEmail,
-            avatar_url: gravatarFor(contactEmail),
+            avatar_url: avatarUrlFor(contactEmail),
           })
           .select("id")
           .single();

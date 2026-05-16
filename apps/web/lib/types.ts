@@ -47,6 +47,7 @@ export type Message = {
   senderEmail?: string;
   senderAvatarUrl?: string;
   dateLong?: string;
+  bodyHtml?: string;
 };
 
 export type Priority = "high" | "medium" | "low";

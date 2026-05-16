@@ -83,14 +83,29 @@ export async function getInboxData(): Promise<InboxData> {
     const convIds = convs.map((c) => c.id as string);
     const { data: msgs } = await supabase
       .from("messages")
-      .select("id, conversation_id, direction, body_text, sent_at, metadata")
+      .select("id, conversation_id, direction, body_text, body_html, sent_at, metadata")
       .in("conversation_id", convIds)
       .order("sent_at", { ascending: true });
+    // Build a lookup of contact email → avatar_url so we can stamp each
+     // inbound email with its sender's avatar (gravatar / favicon).
+    const contactByEmail = new Map<string, string>();
+    for (const c of convs) {
+      const contact = (c.contacts ?? null) as Record<string, unknown> | null;
+      const email = (contact?.email as string)?.toLowerCase();
+      const avatar = contact?.avatar_url as string | null;
+      if (email && avatar) contactByEmail.set(email, avatar);
+    }
+
     messagesByConv = ((msgs ?? []) as Record<string, unknown>[]).reduce<Record<string, Message[]>>(
       (acc, row) => {
         const cid = row.conversation_id as string;
+        const msg = adaptMessage(row);
+        if (msg.senderEmail) {
+          const avatar = contactByEmail.get(msg.senderEmail.toLowerCase());
+          if (avatar) msg.senderAvatarUrl = avatar;
+        }
         const list = acc[cid] ?? (acc[cid] = []);
-        list.push(adaptMessage(row));
+        list.push(msg);
         return acc;
       },
       {}

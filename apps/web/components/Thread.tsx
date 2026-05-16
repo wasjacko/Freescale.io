@@ -6,6 +6,7 @@ import { useToast } from "@/lib/hooks/useToast";
 import { useData } from "@/lib/contexts/DataContext";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
+import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import type { Message } from "@/lib/types";
 
 const QUICK_REPLIES = [
@@ -253,6 +254,7 @@ function EmailCard({
   fallbackName: string;
   fallbackAvatar: import("@/lib/types").Avatar | null;
 }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const name = message.senderName || fallbackName;
   const email = message.senderEmail || "";
   const avatarSrc =
@@ -265,6 +267,8 @@ function EmailCard({
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("") || (email[0]?.toUpperCase() ?? "?");
 
+  const hasHtml = !!message.bodyHtml && message.bodyHtml.length > 50;
+
   // Strip the long auto-footers (=== separator, "View this email in browser"…)
   // for a tighter preview. Keep the first ~80 lines / 4000 chars max.
   const cleaned = (message.text || "").replace(/ /g, " ").trim();
@@ -273,14 +277,13 @@ function EmailCard({
     <article className={`email-card ${message.dir === "out" ? "is-out" : ""}`}>
       <header className="email-card-head">
         <div className="email-card-avatar">
-          {avatarSrc ? (
+          {avatarSrc && !imgFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarSrc}
               alt=""
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+              referrerPolicy="no-referrer"
+              onError={() => setImgFailed(true)}
             />
           ) : (
             <span>{initials}</span>
@@ -295,7 +298,9 @@ function EmailCard({
         </div>
       </header>
       <div className="email-card-body">
-        {cleaned ? (
+        {hasHtml ? (
+          <EmailHtmlBody html={message.bodyHtml as string} />
+        ) : cleaned ? (
           <pre>{cleaned}</pre>
         ) : (
           <p style={{ opacity: 0.5, fontStyle: "italic" }}>(Aucun contenu textuel)</p>
