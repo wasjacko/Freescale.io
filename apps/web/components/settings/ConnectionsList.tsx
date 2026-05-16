@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { syncGmail, disconnectChannel, type SyncReport } from "@/lib/actions/connections";
 
@@ -40,9 +41,67 @@ export function ConnectionsList({
   accounts: Account[];
   flash: { kind: "ok" | "err"; text: string } | null;
 }) {
+  const router = useRouter();
   const [report, setReport] = useState<SyncReport | null>(null);
   const [pending, startTransition] = useTransition();
+  const [connecting, setConnecting] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(flash);
+
+  // Listen for OAuth popup messages from /auth/gmail/callback
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as
+        | { type: "gmail_connected"; email: string; synced: number }
+        | { type: "gmail_error"; error: string }
+        | null;
+      if (!data) return;
+      if (data.type === "gmail_connected") {
+        setConnecting(null);
+        const tail =
+          data.synced > 0
+            ? ` · ${data.synced} message${data.synced > 1 ? "s" : ""} importé${data.synced > 1 ? "s" : ""}`
+            : "";
+        setToast({ kind: "ok", text: `Gmail connecté (${data.email})${tail}` });
+        router.refresh();
+      } else if (data.type === "gmail_error") {
+        setConnecting(null);
+        setToast({ kind: "err", text: `Connexion impossible : ${data.error}` });
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [router]);
+
+  const openConnectPopup = (kind: string, path: string) => {
+    setConnecting(kind);
+    setToast(null);
+    const w = 560;
+    const h = 720;
+    const left = window.screenX + (window.outerWidth - w) / 2;
+    const top = window.screenY + (window.outerHeight - h) / 2;
+    const popup = window.open(
+      `${path}?popup=1`,
+      "freescale_oauth",
+      `width=${w},height=${h},left=${left},top=${top},popup=yes`
+    );
+    if (!popup) {
+      setConnecting(null);
+      setToast({
+        kind: "err",
+        text: "Impossible d'ouvrir la fenêtre. Autorisez les pop-ups pour freescale-io.vercel.app.",
+      });
+      return;
+    }
+    // Poll for the popup being closed without a message (user closed it
+    // manually) so we don't stay stuck on "Connexion…"
+    const timer = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(timer);
+        setConnecting((c) => (c === kind ? null : c));
+      }
+    }, 600);
+  };
 
   const handleSync = (accountId: string) => {
     setReport(null);
@@ -164,9 +223,14 @@ export function ConnectionsList({
                         Connecté
                       </span>
                     ) : (
-                      <a href={p.startPath} className="set-btn set-btn-primary">
-                        Connecter {p.label}
-                      </a>
+                      <button
+                        type="button"
+                        className="set-btn set-btn-primary"
+                        onClick={() => openConnectPopup(p.kind, p.startPath!)}
+                        disabled={connecting === p.kind}
+                      >
+                        {connecting === p.kind ? "Connexion…" : `Connecter ${p.label}`}
+                      </button>
                     )
                   ) : (
                     <button type="button" className="set-btn" disabled>

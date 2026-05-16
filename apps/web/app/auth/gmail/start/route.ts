@@ -22,11 +22,12 @@ export async function GET(request: NextRequest) {
 
   const state = randomBytes(24).toString("hex");
   const authUrl = buildGmailAuthUrl(state);
+  const isPopup = request.nextUrl.searchParams.get("popup") === "1";
 
   const res = NextResponse.redirect(authUrl);
-  // 10-minute httpOnly cookie carrying (user id, state) so the callback can
-  // validate against CSRF.
-  res.cookies.set("fs_gmail_oauth", `${user.id}.${state}`, {
+  // 10-minute httpOnly cookie carrying (user id, state, popup flag) so the
+  // callback can validate against CSRF and know how to close the loop.
+  res.cookies.set("fs_gmail_oauth", `${user.id}.${state}.${isPopup ? "1" : "0"}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

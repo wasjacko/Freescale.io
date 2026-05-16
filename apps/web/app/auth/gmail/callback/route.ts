@@ -32,10 +32,11 @@ export async function GET(request: NextRequest) {
   if (!stored) {
     return NextResponse.redirect(new URL("/app/settings/connections?error=state_lost", request.url));
   }
-  const [storedUserId, storedState] = stored.split(".");
+  const [storedUserId, storedState, popupFlag] = stored.split(".");
   if (storedUserId !== user.id || storedState !== state) {
     return NextResponse.redirect(new URL("/app/settings/connections?error=state_mismatch", request.url));
   }
+  const isPopup = popupFlag === "1";
 
   try {
     const tokens = await exchangeGmailCode(code);
@@ -93,6 +94,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (isPopup) {
+      const html = renderPopupClose({
+        type: "gmail_connected",
+        email: tokens.email,
+        synced,
+      });
+      const res = new NextResponse(html, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+      res.cookies.delete("fs_gmail_oauth");
+      return res;
+    }
+
     const res = NextResponse.redirect(
       new URL(
         `/app?connected=gmail&email=${encodeURIComponent(tokens.email)}&synced=${synced}`,
@@ -104,10 +119,63 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error("Gmail OAuth callback failed:", err);
     const msg = err instanceof Error ? err.message : "unknown_error";
+    if (isPopup) {
+      const html = renderPopupClose({ type: "gmail_error", error: msg });
+      const res = new NextResponse(html, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+      res.cookies.delete("fs_gmail_oauth");
+      return res;
+    }
     const res = NextResponse.redirect(
       new URL(`/app/settings/connections?error=${encodeURIComponent(msg)}`, request.url)
     );
     res.cookies.delete("fs_gmail_oauth");
     return res;
   }
+}
+
+/**
+ * Tiny HTML rendered in the OAuth popup window — postMessages the parent
+ * window so the SaaS can show a toast / refresh data, then closes itself.
+ * The parent must verify event.origin matches its own origin before trusting
+ * event.data.
+ */
+function renderPopupClose(payload: Record<string, unknown>): string {
+  const json = JSON.stringify(payload).replace(/</g, "\\u003c");
+  return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Connexion Gmail</title>
+  <style>
+    html, body { margin: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: #FBFAFF; color: #0F172A; }
+    .wrap { height: 100%; display: grid; place-items: center; padding: 24px; text-align: center; }
+    h1 { font-size: 16px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+    p { font-size: 13px; color: #5B6475; margin: 0; }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: #5B6CFF; margin: 0 auto 14px; box-shadow: 0 0 0 6px rgba(91, 108, 255, 0.18); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <div class="dot" aria-hidden></div>
+      <h1>Connexion terminée</h1>
+      <p>Cette fenêtre se ferme automatiquement.</p>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var payload = ${json};
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage(payload, window.location.origin);
+        }
+      } catch (e) {}
+      setTimeout(function () { window.close(); }, 120);
+    })();
+  </script>
+</body>
+</html>`;
 }
