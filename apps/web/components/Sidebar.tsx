@@ -24,7 +24,10 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar({ user }: { user: CurrentUser | null }) {
   const { view, setView, toggleSidebar } = useApp();
-  const { conversations, tasks, channels } = useData();
+  const data = useData();
+  const conversations = data.conversations ?? [];
+  const tasks = data.tasks ?? [];
+  const channels = data.channels ?? [];
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [addChannelOpen, setAddChannelOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);

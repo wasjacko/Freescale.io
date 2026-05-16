@@ -1,31 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import DOMPurify from "isomorphic-dompurify";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Render an HTML email body inside a sandboxed iframe so:
  *  - the email's CSS can't bleed into our app
  *  - the iframe height auto-fits the content (no inner scrollbar)
- *  - DOMPurify strips scripts, forms, dangerous tags before injecting
+ *  - we strip scripts / forms / dangerous tags before injecting
+ *
+ * Sanitization is intentionally done client-side only (lazy DOMPurify import)
+ * so the server bundle stays free of jsdom and we don't risk crashing the
+ * RSC render. Before the lazy module resolves we show a tiny loading box.
  */
 export function EmailHtmlBody({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
-  const [height, setHeight] = useState(400);
+  const [height, setHeight] = useState(120);
+  const [doc, setDoc] = useState<string | null>(null);
 
-  const clean = (() => {
-    const sanitized = DOMPurify.sanitize(html, {
-      USE_PROFILES: { html: true },
-      ALLOWED_ATTR: [
-        "href", "src", "alt", "title", "target", "rel",
-        "style", "class", "id", "width", "height", "align",
-        "bgcolor", "color", "border", "cellpadding", "cellspacing",
-        "valign", "colspan", "rowspan",
-      ],
-      FORBID_TAGS: ["script", "iframe", "form", "input", "button", "select", "textarea", "object", "embed"],
-      FORBID_ATTR: ["onerror", "onclick", "onload", "onmouseover", "onsubmit", "onfocus", "onblur"],
-    });
-    return `<!doctype html>
+  // Lazy-load DOMPurify on the client, then sanitize and build the srcDoc.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const mod = await import("isomorphic-dompurify");
+        if (cancelled) return;
+        const DOMPurify = mod.default ?? (mod as unknown as { sanitize: (s: string, o?: object) => string });
+        const sanitized = DOMPurify.sanitize(html, {
+          USE_PROFILES: { html: true },
+          FORBID_TAGS: ["script", "iframe", "form", "input", "button", "select", "textarea", "object", "embed"],
+          FORBID_ATTR: ["onerror", "onclick", "onload", "onmouseover", "onsubmit", "onfocus", "onblur"],
+        });
+        const built = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -35,79 +40,76 @@ export function EmailHtmlBody({ html }: { html: string }) {
     html, body { margin: 0; padding: 0; overflow: hidden; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Geist", system-ui, sans-serif;
-      font-size: 14px;
-      line-height: 1.55;
-      color: #0F172A;
-      word-break: break-word;
-      overflow-wrap: anywhere;
+      font-size: 14px; line-height: 1.55; color: #0F172A;
+      word-break: break-word; overflow-wrap: anywhere;
     }
     img { max-width: 100%; height: auto; }
     table { max-width: 100%; }
     a { color: #4A52E6; }
-    blockquote {
-      margin: 12px 0;
-      padding: 0 12px;
-      border-left: 3px solid rgba(15, 23, 42, 0.10);
-      color: #5B6475;
-    }
-    pre, code {
-      font-family: ui-monospace, "SF Mono", Menlo, monospace;
-      font-size: 13px;
-      background: #F4F5FA;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
+    blockquote { margin: 12px 0; padding: 0 12px; border-left: 3px solid rgba(15, 23, 42, 0.10); color: #5B6475; }
+    pre, code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; background: #F4F5FA; padding: 2px 6px; border-radius: 4px; }
   </style>
 </head>
 <body>${sanitized}
 <script>
-  // Forward wheel events to the parent window so the outer scroll container
-  // can scroll past the email body. Without this, wheel events get trapped
-  // inside the iframe and the parent <.messages> never scrolls.
-  document.addEventListener('wheel', function (e) {
-    parent.postMessage({ type: 'fs:wheel', deltaY: e.deltaY, deltaX: e.deltaX }, '*');
-  }, { passive: true });
-  // Same for touch scrolling on mobile / trackpads in scroll-snap mode.
-  var lastY = 0;
-  document.addEventListener('touchstart', function (e) {
-    lastY = e.touches[0] ? e.touches[0].clientY : 0;
-  }, { passive: true });
-  document.addEventListener('touchmove', function (e) {
-    var y = e.touches[0] ? e.touches[0].clientY : 0;
-    parent.postMessage({ type: 'fs:wheel', deltaY: lastY - y, deltaX: 0 }, '*');
-    lastY = y;
-  }, { passive: true });
+  (function () {
+    try {
+      document.addEventListener('wheel', function (e) {
+        parent.postMessage({ type: 'fs:wheel', deltaY: e.deltaY, deltaX: e.deltaX }, '*');
+      }, { passive: true });
+      var lastY = 0;
+      document.addEventListener('touchstart', function (e) {
+        lastY = e.touches[0] ? e.touches[0].clientY : 0;
+      }, { passive: true });
+      document.addEventListener('touchmove', function (e) {
+        var y = e.touches[0] ? e.touches[0].clientY : 0;
+        parent.postMessage({ type: 'fs:wheel', deltaY: lastY - y, deltaX: 0 }, '*');
+        lastY = y;
+      }, { passive: true });
+    } catch (err) {}
+  })();
 </script>
 </body>
 </html>`;
-  })();
+        setDoc(built);
+      } catch (err) {
+        // If sanitization fails for any reason, render the raw text as a
+        // graceful degrade rather than crashing the whole thread.
+        // eslint-disable-next-line no-console
+        console.error("EmailHtmlBody sanitize failed:", err);
+        setDoc(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [html]);
 
   useEffect(() => {
     const iframe = ref.current;
-    if (!iframe) return;
+    if (!iframe || !doc) return;
 
     const resize = () => {
       try {
-        const doc = iframe.contentDocument;
-        if (!doc) return;
+        const cdoc = iframe.contentDocument;
+        if (!cdoc) return;
         const h = Math.max(
-          doc.documentElement.scrollHeight,
-          doc.body?.scrollHeight ?? 0
+          cdoc.documentElement.scrollHeight,
+          cdoc.body?.scrollHeight ?? 0
         );
         if (h && Math.abs(h - height) > 4) setHeight(h);
       } catch {
-        // Cross-origin or document not ready — try again on next load
+        // ignore
       }
     };
 
     iframe.addEventListener("load", resize);
-    const t1 = setTimeout(resize, 200);
-    const t2 = setTimeout(resize, 600);
-    const t3 = setTimeout(resize, 1500);
+    const timers = [
+      setTimeout(resize, 200),
+      setTimeout(resize, 600),
+      setTimeout(resize, 1500),
+    ];
 
-    // Forward wheel events emitted by the iframe back to the nearest scroll
-    // container in our app so the user can scroll the message list while the
-    // pointer is over the email body.
     const onMessage = (e: MessageEvent) => {
       const data = e.data as { type?: string; deltaY?: number; deltaX?: number } | null;
       if (!data || data.type !== "fs:wheel") return;
@@ -124,17 +126,35 @@ export function EmailHtmlBody({ html }: { html: string }) {
     return () => {
       iframe.removeEventListener("load", resize);
       window.removeEventListener("message", onMessage);
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      timers.forEach(clearTimeout);
     };
-  }, [clean, height]);
+  }, [doc, height]);
+
+  // Plain-text fallback if sanitization hasn't resolved or failed.
+  const placeholder = useMemo(
+    () => (
+      <div
+        style={{
+          minHeight: 80,
+          padding: "0 28px 24px",
+          fontSize: 13,
+          color: "#8B93A4",
+          fontStyle: "italic",
+        }}
+      >
+        Chargement de l&apos;email…
+      </div>
+    ),
+    []
+  );
+
+  if (!doc) return placeholder;
 
   return (
     <iframe
       ref={ref}
-      sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-      srcDoc={clean}
+      sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"
+      srcDoc={doc}
       style={{
         width: "100%",
         border: 0,
