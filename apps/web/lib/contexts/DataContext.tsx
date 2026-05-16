@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from "react";
 import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
-import type { InboxData } from "@/lib/data/queries";
+import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
 import {
   markConversationRead as srvMarkRead,
   markConversationUnread as srvMarkUnread,
@@ -17,6 +17,7 @@ type Ctx = {
   tasks: Task[];
   events: CalEvent[];
   upcoming: UpcomingEvent[];
+  channels: ConnectedChannel[];
   archived: Set<string>;
   markRead: (id: string) => Promise<void>;
   markUnread: (id: string) => Promise<void>;
@@ -90,6 +91,7 @@ export function DataProvider({
       tasks,
       events: initial.events,
       upcoming: initial.upcoming,
+      channels: initial.channels,
       archived,
       markRead,
       markUnread,
@@ -104,6 +106,7 @@ export function DataProvider({
       tasks,
       initial.events,
       initial.upcoming,
+      initial.channels,
       archived,
       markRead,
       markUnread,

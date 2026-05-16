@@ -3,51 +3,36 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { useApp } from "@/lib/store";
-import { useToast } from "@/lib/hooks/useToast";
+import { useData } from "@/lib/contexts/DataContext";
 import type { CurrentUser } from "@/lib/auth";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
-import { ChannelPicker } from "@/components/ChannelPicker";
 
 type NavItem = {
   id: "inbox" | "tasks" | "calendar" | "ai-knowledge";
   label: string;
   icon: string;
-  count?: number;
   beta?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { id: "inbox", label: "Inbox", icon: "i-inbox", count: 12 },
-  { id: "tasks", label: "Tasks", icon: "i-task", count: 8 },
+  { id: "inbox", label: "Inbox", icon: "i-inbox" },
+  { id: "tasks", label: "Tasks", icon: "i-task" },
   { id: "calendar", label: "Calendar", icon: "i-cal" },
   { id: "ai-knowledge", label: "AI Knowledge", icon: "i-spark", beta: true },
 ];
 
-const DEFAULT_CHANNELS = [
-  { id: "gmail", label: "Gmail", count: 12 },
-  { id: "instagram", label: "Instagram", count: 6 },
-  { id: "whatsapp", label: "WhatsApp", count: 2 },
-  { id: "slack", label: "Slack", count: 3 },
-  { id: "discord", label: "Discord", count: 1 },
-];
-
 export function Sidebar({ user }: { user: CurrentUser | null }) {
   const { view, setView, toggleSidebar } = useApp();
-  const push = useToast((s) => s.push);
-  const [extraChannels, setExtraChannels] = useState<Array<{ id: string; label: string }>>([]);
-  const [pickerAnchor, setPickerAnchor] = useState<HTMLElement | null>(null);
+  const { conversations, tasks, channels } = useData();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const addBtnRef = useRef<HTMLButtonElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
 
-  const connectedIds = new Set<string>([
-    ...DEFAULT_CHANNELS.map((c) => c.id),
-    ...extraChannels.map((c) => c.id),
-  ]);
-
-  const handleConnect = (id: string, name: string) => {
-    setExtraChannels((prev) => [...prev, { id, label: name }]);
-    push({ text: `✓ ${name} connected` });
+  // Real counts derived from the live DB
+  const counts: Record<NavItem["id"], number | null> = {
+    inbox: conversations.filter((c) => c.unread).length,
+    tasks: tasks.filter((t) => t.status !== "done").length,
+    calendar: null,
+    "ai-knowledge": null,
   };
 
   return (
@@ -71,61 +56,74 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
       </div>
 
       <nav className="nav-section">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`nav-item ${view === item.id ? "active" : ""}`}
-            onClick={() => setView(item.id)}
-          >
-            <span className="nav-left">
-              <Icon name={item.icon} />
-              <span className="nav-text">
-                {item.label}
-                {item.beta && <span className="nav-beta">Beta</span>}
+        {NAV_ITEMS.map((item) => {
+          const count = counts[item.id];
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`nav-item ${view === item.id ? "active" : ""}`}
+              onClick={() => setView(item.id)}
+            >
+              <span className="nav-left">
+                <Icon name={item.icon} />
+                <span className="nav-text">
+                  {item.label}
+                  {item.beta && <span className="nav-beta">Beta</span>}
+                </span>
               </span>
-            </span>
-            {item.count != null && <span className="count">{item.count}</span>}
-          </button>
-        ))}
+              {count != null && count > 0 && <span className="count">{count}</span>}
+            </button>
+          );
+        })}
       </nav>
 
       <nav className="nav-section" id="channels-section">
         <div className="nav-section-head">
           <div className="nav-label">Channels</div>
-          <button
-            ref={addBtnRef}
+          <Link
+            href="/app/settings/connections"
             className="add-channel-btn"
-            type="button"
-            aria-label="Add channel"
-            data-tip="Add channel"
+            aria-label="Connecter un canal"
+            data-tip="Connecter un canal"
             data-tip-side="right"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPickerAnchor(pickerAnchor ? null : addBtnRef.current);
-            }}
           >
             <Icon name="i-plus" />
-          </button>
+          </Link>
         </div>
-        {DEFAULT_CHANNELS.map((ch) => (
-          <button key={ch.id} type="button" className="nav-item">
+        {channels.length === 0 ? (
+          <Link
+            href="/app/settings/connections"
+            className="nav-item"
+            style={{ textDecoration: "none", opacity: 0.78 }}
+          >
             <span className="nav-left">
-              <ChannelLogo channel={ch.id} />
-              <span className="nav-text">{ch.label}</span>
+              <Icon name="i-plus" />
+              <span className="nav-text">Connecter un canal</span>
             </span>
-            <span className="count">{ch.count}</span>
-          </button>
-        ))}
-        {extraChannels.map((ch) => (
-          <button key={ch.id} type="button" className="nav-item">
-            <span className="nav-left">
-              <ChannelLogo channel={ch.id} />
-              <span className="nav-text">{ch.label}</span>
-            </span>
-            <span className="count">·</span>
-          </button>
-        ))}
+          </Link>
+        ) : (
+          channels.map((ch) => (
+            <button
+              key={ch.id}
+              type="button"
+              className="nav-item"
+              onClick={() => setView("inbox")}
+            >
+              <span className="nav-left">
+                <ChannelLogo channel={ch.kind} />
+                <span className="nav-text">{ch.displayName}</span>
+              </span>
+              {ch.unreadCount > 0 ? (
+                <span className="count">{ch.unreadCount}</span>
+              ) : ch.conversationCount > 0 ? (
+                <span className="count" style={{ opacity: 0.5 }}>
+                  {ch.conversationCount}
+                </span>
+              ) : null}
+            </button>
+          ))
+        )}
       </nav>
 
       <div className="account" ref={accountRef} style={{ position: "relative" }}>
@@ -169,6 +167,13 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             >
               <Icon name="i-settings" /> Paramètres
             </Link>
+            <Link
+              href="/app/settings/connections"
+              className="ctx-item"
+              onClick={() => setAccountMenuOpen(false)}
+            >
+              <Icon name="i-globe" /> Connexions
+            </Link>
             <div className="ctx-divider" />
             <form action="/auth/sign-out" method="post" style={{ margin: 0 }}>
               <button className="ctx-item is-danger" type="submit" style={{ width: "100%" }}>
@@ -178,15 +183,6 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
           </div>
         )}
       </div>
-
-      {pickerAnchor && (
-        <ChannelPicker
-          anchor={pickerAnchor}
-          connectedIds={connectedIds}
-          onClose={() => setPickerAnchor(null)}
-          onConnect={handleConnect}
-        />
-      )}
     </aside>
   );
 }

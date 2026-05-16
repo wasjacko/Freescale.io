@@ -7,7 +7,15 @@ import {
   adaptCalendarEvent,
   adaptUpcoming,
 } from "./adapters";
-import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
+import type { CalEvent, ChannelId, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
+
+export type ConnectedChannel = {
+  id: string;
+  kind: ChannelId;
+  displayName: string;
+  conversationCount: number;
+  unreadCount: number;
+};
 
 export type InboxData = {
   workspaceId: string | null;
@@ -16,6 +24,7 @@ export type InboxData = {
   tasks: Task[];
   events: CalEvent[];
   upcoming: UpcomingEvent[];
+  channels: ConnectedChannel[];
 };
 
 export async function getCurrentWorkspaceId(): Promise<string | null> {
@@ -45,10 +54,11 @@ export async function getInboxData(): Promise<InboxData> {
       tasks: [],
       events: [],
       upcoming: [],
+      channels: [],
     };
   }
 
-  const [convsRes, tasksRes, eventsRes] = await Promise.all([
+  const [convsRes, tasksRes, eventsRes, channelsRes] = await Promise.all([
     supabase
       .from("conversations")
       .select(
@@ -73,6 +83,13 @@ export async function getInboxData(): Promise<InboxData> {
       .eq("workspace_id", workspaceId)
       .order("starts_at", { ascending: true })
       .limit(100),
+    supabase
+      .from("channel_accounts")
+      .select("id, kind, display_name, external_id")
+      .eq("workspace_id", workspaceId)
+      .eq("status", "active")
+      .not("encrypted_tokens", "is", null)
+      .order("connected_at", { ascending: true }),
   ]);
 
   const convs = (convsRes.data ?? []) as Record<string, unknown>[];
@@ -127,5 +144,30 @@ export async function getInboxData(): Promise<InboxData> {
     .slice(0, 4)
     .map(adaptUpcoming);
 
-  return { workspaceId, conversations, messagesByConv, tasks, events, upcoming };
+  // Per-channel rollup so the sidebar can show real counts of what's actually
+  // connected. We could push this into Postgres (count() group by), but the
+  // conversation set we already loaded is small enough to bucket in-memory.
+  const channelAccounts = (channelsRes.data ?? []) as Record<string, unknown>[];
+  const channels: ConnectedChannel[] = channelAccounts.map((acc) => {
+    const kind = (acc.kind as ChannelId) ?? "gmail";
+    const convsForKind = conversations.filter((c) => c.channel === kind);
+    return {
+      id: acc.id as string,
+      kind,
+      displayName:
+        (acc.display_name as string) || (acc.external_id as string) || kind,
+      conversationCount: convsForKind.length,
+      unreadCount: convsForKind.filter((c) => c.unread).length,
+    };
+  });
+
+  return {
+    workspaceId,
+    conversations,
+    messagesByConv,
+    tasks,
+    events,
+    upcoming,
+    channels,
+  };
 }
