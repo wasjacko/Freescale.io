@@ -241,10 +241,26 @@ function getCharset(part: GmailMessagePart): string {
 }
 
 /**
+ * Try to decode bytes with the given charset. Returns null if the result is
+ * suspect (contains the U+FFFD replacement character → invalid sequences
+ * for that charset).
+ */
+function tryDecode(bytes: Buffer, charset: string): string | null {
+  try {
+    const out = new TextDecoder(charset, { fatal: false }).decode(bytes);
+    return out.includes("�") ? null : out;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Decode a message part body honoring both Content-Transfer-Encoding
  * (quoted-printable / base64 / 7bit / 8bit) AND the Content-Type charset
- * (utf-8, windows-1252, iso-8859-15, ...). Without charset awareness, French
- * emails sent as ISO-8859-1 surface as "Cr�er" instead of "Créer".
+ * (utf-8, windows-1252, iso-8859-15, ...). Many French senders LIE about
+ * their charset (declare utf-8 but ship Latin-1), so we run a candidate
+ * cascade: declared → windows-1252 → utf-8 (lossy), keeping the first one
+ * that decodes cleanly (no U+FFFD characters).
  */
 function decodePart(part: GmailMessagePart): string {
   const raw = part.body?.data;
@@ -257,28 +273,32 @@ function decodePart(part: GmailMessagePart): string {
   const enc = (getHeader(part, "content-transfer-encoding") ?? "").toLowerCase();
   let bodyBytes: Buffer;
   if (enc === "quoted-printable") {
-    // The transport-decoded bytes here are the ASCII-printable QP source
-    // text. Round-trip via latin1 (1 byte per code unit) so we can walk it
-    // char by char without surrogate weirdness, then byte-decode QP.
     bodyBytes = decodeQuotedPrintableBytes(transportBytes.toString("latin1"));
   } else if (enc === "base64") {
-    // Rare: Gmail double-encoded. Unwrap once more.
     bodyBytes = Buffer.from(transportBytes.toString("latin1"), "base64");
   } else {
     bodyBytes = transportBytes;
   }
 
-  // Interpret with the declared charset.
-  const charset = getCharset(part);
+  const declared = getCharset(part);
+  // Candidate cascade — first non-suspect decode wins
+  const candidates = [
+    declared,
+    "windows-1252",
+    "iso-8859-15",
+    "utf-8",
+  ].filter((c, i, arr) => arr.indexOf(c) === i);
+
+  for (const cs of candidates) {
+    const out = tryDecode(bodyBytes, cs);
+    if (out !== null) return out;
+  }
+
+  // Ultimate fallback — accept lossy UTF-8 (with U+FFFD for bad bytes).
   try {
-    return new TextDecoder(charset, { fatal: false }).decode(bodyBytes);
+    return new TextDecoder("utf-8", { fatal: false }).decode(bodyBytes);
   } catch {
-    // Unknown charset → UTF-8 first, latin1 as ultimate fallback.
-    try {
-      return new TextDecoder("utf-8", { fatal: false }).decode(bodyBytes);
-    } catch {
-      return bodyBytes.toString("latin1");
-    }
+    return bodyBytes.toString("latin1");
   }
 }
 
