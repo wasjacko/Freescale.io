@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/Toaster";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
+import { AutoSync } from "@/components/AutoSync";
 
 export function AppShell({
   user,
@@ -152,6 +153,7 @@ export function AppShell({
       <Suspense>
         <FlashFromUrl />
       </Suspense>
+      <AutoSync />
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 

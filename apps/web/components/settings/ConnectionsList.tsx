@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChannelLogo } from "@/components/icons/Icon";
-import { syncGmail, disconnectChannel, type SyncReport } from "@/lib/actions/connections";
+import { disconnectChannel } from "@/lib/actions/connections";
 
 type Account = {
   id: string;
@@ -42,12 +42,13 @@ export function ConnectionsList({
   flash: { kind: "ok" | "err"; text: string } | null;
 }) {
   const router = useRouter();
-  const [report, setReport] = useState<SyncReport | null>(null);
   const [pending, startTransition] = useTransition();
   const [connecting, setConnecting] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(flash);
 
-  // Listen for OAuth popup messages from /auth/gmail/callback
+  // Listen for OAuth popup messages from /auth/gmail/callback. On success we
+  // route the user straight into the inbox — FlashFromUrl over there will fire
+  // the confirmation toast so it survives the navigation.
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -58,12 +59,10 @@ export function ConnectionsList({
       if (!data) return;
       if (data.type === "gmail_connected") {
         setConnecting(null);
-        const tail =
-          data.synced > 0
-            ? ` · ${data.synced} message${data.synced > 1 ? "s" : ""} importé${data.synced > 1 ? "s" : ""}`
-            : "";
-        setToast({ kind: "ok", text: `Gmail connecté (${data.email})${tail}` });
-        router.refresh();
+        const url = `/app?connected=gmail&email=${encodeURIComponent(
+          data.email
+        )}&synced=${data.synced}`;
+        router.push(url as never);
       } else if (data.type === "gmail_error") {
         setConnecting(null);
         setToast({ kind: "err", text: `Connexion impossible : ${data.error}` });
@@ -101,30 +100,6 @@ export function ConnectionsList({
         setConnecting((c) => (c === kind ? null : c));
       }
     }, 600);
-  };
-
-  const handleSync = (accountId: string) => {
-    setReport(null);
-    setToast(null);
-    startTransition(async () => {
-      try {
-        const r = await syncGmail(accountId);
-        setReport(r);
-        if (r.errors.length === 0) {
-          setToast({
-            kind: "ok",
-            text: `${r.newMessages} nouveau(x) message(s), ${r.newConversations} nouvelle(s) conversation(s).`,
-          });
-        } else {
-          setToast({ kind: "err", text: r.errors[0] ?? "Sync partielle" });
-        }
-      } catch (err) {
-        setToast({
-          kind: "err",
-          text: err instanceof Error ? err.message : "Sync impossible.",
-        });
-      }
-    });
   };
 
   const handleDisconnect = (accountId: string, label: string) => {
@@ -170,14 +145,9 @@ export function ConnectionsList({
                     </div>
                   </div>
                   <div className="settings-row-control" style={{ justifyContent: "flex-end", width: "100%" }}>
-                    <button
-                      type="button"
-                      className="set-btn"
-                      onClick={() => handleSync(account.id)}
-                      disabled={pending}
-                    >
-                      {pending ? "Synchronisation…" : "Synchroniser maintenant"}
-                    </button>
+                    <span className="onb-option-tag is-ready" style={{ alignSelf: "center" }}>
+                      Sync auto
+                    </span>
                     <button
                       type="button"
                       className="set-btn set-btn-quiet"
@@ -245,16 +215,6 @@ export function ConnectionsList({
         })}
       </div>
 
-      {report && report.errors.length > 0 && (
-        <div className="settings-card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Détails de la sync</h3>
-          <ul style={{ fontSize: 12.5, color: "#5B6475", paddingLeft: 18 }}>
-            {report.errors.map((e, i) => (
-              <li key={i} style={{ marginBottom: 4 }}>{e}</li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
