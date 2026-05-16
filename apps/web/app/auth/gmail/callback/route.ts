@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { encryptJSON } from "@/lib/encryption";
 import { exchangeGmailCode } from "@/lib/gmail";
+import { syncGmail } from "@/lib/actions/connections";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -61,18 +62,45 @@ export async function GET(request: NextRequest) {
     }
 
     // Upsert channel account
-    await supabase.from("channel_accounts").upsert(
-      {
-        workspace_id: workspace.id,
-        kind: "gmail",
-        external_id: tokens.email,
-        display_name: tokens.email,
-        encrypted_tokens: encrypted,
-        status: "active",
-        connected_at: new Date().toISOString(),
-      },
-      { onConflict: "workspace_id,kind,external_id" }
+    const { data: account } = await supabase
+      .from("channel_accounts")
+      .upsert(
+        {
+          workspace_id: workspace.id,
+          kind: "gmail",
+          external_id: tokens.email,
+          display_name: tokens.email,
+          encrypted_tokens: encrypted,
+          status: "active",
+          connected_at: new Date().toISOString(),
+        },
+        { onConflict: "workspace_id,kind,external_id" }
+      )
+      .select("id")
+      .single();
+
+    // Auto-sync the inbox right after connecting so the user lands on real
+    // emails instead of an empty shell. Capped at 50 messages — feels instant,
+    // gives Mue real context.
+    let synced = 0;
+    if (account?.id) {
+      try {
+        const report = await syncGmail(account.id as string);
+        synced = report.newMessages;
+      } catch (syncErr) {
+        console.error("Initial Gmail sync failed:", syncErr);
+        // Don't block the redirect — the user can re-sync manually if needed.
+      }
+    }
+
+    const res = NextResponse.redirect(
+      new URL(
+        `/app?connected=gmail&email=${encodeURIComponent(tokens.email)}&synced=${synced}`,
+        request.url
+      )
     );
+    res.cookies.delete("fs_gmail_oauth");
+    return res;
   } catch (err) {
     console.error("Gmail OAuth callback failed:", err);
     const msg = err instanceof Error ? err.message : "unknown_error";
@@ -82,10 +110,4 @@ export async function GET(request: NextRequest) {
     res.cookies.delete("fs_gmail_oauth");
     return res;
   }
-
-  const res = NextResponse.redirect(
-    new URL("/app/settings/connections?connected=gmail", request.url)
-  );
-  res.cookies.delete("fs_gmail_oauth");
-  return res;
 }

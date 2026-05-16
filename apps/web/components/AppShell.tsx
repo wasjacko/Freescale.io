@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useApp } from "@/lib/store";
 import { useData } from "@/lib/contexts/DataContext";
 import type { CurrentUser } from "@/lib/auth";
@@ -15,6 +15,7 @@ import { AIKnowledgeView } from "@/components/AIKnowledgeView";
 import { Toaster } from "@/components/ui/Toaster";
 import { CommandPalette } from "@/components/CommandPalette";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
+import { FlashFromUrl } from "@/components/FlashFromUrl";
 
 export function AppShell({
   user,
@@ -148,6 +149,9 @@ export function AppShell({
       </div>
 
       <Toaster />
+      <Suspense>
+        <FlashFromUrl />
+      </Suspense>
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
