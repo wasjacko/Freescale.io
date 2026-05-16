@@ -193,7 +193,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             <div className="settings-avatar-actions">
               <button
                 type="button"
-                className="settings-btn"
+                className="set-btn"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading || pending}
               >
@@ -202,7 +202,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
               {avatarUrl && (
                 <button
                   type="button"
-                  className="settings-btn settings-btn-quiet"
+                  className="set-btn set-btn-quiet"
                   onClick={handleRemove}
                   disabled={uploading || pending}
                 >
@@ -309,7 +309,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         )}
         <button
           type="button"
-          className="settings-btn settings-btn-primary"
+          className="set-btn set-btn-primary"
           onClick={handleSave}
           disabled={!dirty || pending}
         >
@@ -387,7 +387,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             )}
             <button
               type="submit"
-              className="settings-btn settings-btn-primary"
+              className="set-btn set-btn-primary"
               disabled={pwdLoading || !currentPwd || !newPwd || !confirmPwd}
             >
               {pwdLoading ? "Mise à jour…" : "Mettre à jour le mot de passe"}

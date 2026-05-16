@@ -113,7 +113,7 @@ export function ConnectionsList({
                   <div className="settings-row-control" style={{ justifyContent: "flex-end", width: "100%" }}>
                     <button
                       type="button"
-                      className="settings-btn"
+                      className="set-btn"
                       onClick={() => handleSync(account.id)}
                       disabled={pending}
                     >
@@ -121,7 +121,7 @@ export function ConnectionsList({
                     </button>
                     <button
                       type="button"
-                      className="settings-btn settings-btn-quiet"
+                      className="set-btn set-btn-quiet"
                       onClick={() => handleDisconnect(account.id, account.display_name ?? account.external_id)}
                       disabled={pending}
                     >
@@ -164,12 +164,12 @@ export function ConnectionsList({
                         Connecté
                       </span>
                     ) : (
-                      <a href={p.startPath} className="settings-btn settings-btn-primary">
+                      <a href={p.startPath} className="set-btn set-btn-primary">
                         Connecter {p.label}
                       </a>
                     )
                   ) : (
-                    <button type="button" className="settings-btn" disabled>
+                    <button type="button" className="set-btn" disabled>
                       Bientôt
                     </button>
                   )}
