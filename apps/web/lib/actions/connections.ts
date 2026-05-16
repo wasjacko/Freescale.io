@@ -31,9 +31,10 @@ function avatarUrlFor(email: string): string {
     // the UI fall back to colored initials. Better than a generic identicon.
     return `https://www.gravatar.com/avatar/${md5}?s=160&d=404`;
   }
-  // Business domain → company favicon. Google's favicons.googleusercontent.com
-  // returns a real logo for almost every known site, no auth, no rate limit.
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  // Business domain → company favicon. Google's newer faviconV2 endpoint
+  // returns up to 128 px clean (much sharper than the legacy s2/favicons
+  // which often caps at 16/32 px regardless of sz=).
+  return `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON_INTERNATIONAL&fallback_opts=TYPE,SIZE,URL&size=128&url=https://${domain}`;
 }
 
 export type SyncReport = {

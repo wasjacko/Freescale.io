@@ -32,7 +32,7 @@ export function EmailHtmlBody({ html }: { html: string }) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <base target="_blank" />
   <style>
-    html, body { margin: 0; padding: 0; }
+    html, body { margin: 0; padding: 0; overflow: hidden; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Geist", system-ui, sans-serif;
       font-size: 14px;
@@ -59,7 +59,26 @@ export function EmailHtmlBody({ html }: { html: string }) {
     }
   </style>
 </head>
-<body>${sanitized}</body>
+<body>${sanitized}
+<script>
+  // Forward wheel events to the parent window so the outer scroll container
+  // can scroll past the email body. Without this, wheel events get trapped
+  // inside the iframe and the parent <.messages> never scrolls.
+  document.addEventListener('wheel', function (e) {
+    parent.postMessage({ type: 'fs:wheel', deltaY: e.deltaY, deltaX: e.deltaX }, '*');
+  }, { passive: true });
+  // Same for touch scrolling on mobile / trackpads in scroll-snap mode.
+  var lastY = 0;
+  document.addEventListener('touchstart', function (e) {
+    lastY = e.touches[0] ? e.touches[0].clientY : 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    var y = e.touches[0] ? e.touches[0].clientY : 0;
+    parent.postMessage({ type: 'fs:wheel', deltaY: lastY - y, deltaX: 0 }, '*');
+    lastY = y;
+  }, { passive: true });
+</script>
+</body>
 </html>`;
   })();
 
@@ -82,13 +101,29 @@ export function EmailHtmlBody({ html }: { html: string }) {
     };
 
     iframe.addEventListener("load", resize);
-    // Some emails lazy-load images; recheck a few times
     const t1 = setTimeout(resize, 200);
     const t2 = setTimeout(resize, 600);
     const t3 = setTimeout(resize, 1500);
 
+    // Forward wheel events emitted by the iframe back to the nearest scroll
+    // container in our app so the user can scroll the message list while the
+    // pointer is over the email body.
+    const onMessage = (e: MessageEvent) => {
+      const data = e.data as { type?: string; deltaY?: number; deltaX?: number } | null;
+      if (!data || data.type !== "fs:wheel") return;
+      if (e.source !== iframe.contentWindow) return;
+      const scroller =
+        iframe.closest<HTMLElement>(".messages") ??
+        iframe.closest<HTMLElement>("[data-scroll-root]");
+      if (scroller) {
+        scroller.scrollBy({ top: data.deltaY ?? 0, left: data.deltaX ?? 0, behavior: "auto" });
+      }
+    };
+    window.addEventListener("message", onMessage);
+
     return () => {
       iframe.removeEventListener("load", resize);
+      window.removeEventListener("message", onMessage);
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);

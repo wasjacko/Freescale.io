@@ -5243,60 +5243,63 @@
 /* =============================================================================
    Email card layout (used when conversation channel = gmail/outlook)
    ============================================================================= */
+/* Edge-to-edge email layout — no padding, no card borders, hairlines only.
+   The .thread is flex column with min-height: 0 ; flex: 1 + min-height: 0 +
+   overflow-y: auto here make the whole email list scroll inside the pane. */
 .messages.is-email {
-  padding: 24px 28px 32px;
+  padding: 0;
+  gap: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  background: #FBFAFF;
-  /* Scroll guarantees on the email layout. The parent .thread is flex column
-     with min-height: 0, so flex:1 + overflow-y: auto here actually scrolls. */
-  flex: 1;
+  background: #fff;
+  flex: 1 1 0;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
-.email-card { max-width: 100%; }
-.email-card-body { overflow: hidden; }
-
 .email-card {
-  background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(91, 108, 255, 0.04);
-  overflow: hidden;
-  animation: email-card-in 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+  max-width: 100%;
+  animation: email-card-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
+.email-card:last-child { border-bottom: 0; }
 @keyframes email-card-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.email-card.is-out {
-  background: linear-gradient(180deg, #FAFAFE 0%, #F4F5FA 100%);
-  border-color: rgba(91, 108, 255, 0.18);
-}
+.email-card.is-out { background: #FAFAFE; }
 
 .email-card-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  padding: 16px 18px;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+  padding: 16px 28px 12px;
 }
 .email-card-avatar {
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   overflow: hidden;
   background: linear-gradient(135deg, #C4D7FF, #5B6CFF);
   color: #fff;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  image-rendering: -webkit-optimize-contrast;
 }
-.email-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.email-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: -webkit-optimize-contrast;
+}
 
 .email-card-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .email-card-line {
@@ -5320,7 +5323,8 @@
 }
 
 .email-card-body {
-  padding: 18px 20px 22px;
+  padding: 0 28px 24px;
+  overflow: visible;
 }
 .email-card-body pre {
   margin: 0;
@@ -5333,7 +5337,6 @@
   word-break: break-word;
   overflow-wrap: anywhere;
 }
-.email-card-body pre::first-line { color: #0F172A; }
 
 /* =============================================================================
    Add Channel modal — opened from the sidebar "+" button
