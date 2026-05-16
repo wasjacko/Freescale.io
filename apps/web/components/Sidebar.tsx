@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import { useApp } from "@/lib/store";
 import { useData } from "@/lib/contexts/DataContext";
 import type { CurrentUser } from "@/lib/auth";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
+import { AddChannelModal } from "@/components/AddChannelModal";
 
 type NavItem = {
   id: "inbox" | "tasks" | "calendar" | "ai-knowledge";
@@ -25,7 +26,13 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
   const { view, setView, toggleSidebar } = useApp();
   const { conversations, tasks, channels } = useData();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [addChannelOpen, setAddChannelOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
+
+  const connectedKinds = useMemo(
+    () => new Set(channels.map((c) => c.kind)),
+    [channels]
+  );
 
   // Real counts derived from the live DB
   const counts: Record<NavItem["id"], number | null> = {
@@ -81,27 +88,29 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
       <nav className="nav-section" id="channels-section">
         <div className="nav-section-head">
           <div className="nav-label">Channels</div>
-          <Link
-            href="/app/settings/connections"
+          <button
+            type="button"
             className="add-channel-btn"
             aria-label="Connecter un canal"
             data-tip="Connecter un canal"
             data-tip-side="right"
+            onClick={() => setAddChannelOpen(true)}
           >
             <Icon name="i-plus" />
-          </Link>
+          </button>
         </div>
         {channels.length === 0 ? (
-          <Link
-            href="/app/settings/connections"
+          <button
+            type="button"
             className="nav-item"
-            style={{ textDecoration: "none", opacity: 0.78 }}
+            style={{ opacity: 0.78 }}
+            onClick={() => setAddChannelOpen(true)}
           >
             <span className="nav-left">
               <Icon name="i-plus" />
               <span className="nav-text">Connecter un canal</span>
             </span>
-          </Link>
+          </button>
         ) : (
           channels.map((ch) => (
             <button
@@ -183,6 +192,12 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
           </div>
         )}
       </div>
+
+      <AddChannelModal
+        open={addChannelOpen}
+        onClose={() => setAddChannelOpen(false)}
+        connectedKinds={connectedKinds}
+      />
     </aside>
   );
 }
