@@ -195,25 +195,18 @@ export async function getMessage(accessToken: string, id: string): Promise<Gmail
   return (await res.json()) as GmailMessage;
 }
 
-function decodeBase64Url(input: string): string {
-  // Gmail uses base64url; Node Buffer handles "base64" with normalization
+/** Return raw bytes from a base64url-encoded string (no charset assumption). */
+function decodeBase64UrlBytes(input: string): Buffer {
   const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
   const pad = normalized.length % 4 ? "====".slice(normalized.length % 4) : "";
-  try {
-    return Buffer.from(normalized + pad, "base64").toString("utf-8");
-  } catch {
-    return "";
-  }
+  return Buffer.from(normalized + pad, "base64");
 }
 
 /**
- * Decode quoted-printable text (RFC 2045) and return UTF-8. Necessary because
- * Gmail returns each part with the original Content-Transfer-Encoding, and the
- * vast majority of text/* parts are quoted-printable wrapped. Without this you
- * see things like `=C2=A0` (a non-breaking space) and `=3D` (a literal `=`)
- * everywhere in the rendered body.
+ * Decode quoted-printable text (RFC 2045) → raw bytes. Charset interpretation
+ * is intentionally separate so we can honor each part's Content-Type.
  */
-function decodeQuotedPrintable(input: string): string {
+function decodeQuotedPrintableBytes(input: string): Buffer {
   // Drop soft line breaks ("=" at end of line)
   const cleaned = input.replace(/=\r?\n/g, "");
   const bytes: number[] = [];
@@ -228,24 +221,65 @@ function decodeQuotedPrintable(input: string): string {
     }
     bytes.push(cleaned.charCodeAt(i) & 0xff);
   }
-  try {
-    return new TextDecoder("utf-8", { fatal: false }).decode(Uint8Array.from(bytes));
-  } catch {
-    return cleaned;
-  }
+  return Buffer.from(bytes);
 }
 
 function getHeader(part: GmailMessagePart, name: string): string | undefined {
   return part.headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value;
 }
 
-function decodePart(part: GmailMessagePart): string {
-  const raw = part.body?.data ? decodeBase64Url(part.body.data) : "";
-  if (!raw) return "";
-  const enc = (getHeader(part, "content-transfer-encoding") ?? "").toLowerCase();
-  if (enc === "quoted-printable") return decodeQuotedPrintable(raw);
-  // For 7bit / 8bit / binary, the base64url-decoded string IS the body.
+/** Pull charset=... out of the Content-Type header (case-insensitive). */
+function getCharset(part: GmailMessagePart): string {
+  const ct = getHeader(part, "content-type") ?? "";
+  const match = ct.match(/charset\s*=\s*"?([^";\s]+)/i);
+  const raw = (match?.[1] ?? "utf-8").toLowerCase();
+  // Normalize aliases TextDecoder accepts. windows-1252 is the de-facto
+  // superset of ISO-8859-1 most French senders actually use (Outlook,
+  // IONOS, French ISPs), so we map there for safer accent decoding.
+  if (raw === "iso-8859-1" || raw === "latin-1" || raw === "latin1") return "windows-1252";
   return raw;
+}
+
+/**
+ * Decode a message part body honoring both Content-Transfer-Encoding
+ * (quoted-printable / base64 / 7bit / 8bit) AND the Content-Type charset
+ * (utf-8, windows-1252, iso-8859-15, ...). Without charset awareness, French
+ * emails sent as ISO-8859-1 surface as "Cr�er" instead of "Créer".
+ */
+function decodePart(part: GmailMessagePart): string {
+  const raw = part.body?.data;
+  if (!raw) return "";
+
+  // base64url → raw byte buffer (Gmail's body.data is always base64url)
+  const transportBytes = decodeBase64UrlBytes(raw);
+
+  // Unwrap the transfer encoding if needed → final byte buffer
+  const enc = (getHeader(part, "content-transfer-encoding") ?? "").toLowerCase();
+  let bodyBytes: Buffer;
+  if (enc === "quoted-printable") {
+    // The transport-decoded bytes here are the ASCII-printable QP source
+    // text. Round-trip via latin1 (1 byte per code unit) so we can walk it
+    // char by char without surrogate weirdness, then byte-decode QP.
+    bodyBytes = decodeQuotedPrintableBytes(transportBytes.toString("latin1"));
+  } else if (enc === "base64") {
+    // Rare: Gmail double-encoded. Unwrap once more.
+    bodyBytes = Buffer.from(transportBytes.toString("latin1"), "base64");
+  } else {
+    bodyBytes = transportBytes;
+  }
+
+  // Interpret with the declared charset.
+  const charset = getCharset(part);
+  try {
+    return new TextDecoder(charset, { fatal: false }).decode(bodyBytes);
+  } catch {
+    // Unknown charset → UTF-8 first, latin1 as ultimate fallback.
+    try {
+      return new TextDecoder("utf-8", { fatal: false }).decode(bodyBytes);
+    } catch {
+      return bodyBytes.toString("latin1");
+    }
+  }
 }
 
 function findPart(
@@ -261,6 +295,55 @@ function findPart(
   return null;
 }
 
+/**
+ * Decode RFC 2047 "encoded-word" header values like
+ *   =?UTF-8?B?Q3LDqWVy?=  →  Créer
+ *   =?ISO-8859-1?Q?Cr=E9er?=  →  Créer
+ * Plain ASCII passes through unchanged.
+ */
+function decodeMimeHeader(raw: string): string {
+  if (!raw) return "";
+  // Replace each encoded-word block. Adjacent ones with only whitespace
+  // between are joined per RFC 2047 §6.2.
+  const compacted = raw.replace(
+    /=\?([^?]+)\?([QqBb])\?([^?]*)\?=\s+(?==\?)/g,
+    "=?$1?$2?$3?="
+  );
+  return compacted.replace(
+    /=\?([^?]+)\?([QqBb])\?([^?]*)\?=/g,
+    (_, charsetRaw: string, mode: string, payload: string) => {
+      try {
+        const cs = (() => {
+          const lower = charsetRaw.toLowerCase();
+          if (lower === "iso-8859-1" || lower === "latin-1" || lower === "latin1")
+            return "windows-1252";
+          return lower;
+        })();
+        let bytes: Buffer;
+        if (mode.toUpperCase() === "B") {
+          bytes = Buffer.from(payload, "base64");
+        } else {
+          // Q-encoding: like quoted-printable but underscores are spaces
+          const qp = payload.replace(/_/g, " ");
+          const out: number[] = [];
+          for (let i = 0; i < qp.length; i++) {
+            if (qp[i] === "=" && i + 2 < qp.length && /^[0-9A-Fa-f]{2}$/.test(qp.slice(i + 1, i + 3))) {
+              out.push(parseInt(qp.slice(i + 1, i + 3), 16));
+              i += 2;
+            } else {
+              out.push(qp.charCodeAt(i) & 0xff);
+            }
+          }
+          bytes = Buffer.from(out);
+        }
+        return new TextDecoder(cs, { fatal: false }).decode(bytes);
+      } catch {
+        return payload;
+      }
+    }
+  );
+}
+
 export function extractMessageContent(message: GmailMessage): {
   text: string;
   html: string;
@@ -272,20 +355,20 @@ export function extractMessageContent(message: GmailMessage): {
   const headers = message.payload?.headers ?? [];
   const headerMap = new Map(headers.map((h) => [h.name.toLowerCase(), h.value]));
 
-  const fromRaw = headerMap.get("from") ?? "";
+  const fromRaw = decodeMimeHeader(headerMap.get("from") ?? "");
   const matchFrom = fromRaw.match(/^\s*(?:"?([^"<]+)"?\s*)?<?([^<>\s]+@[^<>\s]+)>?\s*$/);
   const from = {
     name: matchFrom?.[1]?.trim().replace(/^"|"$/g, "") ?? null,
     email: matchFrom?.[2]?.trim() ?? fromRaw,
   };
 
-  const toRaw = headerMap.get("to") ?? "";
+  const toRaw = decodeMimeHeader(headerMap.get("to") ?? "");
   const to = toRaw
     .split(",")
     .map((s) => s.match(/<?([^<>\s]+@[^<>\s]+)>?/)?.[1]?.trim())
     .filter((s): s is string => Boolean(s));
 
-  const subject = headerMap.get("subject") ?? "";
+  const subject = decodeMimeHeader(headerMap.get("subject") ?? "");
   const dateHeader = headerMap.get("date");
   const date = dateHeader
     ? new Date(dateHeader)
