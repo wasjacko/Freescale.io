@@ -36,34 +36,10 @@ export async function applySignupAnswers(answers: SignupAnswers): Promise<void> 
     })
     .eq("id", user.id);
 
-  // Bootstrap channel placeholders so the dashboard knows what to surface.
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (workspace?.id && answers.channelsPicked.length) {
-    const rows = answers.channelsPicked
-      .filter((kind) =>
-        ["gmail", "instagram", "whatsapp", "slack", "discord"].includes(kind)
-      )
-      .map((kind) => ({
-        workspace_id: workspace.id as string,
-        kind,
-        external_id: `pending:${kind}`,
-        display_name: null,
-        status: "pending",
-      }));
-    if (rows.length) {
-      await supabase.from("channel_accounts").upsert(rows, {
-        onConflict: "workspace_id,kind,external_id",
-        ignoreDuplicates: true,
-      });
-    }
-  }
+  // Intent (which channels the user wants to plug in) is captured in
+  // profiles.channels_picked. We deliberately do NOT pre-create rows in
+  // channel_accounts: that table is the source of truth for *actually linked*
+  // accounts and any placeholder there would lie to the UI.
 
   revalidatePath("/app", "layout");
 }

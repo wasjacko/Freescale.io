@@ -25,11 +25,15 @@ export default async function ConnectionsPage({
     .limit(1)
     .maybeSingle();
 
+  // Only surface accounts that actually carry credentials. Anything else is a
+  // placeholder row (seed data, pending OAuth that never completed, etc.) and
+  // would mislead the user into clicking Sync on a non-linked account.
   const { data: accounts } = workspace?.id
     ? await supabase
         .from("channel_accounts")
         .select("id, kind, external_id, display_name, status, last_synced_at, connected_at")
         .eq("workspace_id", workspace.id)
+        .not("encrypted_tokens", "is", null)
         .order("connected_at", { ascending: false })
     : { data: [] };
 
