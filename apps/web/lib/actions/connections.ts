@@ -22,6 +22,33 @@ const PERSONAL_EMAIL_DOMAINS = new Set([
   "free.fr", "orange.fr", "wanadoo.fr", "sfr.fr", "laposte.net",
 ]);
 
+/**
+ * Strip subdomains down to the registrable domain. Handles the common
+ * ccTLD+SLD shape (.co.uk, .com.au, .co.jp, .gov.fr, etc.) by keeping the
+ * last 3 parts when the 2nd-to-last is 2-3 chars. Not bulletproof against
+ * the full Public Suffix List, but covers ~99% of email senders we see.
+ *
+ *   notifications.partenaire.meilleurtaux.com → meilleurtaux.com
+ *   accounts.google.com                       → google.com
+ *   news.bbc.co.uk                            → bbc.co.uk
+ *   ionos.fr                                  → ionos.fr
+ */
+function rootDomain(domain: string): string {
+  const parts = domain.split(".");
+  if (parts.length <= 2) return domain;
+  const lastTld = parts[parts.length - 1] ?? "";
+  const secondLast = parts[parts.length - 2] ?? "";
+  // ccTLD pattern: 2-letter TLD + short SLD ("co", "com", "gov", "ac", "or")
+  if (
+    lastTld.length === 2 &&
+    secondLast.length <= 3 &&
+    /^[a-z]+$/.test(secondLast)
+  ) {
+    return parts.slice(-3).join(".");
+  }
+  return parts.slice(-2).join(".");
+}
+
 function avatarUrlFor(email: string): string {
   const domain = email.split("@")[1]?.toLowerCase().trim() ?? "";
   if (!domain) return "";
@@ -29,14 +56,12 @@ function avatarUrlFor(email: string): string {
     const md5 = createHash("md5").update(email.trim().toLowerCase()).digest("hex");
     // d=404 so the <img> fires onerror when no real Gravatar exists, letting
     // the UI fall back to colored initials. Better than a generic identicon.
-    return `https://www.gravatar.com/avatar/${md5}?s=160&d=404`;
+    return `https://www.gravatar.com/avatar/${md5}?s=200&d=404`;
   }
-  // Business domain → icon.horse. Returns up to 256x256 PNG of the real
-  // logo for known sites, or a clean letter-avatar (colored monogram) if the
-  // domain has no favicon. Way sharper than DuckDuckGo's 16-32px favicons,
-  // and the letter-fallback is per-domain unique (not a single generic
-  // placeholder like Google's faviconV2 returns).
-  return `https://icon.horse/icon/${domain}`;
+  // Business domain → icon.horse on the ROOT domain. Returns up to 256x256
+  // PNG of the real logo for known sites; subdomains often 504 on icon.horse
+  // so stripping is mandatory ("partenaire.meilleurtaux.com" was failing).
+  return `https://icon.horse/icon/${rootDomain(domain)}`;
 }
 
 export type SyncReport = {

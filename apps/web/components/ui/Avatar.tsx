@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Avatar as AvatarType } from "@/lib/types";
 
 type Props = {
@@ -10,13 +10,35 @@ type Props = {
 };
 
 /**
- * Renders an avatar. When the source is an <img> URL and the request fails
- * (Gravatar `d=404`, DuckDuckGo with no favicon for that domain, blocked by
- * the network, etc.), we fall back to colored initials so the inbox never
- * shows the same generic placeholder for unknown senders.
+ * Resolve a fallback URL when the primary avatar source fails. For business
+ * domain logos served by icon.horse, we retry on DuckDuckGo's favicon API
+ * (smaller but reliable). For Gravatar (personal emails), there's no useful
+ * second source, so we go straight to initials.
+ */
+function nextFallback(currentUrl: string | undefined): string | null {
+  if (!currentUrl) return null;
+  if (currentUrl.startsWith("https://icon.horse/icon/")) {
+    const domain = currentUrl.replace("https://icon.horse/icon/", "").split("?")[0];
+    if (!domain) return null;
+    return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  }
+  return null;
+}
+
+/**
+ * Renders an avatar with a graceful fallback chain when the image fails:
+ *   icon.horse  →  DuckDuckGo  →  colored initials
+ *   Gravatar    →  colored initials
+ * Initials are derived from avatar.alt (typically the contact's display name).
  */
 export function Avatar({ avatar, className = "avatar", size }: Props) {
-  const [imgFailed, setImgFailed] = useState(false);
+  const initialSrc = avatar.kind === "img" ? avatar.src : null;
+  const [src, setSrc] = useState<string | null>(initialSrc);
+
+  // Reset to the new primary src whenever the parent passes a different avatar
+  useEffect(() => {
+    setSrc(avatar.kind === "img" ? avatar.src : null);
+  }, [avatar.kind, avatar.kind === "img" ? avatar.src : null]);
 
   const style: React.CSSProperties = {};
   if (size) {
@@ -41,7 +63,7 @@ export function Avatar({ avatar, className = "avatar", size }: Props) {
     );
   }
 
-  if (imgFailed) {
+  if (!src) {
     return (
       <span className={className} style={style}>
         {fallbackInitials}
@@ -53,11 +75,14 @@ export function Avatar({ avatar, className = "avatar", size }: Props) {
     <span className={className} style={style}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={avatar.src}
+        src={src}
         alt={avatar.alt ?? ""}
         referrerPolicy="no-referrer"
         loading="lazy"
-        onError={() => setImgFailed(true)}
+        onError={() => {
+          const next = nextFallback(src);
+          setSrc(next);
+        }}
       />
     </span>
   );
