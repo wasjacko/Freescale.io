@@ -160,18 +160,13 @@ export type GmailMessage = {
 };
 
 /**
- * Pulls the most recent messages across the user's WHOLE mailbox, not just
- * the inbox label. Gmail returns messages in reverse chronological order;
- * we paginate up to `maxResults` (default 400) so we don't miss recent
- * emails living in Promotions / Updates / Social categories, in custom
- * labels, or simply archived after a read.
- *
- * Excludes: Chats, Drafts, Spam, Trash — the only junk the user wouldn't
- * expect to see in a unified inbox.
+ * Initial / full-resync message list. Paginates through Gmail's reverse-
+ * chronological messages.list. Excludes only the junk drawers — keeps
+ * Primary + Promotions + Social + Updates + every label.
  */
 export async function listRecentMessages(
   accessToken: string,
-  maxResults = 400
+  maxResults = 800
 ): Promise<{ id: string; threadId: string }[]> {
   const collected: { id: string; threadId: string }[] = [];
   let pageToken: string | undefined;
@@ -179,10 +174,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      // Mirror Gmail's default Primary tab. Users expect Freescale's inbox
-      // to match what they see at gmail.com first — Promotions / Social /
-      // Updates / Forums stay reachable through tabs later if we add them.
-      q: "category:primary -in:chats -in:drafts -in:spam -in:trash",
+      q: "-in:chats -in:drafts -in:spam -in:trash",
     });
     if (pageToken) params.set("pageToken", pageToken);
 
@@ -203,6 +195,134 @@ export async function listRecentMessages(
     pageToken = data.nextPageToken;
   }
   return collected;
+}
+
+/**
+ * Fetch the user's profile — used to grab the current historyId that we
+ * persist as a cursor after the initial full sync.
+ */
+export async function getProfile(
+  accessToken: string
+): Promise<{ emailAddress: string; messagesTotal: number; threadsTotal: number; historyId: string }> {
+  const res = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/profile",
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Gmail getProfile failed: ${res.status} ${text}`);
+  }
+  return (await res.json()) as {
+    emailAddress: string;
+    messagesTotal: number;
+    threadsTotal: number;
+    historyId: string;
+  };
+}
+
+/**
+ * History API event surface we care about. Each one carries enough info
+ * to reconcile our local DB without re-listing every message.
+ */
+export type HistoryDelta = {
+  newHistoryId: string;
+  /** Cursor expired (>7 days) — caller MUST do a full resync. */
+  expired: boolean;
+  addedMessages: Array<{ id: string; threadId: string }>;
+  deletedMessages: Array<{ id: string; threadId: string }>;
+  labelsAdded: Array<{ id: string; threadId: string; labelIds: string[] }>;
+  labelsRemoved: Array<{ id: string; threadId: string; labelIds: string[] }>;
+};
+
+/**
+ * users.history.list — Gmail's INCREMENTAL change feed. Returns every
+ * mutation since `startHistoryId`. Cursor expires after ~7 days; we
+ * surface that via `expired: true` so the caller can fall back to a full
+ * resync.
+ */
+export async function listHistory(
+  accessToken: string,
+  startHistoryId: string
+): Promise<HistoryDelta> {
+  const collected = {
+    addedMessages: [] as HistoryDelta["addedMessages"],
+    deletedMessages: [] as HistoryDelta["deletedMessages"],
+    labelsAdded: [] as HistoryDelta["labelsAdded"],
+    labelsRemoved: [] as HistoryDelta["labelsRemoved"],
+  };
+  let pageToken: string | undefined;
+  let latestHistoryId = startHistoryId;
+
+  while (true) {
+    const params = new URLSearchParams({
+      startHistoryId,
+      maxResults: "500",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const res = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/history?${params}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (res.status === 404) {
+      return { ...collected, newHistoryId: startHistoryId, expired: true };
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Gmail history.list failed: ${res.status} ${text}`);
+    }
+
+    type HistoryItem = {
+      id: string;
+      messages?: Array<{ id: string; threadId: string; labelIds?: string[] }>;
+      messagesAdded?: Array<{
+        message: { id: string; threadId: string; labelIds?: string[] };
+      }>;
+      messagesDeleted?: Array<{
+        message: { id: string; threadId: string };
+      }>;
+      labelsAdded?: Array<{
+        message: { id: string; threadId: string };
+        labelIds: string[];
+      }>;
+      labelsRemoved?: Array<{
+        message: { id: string; threadId: string };
+        labelIds: string[];
+      }>;
+    };
+    const data = (await res.json()) as {
+      history?: HistoryItem[];
+      historyId?: string;
+      nextPageToken?: string;
+    };
+    if (data.historyId) latestHistoryId = data.historyId;
+    for (const item of data.history ?? []) {
+      for (const a of item.messagesAdded ?? []) {
+        collected.addedMessages.push({ id: a.message.id, threadId: a.message.threadId });
+      }
+      for (const d of item.messagesDeleted ?? []) {
+        collected.deletedMessages.push({ id: d.message.id, threadId: d.message.threadId });
+      }
+      for (const la of item.labelsAdded ?? []) {
+        collected.labelsAdded.push({
+          id: la.message.id,
+          threadId: la.message.threadId,
+          labelIds: la.labelIds,
+        });
+      }
+      for (const lr of item.labelsRemoved ?? []) {
+        collected.labelsRemoved.push({
+          id: lr.message.id,
+          threadId: lr.message.threadId,
+          labelIds: lr.labelIds,
+        });
+      }
+    }
+    if (!data.nextPageToken) break;
+    pageToken = data.nextPageToken;
+  }
+
+  return { ...collected, newHistoryId: latestHistoryId, expired: false };
 }
 
 /**

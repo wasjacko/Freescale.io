@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   extractMessageContent,
+  getProfile,
   getThread,
   getValidAccessToken,
+  listHistory,
   listRecentMessages,
 } from "@/lib/gmail";
 
@@ -71,6 +73,28 @@ export type SyncReport = {
   errors: string[];
 };
 
+/**
+ * Full Gmail enumeration — used for the FIRST sync of an account, and as a
+ * fallback when the History API cursor has aged out (> ~7 days). Pulls up
+ * to 800 of the most recent messages across all categories, dedupes them
+ * down to unique thread IDs, and reports how many message ids we saw.
+ *
+ * We sync THREADS (not individual messages) because Gmail's model is
+ * thread-first: a single thread can contain dozens of messages, and we
+ * always want the full conversation in our DB regardless of how many of
+ * its messages happened to surface in messages.list.
+ */
+async function doFullList(
+  accessToken: string,
+  report: SyncReport
+): Promise<string[]> {
+  const messages = await listRecentMessages(accessToken, 800);
+  report.fetched = messages.length;
+  const threadIds = new Set<string>();
+  for (const m of messages) threadIds.add(m.threadId);
+  return [...threadIds];
+}
+
 export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
   const report: SyncReport = { fetched: 0, newConversations: 0, newMessages: 0, errors: [] };
   const supabase = await createClient();
@@ -81,7 +105,7 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
 
   const { data: account, error: accountErr } = await supabase
     .from("channel_accounts")
-    .select("id, workspace_id, encrypted_tokens, external_id")
+    .select("id, workspace_id, encrypted_tokens, external_id, history_id")
     .eq("id", channelAccountId)
     .eq("kind", "gmail")
     .maybeSingle();
@@ -105,17 +129,71 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     return report;
   }
 
-  let messageList: { id: string; threadId: string }[] = [];
-  try {
-    messageList = await listRecentMessages(accessToken, 50);
-  } catch (err) {
-    report.errors.push(err instanceof Error ? err.message : "Listing failed");
+  // ─── Decide the sync strategy ─────────────────────────────────────────
+  // - No history_id stored → initial full sync (paginate messages.list up
+  //   to the cap, then capture the current profile.historyId as our cursor).
+  // - history_id present → incremental via users.history.list. If the API
+  //   returns 404 (cursor > ~7 days old), we fall back to a fresh full sync.
+  // This is the same approach Superhuman / Missive / Front use: full once,
+  // then deltas — way faster than re-listing every tick and the only way
+  // to catch deletes / label changes without re-walking every thread.
+  let threadIds: string[];
+  let nextHistoryId: string | null = null;
+
+  const storedHistoryId = (account.history_id as string | null) ?? null;
+  if (storedHistoryId) {
+    try {
+      const delta = await listHistory(accessToken, storedHistoryId);
+      if (delta.expired) {
+        // Cursor aged out — do a fresh full sync below
+        threadIds = await doFullList(accessToken, report);
+        nextHistoryId = (await getProfile(accessToken)).historyId;
+      } else {
+        const ids = new Set<string>();
+        for (const m of delta.addedMessages) ids.add(m.threadId);
+        for (const m of delta.labelsAdded) ids.add(m.threadId);
+        for (const m of delta.labelsRemoved) ids.add(m.threadId);
+        threadIds = [...ids];
+        nextHistoryId = delta.newHistoryId;
+        report.fetched = delta.addedMessages.length;
+
+        // Apply deletions (rare, but the History API is the only way we
+        // ever learn about them)
+        for (const d of delta.deletedMessages) {
+          await supabase
+            .from("messages")
+            .delete()
+            .eq("workspace_id", account.workspace_id)
+            .eq("external_id", d.id);
+        }
+      }
+    } catch (err) {
+      report.errors.push(err instanceof Error ? err.message : "History failed");
+      return report;
+    }
+  } else {
+    threadIds = await doFullList(accessToken, report);
+    try {
+      nextHistoryId = (await getProfile(accessToken)).historyId;
+    } catch {
+      // best-effort
+    }
+  }
+
+  if (threadIds.length === 0) {
+    if (nextHistoryId) {
+      await supabase
+        .from("channel_accounts")
+        .update({ history_id: nextHistoryId, last_synced_at: new Date().toISOString() })
+        .eq("id", account.id);
+    } else {
+      await supabase
+        .from("channel_accounts")
+        .update({ last_synced_at: new Date().toISOString() })
+        .eq("id", account.id);
+    }
     return report;
   }
-  report.fetched = messageList.length;
-
-  // Unique threadIds (one conversation per thread)
-  const threadIds = [...new Set(messageList.map((m) => m.threadId))];
 
   // Find which threads we already have so we can update vs insert
   const { data: existingConvs } = await supabase
@@ -297,9 +375,15 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     }
   }
 
+  // Persist the new history cursor alongside last_synced_at. Next sync
+  // tick will call users.history.list?startHistoryId=<this> and only pull
+  // the deltas — way cheaper than re-listing 800 messages every minute.
   await supabase
     .from("channel_accounts")
-    .update({ last_synced_at: new Date().toISOString() })
+    .update({
+      last_synced_at: new Date().toISOString(),
+      ...(nextHistoryId ? { history_id: nextHistoryId } : {}),
+    })
     .eq("id", account.id);
 
   revalidatePath("/app", "layout");
