@@ -180,3 +180,292 @@ export async function suggestReplies(
     };
   }
 }
+
+// ───────────────────────────────────────────────────────────────────────
+// Shared helpers for the three side-panel Mue actions (summary, tasks,
+// translation). All three need the same conv-fetch + Claude-call dance,
+// only the prompt and output schema differ.
+// ───────────────────────────────────────────────────────────────────────
+
+function buildAnthropicClient(): Anthropic | null {
+  const baseUrl = process.env.ANTHROPIC_BASE_URL;
+  const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!authToken && !apiKey) return null;
+  return new Anthropic({
+    ...(baseUrl ? { baseURL: baseUrl } : {}),
+    ...(authToken ? { authToken } : {}),
+    ...(apiKey && !authToken ? { apiKey } : {}),
+  });
+}
+
+async function fetchThreadTranscript(
+  conversationId: string
+): Promise<{ transcript: string | null; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { transcript: null, error: "unauthenticated" };
+
+  const { data: conv, error: convErr } = await supabase
+    .from("conversations")
+    .select(
+      "external_thread_id, channel_account_id, channel_accounts(kind, encrypted_tokens, external_id)"
+    )
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (convErr || !conv) {
+    return { transcript: null, error: `conv lookup: ${convErr?.message ?? "not found"}` };
+  }
+  if (!conv.external_thread_id) {
+    return { transcript: null, error: "no external_thread_id on conv" };
+  }
+
+  const rawAccount = conv.channel_accounts as unknown;
+  const account = Array.isArray(rawAccount) ? rawAccount[0] : rawAccount;
+  const tokens = (account as { encrypted_tokens?: string } | null)?.encrypted_tokens;
+  const externalId = (account as { external_id?: string } | null)?.external_id ?? "";
+  const kind = (account as { kind?: string } | null)?.kind;
+  if (!tokens || kind !== "gmail") {
+    return { transcript: null, error: "no Gmail token for this conversation" };
+  }
+
+  const { accessToken } = await getValidAccessToken(tokens);
+  let thread: Awaited<ReturnType<typeof getThread>>;
+  try {
+    thread = await getThread(accessToken, conv.external_thread_id as string);
+  } catch (err) {
+    return { transcript: null, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  const userEmail = externalId.toLowerCase();
+  const parsed = thread.messages
+    .map((m) => extractMessageContent(m))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+  if (parsed.length === 0) return { transcript: null, error: "empty thread" };
+
+  const transcript = parsed
+    .map((p) => {
+      const isOut = p.from.email.toLowerCase() === userEmail;
+      const senderLabel = isOut ? "Me" : `${p.from.name ?? p.from.email}`;
+      const body = (p.text || p.snippet || "").slice(0, 3000).trim();
+      return `--- ${senderLabel} (${p.date.toISOString()})\nSubject: ${p.subject}\n${body}`;
+    })
+    .join("\n\n");
+
+  return { transcript, error: null };
+}
+
+async function callClaude(
+  client: Anthropic,
+  systemPrompt: string,
+  userMessage: string,
+  maxTokens = 1024
+): Promise<string> {
+  const model = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
+  const resp = await client.messages.create({
+    model,
+    max_tokens: maxTokens,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userMessage }],
+  });
+  const block = resp.content.find((b) => b.type === "text");
+  return block && "text" in block ? block.text : "";
+}
+
+// ─── 1. Résumer la conversation ────────────────────────────────────────
+
+const SUMMARY_SYSTEM = `You summarize email conversations for an inbox app. Read the full thread (oldest → newest) and produce a concise summary in the SAME LANGUAGE as the thread.
+
+Output strict JSON, no fences:
+{"tldr": "<one sentence, max 25 words>", "bullets": ["<key point>", "<key point>", ...] }
+
+Rules:
+- 3 to 5 bullets max. Each bullet ≤ 15 words.
+- Focus on decisions, action items, open questions. Skip pleasantries.
+- If something is undecided or blocked, call it out.`;
+
+export type ThreadSummary = { tldr: string; bullets: string[] };
+
+export async function summarizeThread(
+  conversationId: string
+): Promise<{ summary: ThreadSummary | null; error: string | null }> {
+  const client = buildAnthropicClient();
+  if (!client) return { summary: null, error: "ANTHROPIC credentials not set" };
+
+  const { transcript, error } = await fetchThreadTranscript(conversationId);
+  if (!transcript) return { summary: null, error: error ?? "no transcript" };
+
+  let raw: string;
+  try {
+    raw = await callClaude(
+      client,
+      SUMMARY_SYSTEM,
+      `Conversation thread (oldest → newest):\n\n${transcript}\n\nReturn the JSON summary now.`,
+      512
+    );
+  } catch (err) {
+    return { summary: null, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  const slice =
+    firstBrace >= 0 && lastBrace > firstBrace
+      ? cleaned.slice(firstBrace, lastBrace + 1)
+      : cleaned;
+  try {
+    const parsed = JSON.parse(slice) as { tldr?: string; bullets?: string[] };
+    if (!parsed.tldr || !Array.isArray(parsed.bullets)) {
+      return { summary: null, error: "malformed summary response" };
+    }
+    return {
+      summary: {
+        tldr: parsed.tldr,
+        bullets: parsed.bullets.filter((b) => typeof b === "string").slice(0, 5),
+      },
+      error: null,
+    };
+  } catch (err) {
+    return {
+      summary: null,
+      error: `parse: ${err instanceof Error ? err.message : err} — raw: ${raw.slice(0, 200)}`,
+    };
+  }
+}
+
+// ─── 2. Suggérer des tâches ────────────────────────────────────────────
+
+const TASKS_SYSTEM = `You extract concrete action items from an email conversation. The user wants a list of TODOs they should do as a result of this thread.
+
+Output strict JSON, no fences:
+{"tasks": [{"title": "<short imperative>", "priority": "high"|"medium"|"low", "due": "<ISO date or null>"}]}
+
+Rules:
+- 0 to 5 tasks. Only include real, actionable items (not "be polite", "remember to think about it").
+- Each title ≤ 80 chars, in the SAME LANGUAGE as the thread.
+- priority: "high" if blocking or time-sensitive, "low" if optional, "medium" otherwise.
+- due: ISO 8601 date (YYYY-MM-DD) ONLY when explicitly mentioned in the thread. null otherwise.
+- If the thread has no actionable items, return {"tasks": []}.`;
+
+export type SuggestedTask = {
+  title: string;
+  priority: "high" | "medium" | "low";
+  due: string | null;
+};
+
+export async function suggestTasks(
+  conversationId: string
+): Promise<{ tasks: SuggestedTask[]; error: string | null }> {
+  const client = buildAnthropicClient();
+  if (!client) return { tasks: [], error: "ANTHROPIC credentials not set" };
+
+  const { transcript, error } = await fetchThreadTranscript(conversationId);
+  if (!transcript) return { tasks: [], error: error ?? "no transcript" };
+
+  let raw: string;
+  try {
+    raw = await callClaude(
+      client,
+      TASKS_SYSTEM,
+      `Conversation thread (oldest → newest):\n\n${transcript}\n\nReturn the JSON task list now.`,
+      512
+    );
+  } catch (err) {
+    return { tasks: [], error: err instanceof Error ? err.message : String(err) };
+  }
+
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  const slice =
+    firstBrace >= 0 && lastBrace > firstBrace
+      ? cleaned.slice(firstBrace, lastBrace + 1)
+      : cleaned;
+  try {
+    const parsed = JSON.parse(slice) as { tasks?: SuggestedTask[] };
+    const tasks = (parsed.tasks ?? [])
+      .filter((t) => t && typeof t.title === "string")
+      .slice(0, 5)
+      .map((t) => ({
+        title: t.title,
+        priority:
+          t.priority === "high" || t.priority === "low" ? t.priority : ("medium" as const),
+        due: typeof t.due === "string" ? t.due : null,
+      }));
+    return { tasks, error: null };
+  } catch (err) {
+    return {
+      tasks: [],
+      error: `parse: ${err instanceof Error ? err.message : err} — raw: ${raw.slice(0, 200)}`,
+    };
+  }
+}
+
+// ─── 3. Traduire la conversation ───────────────────────────────────────
+
+const TRANSLATE_SYSTEM = `You translate email conversations. Translate every message in the thread into the target language while preserving each sender's identity and timestamp.
+
+Output strict JSON, no fences:
+{"messages": [{"sender": "<as given>", "date": "<as given>", "translated": "<the translation>"}]}
+
+Rules:
+- Keep the SAME number of messages as the input, in the SAME order.
+- "translated" is the message body in the target language, kept concise and natural.
+- Do NOT translate the sender name or the date.
+- If a message is already in the target language, copy it verbatim.`;
+
+export type TranslatedMessage = {
+  sender: string;
+  date: string;
+  translated: string;
+};
+
+export async function translateThread(
+  conversationId: string,
+  targetLang: string
+): Promise<{ messages: TranslatedMessage[]; error: string | null }> {
+  const client = buildAnthropicClient();
+  if (!client) return { messages: [], error: "ANTHROPIC credentials not set" };
+
+  const { transcript, error } = await fetchThreadTranscript(conversationId);
+  if (!transcript) return { messages: [], error: error ?? "no transcript" };
+
+  let raw: string;
+  try {
+    raw = await callClaude(
+      client,
+      TRANSLATE_SYSTEM,
+      `Target language: ${targetLang}\n\nConversation thread (oldest → newest):\n\n${transcript}\n\nReturn the JSON translation now.`,
+      2048
+    );
+  } catch (err) {
+    return { messages: [], error: err instanceof Error ? err.message : String(err) };
+  }
+
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  const slice =
+    firstBrace >= 0 && lastBrace > firstBrace
+      ? cleaned.slice(firstBrace, lastBrace + 1)
+      : cleaned;
+  try {
+    const parsed = JSON.parse(slice) as { messages?: TranslatedMessage[] };
+    const messages = (parsed.messages ?? []).filter(
+      (m) =>
+        m &&
+        typeof m.sender === "string" &&
+        typeof m.date === "string" &&
+        typeof m.translated === "string"
+    );
+    return { messages, error: null };
+  } catch (err) {
+    return {
+      messages: [],
+      error: `parse: ${err instanceof Error ? err.message : err} — raw: ${raw.slice(0, 200)}`,
+    };
+  }
+}

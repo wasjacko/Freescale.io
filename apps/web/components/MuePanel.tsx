@@ -1,11 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import { useApp } from "@/lib/store";
 import { useData } from "@/lib/contexts/DataContext";
+import { useToast } from "@/lib/hooks/useToast";
 import type { CurrentUser } from "@/lib/auth";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { MueAvatar } from "@/components/MueAvatar";
+import {
+  summarizeThread,
+  suggestTasks,
+  translateThread,
+  type ThreadSummary,
+  type SuggestedTask,
+  type TranslatedMessage,
+} from "@/lib/actions/mue";
+
+type MueResult =
+  | { kind: "summary"; data: ThreadSummary }
+  | { kind: "tasks"; data: SuggestedTask[] }
+  | { kind: "translation"; data: TranslatedMessage[]; lang: string }
+  | { kind: "loading"; label: string }
+  | { kind: "error"; message: string };
 
 function greeting() {
   const h = new Date().getHours();
@@ -18,9 +35,65 @@ function greeting() {
 export function MuePanel({ user }: { user?: CurrentUser | null }) {
   const { view, activeConvId } = useApp();
   const { conversations, tasks, upcoming, events } = useData();
+  const push = useToast((s) => s.push);
   const conv = conversations.find((c) => c.id === activeConvId);
   const contactName = conv?.name.split(/[ –-]/)[0]?.trim() ?? "";
   const userName = user?.firstName ?? "vous";
+
+  const [result, setResult] = useState<MueResult | null>(null);
+
+  const requireConv = () => {
+    if (!activeConvId) {
+      push({ text: "Sélectionnez une conversation d'abord." });
+      return false;
+    }
+    return true;
+  };
+
+  const handleSummary = async () => {
+    if (!requireConv()) return;
+    setResult({ kind: "loading", label: "Résumé en cours…" });
+    const res = await summarizeThread(activeConvId);
+    if (res.error || !res.summary) {
+      setResult({ kind: "error", message: res.error ?? "Erreur Mue" });
+    } else {
+      setResult({ kind: "summary", data: res.summary });
+    }
+  };
+
+  const handleTasks = async () => {
+    if (!requireConv()) return;
+    setResult({ kind: "loading", label: "Extraction des tâches…" });
+    const res = await suggestTasks(activeConvId);
+    if (res.error) {
+      setResult({ kind: "error", message: res.error });
+    } else if (res.tasks.length === 0) {
+      setResult({
+        kind: "error",
+        message: "Aucune action concrète détectée dans cette conversation.",
+      });
+    } else {
+      setResult({ kind: "tasks", data: res.tasks });
+    }
+  };
+
+  const handleTranslate = async () => {
+    if (!requireConv()) return;
+    // Quick prompt for the target language. Real product would be a
+    // dropdown of supported langs; for v1 we ask once per click.
+    const lang = window.prompt(
+      "Traduire vers quelle langue ? (ex: anglais, espagnol, italien)",
+      "anglais"
+    );
+    if (!lang) return;
+    setResult({ kind: "loading", label: `Traduction en ${lang}…` });
+    const res = await translateThread(activeConvId, lang);
+    if (res.error || res.messages.length === 0) {
+      setResult({ kind: "error", message: res.error ?? "Aucune traduction" });
+    } else {
+      setResult({ kind: "translation", data: res.messages, lang });
+    }
+  };
 
   // Real counts so the panel never invents data
   const todayStart = new Date();
@@ -143,35 +216,101 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
             )}
 
             <section className="actions" aria-label="Suggested actions">
-              <button className="action" type="button" disabled style={{ opacity: 0.55, cursor: "not-allowed" }}>
+              <button className="action" type="button" onClick={handleTasks}>
                 <span className="action-icon"><Icon name="i-spark" /></span>
                 <span>
                   <span className="action-title">Suggérer des tâches</span>
                   <span className="action-desc">Transformer les points clés en actions</span>
                 </span>
-                <span className="add-channel-tag" style={{ marginLeft: "auto" }}>Bientôt</span>
               </button>
-              <button className="action" type="button" disabled style={{ opacity: 0.55, cursor: "not-allowed" }}>
+              <button className="action" type="button" onClick={handleSummary}>
                 <span className="action-icon warm"><Icon name="i-list" /></span>
                 <span>
                   <span className="action-title">Résumer la conversation</span>
                   <span className="action-desc">Points principaux en un résumé clair</span>
                 </span>
-                <span className="add-channel-tag" style={{ marginLeft: "auto" }}>Bientôt</span>
               </button>
-              <button className="action" type="button" disabled style={{ opacity: 0.55, cursor: "not-allowed" }}>
+              <button className="action" type="button" onClick={handleTranslate}>
                 <span className="action-icon cool"><Icon name="i-globe" /></span>
                 <span>
                   <span className="action-title">Traduire la conversation</span>
                   <span className="action-desc">Traduire en une autre langue</span>
                 </span>
-                <span className="add-channel-tag" style={{ marginLeft: "auto" }}>Bientôt</span>
               </button>
             </section>
 
+            {result && (
+              <section className="mue-result" aria-live="polite">
+                <header className="mue-result-head">
+                  <span className="mue-result-title">
+                    {result.kind === "loading" && result.label}
+                    {result.kind === "error" && "Erreur Mue"}
+                    {result.kind === "summary" && "Résumé"}
+                    {result.kind === "tasks" && "Tâches suggérées"}
+                    {result.kind === "translation" && `Traduit en ${result.lang}`}
+                  </span>
+                  <button
+                    type="button"
+                    className="mue-result-close"
+                    onClick={() => setResult(null)}
+                    aria-label="Fermer"
+                  >
+                    ✕
+                  </button>
+                </header>
+
+                {result.kind === "loading" && (
+                  <div className="mue-result-loading">
+                    <span className="mue-result-spinner" />
+                  </div>
+                )}
+
+                {result.kind === "error" && (
+                  <p className="mue-result-error">{result.message}</p>
+                )}
+
+                {result.kind === "summary" && (
+                  <div className="mue-result-body">
+                    <p className="mue-result-tldr">{result.data.tldr}</p>
+                    <ul className="mue-result-bullets">
+                      {result.data.bullets.map((b, i) => (
+                        <li key={i}>{b}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {result.kind === "tasks" && (
+                  <ul className="mue-result-tasks">
+                    {result.data.map((t, i) => (
+                      <li key={i} className={`mue-task is-${t.priority}`}>
+                        <span className="mue-task-priority" title={`Priorité ${t.priority}`} />
+                        <span className="mue-task-title">{t.title}</span>
+                        {t.due && <span className="mue-task-due">{t.due}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {result.kind === "translation" && (
+                  <div className="mue-result-translation">
+                    {result.data.map((m, i) => (
+                      <div key={i} className="mue-translated-msg">
+                        <div className="mue-translated-meta">
+                          <strong>{m.sender}</strong>
+                          <span>{new Date(m.date).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
+                        </div>
+                        <p>{m.translated}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
             <div className="footnote">
               <Icon name="i-info" size={13} />
-              <span>L&apos;IA de Mue arrive bientôt. Pour le moment elle veille sur votre inbox.</span>
+              <span>Mue analyse la conversation active à chaque action.</span>
             </div>
           </div>
         </div>
