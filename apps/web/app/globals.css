@@ -5484,3 +5484,186 @@
 .add-channel-cta:hover:not(:disabled) { background: #1E293B; }
 .add-channel-cta:active:not(:disabled) { transform: translateY(0.5px); }
 .add-channel-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* =============================================================================
+   Email composer (Gmail-channel reply) — Cc + attachments + Envoyer sur Gmail
+   ============================================================================= */
+.email-composer {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px 14px;
+  background: #fff;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  gap: 10px;
+}
+.email-composer-headers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.email-composer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #0F172A;
+  min-height: 28px;
+}
+.email-composer-label {
+  width: 28px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8B93A4;
+  flex-shrink: 0;
+}
+.email-composer-value {
+  flex: 1;
+  font-weight: 500;
+  color: #0F172A;
+}
+.email-composer-email { color: #8B93A4; font-weight: 400; }
+.email-composer-toggle {
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5B6475;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 160ms;
+}
+.email-composer-toggle:hover { background: rgba(15, 23, 42, 0.05); color: #0F172A; }
+.email-composer-cc {
+  flex: 1;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0F172A;
+  outline: none;
+  transition: border-color 160ms;
+}
+.email-composer-cc:focus {
+  border-color: rgba(91, 108, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.12);
+}
+
+.email-composer-body {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #0F172A;
+  resize: vertical;
+  min-height: 92px;
+  max-height: 320px;
+  outline: none;
+  transition: border-color 180ms, box-shadow 180ms;
+}
+.email-composer-body:focus {
+  border-color: rgba(91, 108, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.12);
+}
+
+.email-composer-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.email-composer-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(91, 108, 255, 0.08);
+  border: 1px solid rgba(91, 108, 255, 0.18);
+  border-radius: 999px;
+  font-size: 12px;
+  color: #0F172A;
+  max-width: 280px;
+}
+.email-composer-file .icon { width: 12px; height: 12px; color: #5B6475; flex-shrink: 0; }
+.email-composer-file > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.email-composer-file em {
+  font-style: normal;
+  font-size: 11px;
+  color: #8B93A4;
+  flex-shrink: 0;
+}
+.email-composer-file button {
+  border: 0;
+  background: transparent;
+  color: #5B6475;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+.email-composer-file button:hover { color: #0F172A; }
+.email-composer-total {
+  font-size: 11.5px;
+  color: #8B93A4;
+  margin-left: auto;
+}
+
+.email-composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.email-composer-attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #0F172A;
+  cursor: pointer;
+  transition: background 160ms, border-color 160ms;
+}
+.email-composer-attach:hover:not(:disabled) {
+  background: #FAFAFC;
+  border-color: rgba(15, 23, 42, 0.16);
+}
+.email-composer-attach .icon { width: 14px; height: 14px; }
+.email-composer-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 18px;
+  background: #0F172A;
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: -0.005em;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+  transition: background 160ms, transform 100ms;
+}
+.email-composer-send:hover:not(:disabled) {
+  background: #1E293B;
+  transform: translateY(-0.5px);
+}
+.email-composer-send:disabled { opacity: 0.5; cursor: not-allowed; }
+.email-composer-send .icon { width: 14px; height: 14px; }

@@ -239,59 +239,107 @@ function base64Url(buf: Buffer | string): string {
   return b.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+function formatAddress(addr: { name?: string | null; email: string }): string {
+  return addr.name ? `${encodeMimeWord(addr.name)} <${addr.email}>` : addr.email;
+}
+
+function b64Wrap(bytes: Buffer): string {
+  return bytes.toString("base64").match(/.{1,76}/g)?.join("\r\n") ?? "";
+}
+
+export type GmailAttachment = {
+  filename: string;
+  mimeType: string;
+  bytes: Buffer;
+};
+
 /**
  * Build an RFC 5322 message ready to base64url-encode for Gmail's
- * users.messages.send endpoint. Body goes out as UTF-8 quoted-printable
- * (simple line splitting; works for most prose).
+ * users.messages.send endpoint. Supports To/Cc/Bcc, threading headers,
+ * and attachments via multipart/mixed.
  */
 function buildRawMessage(opts: {
   from: { name?: string | null; email: string };
-  to: { name?: string | null; email: string };
+  to: Array<{ name?: string | null; email: string }>;
+  cc?: Array<{ name?: string | null; email: string }>;
+  bcc?: Array<{ name?: string | null; email: string }>;
   subject: string;
   body: string;
   inReplyTo?: string;
   references?: string[];
+  attachments?: GmailAttachment[];
 }): string {
-  const fromHeader = opts.from.name
-    ? `${encodeMimeWord(opts.from.name)} <${opts.from.email}>`
-    : opts.from.email;
-  const toHeader = opts.to.name
-    ? `${encodeMimeWord(opts.to.name)} <${opts.to.email}>`
-    : opts.to.email;
-
   const headers: string[] = [
-    `From: ${fromHeader}`,
-    `To: ${toHeader}`,
-    `Subject: ${encodeMimeWord(opts.subject || "(no subject)")}`,
-    `Date: ${new Date().toUTCString()}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: text/plain; charset=UTF-8`,
-    `Content-Transfer-Encoding: base64`,
+    `From: ${formatAddress(opts.from)}`,
+    `To: ${opts.to.map(formatAddress).join(", ")}`,
   ];
+  if (opts.cc && opts.cc.length) headers.push(`Cc: ${opts.cc.map(formatAddress).join(", ")}`);
+  if (opts.bcc && opts.bcc.length) headers.push(`Bcc: ${opts.bcc.map(formatAddress).join(", ")}`);
+  headers.push(`Subject: ${encodeMimeWord(opts.subject || "(no subject)")}`);
+  headers.push(`Date: ${new Date().toUTCString()}`);
+  headers.push(`MIME-Version: 1.0`);
   if (opts.inReplyTo) headers.push(`In-Reply-To: ${opts.inReplyTo}`);
   if (opts.references && opts.references.length) {
     headers.push(`References: ${opts.references.join(" ")}`);
   }
 
-  // base64-encode body and wrap at 76 chars per RFC 2045
-  const bodyB64 = Buffer.from(opts.body, "utf-8")
-    .toString("base64")
-    .match(/.{1,76}/g)
-    ?.join("\r\n") ?? "";
+  const hasAttachments = !!opts.attachments && opts.attachments.length > 0;
 
-  return `${headers.join("\r\n")}\r\n\r\n${bodyB64}`;
+  if (!hasAttachments) {
+    // Simple text/plain body
+    headers.push(`Content-Type: text/plain; charset=UTF-8`);
+    headers.push(`Content-Transfer-Encoding: base64`);
+    const bodyB64 = b64Wrap(Buffer.from(opts.body, "utf-8"));
+    return `${headers.join("\r\n")}\r\n\r\n${bodyB64}`;
+  }
+
+  // multipart/mixed → one text/plain part + N file parts
+  const boundary = `----=_freescale_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+
+  const parts: string[] = [];
+  // Body part
+  parts.push(
+    [
+      `--${boundary}`,
+      `Content-Type: text/plain; charset=UTF-8`,
+      `Content-Transfer-Encoding: base64`,
+      ``,
+      b64Wrap(Buffer.from(opts.body, "utf-8")),
+    ].join("\r\n")
+  );
+
+  // Attachment parts
+  for (const att of opts.attachments ?? []) {
+    parts.push(
+      [
+        `--${boundary}`,
+        `Content-Type: ${att.mimeType}; name="${encodeMimeWord(att.filename)}"`,
+        `Content-Disposition: attachment; filename="${encodeMimeWord(att.filename)}"`,
+        `Content-Transfer-Encoding: base64`,
+        ``,
+        b64Wrap(att.bytes),
+      ].join("\r\n")
+    );
+  }
+  parts.push(`--${boundary}--`);
+
+  return `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
 }
 
 export async function sendGmailMessage(
   accessToken: string,
   opts: {
     from: { name?: string | null; email: string };
-    to: { name?: string | null; email: string };
+    to: Array<{ name?: string | null; email: string }>;
+    cc?: Array<{ name?: string | null; email: string }>;
+    bcc?: Array<{ name?: string | null; email: string }>;
     subject: string;
     body: string;
     threadId?: string;
     inReplyTo?: string;
     references?: string[];
+    attachments?: GmailAttachment[];
   }
 ): Promise<{ id: string; threadId: string; messageId: string | null }> {
   const raw = buildRawMessage(opts);

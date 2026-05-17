@@ -7,6 +7,7 @@ import { useData } from "@/lib/contexts/DataContext";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
+import { sendEmailReply } from "@/lib/actions/inbox";
 import type { Message } from "@/lib/types";
 
 const QUICK_REPLIES = [
@@ -197,49 +198,63 @@ export function Thread() {
       </section>
 
       <footer className="composer">
-        <div className="quick-replies" id="quick-replies">
-          {QUICK_REPLIES.map((q) => (
-            <button
-              key={q.id}
-              className="quick-reply"
-              type="button"
-              onClick={() => setInput(q.id === "suggest"
-                ? "I appreciate you sharing this — let me come back to you with a thoughtful reply by end of day."
-                : q.text.replace(/^[\p{Emoji}\s]+/u, "").trim())}
-            >
-              {q.icon && <Icon name={q.icon} />}
-              {q.text}
-            </button>
-          ))}
-        </div>
-
-        <div className="composer-box">
-          <input
-            className="composer-input"
-            type="text"
-            placeholder={`Reply to ${firstName}…`}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+        {isEmail ? (
+          <EmailComposer
+            conversationId={activeConvId}
+            toName={conv.name}
+            contactEmail={conv.contactEmail ?? null}
           />
-          <div className="composer-bar">
-            <div className="composer-tools">
-              <button className="icon-btn" type="button" aria-label="Emoji" data-tip="Add emoji"><Icon name="i-smile" /></button>
-              <button className="icon-btn" type="button" aria-label="Attach" data-tip="Attach file"><Icon name="i-clip" /></button>
-              <button className="icon-btn" type="button" aria-label="More" data-tip="More tools"><Icon name="i-more" /></button>
+        ) : (
+          <>
+            <div className="quick-replies" id="quick-replies">
+              {QUICK_REPLIES.map((q) => (
+                <button
+                  key={q.id}
+                  className="quick-reply"
+                  type="button"
+                  onClick={() =>
+                    setInput(
+                      q.id === "suggest"
+                        ? "I appreciate you sharing this — let me come back to you with a thoughtful reply by end of day."
+                        : q.text.replace(/^[\p{Emoji}\s]+/u, "").trim()
+                    )
+                  }
+                >
+                  {q.icon && <Icon name={q.icon} />}
+                  {q.text}
+                </button>
+              ))}
             </div>
-            <button
-              ref={sendBtnRef}
-              className="btn btn-primary btn-send"
-              type="button"
-              aria-label="Send"
-              data-tip="Send · Enter"
-              onClick={handleSend}
-            >
-              <Icon name="i-send" />
-            </button>
-          </div>
-        </div>
+
+            <div className="composer-box">
+              <input
+                className="composer-input"
+                type="text"
+                placeholder={`Reply to ${firstName}…`}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+              <div className="composer-bar">
+                <div className="composer-tools">
+                  <button className="icon-btn" type="button" aria-label="Emoji" data-tip="Add emoji"><Icon name="i-smile" /></button>
+                  <button className="icon-btn" type="button" aria-label="Attach" data-tip="Attach file"><Icon name="i-clip" /></button>
+                  <button className="icon-btn" type="button" aria-label="More" data-tip="More tools"><Icon name="i-more" /></button>
+                </div>
+                <button
+                  ref={sendBtnRef}
+                  className="btn btn-primary btn-send"
+                  type="button"
+                  aria-label="Send"
+                  data-tip="Send · Enter"
+                  onClick={handleSend}
+                >
+                  <Icon name="i-send" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </footer>
     </main>
   );
@@ -307,5 +322,173 @@ function EmailCard({
         )}
       </div>
     </article>
+  );
+}
+
+function EmailComposer({
+  conversationId,
+  toName,
+  contactEmail,
+}: {
+  conversationId: string;
+  toName: string;
+  contactEmail: string | null;
+}) {
+  const push = useToast((s) => s.push);
+  const [body, setBody] = useState("");
+  const [cc, setCc] = useState("");
+  const [showCc, setShowCc] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [sending, setSending] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = (incoming: FileList | null) => {
+    if (!incoming) return;
+    setFiles((prev) => [...prev, ...Array.from(incoming)]);
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSend = async () => {
+    const trimmed = body.trim();
+    if (!trimmed && files.length === 0) {
+      push({ text: "Le message est vide." });
+      return;
+    }
+    setSending(true);
+    try {
+      const fd = new FormData();
+      fd.append("conversationId", conversationId);
+      fd.append("text", trimmed);
+      if (cc.trim()) fd.append("cc", cc.trim());
+      for (const f of files) fd.append("files", f);
+
+      await sendEmailReply(fd);
+      push({ text: "Email envoyé via Gmail ✉", duration: 3000 });
+      setBody("");
+      setCc("");
+      setShowCc(false);
+      setFiles([]);
+    } catch (err) {
+      push({
+        text: err instanceof Error ? err.message : "Envoi impossible.",
+        duration: 5000,
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const totalSize = files.reduce((acc, f) => acc + f.size, 0);
+
+  return (
+    <div className="email-composer">
+      <div className="email-composer-headers">
+        <div className="email-composer-row">
+          <span className="email-composer-label">À</span>
+          <span className="email-composer-value">
+            {toName}
+            {contactEmail ? <span className="email-composer-email"> &lt;{contactEmail}&gt;</span> : null}
+          </span>
+          {!showCc && (
+            <button
+              type="button"
+              className="email-composer-toggle"
+              onClick={() => setShowCc(true)}
+            >
+              Cc
+            </button>
+          )}
+        </div>
+        {showCc && (
+          <div className="email-composer-row">
+            <span className="email-composer-label">Cc</span>
+            <input
+              type="text"
+              className="email-composer-cc"
+              placeholder="email1@…, email2@…"
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              autoFocus
+            />
+            <button
+              type="button"
+              className="email-composer-toggle"
+              onClick={() => {
+                setShowCc(false);
+                setCc("");
+              }}
+              aria-label="Retirer Cc"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
+      <textarea
+        className="email-composer-body"
+        placeholder={`Votre réponse à ${toName}…`}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={4}
+      />
+
+      {files.length > 0 && (
+        <div className="email-composer-files">
+          {files.map((f, idx) => (
+            <span key={idx} className="email-composer-file">
+              <Icon name="i-clip" />
+              <span>{f.name}</span>
+              <em>{(f.size / 1024).toFixed(0)} Ko</em>
+              <button
+                type="button"
+                aria-label="Retirer"
+                onClick={() => removeFile(idx)}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+          <span className="email-composer-total">
+            Total : {(totalSize / 1024 / 1024).toFixed(2)} Mo (max 25 Mo)
+          </span>
+        </div>
+      )}
+
+      <div className="email-composer-actions">
+        <button
+          type="button"
+          className="email-composer-attach"
+          onClick={() => fileRef.current?.click()}
+          disabled={sending}
+        >
+          <Icon name="i-clip" />
+          Joindre
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          hidden
+          onChange={(e) => {
+            addFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <span style={{ flex: 1 }} />
+        <button
+          type="button"
+          className="email-composer-send"
+          onClick={handleSend}
+          disabled={sending || (!body.trim() && files.length === 0)}
+        >
+          <Icon name="i-send" />
+          {sending ? "Envoi…" : "Envoyer sur Gmail"}
+        </button>
+      </div>
+    </div>
   );
 }
