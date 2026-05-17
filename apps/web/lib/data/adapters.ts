@@ -59,6 +59,14 @@ export function adaptConversation(row: Row): Conversation {
   const channelAccount = (row.channel_accounts ?? null) as Row | null;
   const name = (contact?.display_name as string) || "Unknown";
   const lastAt = (row.last_message_at as string) ?? new Date().toISOString();
+  const rawCategory = (row.category as string | null) ?? null;
+  const category =
+    rawCategory === "client" ||
+    rawCategory === "promo" ||
+    rawCategory === "notif" ||
+    rawCategory === "other"
+      ? rawCategory
+      : null;
   return {
     id: row.id as string,
     name,
@@ -68,6 +76,7 @@ export function adaptConversation(row: Row): Conversation {
     channel: toChannel(channelAccount?.kind),
     unread: ((row.unread_count as number) ?? 0) > 0,
     group: groupFor(lastAt),
+    category,
     ...((row.subject as string) ? { subject: row.subject as string } : {}),
     ...((contact?.email as string) ? { contactEmail: contact!.email as string } : {}),
   };

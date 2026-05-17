@@ -8,9 +8,11 @@ import { useData } from "@/lib/contexts/DataContext";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
+import { classifyAllUncategorized } from "@/lib/actions/triage";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
 import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
+import type { ConversationCategory } from "@/lib/types";
 
 const GROUP_LABELS: Record<string, string> = {
   today: "Today",
@@ -69,6 +71,15 @@ function clientGroupFor(iso: string): "today" | "yesterday" | "this-week" | "ear
   return "earlier";
 }
 
+type CategoryTab = "client" | "promo" | "notif" | "other";
+
+const TAB_LABELS: Record<CategoryTab, string> = {
+  client: "Clients",
+  promo: "Promos",
+  notif: "Notifs",
+  other: "Autres",
+};
+
 export function Inbox() {
   const router = useRouter();
   const { activeConvId, setActiveConv } = useApp();
@@ -82,6 +93,28 @@ export function Inbox() {
   const filterBtnRef = useRef<HTMLButtonElement>(null);
   const [ctx, setCtx] = useState<{ x: number; y: number; convId: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [tab, setTab] = useState<CategoryTab>("client");
+  const [triaging, setTriaging] = useState(false);
+
+  const handleTriage = async () => {
+    if (triaging) return;
+    setTriaging(true);
+    try {
+      const report = await classifyAllUncategorized();
+      router.refresh();
+      if (report.classified > 0) {
+        push({ text: `Mue a trié ${report.classified} conversation${report.classified > 1 ? "s" : ""}` });
+      } else if (report.errors.length > 0) {
+        push({ text: `Erreur Mue : ${report.errors[0]?.slice(0, 80)}` });
+      } else {
+        push({ text: "Tout est déjà trié." });
+      }
+    } catch (err) {
+      push({ text: err instanceof Error ? err.message : "Triage impossible." });
+    } finally {
+      setTriaging(false);
+    }
+  };
 
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -160,14 +193,40 @@ export function Inbox() {
     }
   };
 
+  // Per-tab counts (computed across all non-archived convs, ignoring the
+  // active read/mentions filter — tabs always show their full bucket).
+  const tabCounts = useMemo(() => {
+    const counts: Record<CategoryTab, number> & { unclassified: number } = {
+      client: 0,
+      promo: 0,
+      notif: 0,
+      other: 0,
+      unclassified: 0,
+    };
+    for (const c of conversations) {
+      if (archived.has(c.id)) continue;
+      if (c.category === "client") counts.client += 1;
+      else if (c.category === "promo") counts.promo += 1;
+      else if (c.category === "notif") counts.notif += 1;
+      else if (c.category === "other") counts.other += 1;
+      else counts.unclassified += 1;
+    }
+    return counts;
+  }, [conversations, archived]);
+
   const filteredConvs = useMemo(() => {
     return conversations.filter((c) => {
       if (archived.has(c.id)) return false;
+      // Tab filter — pin to the bucket the user selected. Unclassified
+      // conversations show under whichever tab the user is on (so they
+      // never "disappear" until Mue has had a chance to classify them).
+      const category: ConversationCategory = c.category ?? null;
+      if (category && category !== tab) return false;
       if (filter === "unread") return isUnread(c.id, c.unread);
       if (filter === "mentions") return false;
       return true;
     });
-  }, [conversations, archived, filter, extraUnread, readIds]);
+  }, [conversations, archived, filter, extraUnread, readIds, tab]);
 
   const groups: Record<string, typeof conversations> = {
     today: [],
@@ -202,7 +261,21 @@ export function Inbox() {
       <header className="panel-head">
         <div className="panel-title-row">
           <h2 className="panel-title">Inbox</h2>
-          <span className="panel-count">{counts.all} conversations</span>
+          <span className="panel-count">{tabCounts[tab]} {TAB_LABELS[tab].toLowerCase()}</span>
+          <button
+            className="filter-btn"
+            type="button"
+            aria-label="Trier avec Mue"
+            data-tip="Mue trie tes mails par catégorie"
+            onClick={handleTriage}
+            disabled={triaging}
+            style={triaging ? { opacity: 0.5 } : undefined}
+          >
+            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
+              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
           <button
             className="filter-btn"
             type="button"
@@ -232,6 +305,26 @@ export function Inbox() {
               <line x1="10" y1="18" x2="14" y2="18" />
             </svg>
           </button>
+        </div>
+        <div className="inbox-tabs" role="tablist">
+          {(["client", "promo", "notif", "other"] as CategoryTab[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={tab === t}
+              className={`inbox-tab ${tab === t ? "is-active" : ""}`}
+              onClick={() => setTab(t)}
+            >
+              {TAB_LABELS[t]}
+              {tabCounts[t] > 0 && <span className="inbox-tab-count">{tabCounts[t]}</span>}
+            </button>
+          ))}
+          {tabCounts.unclassified > 0 && (
+            <span className="inbox-tab-pending" title="Non triés par Mue — clique sur l'étoile pour lancer le tri">
+              · {tabCounts.unclassified} à trier
+            </span>
+          )}
         </div>
       </header>
 

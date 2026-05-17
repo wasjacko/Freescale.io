@@ -62,7 +62,7 @@ export async function getInboxData(): Promise<InboxData> {
     supabase
       .from("conversations")
       .select(
-        "id, preview, subject, last_message_at, unread_count, archived, contacts(display_name, avatar_url, email), channel_accounts(kind)"
+        "id, preview, subject, last_message_at, unread_count, archived, category, contacts(display_name, avatar_url, email), channel_accounts(kind)"
       )
       .eq("workspace_id", workspaceId)
       .eq("archived", false)

@@ -19,6 +19,9 @@ export type Avatar = AvatarSource & {
   alt?: string;
 };
 
+/** Mue-classified bucket. NULL = not yet triaged. */
+export type ConversationCategory = "client" | "promo" | "notif" | "other" | null;
+
 export type Conversation = {
   id: string;
   name: string;
@@ -31,6 +34,7 @@ export type Conversation = {
   group: "today" | "yesterday" | "this-week" | "earlier";
   subject?: string;
   contactEmail?: string;
+  category?: ConversationCategory;
 };
 
 export type MessageDirection = "in" | "out";
