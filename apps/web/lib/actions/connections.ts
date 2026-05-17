@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   extractMessageContent,
-  getMessage,
+  getThread,
   getValidAccessToken,
   listRecentMessages,
 } from "@/lib/gmail";
@@ -114,16 +114,10 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
   }
   report.fetched = messageList.length;
 
-  // Group by threadId so we create one conversation per thread.
-  const threadGroups = new Map<string, string[]>();
-  for (const m of messageList) {
-    const arr = threadGroups.get(m.threadId) ?? [];
-    arr.push(m.id);
-    threadGroups.set(m.threadId, arr);
-  }
+  // Unique threadIds (one conversation per thread)
+  const threadIds = [...new Set(messageList.map((m) => m.threadId))];
 
-  // Find which threads we already have so we skip them on the cheap path.
-  const threadIds = [...threadGroups.keys()];
+  // Find which threads we already have so we can update vs insert
   const { data: existingConvs } = await supabase
     .from("conversations")
     .select("id, external_thread_id")
@@ -134,29 +128,30 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     (existingConvs ?? []).map((c) => [c.external_thread_id as string, c.id as string])
   );
 
-  // Find existing message external_ids to dedupe
-  const messageIds = messageList.map((m) => m.id);
+  // Find existing message external_ids to dedupe inserts. We query across
+  // the workspace so a re-sync after a wipe doesn't double-write.
   const { data: existingMsgs } = await supabase
     .from("messages")
     .select("external_id")
-    .eq("workspace_id", account.workspace_id)
-    .in("external_id", messageIds);
+    .eq("workspace_id", account.workspace_id);
   const existingMessageIds = new Set(
     (existingMsgs ?? []).map((m) => m.external_id as string).filter(Boolean)
   );
 
-  for (const [threadId, ids] of threadGroups) {
-    // Fetch message contents
-    const fetched = await Promise.all(
-      ids.map((id) =>
-        getMessage(accessToken, id).catch((err) => {
-          report.errors.push(`${id}: ${err instanceof Error ? err.message : err}`);
-          return null;
-        })
-      )
-    );
-    const parsed = fetched
-      .filter((m): m is NonNullable<typeof m> => m !== null)
+  for (const threadId of threadIds) {
+    // Fetch the FULL thread — gives us every message in it, not just the
+    // most recent one that surfaced in messages.list. Without this the user
+    // opens a thread and only sees the last 1-2 messages, missing the
+    // context of the conversation they're replying in.
+    let thread: Awaited<ReturnType<typeof getThread>>;
+    try {
+      thread = await getThread(accessToken, threadId);
+    } catch (err) {
+      report.errors.push(`${threadId}: ${err instanceof Error ? err.message : err}`);
+      continue;
+    }
+
+    const parsed = thread.messages
       .map((m) => ({ raw: m, content: extractMessageContent(m) }))
       .sort((a, b) => a.content.date.getTime() - b.content.date.getTime());
     if (parsed.length === 0) continue;

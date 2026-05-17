@@ -183,6 +183,27 @@ export async function listRecentMessages(
   return data.messages ?? [];
 }
 
+/**
+ * Fetch every message in a Gmail thread (vs. only the latest one surfaced
+ * by messages.list). Used during sync so the user opens a conversation
+ * and sees the full prior history, not just the last reply.
+ */
+export async function getThread(
+  accessToken: string,
+  threadId: string
+): Promise<{ id: string; messages: GmailMessage[] }> {
+  const res = await fetch(
+    `https://gmail.googleapis.com/gmail/v1/users/me/threads/${threadId}?format=full`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Gmail threads.get(${threadId}) failed: ${res.status} ${text}`);
+  }
+  const data = (await res.json()) as { id: string; messages?: GmailMessage[] };
+  return { id: data.id, messages: data.messages ?? [] };
+}
+
 export async function getMessage(accessToken: string, id: string): Promise<GmailMessage> {
   const res = await fetch(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
