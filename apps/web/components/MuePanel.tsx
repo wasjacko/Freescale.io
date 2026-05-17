@@ -8,7 +8,13 @@ import type { CurrentUser } from "@/lib/auth";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { MueAvatar } from "@/components/MueAvatar";
-import { dailyBriefing, type DailyBriefing } from "@/lib/actions/mue";
+import { useRouter } from "next/navigation";
+import {
+  dailyBriefing,
+  createTaskFromBrief,
+  type DailyBriefing,
+  type DailyBriefingItem,
+} from "@/lib/actions/mue";
 
 function greeting() {
   const h = new Date().getHours();
@@ -34,7 +40,8 @@ function greeting() {
  * placeholder for the upcoming chat-with-Mue mode.
  */
 export function MuePanel({ user }: { user?: CurrentUser | null }) {
-  const { view } = useApp();
+  const router = useRouter();
+  const { view, setActiveConv } = useApp();
   const { conversations, tasks } = useData();
   const push = useToast((s) => s.push);
   const userName = user?.firstName ?? "vous";
@@ -48,6 +55,47 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
   const [briefingLoading, setBriefingLoading] = useState(false);
   const [briefingError, setBriefingError] = useState<string | null>(null);
   const [askInput, setAskInput] = useState("");
+  const [createdTaskTitles, setCreatedTaskTitles] = useState<Set<string>>(new Set());
+
+  const handleCreateTask = async (item: DailyBriefingItem) => {
+    const key = `${item.conversationId}__${item.title}`;
+    if (createdTaskTitles.has(key)) return;
+    setCreatedTaskTitles((s) => new Set(s).add(key));
+    try {
+      const res = await createTaskFromBrief({
+        conversationId: item.conversationId,
+        title: item.title,
+        description: item.why,
+        priority: item.priority,
+        due: item.due,
+      });
+      if (res.ok) {
+        push({ text: `Tâche créée : ${item.title.slice(0, 50)}…`, duration: 2400 });
+        router.refresh();
+      } else {
+        // Roll back the optimistic "created" so the user can retry.
+        setCreatedTaskTitles((s) => {
+          const next = new Set(s);
+          next.delete(key);
+          return next;
+        });
+        push({ text: `Erreur : ${res.error}`, duration: 4000 });
+      }
+    } catch (err) {
+      setCreatedTaskTitles((s) => {
+        const next = new Set(s);
+        next.delete(key);
+        return next;
+      });
+      push({
+        text: err instanceof Error ? err.message : "Création impossible.",
+      });
+    }
+  };
+
+  const handleOpenConv = (id: string) => {
+    setActiveConv(id);
+  };
 
   const handleBriefing = async () => {
     if (briefingLoading) return;
@@ -110,7 +158,14 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
         {briefing && (
           <section className="mue-brief-card" aria-live="polite">
             <header className="mue-brief-card-head">
-              <span className="mue-brief-card-label">Brief du jour</span>
+              <span className="mue-brief-card-label">
+                Brief du jour
+                {briefing.items.length > 0 && (
+                  <span className="mue-brief-count">
+                    {briefing.items.length} action{briefing.items.length > 1 ? "s" : ""}
+                  </span>
+                )}
+              </span>
               <button
                 type="button"
                 className="mue-brief-card-close"
@@ -121,15 +176,48 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
               </button>
             </header>
             <p className="mue-brief-headline">{briefing.headline}</p>
-            {briefing.highlights.length > 0 && (
+
+            {briefing.items.length > 0 && (
               <ul className="mue-brief-list">
-                {briefing.highlights.map((h, i) => (
-                  <li key={i} className="mue-brief-item">
-                    <div className="mue-brief-who">{h.who}</div>
-                    <div className="mue-brief-why">{h.why}</div>
-                    <div className="mue-brief-action">→ {h.action}</div>
-                  </li>
-                ))}
+                {briefing.items.map((it, i) => {
+                  const key = `${it.conversationId}__${it.title}`;
+                  const created = createdTaskTitles.has(key);
+                  return (
+                    <li key={i} className={`mue-brief-item is-${it.priority}`}>
+                      <button
+                        type="button"
+                        className="mue-brief-item-link"
+                        onClick={() => handleOpenConv(it.conversationId)}
+                        title="Ouvrir la conversation"
+                      >
+                        <span className="mue-brief-priority" />
+                        <div className="mue-brief-text">
+                          <div className="mue-brief-title">{it.title}</div>
+                          <div className="mue-brief-meta">
+                            <span className="mue-brief-who">{it.contactName}</span>
+                            {it.due && (
+                              <span className="mue-brief-due">· {it.due}</span>
+                            )}
+                          </div>
+                          {it.why && <div className="mue-brief-why">{it.why}</div>}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        className={`mue-brief-task-btn ${created ? "is-done" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!created) void handleCreateTask(it);
+                        }}
+                        disabled={created}
+                        title={created ? "Tâche créée" : "Créer cette tâche"}
+                        aria-label={created ? "Tâche créée" : "Créer cette tâche"}
+                      >
+                        {created ? "✓" : "+ Tâche"}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

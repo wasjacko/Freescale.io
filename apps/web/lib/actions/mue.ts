@@ -425,25 +425,43 @@ export type TranslatedMessage = {
 
 // ─── 4. Brief du jour ──────────────────────────────────────────────────
 
-const BRIEFING_SYSTEM = `You are Mue, the user's inbox copilot. Produce a concise morning briefing based on the user's recent conversations — what they should pay attention to TODAY.
+const BRIEFING_SYSTEM = `You are Mue, the user's inbox copilot. Scan the user's recent conversations and extract CONCRETE ACTION ITEMS they should do today. Each item must reference the conversation it came from.
 
 Output strict JSON, no fences:
-{"headline": "<one warm sentence in French, max 18 words>", "highlights": [{"who": "<sender>", "why": "<one-line reason this matters>", "action": "<short verb-led next step>" }]}
+{
+  "headline": "<one warm sentence in French, max 18 words>",
+  "items": [
+    {
+      "conv_index": <1-based index of the conversation in the input list>,
+      "title": "<imperative French verb-led title, max 70 chars>",
+      "why": "<one-line context, max 15 words>",
+      "priority": "high" | "medium" | "low",
+      "due": "<ISO date YYYY-MM-DD or null>"
+    }
+  ]
+}
 
 Rules:
-- 0 to 5 highlights. Skip pure noise (newsletters, transactional notifications) unless something is truly urgent.
-- Each "why" ≤ 12 words. Each "action" ≤ 8 words.
-- French output.
-- "headline" sets the tone — friendly, direct. Mention how many real conversations need attention.`;
+- 0 to 6 items. ONLY include real actionable items the user needs to do (reply, follow-up, schedule, send, decide, review). Skip pure FYI / pleasantries / generic newsletters.
+- Each title is an IMPERATIVE in French: "Répondre à X concernant…", "Confirmer le RDV…", "Envoyer le devis à…", "Relancer Y sur…", "Préparer le brief pour…".
+- priority: "high" if the user is blocking someone or there's a deadline today/tomorrow. "low" if it's nice-to-do. "medium" otherwise.
+- due: ISO date ONLY when the conversation explicitly mentions a date. null otherwise.
+- conv_index: the number of the conversation in the input list (1-based, integer).
+- French throughout. No emoji. No markdown.
+- headline tone: friendly, direct ("Voici ce qui mérite votre attention ce matin." / "X messages prioritaires à traiter aujourd'hui.").
+- If nothing actionable: {"headline": "Inbox calme — rien d'urgent ce matin.", "items": []}.`;
 
-export type DailyBriefingHighlight = {
-  who: string;
+export type DailyBriefingItem = {
+  conversationId: string;
+  contactName: string;
+  title: string;
   why: string;
-  action: string;
+  priority: "high" | "medium" | "low";
+  due: string | null;
 };
 export type DailyBriefing = {
   headline: string;
-  highlights: DailyBriefingHighlight[];
+  items: DailyBriefingItem[];
 };
 
 export async function dailyBriefing(): Promise<{
@@ -500,18 +518,26 @@ export async function dailyBriefing(): Promise<{
     return {
       briefing: {
         headline: "Inbox vide — profitez de la pause.",
-        highlights: [],
+        items: [],
       },
       error: null,
     };
   }
 
+  // Build a numbered list Claude can reference back by index, and a parallel
+  // lookup of (index → conv id + contact name) so we can hydrate the AI's
+  // conv_index pointers back to real IDs for the task-creation buttons.
+  const convByIndex = new Map<
+    number,
+    { id: string; contactName: string }
+  >();
   const transcript = convs
     .map((c, i) => {
       const contact = Array.isArray(c.contacts) ? c.contacts[0] : c.contacts;
       const name = (contact?.display_name as string) || (contact?.email as string) || "?";
       const subject = ((c.subject as string) || "(no subject)").slice(0, 100);
       const preview = ((c.preview as string) || "").slice(0, 220).replace(/\s+/g, " ").trim();
+      convByIndex.set(i + 1, { id: c.id as string, contactName: name });
       return `${i + 1}. From: ${name}\n   Subject: ${subject}\n   Preview: ${preview}`;
     })
     .join("\n\n");
@@ -538,27 +564,86 @@ export async function dailyBriefing(): Promise<{
   try {
     const parsed = JSON.parse(slice) as {
       headline?: string;
-      highlights?: DailyBriefingHighlight[];
+      items?: Array<{
+        conv_index?: number;
+        title?: string;
+        why?: string;
+        priority?: string;
+        due?: string | null;
+      }>;
     };
     if (!parsed.headline) return { briefing: null, error: "malformed briefing" };
-    return {
-      briefing: {
-        headline: parsed.headline,
-        highlights: (parsed.highlights ?? [])
-          .filter(
-            (h) =>
-              h && typeof h.who === "string" && typeof h.why === "string" && typeof h.action === "string"
-          )
-          .slice(0, 5),
-      },
-      error: null,
-    };
+    const items: DailyBriefingItem[] = (parsed.items ?? [])
+      .map((it) => {
+        if (!it || typeof it.title !== "string" || typeof it.conv_index !== "number") {
+          return null;
+        }
+        const convRef = convByIndex.get(it.conv_index);
+        if (!convRef) return null;
+        const priority =
+          it.priority === "high" || it.priority === "low"
+            ? it.priority
+            : ("medium" as const);
+        return {
+          conversationId: convRef.id,
+          contactName: convRef.contactName,
+          title: it.title,
+          why: typeof it.why === "string" ? it.why : "",
+          priority,
+          due: typeof it.due === "string" && it.due ? it.due : null,
+        };
+      })
+      .filter((x): x is DailyBriefingItem => x !== null)
+      .slice(0, 6);
+    return { briefing: { headline: parsed.headline, items }, error: null };
   } catch (err) {
     return {
       briefing: null,
       error: `parse: ${err instanceof Error ? err.message : err} — raw: ${raw.slice(0, 200)}`,
     };
   }
+}
+
+/**
+ * Persist a briefing item into the tasks table. Called when the user
+ * clicks "Créer cette tâche" on a briefing highlight. We pass through
+ * the conversation reference so the task is anchored to the original
+ * thread for context.
+ */
+export async function createTaskFromBrief(input: {
+  conversationId: string;
+  title: string;
+  description?: string;
+  priority?: "high" | "medium" | "low";
+  due?: string | null;
+}): Promise<{ ok: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "unauthenticated" };
+
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!workspace?.id) return { ok: false, error: "no workspace" };
+
+  const { error } = await supabase.from("tasks").insert({
+    workspace_id: workspace.id,
+    conversation_id: input.conversationId,
+    title: input.title,
+    description: input.description ?? null,
+    priority: input.priority ?? "medium",
+    status: "todo",
+    due_at: input.due ? new Date(input.due).toISOString() : null,
+    ai_generated: true,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, error: null };
 }
 
 export async function translateThread(
