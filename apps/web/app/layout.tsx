@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Freescale — Client Communications OS",
   description: "Unified multi-channel inbox with AI copilot Mue",
-  metadataBase: new URL("https://app.freescale.app"),
+  metadataBase: new URL("https://freescale.site"),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
