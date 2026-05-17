@@ -5723,6 +5723,47 @@
 .conv-skel:nth-child(7) .conv-skel-av,
 .conv-skel:nth-child(7) .conv-skel-line { animation-delay: 0.60s; }
 
+/* Email-card skeleton — shown in the right pane while live-fetching a
+   thread's content from Gmail. Mirrors the EmailCard layout so the
+   transition into the real content is visually seamless. */
+.email-card-skeleton {
+  padding: 16px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+.email-card-skel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.email-card-skel-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: linear-gradient(110deg, rgba(15, 23, 42, 0.06) 8%, rgba(15, 23, 42, 0.12) 18%, rgba(15, 23, 42, 0.06) 33%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.6s linear infinite;
+}
+.email-card-skel-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.email-card-skel-line {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(110deg, rgba(15, 23, 42, 0.06) 8%, rgba(15, 23, 42, 0.12) 18%, rgba(15, 23, 42, 0.06) 33%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.6s linear infinite;
+}
+.email-card-skel-line.tiny { width: 25%; height: 8px; opacity: 0.7; }
+.email-card-skel-line.short { width: 40%; }
+.email-card-skel-line.long { width: 60%; }
+.email-card-skel-line.full { width: 100%; }
+
 /* =============================================================================
    Inbox empty-state — no channels connected yet
    ============================================================================= */

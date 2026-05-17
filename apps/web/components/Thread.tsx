@@ -51,48 +51,54 @@ export function Thread() {
   const [isStarred, setIsStarred] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Live-fetch messages from Gmail on conv open. We KEEP messagesByConv
-  // (server-side DB cache) as the instant-render fallback, but always
-  // overlay with the freshly-fetched Gmail response — sidesteps the whole
-  // class of "messages aren't in our DB" bugs because we don't depend on
-  // the DB for the actual message bodies anymore.
-  const cachedMessages = messagesByConv[activeConvId] ?? [];
-  const [liveMessages, setLiveMessages] = useState<Message[]>([]);
+  // Live-fetch messages from Gmail on conv open. messagesByConv (server
+  // DB cache) used only as an INSTANT fallback for the conv we last
+  // rendered — never leaks across conv switches (would show the wrong
+  // thread's content for ~300ms while the new fetch resolved).
+  const [liveByConv, setLiveByConv] = useState<Record<string, Message[]>>({});
   const [liveError, setLiveError] = useState<string | null>(null);
-  const [liveLoading, setLiveLoading] = useState(false);
+  const [loadingConvId, setLoadingConvId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!activeConvId) {
-      setLiveMessages([]);
       setLiveError(null);
       return;
     }
+    // If we already have live messages for THIS conv, skip the re-fetch —
+    // user just navigated back to a thread they opened earlier in the
+    // session.
+    if (liveByConv[activeConvId]) return;
+
     let cancelled = false;
-    setLiveLoading(true);
+    setLoadingConvId(activeConvId);
     setLiveError(null);
     getConversationMessages(activeConvId)
       .then((result) => {
         if (cancelled) return;
         if (result.error) setLiveError(result.error);
-        setLiveMessages(result.messages);
+        setLiveByConv((prev) => ({ ...prev, [activeConvId]: result.messages }));
       })
       .catch((err) => {
         if (cancelled) return;
         setLiveError(err instanceof Error ? err.message : String(err));
       })
       .finally(() => {
-        if (!cancelled) setLiveLoading(false);
+        if (!cancelled) setLoadingConvId(null);
       });
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConvId]);
 
-  // Live takes priority. Cache only used if live is empty AND we have
-  // something cached (rare; happens during the ~300ms before live resolves).
+  const isLiveLoading = loadingConvId === activeConvId;
+
+  // Strict per-conv lookup. NO fallback to messagesByConv across convs —
+  // showing the wrong thread's content during a switch was the "loading
+  // flash" bug.
   const messages = useMemo<Message[]>(
-    () => (liveMessages.length > 0 ? liveMessages : cachedMessages),
-    [liveMessages, cachedMessages]
+    () => liveByConv[activeConvId] ?? messagesByConv[activeConvId] ?? [],
+    [liveByConv, messagesByConv, activeConvId]
   );
 
   const isEmail = conv?.channel === "gmail";
@@ -210,19 +216,18 @@ export function Thread() {
         aria-live="polite"
         tabIndex={-1}
       >
-        {/* TEMP DEBUG — surface what's actually happening when right panel
-            looks empty. Visible bandeau showing message count for the active
-            conv, whether each has body_text / body_html, etc. Remove once
-            the display bug is fully resolved. */}
-        {liveLoading && messages.length === 0 && (
-          <div
-            style={{
-              padding: "10px 28px",
-              fontSize: 13,
-              color: "#8B93A4",
-            }}
-          >
-            Chargement du message…
+        {isLiveLoading && messages.length === 0 && (
+          <div className="email-card-skeleton" aria-busy="true">
+            <div className="email-card-skel-row">
+              <span className="email-card-skel-avatar" />
+              <span className="email-card-skel-meta">
+                <span className="email-card-skel-line short" />
+                <span className="email-card-skel-line tiny" />
+              </span>
+            </div>
+            <span className="email-card-skel-line full" />
+            <span className="email-card-skel-line full" />
+            <span className="email-card-skel-line long" />
           </div>
         )}
         {liveError && messages.length === 0 && (
