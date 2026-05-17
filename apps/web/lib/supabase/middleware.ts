@@ -66,7 +66,8 @@ export async function updateSession(request: NextRequest) {
   // "I changed Gmail but still see the old emails" bug.
   const intentionalSignIn =
     request.nextUrl.searchParams.has("switch") ||
-    request.nextUrl.searchParams.has("signedout");
+    request.nextUrl.searchParams.has("signedout") ||
+    request.nextUrl.searchParams.has("deleted");
   if (user && pathname === "/sign-in" && !intentionalSignIn) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";

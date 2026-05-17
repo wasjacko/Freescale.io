@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/settings/ProfileForm";
+import { DangerZone } from "@/components/settings/DangerZone";
 
 export const metadata = { title: "Profil · Freescale" };
 
@@ -17,15 +18,20 @@ export default async function ProfileSettingsPage() {
     .eq("id", user.id)
     .maybeSingle();
 
+  const profileEmail = (profile?.email as string) ?? user.email ?? "";
+
   return (
-    <ProfileForm
-      initial={{
-        fullName: (profile?.full_name as string) ?? "",
-        avatarUrl: (profile?.avatar_url as string | null) ?? null,
-        timezone: (profile?.timezone as string) ?? "Europe/Paris",
-        locale: (profile?.locale as string) ?? "fr",
-        email: (profile?.email as string) ?? user.email ?? "",
-      }}
-    />
+    <>
+      <ProfileForm
+        initial={{
+          fullName: (profile?.full_name as string) ?? "",
+          avatarUrl: (profile?.avatar_url as string | null) ?? null,
+          timezone: (profile?.timezone as string) ?? "Europe/Paris",
+          locale: (profile?.locale as string) ?? "fr",
+          email: profileEmail,
+        }}
+      />
+      <DangerZone email={profileEmail} />
+    </>
   );
 }
