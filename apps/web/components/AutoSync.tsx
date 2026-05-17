@@ -57,7 +57,18 @@ export function AutoSync() {
       if (document.visibilityState === "visible") void run();
     };
     document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+
+    // Periodic refresh while the tab is open and visible. The throttle
+    // inside run() guarantees we don't fire more than once per minute
+    // even if other events also call it.
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") void run();
+    }, 60_000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(interval);
+    };
   }, [router, push, setIsSyncing, conversations.length]);
 
   return null;

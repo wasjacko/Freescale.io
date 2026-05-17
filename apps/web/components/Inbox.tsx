@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
 import { useData } from "@/lib/contexts/DataContext";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
+import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
 import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
@@ -18,6 +20,7 @@ const GROUP_LABELS: Record<string, string> = {
 };
 
 export function Inbox() {
+  const router = useRouter();
   const { activeConvId, setActiveConv } = useApp();
   const { conversations, archived, archive: archiveConv, unarchive, markRead, markUnread, isSyncing, channels } = useData();
   const push = useToast((s) => s.push);
@@ -28,6 +31,26 @@ export function Inbox() {
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
   const filterBtnRef = useRef<HTMLButtonElement>(null);
   const [ctx, setCtx] = useState<{ x: number; y: number; convId: string } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      // Force-sync regardless of staleness
+      const report = await autoSyncStaleChannels(0);
+      router.refresh();
+      if (report.newMessages > 0) {
+        push({ text: `${report.newMessages} nouveau message${report.newMessages > 1 ? "s" : ""}`, duration: 2400 });
+      } else {
+        push({ text: "Inbox à jour", duration: 1800 });
+      }
+    } catch {
+      push({ text: "Sync impossible — réessayez.", duration: 3000 });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const isUnread = (id: string, baseUnread?: boolean) => {
     if (extraUnread.has(id)) return true;
@@ -129,11 +152,26 @@ export function Inbox() {
           <h2 className="panel-title">Inbox</h2>
           <span className="panel-count">{counts.all} conversations</span>
           <button
+            className="filter-btn"
+            type="button"
+            aria-label="Rafraîchir"
+            data-tip="Rafraîchir"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            style={refreshing ? { opacity: 0.5 } : undefined}
+          >
+            <svg className={`icon ${refreshing ? "is-spinning" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          </button>
+          <button
             ref={filterBtnRef}
             className="filter-btn"
             type="button"
-            aria-label="Filter"
-            data-tip="Filter conversations"
+            aria-label="Filtrer"
+            data-tip="Filtrer"
             onClick={() => setFilterAnchor(filterBtnRef.current)}
           >
             <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
