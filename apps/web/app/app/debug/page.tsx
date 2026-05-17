@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getValidAccessToken, type GmailMessage } from "@/lib/gmail";
+import { DebugResyncButton } from "./DebugResyncButton";
 
 /**
  * Diagnostic page — surfaces the raw label set Gmail puts on each recent
@@ -21,7 +22,7 @@ export default async function DebugPage() {
 
   const { data: account } = await supabase
     .from("channel_accounts")
-    .select("encrypted_tokens, external_id")
+    .select("id, encrypted_tokens, external_id")
     .eq("kind", "gmail")
     .not("encrypted_tokens", "is", null)
     .limit(1)
@@ -34,6 +35,7 @@ export default async function DebugPage() {
       </main>
     );
   }
+  const channelAccountId = account.id as string;
 
   const { accessToken } = await getValidAccessToken(account.encrypted_tokens as string);
 
@@ -171,6 +173,8 @@ export default async function DebugPage() {
         Account: <strong>{profile?.emailAddress ?? account.external_id}</strong> ·{" "}
         {profile?.messagesTotal ?? "?"} messages total
       </p>
+
+      <DebugResyncButton channelAccountId={channelAccountId} />
 
       <section
         style={{

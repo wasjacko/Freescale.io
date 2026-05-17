@@ -531,16 +531,50 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       }
     }
     if (messagesPayload.length > 0) {
-      const { error: msgErr } = await supabase
+      // Try batch upsert first — fast path. If anything in the batch
+      // violates a constraint (one bad row poisons the whole INSERT in
+      // Postgres), fall back to inserting one message at a time so a
+      // single broken row doesn't drop the other 15.
+      const { error: batchErr } = await supabase
         .from("messages")
         .upsert(messagesPayload, {
           onConflict: "conversation_id,external_id",
           ignoreDuplicates: true,
         });
-      if (msgErr) {
-        report.errors.push(`messages upsert: ${msgErr.message}`);
-      } else {
+
+      if (!batchErr) {
         report.newMessages += messagesPayload.length;
+      } else {
+        report.errors.push(`messages batch failed (${batchErr.message}) — retrying per-message`);
+        // eslint-disable-next-line no-console
+        console.error("messages batch upsert failed:", batchErr);
+        let okCount = 0;
+        for (const m of messagesPayload) {
+          const { error: oneErr } = await supabase
+            .from("messages")
+            .upsert([m], {
+              onConflict: "conversation_id,external_id",
+              ignoreDuplicates: true,
+            });
+          if (oneErr) {
+            report.errors.push(
+              `msg ${m.external_id}: ${oneErr.message.slice(0, 100)}`
+            );
+            // eslint-disable-next-line no-console
+            console.error(`messages single insert failed (${m.external_id}):`, oneErr, {
+              conv: m.conversation_id,
+              direction: m.direction,
+              hasText: !!m.body_text,
+              textLen: m.body_text?.length ?? 0,
+              hasHtml: !!m.body_html,
+              htmlLen: m.body_html?.length ?? 0,
+              metadataKeys: Object.keys(m.metadata ?? {}),
+            });
+          } else {
+            okCount += 1;
+          }
+        }
+        report.newMessages += okCount;
       }
     }
   }
