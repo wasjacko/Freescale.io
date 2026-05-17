@@ -237,10 +237,23 @@ export function SignupWizard() {
     setAuthMsg(null);
     setAuthLoading("google");
     try {
+      // Same Gmail-scoped flow as /sign-in. Signing up with Google
+      // ALSO connects the user's Gmail in one shot — they land on /app
+      // with their inbox already syncing.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback?next=/sign-up`,
+          scopes: [
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://www.googleapis.com/auth/gmail.send",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+          ].join(" "),
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
       if (error) throw error;

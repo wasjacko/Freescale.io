@@ -50,10 +50,27 @@ export function SignInScreen() {
     setMsg(null);
     setLoading("google");
     try {
+      // Unified flow: request Gmail scopes at sign-in time so we get a
+      // Google refresh-token in the Supabase session right away. The
+      // /auth/callback handler picks those up and stores them as a Gmail
+      // channel_account — the user is logged in AND has Gmail connected
+      // in a single click, no separate "Connect Gmail" step.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          scopes: [
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://www.googleapis.com/auth/gmail.send",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+          ].join(" "),
+          queryParams: {
+            // offline + consent = guarantees we get a refresh_token back
+            // (Google omits it on subsequent grants if not forced).
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
       });
       if (error) throw error;
