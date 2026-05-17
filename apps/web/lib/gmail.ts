@@ -160,10 +160,19 @@ export type GmailMessage = {
 };
 
 /**
- * Initial / full-resync message list. Restricted to Gmail's PRIMARY tab —
- * the user wants the focused mailbox view, not Promotions / Social /
- * Updates noise. category:primary is Gmail's own internal filter, so the
- * match is identical to what the user sees when they open Gmail.
+ * Initial / full-resync message list. Returns every message currently in
+ * the user's Inbox (Primary + Promotions + Social + Updates + Forums),
+ * not the Sent / Archive / Spam / Trash drawers.
+ *
+ * Why `in:inbox` rather than `category:primary`: Gmail's category labels
+ * are applied by an ML classifier *after* the mail arrives. A mail can
+ * be visible in the Primary tab without ever getting CATEGORY_PERSONAL —
+ * un-categorised inbox mail falls into Primary by default. The
+ * narrower `category:primary` query was silently dropping those (so
+ * GamsGo / Aiapiflow were missing for the user). We now pull every
+ * inbox message and let the thread-level isInPrimaryTab() gate in
+ * syncGmail decide whether to keep it, which catches both the explicit
+ * CATEGORY_PERSONAL case AND the un-categorised default-Primary case.
  *
  * 200 keeps the first sync under Vercel's 60s server-action ceiling even
  * with the per-thread fetch fan-out below; the History API takes over
@@ -180,7 +189,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "category:primary",
+      q: "in:inbox",
     });
     if (pageToken) params.set("pageToken", pageToken);
 
