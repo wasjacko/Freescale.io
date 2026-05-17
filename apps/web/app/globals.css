@@ -5668,6 +5668,93 @@
 .email-composer-send:disabled { opacity: 0.5; cursor: not-allowed; }
 .email-composer-send .icon { width: 14px; height: 14px; }
 
+/* Mue — "Suggérer (Mue)" button in the composer actions row. Gradient
+   accent so it visually reads as the AI-powered shortcut among the
+   neutral attach/send buttons. */
+.email-composer-mue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(99, 102, 241, 0.10));
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4F46E5;
+  cursor: pointer;
+  transition: background 160ms, border-color 160ms;
+}
+.email-composer-mue:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(99, 102, 241, 0.16));
+  border-color: rgba(99, 102, 241, 0.30);
+}
+.email-composer-mue:disabled { opacity: 0.6; cursor: not-allowed; }
+.email-composer-mue .icon { width: 14px; height: 14px; }
+
+/* Mue suggestion chips — appear above the textarea after the AI returns
+   3 drafts. One click pastes the text into the composer and dismisses
+   the chip row. */
+.mue-suggestions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin: 0 0 8px 0;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.04), rgba(99, 102, 241, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+.mue-suggestions-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4F46E5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.mue-suggestions-label .icon { width: 12px; height: 12px; }
+.mue-suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  background: #fff;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #0F172A;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, transform 100ms;
+  text-align: left;
+}
+.mue-suggestion-chip:hover {
+  background: #F4F5FF;
+  border-color: rgba(99, 102, 241, 0.40);
+  transform: translateY(-0.5px);
+}
+.mue-suggestion-dismiss {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #8B93A4;
+  cursor: pointer;
+  font-size: 12px;
+}
+.mue-suggestion-dismiss:hover { background: rgba(0, 0, 0, 0.05); color: #0F172A; }
+
 /* =============================================================================
    Conversation skeleton — shown while the first sync is running
    ============================================================================= */

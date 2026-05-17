@@ -10,6 +10,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import { sendEmailReply } from "@/lib/actions/inbox";
 import { getConversationMessages } from "@/lib/actions/thread-messages";
+import { suggestReplies, type ReplySuggestion } from "@/lib/actions/mue";
 import type { Message } from "@/lib/types";
 
 const QUICK_REPLIES = [
@@ -431,6 +432,42 @@ function EmailComposer({
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Mue — AI reply suggestions
+  const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+
+  // Reset suggestions whenever the user switches to a different conv
+  useEffect(() => {
+    setSuggestions([]);
+    setBody("");
+  }, [conversationId]);
+
+  const handleSuggest = async () => {
+    setSuggesting(true);
+    try {
+      const result = await suggestReplies(conversationId);
+      if (result.error) {
+        push({
+          text: `Mue : ${result.error}`,
+          duration: 5000,
+        });
+        return;
+      }
+      if (result.suggestions.length === 0) {
+        push({ text: "Mue n'a pas pu générer de suggestions.", duration: 3000 });
+        return;
+      }
+      setSuggestions(result.suggestions);
+    } catch (err) {
+      push({
+        text: err instanceof Error ? err.message : "Mue est indisponible.",
+        duration: 5000,
+      });
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
   const addFiles = (incoming: FileList | null) => {
     if (!incoming) return;
     setFiles((prev) => [...prev, ...Array.from(incoming)]);
@@ -520,6 +557,37 @@ function EmailComposer({
         )}
       </div>
 
+      {suggestions.length > 0 && (
+        <div className="mue-suggestions">
+          <span className="mue-suggestions-label">
+            <Icon name="i-spark" />
+            Mue suggère
+          </span>
+          {suggestions.map((s, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="mue-suggestion-chip"
+              onClick={() => {
+                setBody(s.text);
+                setSuggestions([]);
+              }}
+              title={s.text}
+            >
+              {s.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="mue-suggestion-dismiss"
+            onClick={() => setSuggestions([])}
+            aria-label="Fermer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <textarea
         className="email-composer-body"
         placeholder={`Votre réponse à ${toName}…`}
@@ -559,6 +627,16 @@ function EmailComposer({
         >
           <Icon name="i-clip" />
           Joindre
+        </button>
+        <button
+          type="button"
+          className="email-composer-mue"
+          onClick={handleSuggest}
+          disabled={suggesting || sending}
+          title="Mue génère 3 propositions de réponse contextuelles"
+        >
+          <Icon name="i-spark" />
+          {suggesting ? "Mue réfléchit…" : "Suggérer (Mue)"}
         </button>
         <input
           ref={fileRef}
