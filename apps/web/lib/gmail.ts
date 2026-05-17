@@ -195,6 +195,138 @@ export async function getMessage(accessToken: string, id: string): Promise<Gmail
   return (await res.json()) as GmailMessage;
 }
 
+/**
+ * Cheap metadata-only fetch — used at send time to pull the previous
+ * message's Message-ID header for In-Reply-To / References threading.
+ */
+export async function getMessageMetadata(
+  accessToken: string,
+  id: string,
+  headers: string[] = ["Message-Id", "Subject", "References", "In-Reply-To"]
+): Promise<Record<string, string>> {
+  const params = new URLSearchParams();
+  params.append("format", "metadata");
+  for (const h of headers) params.append("metadataHeaders", h);
+  const res = await fetch(
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?${params}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Gmail metadata(${id}) failed: ${res.status} ${text}`);
+  }
+  const data = (await res.json()) as GmailMessage;
+  const out: Record<string, string> = {};
+  for (const h of data.payload?.headers ?? []) {
+    out[h.name.toLowerCase()] = h.value;
+  }
+  return out;
+}
+
+/* ===========================================================================
+ * SEND
+ * =========================================================================== */
+
+/** Encode a string with RFC 2047 "encoded-word" only if it has non-ASCII. */
+function encodeMimeWord(s: string): string {
+  // eslint-disable-next-line no-control-regex
+  if (/^[\x00-\x7f]*$/.test(s)) return s;
+  return "=?UTF-8?B?" + Buffer.from(s, "utf-8").toString("base64") + "?=";
+}
+
+function base64Url(buf: Buffer | string): string {
+  const b = (typeof buf === "string" ? Buffer.from(buf, "utf-8") : buf).toString("base64");
+  return b.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/**
+ * Build an RFC 5322 message ready to base64url-encode for Gmail's
+ * users.messages.send endpoint. Body goes out as UTF-8 quoted-printable
+ * (simple line splitting; works for most prose).
+ */
+function buildRawMessage(opts: {
+  from: { name?: string | null; email: string };
+  to: { name?: string | null; email: string };
+  subject: string;
+  body: string;
+  inReplyTo?: string;
+  references?: string[];
+}): string {
+  const fromHeader = opts.from.name
+    ? `${encodeMimeWord(opts.from.name)} <${opts.from.email}>`
+    : opts.from.email;
+  const toHeader = opts.to.name
+    ? `${encodeMimeWord(opts.to.name)} <${opts.to.email}>`
+    : opts.to.email;
+
+  const headers: string[] = [
+    `From: ${fromHeader}`,
+    `To: ${toHeader}`,
+    `Subject: ${encodeMimeWord(opts.subject || "(no subject)")}`,
+    `Date: ${new Date().toUTCString()}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: base64`,
+  ];
+  if (opts.inReplyTo) headers.push(`In-Reply-To: ${opts.inReplyTo}`);
+  if (opts.references && opts.references.length) {
+    headers.push(`References: ${opts.references.join(" ")}`);
+  }
+
+  // base64-encode body and wrap at 76 chars per RFC 2045
+  const bodyB64 = Buffer.from(opts.body, "utf-8")
+    .toString("base64")
+    .match(/.{1,76}/g)
+    ?.join("\r\n") ?? "";
+
+  return `${headers.join("\r\n")}\r\n\r\n${bodyB64}`;
+}
+
+export async function sendGmailMessage(
+  accessToken: string,
+  opts: {
+    from: { name?: string | null; email: string };
+    to: { name?: string | null; email: string };
+    subject: string;
+    body: string;
+    threadId?: string;
+    inReplyTo?: string;
+    references?: string[];
+  }
+): Promise<{ id: string; threadId: string; messageId: string | null }> {
+  const raw = buildRawMessage(opts);
+  const payload: Record<string, unknown> = { raw: base64Url(raw) };
+  if (opts.threadId) payload.threadId = opts.threadId;
+
+  const res = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Gmail send failed: ${res.status} ${text}`);
+  }
+  const data = (await res.json()) as { id: string; threadId: string };
+
+  // Best-effort: fetch the sent message's Message-ID so we can store it for
+  // future threading (the next reply needs it as In-Reply-To).
+  let messageId: string | null = null;
+  try {
+    const meta = await getMessageMetadata(accessToken, data.id, ["Message-Id"]);
+    messageId = meta["message-id"] ?? null;
+  } catch {
+    // ignore — threading from our side will still work via threadId
+  }
+  return { id: data.id, threadId: data.threadId, messageId };
+}
+
 /** Return raw bytes from a base64url-encoded string (no charset assumption). */
 function decodeBase64UrlBytes(input: string): Buffer {
   const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
@@ -371,6 +503,8 @@ export function extractMessageContent(message: GmailMessage): {
   to: string[];
   subject: string;
   date: Date;
+  messageId: string;
+  references: string[];
 } {
   const headers = message.payload?.headers ?? [];
   const headerMap = new Map(headers.map((h) => [h.name.toLowerCase(), h.value]));
@@ -393,22 +527,24 @@ export function extractMessageContent(message: GmailMessage): {
   const date = dateHeader
     ? new Date(dateHeader)
     : new Date(Number(message.internalDate ?? Date.now()));
+  const messageId = headerMap.get("message-id") ?? "";
+  const referencesRaw = headerMap.get("references") ?? "";
+  const references = referencesRaw
+    .split(/\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.startsWith("<") && s.endsWith(">"));
 
   const textPart = findPart(message.payload, (p) => p.mimeType === "text/plain" && !!p.body?.data);
   const htmlPart = findPart(message.payload, (p) => p.mimeType === "text/html" && !!p.body?.data);
   const snippet = message.snippet ?? "";
 
   const rawText = textPart ? decodePart(textPart) : "";
-  // If the decoded text looks like binary garbage (lots of replacement chars
-  // or non-printable bytes — common when an email packs a signature blob,
-  // DKIM key, or PGP block into the text part), fall back to Gmail's own
-  // clean snippet for the visible body / preview.
   const text = looksLikeGarbage(rawText) || !rawText.trim() ? snippet : rawText;
 
   const rawHtml = htmlPart ? decodePart(htmlPart) : "";
   const html = looksLikeGarbage(rawHtml) ? "" : rawHtml;
 
-  return { text, html, from, to, subject, date };
+  return { text, html, from, to, subject, date, messageId, references };
 }
 
 /**

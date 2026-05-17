@@ -250,6 +250,8 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
             from: p.content.from,
             to: p.content.to,
             labels: p.raw.labelIds ?? [],
+            messageId: p.content.messageId,
+            references: p.content.references,
           },
         };
       });
