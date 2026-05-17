@@ -54,6 +54,17 @@ export function Thread() {
     () => messagesByConv[activeConvId] ?? [],
     [messagesByConv, activeConvId]
   );
+  // TEMP: aggregate stats across whole DataContext so the debug bandeau can
+  // tell us whether the empty middle block is "this conv has no messages"
+  // (FK/insert bug) vs "no message is loaded anywhere" (data fetching bug).
+  const totalMessagesLoaded = useMemo(
+    () => Object.values(messagesByConv).reduce((acc, arr) => acc + arr.length, 0),
+    [messagesByConv]
+  );
+  const convsWithMessages = useMemo(
+    () => Object.values(messagesByConv).filter((arr) => arr.length > 0).length,
+    [messagesByConv]
+  );
 
   const isEmail = conv?.channel === "gmail";
   const groups = useMemo(() => groupMessages(messages), [messages]);
@@ -186,6 +197,8 @@ export function Thread() {
         >
           DEBUG · conv={activeConvId.slice(0, 8)} · isEmail={String(isEmail)} ·
           messages.length={messages.length}
+          {" · "}
+          TOTAL workspace: {totalMessagesLoaded} msgs across {convsWithMessages} convs
           {messages.length > 0 && (
             <span>
               {" · "}
