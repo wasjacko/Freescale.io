@@ -396,8 +396,37 @@ export function extractMessageContent(message: GmailMessage): {
 
   const textPart = findPart(message.payload, (p) => p.mimeType === "text/plain" && !!p.body?.data);
   const htmlPart = findPart(message.payload, (p) => p.mimeType === "text/html" && !!p.body?.data);
-  const text = textPart ? decodePart(textPart) : (message.snippet ?? "");
-  const html = htmlPart ? decodePart(htmlPart) : "";
+  const snippet = message.snippet ?? "";
+
+  const rawText = textPart ? decodePart(textPart) : "";
+  // If the decoded text looks like binary garbage (lots of replacement chars
+  // or non-printable bytes — common when an email packs a signature blob,
+  // DKIM key, or PGP block into the text part), fall back to Gmail's own
+  // clean snippet for the visible body / preview.
+  const text = looksLikeGarbage(rawText) || !rawText.trim() ? snippet : rawText;
+
+  const rawHtml = htmlPart ? decodePart(htmlPart) : "";
+  const html = looksLikeGarbage(rawHtml) ? "" : rawHtml;
 
   return { text, html, from, to, subject, date };
+}
+
+/**
+ * Heuristic: a string is "garbage" if it has more than ~5% replacement
+ * characters or more than ~15% non-printable bytes. Real email text might
+ * occasionally include a stray � (forwarded mojibake) but never that often.
+ */
+function looksLikeGarbage(s: string): boolean {
+  if (!s) return false;
+  const sample = s.slice(0, 2000);
+  const total = sample.length;
+  if (total < 20) return false;
+  let replacement = 0;
+  let nonPrintable = 0;
+  for (let i = 0; i < total; i++) {
+    const code = sample.charCodeAt(i);
+    if (code === 0xfffd) replacement++;
+    else if (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d) nonPrintable++;
+  }
+  return replacement / total > 0.05 || nonPrintable / total > 0.15;
 }
