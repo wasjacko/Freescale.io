@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { appUrl } from "@/lib/app-url";
 import { MueAvatar } from "@/components/MueAvatar";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { OtpInput } from "@/components/signup/OtpInput";
@@ -162,7 +163,7 @@ export function SignupWizard() {
         email: authEmail.trim(),
         password: authPassword,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/sign-up`,
+          emailRedirectTo: `${appUrl()}/auth/callback?next=/sign-up`,
         },
       });
       if (error) throw error;
@@ -243,7 +244,7 @@ export function SignupWizard() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/sign-up`,
+          redirectTo: `${appUrl()}/auth/callback?next=/sign-up`,
           scopes: [
             "https://www.googleapis.com/auth/gmail.modify",
             "https://www.googleapis.com/auth/gmail.send",

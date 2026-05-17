@@ -7,9 +7,22 @@ const config: NextConfig = {
   },
   async redirects() {
     return [
+      // Legacy auth slugs
       { source: "/login", destination: "/sign-in", permanent: true },
       { source: "/signup", destination: "/sign-up", permanent: true },
       { source: "/onboarding", destination: "/sign-up", permanent: true },
+
+      // Force the canonical domain. Anyone landing on the auto-generated
+      // Vercel preview/staging host (freescale-io.vercel.app) gets 308'd
+      // to the production domain (freescale.site). Critical for OAuth:
+      // signInWithOAuth's redirectTo must match the host the request
+      // came from, and every flow should go through freescale.site.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "freescale-io.vercel.app" }],
+        destination: "https://freescale.site/:path*",
+        permanent: true,
+      },
     ];
   },
   images: {

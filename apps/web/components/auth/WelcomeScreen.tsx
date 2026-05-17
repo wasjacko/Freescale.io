@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { appUrl } from "@/lib/app-url";
 import { MueAvatar } from "@/components/MueAvatar";
 
 /**
@@ -54,7 +55,7 @@ export function WelcomeScreen() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          redirectTo: `${appUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
           scopes: [
             "https://www.googleapis.com/auth/gmail.modify",
             "https://www.googleapis.com/auth/gmail.send",
@@ -82,7 +83,7 @@ export function WelcomeScreen() {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          emailRedirectTo: `${appUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
           shouldCreateUser: true,
         },
       });

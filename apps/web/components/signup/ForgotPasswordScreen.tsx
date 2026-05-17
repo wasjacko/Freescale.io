@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { appUrl } from "@/lib/app-url";
 import { MueAvatar } from "@/components/MueAvatar";
 
 export function ForgotPasswordScreen() {
@@ -18,7 +19,7 @@ export function ForgotPasswordScreen() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${appUrl()}/auth/reset-password`,
       });
       if (error) throw error;
       setSent(true);
