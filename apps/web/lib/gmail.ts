@@ -471,6 +471,29 @@ function tryDecode(bytes: Buffer, charset: string): string | null {
 }
 
 /**
+ * Detect classic UTF-8-misread-as-Latin1 mojibake patterns. Looks for
+ * sequences where a UTF-8 lead byte (0xC2-0xC3) has been decoded as Latin-1
+ * and produces a 2-char artifact ("Ã©" for é, "Ã§" for ç, "Â " for non-
+ * breaking space, etc). Common when an MTA double-encodes.
+ */
+function mojibakeRatio(s: string): number {
+  if (!s) return 0;
+  const matches = s.match(/[ÂÃ][-¿]/g);
+  return (matches?.length ?? 0) / Math.max(s.length, 1);
+}
+
+/**
+ * Reverse mojibake by re-interpreting the string's low-byte view as UTF-8.
+ * If the string was originally UTF-8 bytes mistakenly decoded as Latin-1,
+ * this round-trip restores the original characters.
+ */
+function fixMojibake(s: string): string {
+  const bytes = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
+  return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+}
+
+/**
  * Decode a message part body honoring both Content-Transfer-Encoding
  * (quoted-printable / base64 / 7bit / 8bit) AND the Content-Type charset
  * (utf-8, windows-1252, iso-8859-15, ...). Many French senders LIE about
@@ -505,17 +528,32 @@ function decodePart(part: GmailMessagePart): string {
     "utf-8",
   ].filter((c, i, arr) => arr.indexOf(c) === i);
 
+  let decoded: string | null = null;
   for (const cs of candidates) {
     const out = tryDecode(bodyBytes, cs);
-    if (out !== null) return out;
+    if (out !== null) {
+      decoded = out;
+      break;
+    }
+  }
+  if (decoded === null) {
+    try {
+      decoded = new TextDecoder("utf-8", { fatal: false }).decode(bodyBytes);
+    } catch {
+      decoded = bodyBytes.toString("latin1");
+    }
   }
 
-  // Ultimate fallback — accept lossy UTF-8 (with U+FFFD for bad bytes).
-  try {
-    return new TextDecoder("utf-8", { fatal: false }).decode(bodyBytes);
-  } catch {
-    return bodyBytes.toString("latin1");
+  // Mojibake repair: if the "clean" decode is full of Ã/Â artifacts
+  // (UTF-8 misread as Latin-1 somewhere upstream), re-interpret as UTF-8.
+  // Only keep the repair if it lowers the mojibake ratio meaningfully.
+  if (mojibakeRatio(decoded) > 0.005) {
+    const repaired = fixMojibake(decoded);
+    if (mojibakeRatio(repaired) < mojibakeRatio(decoded) && !repaired.includes("�")) {
+      return repaired;
+    }
   }
+  return decoded;
 }
 
 function findPart(
@@ -583,6 +621,7 @@ function decodeMimeHeader(raw: string): string {
 export function extractMessageContent(message: GmailMessage): {
   text: string;
   html: string;
+  snippet: string;
   from: { name: string | null; email: string };
   to: string[];
   subject: string;
@@ -628,7 +667,7 @@ export function extractMessageContent(message: GmailMessage): {
   const rawHtml = htmlPart ? decodePart(htmlPart) : "";
   const html = looksLikeGarbage(rawHtml) ? "" : rawHtml;
 
-  return { text, html, from, to, subject, date, messageId, references };
+  return { text, html, snippet, from, to, subject, date, messageId, references };
 }
 
 /**

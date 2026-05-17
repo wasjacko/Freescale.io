@@ -197,7 +197,13 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     // (workspace_id, channel_account_id, external_thread_id) makes the
     // INSERT race-safe: on conflict we catch the 23505 and switch to the
     // UPDATE path. No silent data loss from .single() returning nothing.
-    const preview = newest.content.text.slice(0, 140).replace(/\s+/g, " ").trim();
+    // Always prefer Gmail's own snippet for the sidebar preview. It's
+    // pre-cleaned text the API guarantees is safe to display — no
+    // mojibake, no HTML noise, no quoted-printable leftovers.
+    const preview = (newest.content.snippet || newest.content.text)
+      .slice(0, 140)
+      .replace(/\s+/g, " ")
+      .trim();
     const unreadCount = parsed.filter((p) => (p.raw.labelIds ?? []).includes("UNREAD")).length;
     const lastMessageAt = newest.content.date.toISOString();
 
