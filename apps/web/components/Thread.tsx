@@ -170,8 +170,41 @@ export function Thread() {
         aria-live="polite"
         tabIndex={-1}
       >
+        {/* TEMP DEBUG — surface what's actually happening when right panel
+            looks empty. Visible bandeau showing message count for the active
+            conv, whether each has body_text / body_html, etc. Remove once
+            the display bug is fully resolved. */}
+        <div
+          style={{
+            padding: "8px 28px",
+            background: messages.length === 0 ? "#fee2e2" : "#ecfccb",
+            fontSize: 11,
+            fontFamily: "monospace",
+            color: "#1f2937",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+          }}
+        >
+          DEBUG · conv={activeConvId.slice(0, 8)} · isEmail={String(isEmail)} ·
+          messages.length={messages.length}
+          {messages.length > 0 && (
+            <span>
+              {" · "}
+              first msg: text={messages[0]?.text?.length ?? 0}ch · html=
+              {messages[0]?.bodyHtml?.length ?? 0}ch
+            </span>
+          )}
+        </div>
         {isEmail
-          ? messages.map((m) => (
+          ? messages.length === 0
+            ? (
+                <div style={{ padding: 28, color: "#8B93A4", fontSize: 13 }}>
+                  Aucun message chargé pour cette conversation.
+                  <br />
+                  Si tu vois ce texte, le bug est dans le data fetching (la
+                  query messages renvoie vide pour cet ID de conversation).
+                </div>
+              )
+            : messages.map((m) => (
               <EmailCard
                 key={m.id}
                 message={m}
@@ -320,11 +353,18 @@ function EmailCard({
         </div>
       </header>
       <div className="email-card-body">
-        {hasHtml ? (
+        {/* Render BOTH text and html when both exist. The text shows
+            instantly while the HTML iframe loads — and serves as a
+            fallback if DOMPurify fails to load client-side. Previously
+            the right panel could stay blank forever when the iframe
+            never rendered. */}
+        {cleaned && (
+          <pre style={{ marginBottom: hasHtml ? 16 : 0 }}>{cleaned}</pre>
+        )}
+        {hasHtml && (
           <EmailHtmlBody html={message.bodyHtml as string} />
-        ) : cleaned ? (
-          <pre>{cleaned}</pre>
-        ) : (
+        )}
+        {!cleaned && !hasHtml && (
           <p style={{ opacity: 0.5, fontStyle: "italic" }}>(Aucun contenu textuel)</p>
         )}
       </div>
