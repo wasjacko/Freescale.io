@@ -160,14 +160,18 @@ export type GmailMessage = {
 };
 
 /**
- * Pulls recent messages from inbox AND sent so the thread reconstruction
- * doesn't miss the user's own outbound emails (which only live in SENT).
- * Paginates up to `maxResults` (default 200, Gmail's hard per-page max is
- * 500 but the user usually doesn't need more right after a connection).
+ * Pulls the most recent messages across the user's WHOLE mailbox, not just
+ * the inbox label. Gmail returns messages in reverse chronological order;
+ * we paginate up to `maxResults` (default 400) so we don't miss recent
+ * emails living in Promotions / Updates / Social categories, in custom
+ * labels, or simply archived after a read.
+ *
+ * Excludes: Chats, Drafts, Spam, Trash — the only junk the user wouldn't
+ * expect to see in a unified inbox.
  */
 export async function listRecentMessages(
   accessToken: string,
-  maxResults = 200
+  maxResults = 400
 ): Promise<{ id: string; threadId: string }[]> {
   const collected: { id: string; threadId: string }[] = [];
   let pageToken: string | undefined;
@@ -175,7 +179,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "(in:inbox OR in:sent) -in:chats -in:drafts",
+      q: "-in:chats -in:drafts -in:spam -in:trash",
     });
     if (pageToken) params.set("pageToken", pageToken);
 

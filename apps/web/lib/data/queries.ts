@@ -67,7 +67,7 @@ export async function getInboxData(): Promise<InboxData> {
       .eq("workspace_id", workspaceId)
       .eq("archived", false)
       .order("last_message_at", { ascending: false })
-      .limit(50),
+      .limit(150),
     supabase
       .from("tasks")
       .select(
