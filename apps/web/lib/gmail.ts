@@ -160,24 +160,25 @@ export type GmailMessage = {
 };
 
 /**
- * Initial / full-resync message list. Returns messages explicitly tagged
- * by Gmail as CATEGORY_PERSONAL (the Primary tab classifier output).
+ * Initial / full-resync message list. Mirrors Gmail's Principale tab as
+ * the user sees it, and limits to the last 30 days so the inbox stays
+ * focused on what's actively worth attention.
  *
- * Why strict `category:primary` rather than `in:inbox -category:X...`:
- * Gmail leaves a lot of inbox mail un-categorised (random shopping
- * notifications, old newsletters, ancient sales outreach). The
- * negative-filter approach treats "no category" as "Primary by
- * default", which mirrors Gmail's UI rendering but pulls in months of
- * cruft that the user never thinks of as Primary. Strict matching on
- * CATEGORY_PERSONAL gives exactly the mail Gmail's classifier picked
- * for the Primary tab — which is what the user actually wants to see
- * in a focused inbox view.
+ * The query mirrors Gmail's own UI rule for the Principale tab:
  *
- * Trade-off: brand-new mail (arrived in the last minute or two) may
- * not be categorised yet and will be skipped this tick. The History
- * API catches it on the next sync once Gmail's labeller has run.
+ *   Principale = Inbox \ (Promotions ∪ Social ∪ Updates ∪ Forums)
  *
- * 200 keeps the first sync under Vercel's 60s server-action ceiling.
+ * Strict `category:primary` was too narrow — it required Gmail's ML
+ * classifier to have explicitly tagged each message with
+ * CATEGORY_PERSONAL, missing legitimate Principale mail that Gmail
+ * never bothered to label. The negative-exclusion filter matches
+ * exactly what Gmail shows in the Principale tab itself.
+ *
+ * `newer_than:30d` keeps the view focused on recent activity. Old
+ * un-archived mail still technically lives in the Principale tab in
+ * Gmail, but the user doesn't think of January newsletters as
+ * "current inbox" — they're forgotten clutter. Bounding to 30 days
+ * gives the focused-inbox feel the user is after.
  */
 export async function listRecentMessages(
   accessToken: string,
@@ -189,7 +190,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "category:primary",
+      q: "in:inbox -category:promotions -category:social -category:updates -category:forums newer_than:30d",
     });
     if (pageToken) params.set("pageToken", pageToken);
 
