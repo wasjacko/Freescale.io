@@ -423,6 +423,144 @@ export type TranslatedMessage = {
   translated: string;
 };
 
+// ─── 4. Brief du jour ──────────────────────────────────────────────────
+
+const BRIEFING_SYSTEM = `You are Mue, the user's inbox copilot. Produce a concise morning briefing based on the user's recent conversations — what they should pay attention to TODAY.
+
+Output strict JSON, no fences:
+{"headline": "<one warm sentence in French, max 18 words>", "highlights": [{"who": "<sender>", "why": "<one-line reason this matters>", "action": "<short verb-led next step>" }]}
+
+Rules:
+- 0 to 5 highlights. Skip pure noise (newsletters, transactional notifications) unless something is truly urgent.
+- Each "why" ≤ 12 words. Each "action" ≤ 8 words.
+- French output.
+- "headline" sets the tone — friendly, direct. Mention how many real conversations need attention.`;
+
+export type DailyBriefingHighlight = {
+  who: string;
+  why: string;
+  action: string;
+};
+export type DailyBriefing = {
+  headline: string;
+  highlights: DailyBriefingHighlight[];
+};
+
+export async function dailyBriefing(): Promise<{
+  briefing: DailyBriefing | null;
+  error: string | null;
+}> {
+  const client = buildAnthropicClient();
+  if (!client) return { briefing: null, error: "ANTHROPIC credentials not set" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { briefing: null, error: "unauthenticated" };
+
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!workspace?.id) return { briefing: null, error: "no workspace" };
+
+  // Recent client conversations — the brief focuses on what matters,
+  // not the newsletter flood. Fall back to top-20 last-active if Mue
+  // hasn't classified anything yet.
+  const { data: classified } = await supabase
+    .from("conversations")
+    .select(
+      "id, subject, preview, last_message_at, category, contacts(display_name, email)"
+    )
+    .eq("workspace_id", workspace.id)
+    .eq("archived", false)
+    .eq("category", "client")
+    .order("last_message_at", { ascending: false })
+    .limit(25);
+
+  let convs = classified ?? [];
+  if (convs.length === 0) {
+    const { data: fallback } = await supabase
+      .from("conversations")
+      .select(
+        "id, subject, preview, last_message_at, category, contacts(display_name, email)"
+      )
+      .eq("workspace_id", workspace.id)
+      .eq("archived", false)
+      .order("last_message_at", { ascending: false })
+      .limit(20);
+    convs = fallback ?? [];
+  }
+
+  if (convs.length === 0) {
+    return {
+      briefing: {
+        headline: "Inbox vide — profitez de la pause.",
+        highlights: [],
+      },
+      error: null,
+    };
+  }
+
+  const transcript = convs
+    .map((c, i) => {
+      const contact = Array.isArray(c.contacts) ? c.contacts[0] : c.contacts;
+      const name = (contact?.display_name as string) || (contact?.email as string) || "?";
+      const subject = ((c.subject as string) || "(no subject)").slice(0, 100);
+      const preview = ((c.preview as string) || "").slice(0, 220).replace(/\s+/g, " ").trim();
+      return `${i + 1}. From: ${name}\n   Subject: ${subject}\n   Preview: ${preview}`;
+    })
+    .join("\n\n");
+
+  let raw: string;
+  try {
+    raw = await callClaude(
+      client,
+      BRIEFING_SYSTEM,
+      `Recent client conversations (most recent first):\n\n${transcript}\n\nGenerate the briefing JSON now.`,
+      1024
+    );
+  } catch (err) {
+    return { briefing: null, error: err instanceof Error ? err.message : String(err) };
+  }
+
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  const slice =
+    firstBrace >= 0 && lastBrace > firstBrace
+      ? cleaned.slice(firstBrace, lastBrace + 1)
+      : cleaned;
+  try {
+    const parsed = JSON.parse(slice) as {
+      headline?: string;
+      highlights?: DailyBriefingHighlight[];
+    };
+    if (!parsed.headline) return { briefing: null, error: "malformed briefing" };
+    return {
+      briefing: {
+        headline: parsed.headline,
+        highlights: (parsed.highlights ?? [])
+          .filter(
+            (h) =>
+              h && typeof h.who === "string" && typeof h.why === "string" && typeof h.action === "string"
+          )
+          .slice(0, 5),
+      },
+      error: null,
+    };
+  } catch (err) {
+    return {
+      briefing: null,
+      error: `parse: ${err instanceof Error ? err.message : err} — raw: ${raw.slice(0, 200)}`,
+    };
+  }
+}
+
 export async function translateThread(
   conversationId: string,
   targetLang: string

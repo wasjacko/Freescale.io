@@ -10,8 +10,37 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import { sendEmailReply } from "@/lib/actions/inbox";
 import { getConversationMessages } from "@/lib/actions/thread-messages";
-import { suggestReplies, type ReplySuggestion } from "@/lib/actions/mue";
+import {
+  suggestReplies,
+  summarizeThread,
+  suggestTasks,
+  translateThread,
+  type ReplySuggestion,
+  type ThreadSummary,
+  type SuggestedTask,
+  type TranslatedMessage,
+} from "@/lib/actions/mue";
 import type { Message } from "@/lib/types";
+
+type ThreadAiResult =
+  | { kind: "summary"; data: ThreadSummary }
+  | { kind: "tasks"; data: SuggestedTask[] }
+  | { kind: "translation"; data: TranslatedMessage[]; lang: string }
+  | { kind: "loading"; label: string }
+  | { kind: "error"; message: string };
+
+const TRANSLATE_LANGS: Array<{ code: string; label: string; flag: string }> = [
+  { code: "en", label: "anglais", flag: "🇬🇧" },
+  { code: "es", label: "espagnol", flag: "🇪🇸" },
+  { code: "fr", label: "français", flag: "🇫🇷" },
+  { code: "it", label: "italien", flag: "🇮🇹" },
+  { code: "de", label: "allemand", flag: "🇩🇪" },
+  { code: "pt", label: "portugais", flag: "🇵🇹" },
+  { code: "nl", label: "néerlandais", flag: "🇳🇱" },
+  { code: "ar", label: "arabe", flag: "🇸🇦" },
+  { code: "zh", label: "chinois", flag: "🇨🇳" },
+  { code: "ja", label: "japonais", flag: "🇯🇵" },
+];
 
 const QUICK_REPLIES = [
   { id: "suggest", icon: "i-spark", text: "Suggest reply" },
@@ -210,6 +239,8 @@ export function Thread() {
         </div>
       </header>
 
+      {isEmail && <ThreadAiBar conversationId={activeConvId} />}
+
       <section
         className={`messages ${isEmail ? "is-email" : ""} ${isLoading ? "is-loading" : ""}`}
         id="thread-content"
@@ -339,6 +370,154 @@ export function Thread() {
         )}
       </footer>
     </main>
+  );
+}
+
+/**
+ * Inline Mue toolbar sitting between the thread head and the messages.
+ * Holds the three contextual actions (Résumer · Tâches · Traduire) so
+ * they live where the user actually reads + replies to the conversation
+ * — not buried in the right-side MuePanel which now does the higher-
+ * level "brief du jour" job.
+ */
+function ThreadAiBar({ conversationId }: { conversationId: string }) {
+  const push = useToast((s) => s.push);
+  const [result, setResult] = useState<ThreadAiResult | null>(null);
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
+
+  // Clear any previous result the moment the user switches threads so a
+  // stale summary doesn't briefly hang over the new conversation.
+  useEffect(() => {
+    setResult(null);
+    setLangPickerOpen(false);
+  }, [conversationId]);
+
+  const handleSummary = async () => {
+    setResult({ kind: "loading", label: "Résumé en cours…" });
+    const res = await summarizeThread(conversationId);
+    if (res.error || !res.summary) {
+      setResult({ kind: "error", message: res.error ?? "Erreur Mue" });
+    } else {
+      setResult({ kind: "summary", data: res.summary });
+    }
+  };
+
+  const handleTasks = async () => {
+    setResult({ kind: "loading", label: "Extraction des tâches…" });
+    const res = await suggestTasks(conversationId);
+    if (res.error) {
+      setResult({ kind: "error", message: res.error });
+    } else if (res.tasks.length === 0) {
+      setResult({
+        kind: "error",
+        message: "Aucune action concrète détectée dans cette conversation.",
+      });
+    } else {
+      setResult({ kind: "tasks", data: res.tasks });
+    }
+  };
+
+  const runTranslation = async (langLabel: string) => {
+    setLangPickerOpen(false);
+    setResult({ kind: "loading", label: `Traduction en ${langLabel}…` });
+    const res = await translateThread(conversationId, langLabel);
+    if (res.error || res.messages.length === 0) {
+      setResult({ kind: "error", message: res.error ?? "Aucune traduction" });
+    } else {
+      setResult({ kind: "translation", data: res.messages, lang: langLabel });
+    }
+  };
+
+  return (
+    <div className="thread-ai-bar">
+      <div className="thread-ai-actions">
+        <button type="button" className="thread-ai-btn" onClick={handleSummary}>
+          <Icon name="i-list" /> Résumer
+        </button>
+        <button type="button" className="thread-ai-btn" onClick={handleTasks}>
+          <Icon name="i-spark" /> Tâches
+        </button>
+        <button
+          type="button"
+          className={`thread-ai-btn ${langPickerOpen ? "is-active" : ""}`}
+          onClick={() => setLangPickerOpen((o) => !o)}
+          aria-expanded={langPickerOpen}
+        >
+          <Icon name="i-globe" /> Traduire
+          <span className="thread-ai-chevron" aria-hidden>{langPickerOpen ? "▴" : "▾"}</span>
+        </button>
+        {result && (
+          <button
+            type="button"
+            className="thread-ai-close"
+            onClick={() => setResult(null)}
+            aria-label="Fermer le résultat Mue"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {langPickerOpen && (
+        <div className="thread-ai-lang" role="menu">
+          {TRANSLATE_LANGS.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              role="menuitem"
+              className="thread-ai-lang-option"
+              onClick={() => {
+                void runTranslation(l.label);
+                push({ text: `Mue traduit en ${l.label}…`, duration: 1600 });
+              }}
+            >
+              <span aria-hidden>{l.flag}</span> {l.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {result && result.kind === "loading" && (
+        <div className="thread-ai-result is-loading">
+          <span className="mue-result-spinner" /> {result.label}
+        </div>
+      )}
+      {result && result.kind === "error" && (
+        <div className="thread-ai-result is-error">{result.message}</div>
+      )}
+      {result && result.kind === "summary" && (
+        <div className="thread-ai-result">
+          <p className="thread-ai-tldr">{result.data.tldr}</p>
+          <ul className="thread-ai-bullets">
+            {result.data.bullets.map((b, i) => <li key={i}>{b}</li>)}
+          </ul>
+        </div>
+      )}
+      {result && result.kind === "tasks" && (
+        <ul className="thread-ai-result thread-ai-tasks">
+          {result.data.map((t, i) => (
+            <li key={i} className={`mue-task is-${t.priority}`}>
+              <span className="mue-task-priority" />
+              <span className="mue-task-title">{t.title}</span>
+              {t.due && <span className="mue-task-due">{t.due}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {result && result.kind === "translation" && (
+        <div className="thread-ai-result thread-ai-translation">
+          {result.data.map((m, i) => (
+            <div key={i} className="mue-translated-msg">
+              <div className="mue-translated-meta">
+                <strong>{m.sender}</strong>
+                <span>{new Date(m.date).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
+              </div>
+              <p>{m.translated}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
