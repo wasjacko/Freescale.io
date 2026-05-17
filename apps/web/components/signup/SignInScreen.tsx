@@ -11,11 +11,19 @@ export function SignInScreen() {
   const searchParams = useSearchParams();
   const supabase = createClient();
   const next = searchParams.get("next") ?? "/app";
+  const justSignedOut = searchParams.has("signedout");
+  const isSwitching = searchParams.has("switch");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState<"password" | "google" | null>(null);
-  const [msg, setMsg] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ kind: "error" | "info"; text: string } | null>(
+    justSignedOut
+      ? { kind: "info", text: "Vous êtes bien déconnecté. Connectez-vous avec un autre compte." }
+      : isSwitching
+        ? { kind: "info", text: "Connectez-vous avec un autre compte pour changer." }
+        : null
+  );
 
   const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault();

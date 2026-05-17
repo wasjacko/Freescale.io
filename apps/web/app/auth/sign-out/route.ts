@@ -1,13 +1,77 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+
+/**
+ * Sign-out endpoint. Must aggressively clear the Supabase auth cookies
+ * AND any client-side hints — when we used the default
+ * `supabase.auth.signOut()` + NextResponse.redirect pattern, the cookies
+ * set via cookies() weren't always attached to the explicit redirect
+ * response, leaving the next page-load still authenticated as the
+ * "signed-out" user. That's how stale sessions leaked across account
+ * switches.
+ *
+ * Belt-and-suspenders here:
+ *  1. Call supabase.auth.signOut() so the server invalidates the session.
+ *  2. Walk every cookie that starts with `sb-` and explicitly delete it
+ *     on the outgoing redirect response.
+ *  3. Redirect to /sign-in?signedout=1 so the next page is a clean login
+ *     form, not the marketing landing where the user might miss the
+ *     "you're signed out" feedback.
+ */
+async function handleSignOut(request: NextRequest) {
+  const cookieStore = await cookies();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(toSet: Array<{ name: string; value: string; options?: CookieOptions }>) {
+        try {
+          toSet.forEach(({ name, value, options }) =>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            cookieStore.set(name, value, options as any)
+          );
+        } catch {
+          /* RSC context — ignore */
+        }
+      },
+    },
+  });
+  // Server-side session invalidation
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    // Network blip — fall through to local cookie purge regardless.
+  }
+
+  const response = NextResponse.redirect(
+    new URL("/sign-in?signedout=1", request.url),
+    { status: 303 }
+  );
+
+  // Hard-delete every sb-* cookie on the response. This is the fix for the
+  // "I signed out but still see the old account" bug.
+  const all = cookieStore.getAll();
+  for (const c of all) {
+    if (c.name.startsWith("sb-")) {
+      response.cookies.delete(c.name);
+      // Also set an expired cookie as belt-and-suspenders for browsers
+      // that ignore plain delete in this Next.js version.
+      response.cookies.set(c.name, "", { maxAge: 0, path: "/" });
+    }
+  }
+
+  return response;
+}
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/", request.url), { status: 303 });
+  return handleSignOut(request);
 }
 
 export async function GET(request: NextRequest) {
-  // Allow GET for simple links — same behavior
-  return POST(request);
+  return handleSignOut(request);
 }

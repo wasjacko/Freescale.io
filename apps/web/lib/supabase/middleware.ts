@@ -59,10 +59,15 @@ export async function updateSession(request: NextRequest) {
     isAuthRoute ||
     pathname.startsWith("/preview/");
 
-  // Authed users on the sign-in page → straight to /app. We deliberately let
-  // them stay on /sign-up so they can re-run the wizard during dev, and the
-  // wizard itself short-circuits to /app once it has a session.
-  if (user && pathname === "/sign-in") {
+  // Authed users on the sign-in page → straight to /app, UNLESS they
+  // explicitly came to switch accounts (?switch=1) or just signed out
+  // (?signedout=1). Without these escape hatches the user is forever
+  // trapped in whatever account they first signed into — that was the
+  // "I changed Gmail but still see the old emails" bug.
+  const intentionalSignIn =
+    request.nextUrl.searchParams.has("switch") ||
+    request.nextUrl.searchParams.has("signedout");
+  if (user && pathname === "/sign-in" && !intentionalSignIn) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     return NextResponse.redirect(url);

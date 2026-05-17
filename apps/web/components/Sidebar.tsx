@@ -187,9 +187,12 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
               <Icon name="i-globe" /> Connexions
             </Link>
             <div className="ctx-divider" />
+            <Link href={"/sign-in?switch=1" as never} className="ctx-item">
+              <Icon name="i-spark" /> Changer de compte
+            </Link>
             <form action="/auth/sign-out" method="post" style={{ margin: 0 }}>
               <button className="ctx-item is-danger" type="submit" style={{ width: "100%" }}>
-                <Icon name="i-arrow-up" /> Sign out
+                <Icon name="i-arrow-up" /> Se déconnecter
               </button>
             </form>
           </div>
