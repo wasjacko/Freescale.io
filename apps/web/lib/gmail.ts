@@ -160,24 +160,25 @@ export type GmailMessage = {
 };
 
 /**
- * Initial / full-resync message list. Returns every message currently in
- * the user's Inbox (Primary + Promotions + Social + Updates + Forums),
- * not the Sent / Archive / Spam / Trash drawers.
+ * Initial / full-resync message list. Returns the most recent messages
+ * that would land in Gmail's Primary tab — i.e. in the Inbox but NOT in
+ * the Promotions, Social, Updates, or Forums tabs.
  *
- * Why `in:inbox` rather than `category:primary`: Gmail's category labels
- * are applied by an ML classifier *after* the mail arrives. A mail can
- * be visible in the Primary tab without ever getting CATEGORY_PERSONAL —
- * un-categorised inbox mail falls into Primary by default. The
- * narrower `category:primary` query was silently dropping those (so
- * GamsGo / Aiapiflow were missing for the user). We now pull every
- * inbox message and let the thread-level isInPrimaryTab() gate in
- * syncGmail decide whether to keep it, which catches both the explicit
- * CATEGORY_PERSONAL case AND the un-categorised default-Primary case.
+ * Filtering at the QUERY level (rather than fetching all 200 inbox mails
+ * and filtering after) is critical: a typical mailbox sees way more
+ * Promotions than Primary mail, and a "fetch all then filter" approach
+ * blew the 200-message cap on newsletter noise — leaving real Primary
+ * conversations from yesterday/last week invisible to Freescale.
+ *
+ * Using `-category:X` exclusions catches the case where mail has been
+ * manually moved to Primary by the user too: Gmail removes the other
+ * CATEGORY_* label when you reclassify, so the negative filter is more
+ * forgiving than `category:primary` which only matches when
+ * CATEGORY_PERSONAL is explicitly present.
  *
  * 200 keeps the first sync under Vercel's 60s server-action ceiling even
  * with the per-thread fetch fan-out below; the History API takes over
- * once the cursor is captured, so older mail still gets streamed in on
- * subsequent ticks without re-listing.
+ * once the cursor is captured.
  */
 export async function listRecentMessages(
   accessToken: string,
@@ -189,7 +190,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "in:inbox",
+      q: "in:inbox -category:promotions -category:social -category:updates -category:forums",
     });
     if (pageToken) params.set("pageToken", pageToken);
 
