@@ -161,8 +161,11 @@ export type GmailMessage = {
 
 /**
  * Initial / full-resync message list. Paginates through Gmail's reverse-
- * chronological messages.list. Excludes only the junk drawers — keeps
- * Primary + Promotions + Social + Updates + every label.
+ * chronological messages.list, restricted to the PRIMARY tab — same
+ * semantics as Gmail's default "Inbox" view when categories are enabled.
+ * The thread-level isInPrimaryTab() check in syncGmail keeps the History
+ * API deltas aligned to the same view (an email that gets moved into
+ * Promotions later is removed from Freescale automatically).
  */
 export async function listRecentMessages(
   accessToken: string,
@@ -174,7 +177,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "-in:chats -in:drafts -in:spam -in:trash",
+      q: "category:primary",
     });
     if (pageToken) params.set("pageToken", pageToken);
 
