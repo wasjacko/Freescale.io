@@ -160,10 +160,10 @@ export type GmailMessage = {
 };
 
 /**
- * Initial / full-resync message list. Paginates through Gmail's reverse-
- * chronological messages.list. Pulls every tab (Primary + Promotions +
- * Social + Updates) — the user wants the unified view. Excludes only the
- * non-mail drawers (chats, drafts, spam, trash).
+ * Initial / full-resync message list. Restricted to Gmail's PRIMARY tab —
+ * the user wants the focused mailbox view, not Promotions / Social /
+ * Updates noise. category:primary is Gmail's own internal filter, so the
+ * match is identical to what the user sees when they open Gmail.
  *
  * 200 keeps the first sync under Vercel's 60s server-action ceiling even
  * with the per-thread fetch fan-out below; the History API takes over
@@ -180,7 +180,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "-in:chats -in:drafts -in:spam -in:trash",
+      q: "category:primary",
     });
     if (pageToken) params.set("pageToken", pageToken);
 

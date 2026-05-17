@@ -74,10 +74,31 @@ export type SyncReport = {
 };
 
 /**
+ * Mirror Gmail's "Primary" tab at the thread level. A message belongs to
+ * the Primary tab when it has the INBOX label AND either has
+ * CATEGORY_PERSONAL or has no CATEGORY_* label at all (Gmail puts
+ * un-categorized inbox mail into Primary by default).
+ *
+ * Why the gate exists in addition to the category:primary query: the
+ * History API surfaces every label change in the mailbox, so a thread
+ * that moves OUT of Primary needs to be removed from Freescale (and a
+ * thread that moves INTO Primary needs to be inserted even though our
+ * cursor only knew about its previous label).
+ */
+function isInPrimaryTab(labelIds: string[] | undefined): boolean {
+  const labels = labelIds ?? [];
+  if (!labels.includes("INBOX")) return false;
+  if (labels.includes("CATEGORY_PERSONAL")) return true;
+  return !labels.some(
+    (l) => l.startsWith("CATEGORY_") && l !== "CATEGORY_PERSONAL"
+  );
+}
+
+/**
  * Full Gmail enumeration — used for the FIRST sync of an account, and as a
  * fallback when the History API cursor has aged out (> ~7 days). Pulls up
- * to 800 of the most recent messages across all categories, dedupes them
- * down to unique thread IDs, and reports how many message ids we saw.
+ * to 200 of the most recent Primary-tab messages, dedupes them down to
+ * unique thread IDs, and reports how many message ids we saw.
  *
  * We sync THREADS (not individual messages) because Gmail's model is
  * thread-first: a single thread can contain dozens of messages, and we
@@ -250,6 +271,19 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         .map((m) => ({ raw: m, content: extractMessageContent(m) }))
         .sort((a, b) => a.content.date.getTime() - b.content.date.getTime());
       if (parsed.length === 0) continue;
+
+      // Primary-tab gate. The full-sync query filters at the message level,
+      // but History API deltas surface label changes for every category, so
+      // a thread that moved from Primary → Promotions still needs to be
+      // pruned, and one that moved into Primary needs to be picked up.
+      const isAnyInPrimary = parsed.some((p) => isInPrimaryTab(p.raw.labelIds));
+      if (!isAnyInPrimary) {
+        const existingId = existingMap.get(threadId);
+        if (existingId) {
+          await supabase.from("conversations").delete().eq("id", existingId);
+        }
+        continue;
+      }
 
       const newest = parsed[parsed.length - 1];
       if (!newest) continue;
