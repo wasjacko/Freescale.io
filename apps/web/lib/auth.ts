@@ -7,6 +7,12 @@ export type CurrentUser = {
   firstName: string;
   avatarUrl: string | null;
   role: string;
+  /** Soft profiling status — null when the user hasn't been through the
+   *  inline chips yet. /app uses this to decide whether to show them. */
+  onboardedAt: string | null;
+  profileRole: string | null;
+  profileObjective: string | null;
+  profileUsageMode: string | null;
 };
 
 /**
@@ -32,12 +38,24 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     (meta.picture as string | undefined) ||
     null;
 
+  // Pull the soft-profiling state in the same round-trip — the inline
+  // OnboardingChips component needs it to decide whether to show.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarded_at, role, objective, usage_mode")
+    .eq("id", user.id)
+    .maybeSingle();
+
   return {
     id: user.id,
     email: user.email ?? "",
     name: fullName,
     firstName,
     avatarUrl,
-    role: (meta.role as string | undefined) ?? "Freelance Designer",
+    role: (meta.role as string | undefined) ?? "Freelance",
+    onboardedAt: (profile?.onboarded_at as string | null) ?? null,
+    profileRole: (profile?.role as string | null) ?? null,
+    profileObjective: (profile?.objective as string | null) ?? null,
+    profileUsageMode: (profile?.usage_mode as string | null) ?? null,
   };
 }

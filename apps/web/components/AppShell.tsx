@@ -17,6 +17,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { AutoSync } from "@/components/AutoSync";
+import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
 
 export function AppShell({
   user,
@@ -26,7 +27,12 @@ export function AppShell({
   initialActiveConvId: string;
 }) {
   const { view, sidebarCollapsed, setActiveConv, activeConvId, toggleSidebar } = useApp();
-  const { conversations } = useData();
+  const { conversations, channels } = useData();
+  // Soft profiling: show only when user hasn't been profiled AND has at
+  // least one channel connected (so they've actually seen their inbox
+  // = first value already delivered). Audit-aligned.
+  const showOnboardingChips =
+    !!user && user.onboardedAt === null && channels.length > 0;
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -139,6 +145,13 @@ export function AppShell({
         <Sidebar user={user} />
         <div className="workspace">
           <div className="conv-shell">
+            {showOnboardingChips && view === "inbox" && (
+              <OnboardingChips
+                initialRole={user?.profileRole}
+                initialObjective={user?.profileObjective}
+                initialUsageMode={user?.profileUsageMode}
+              />
+            )}
             <Inbox />
             <Thread />
           </div>
