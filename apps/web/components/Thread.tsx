@@ -9,6 +9,7 @@ import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import { sendEmailReply } from "@/lib/actions/inbox";
+import { getConversationMessages } from "@/lib/actions/thread-messages";
 import type { Message } from "@/lib/types";
 
 const QUICK_REPLIES = [
@@ -50,20 +51,48 @@ export function Thread() {
   const [isStarred, setIsStarred] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Live-fetch messages from Gmail on conv open. We KEEP messagesByConv
+  // (server-side DB cache) as the instant-render fallback, but always
+  // overlay with the freshly-fetched Gmail response — sidesteps the whole
+  // class of "messages aren't in our DB" bugs because we don't depend on
+  // the DB for the actual message bodies anymore.
+  const cachedMessages = messagesByConv[activeConvId] ?? [];
+  const [liveMessages, setLiveMessages] = useState<Message[]>([]);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+
+  useEffect(() => {
+    if (!activeConvId) {
+      setLiveMessages([]);
+      setLiveError(null);
+      return;
+    }
+    let cancelled = false;
+    setLiveLoading(true);
+    setLiveError(null);
+    getConversationMessages(activeConvId)
+      .then((result) => {
+        if (cancelled) return;
+        if (result.error) setLiveError(result.error);
+        setLiveMessages(result.messages);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setLiveError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLiveLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConvId]);
+
+  // Live takes priority. Cache only used if live is empty AND we have
+  // something cached (rare; happens during the ~300ms before live resolves).
   const messages = useMemo<Message[]>(
-    () => messagesByConv[activeConvId] ?? [],
-    [messagesByConv, activeConvId]
-  );
-  // TEMP: aggregate stats across whole DataContext so the debug bandeau can
-  // tell us whether the empty middle block is "this conv has no messages"
-  // (FK/insert bug) vs "no message is loaded anywhere" (data fetching bug).
-  const totalMessagesLoaded = useMemo(
-    () => Object.values(messagesByConv).reduce((acc, arr) => acc + arr.length, 0),
-    [messagesByConv]
-  );
-  const convsWithMessages = useMemo(
-    () => Object.values(messagesByConv).filter((arr) => arr.length > 0).length,
-    [messagesByConv]
+    () => (liveMessages.length > 0 ? liveMessages : cachedMessages),
+    [liveMessages, cachedMessages]
   );
 
   const isEmail = conv?.channel === "gmail";
@@ -185,38 +214,32 @@ export function Thread() {
             looks empty. Visible bandeau showing message count for the active
             conv, whether each has body_text / body_html, etc. Remove once
             the display bug is fully resolved. */}
-        <div
-          style={{
-            padding: "8px 28px",
-            background: messages.length === 0 ? "#fee2e2" : "#ecfccb",
-            fontSize: 11,
-            fontFamily: "monospace",
-            color: "#1f2937",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
-          }}
-        >
-          DEBUG · conv={activeConvId.slice(0, 8)} · isEmail={String(isEmail)} ·
-          messages.length={messages.length}
-          {" · "}
-          TOTAL workspace: {totalMessagesLoaded} msgs across {convsWithMessages} convs
-          {messages.length > 0 && (
-            <span>
-              {" · "}
-              first msg: text={messages[0]?.text?.length ?? 0}ch · html=
-              {messages[0]?.bodyHtml?.length ?? 0}ch
-            </span>
-          )}
-        </div>
+        {liveLoading && messages.length === 0 && (
+          <div
+            style={{
+              padding: "10px 28px",
+              fontSize: 13,
+              color: "#8B93A4",
+            }}
+          >
+            Chargement du message…
+          </div>
+        )}
+        {liveError && messages.length === 0 && (
+          <div
+            style={{
+              padding: 28,
+              color: "#b91c1c",
+              fontSize: 13,
+              fontFamily: "monospace",
+            }}
+          >
+            Erreur Gmail : {liveError}
+          </div>
+        )}
         {isEmail
           ? messages.length === 0
-            ? (
-                <div style={{ padding: 28, color: "#8B93A4", fontSize: 13 }}>
-                  Aucun message chargé pour cette conversation.
-                  <br />
-                  Si tu vois ce texte, le bug est dans le data fetching (la
-                  query messages renvoie vide pour cet ID de conversation).
-                </div>
-              )
+            ? null
             : messages.map((m) => (
               <EmailCard
                 key={m.id}
