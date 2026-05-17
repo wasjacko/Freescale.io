@@ -16,38 +16,40 @@ export default async function LandingPage() {
     <div className="land">
       <Sprite />
 
-      <header className="land-nav">
-        <Link href="/" className="land-logo">
-          <span className="land-logo-mark">
-            <MueAvatar />
-          </span>
-          <span className="land-logo-word">Freescale</span>
-        </Link>
-        <nav className="land-links" aria-label="Primary">
-          <a href="#features">Features</a>
-          <a href="#mue">Mue</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
-        </nav>
-        <div className="land-cta">
-          <Link href="/sign-in" className="land-btn land-btn-pill">Se connecter</Link>
-          <Link href="/sign-up" className="land-btn land-btn-pill-dark">
-            Démarrer
-            <svg
-              className="land-btn-arrow"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M6 12l4-4-4-4" />
-            </svg>
+      <div className="land-nav-wrap">
+        <header className="land-nav">
+          <Link href="/" className="land-logo">
+            <span className="land-logo-mark">
+              <MueAvatar />
+            </span>
+            <span className="land-logo-word">Freescale</span>
           </Link>
-        </div>
-      </header>
+          <nav className="land-links" aria-label="Primary">
+            <a href="#features">Features</a>
+            <a href="#mue">Mue</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+          </nav>
+          <div className="land-cta">
+            <Link href="/sign-in" className="land-btn land-btn-pill">Se connecter</Link>
+            <Link href="/sign-up" className="land-btn land-btn-pill-dark">
+              Démarrer
+              <svg
+                className="land-btn-arrow"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M6 12l4-4-4-4" />
+              </svg>
+            </Link>
+          </div>
+        </header>
+      </div>
 
       <main>
         {/* HERO */}
