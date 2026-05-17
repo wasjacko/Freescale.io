@@ -131,10 +131,16 @@ export async function suggestReplies(
     ...(apiKey && !authToken ? { apiKey } : {}),
   });
 
+  // aiapiflow.com requires the dated model ID — the bare alias
+  // `claude-haiku-4-5` returns a "channel pricing restriction" 400.
+  // Allow override via env so swapping to direct Anthropic (which uses
+  // aliases) is one-line later.
+  const model = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
+
   let raw: string;
   try {
     const resp = await client.messages.create({
-      model: "claude-haiku-4-5",
+      model,
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userMessage }],
