@@ -1,6 +1,6 @@
 "use server";
 
-import Anthropic from "@anthropic-ai/sdk";
+import { spawn } from "node:child_process";
 import { createClient } from "@/lib/supabase/server";
 import {
   extractMessageContent,
@@ -11,12 +11,16 @@ import {
 /**
  * Mue — the Freescale AI copilot. First feature wired: contextual reply
  * suggestions. Reads the active conversation from Gmail (same live-fetch
- * path as the thread view), feeds it to Claude, and returns three reply
- * drafts the user can one-click into the composer.
+ * path as the thread view), feeds it to Claude via the locally-installed
+ * `claude` CLI, and returns three reply drafts.
  *
- * Why server-side: the Anthropic API key is a server-only secret. Doing
- * this in a Server Action also lets us reuse the existing Gmail token
- * refresh path without re-implementing it client-side.
+ * IMPORTANT: This subprocess approach works in LOCAL DEVELOPMENT only.
+ * The `claude` binary is installed on the developer's machine and
+ * authenticates via the user's Claude Code session. Vercel's serverless
+ * runtime does NOT have the binary — production deployment will need
+ * either (a) an Anthropic API key + the @anthropic-ai/sdk path, or
+ * (b) a different hosting target (Fly / Railway / a VPS) where we can
+ * install the CLI in the image. For now we ship the dev-only version.
  */
 
 const SYSTEM_PROMPT = `You are Mue, the in-app copilot for Freescale — a unified-inbox SaaS. The user is composing a REPLY to an email conversation and wants three short, ready-to-send draft suggestions.
@@ -30,23 +34,47 @@ Rules:
 - NO greeting line ("Bonjour …" / "Hi …") and NO signature ("Cordialement, …" / "Best, …"). The composer already handles those.
 - 1-3 sentences each. Concise. No flourishes.
 
-Return strict JSON: { "suggestions": [{ "label": string (3-4 word UI label), "text": string (the reply) }] }
+Output strict JSON only, no prose, no markdown fences:
+{"suggestions":[{"label":"<3-4 word UI label>","text":"<the reply>"}]}
 
 The "label" is what we show on the button (e.g. "Confirmer le rendez-vous", "Demander plus d'infos", "Décliner poliment"). The "text" is what we paste in the composer when clicked.`;
 
 export type ReplySuggestion = { label: string; text: string };
 
+/**
+ * Spawn the local `claude` CLI in headless mode and capture its stdout.
+ * `-p` is print-mode: it executes a single prompt and exits. `--system-prompt`
+ * lets us pin the system message. We pipe the user transcript via stdin so
+ * long bodies don't blow the ARG_MAX limit.
+ */
+async function callClaudeCLI(systemPrompt: string, userMessage: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(
+      "claude",
+      ["-p", "--system-prompt", systemPrompt, "--model", "claude-haiku-4-5"],
+      { stdio: ["pipe", "pipe", "pipe"] }
+    );
+
+    let stdout = "";
+    let stderr = "";
+    proc.stdout.on("data", (d) => (stdout += d.toString()));
+    proc.stderr.on("data", (d) => (stderr += d.toString()));
+    proc.on("error", (err) => reject(err));
+    proc.on("close", (code) => {
+      if (code === 0) resolve(stdout);
+      else reject(new Error(`claude CLI exited ${code}: ${stderr.slice(0, 500)}`));
+    });
+
+    // Send the conversation transcript via stdin to avoid ARG_MAX issues
+    // on large email bodies.
+    proc.stdin.write(userMessage);
+    proc.stdin.end();
+  });
+}
+
 export async function suggestReplies(
   conversationId: string
 ): Promise<{ suggestions: ReplySuggestion[]; error: string | null }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return {
-      suggestions: [],
-      error: "ANTHROPIC_API_KEY not set on the server. Add it to .env.local + Vercel env.",
-    };
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -99,9 +127,8 @@ export async function suggestReplies(
     return { suggestions: [], error: "empty thread" };
   }
 
-  // Compose the transcript Claude sees. Keep it bounded — long newsletter
-  // bodies blow the context window and add no signal. Cap each message
-  // body at 2000 chars; usually plenty for a real conversation.
+  // Bound each message body — long newsletter bodies blow context windows
+  // for no signal. Cap at 2000 chars per message.
   const transcript = parsed
     .map((p) => {
       const isOut = p.from.email.toLowerCase() === userEmail;
@@ -113,17 +140,9 @@ export async function suggestReplies(
 
   const userMessage = `Conversation thread (oldest → newest):\n\n${transcript}\n\nGenerate three reply drafts for me to send next.`;
 
-  const client = new Anthropic({ apiKey });
   let raw: string;
   try {
-    const resp = await client.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userMessage }],
-    });
-    const block = resp.content.find((b) => b.type === "text");
-    raw = block && "text" in block ? block.text : "";
+    raw = await callClaudeCLI(SYSTEM_PROMPT, userMessage);
   } catch (err) {
     return {
       suggestions: [],
@@ -137,7 +156,6 @@ export async function suggestReplies(
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/i, "")
     .trim();
-  // Find first { and last } to extract the JSON object
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   const jsonSlice =
