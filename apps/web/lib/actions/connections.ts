@@ -378,7 +378,12 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
 
     if (toUpsert.length === 0) continue;
 
-    // (b) Resolve contacts: fetch existing for this batch, insert missing
+    // (b) Resolve contacts: fetch existing for this batch, then plain
+    // INSERT for the missing ones. Avoiding upsert here because the
+    // contacts unique index is partial (where email is not null) and
+    // Supabase's onConflict resolution doesn't always match partial
+    // indexes cleanly — silent insert failures were dropping contact
+    // links and (downstream) messages.
     const contactByEmail = new Map<string, string>();
     if (contactEmailsInBatch.size > 0) {
       const { data: existingContacts } = await supabase
@@ -391,7 +396,6 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       }
       const missing = [...contactEmailsInBatch].filter((e) => !contactByEmail.has(e));
       if (missing.length > 0) {
-        // Use the first thread's contact name for each missing email
         const nameByEmail = new Map<string, string>();
         for (const t of toUpsert) {
           if (missing.includes(t.contactEmail) && !nameByEmail.has(t.contactEmail)) {
@@ -400,18 +404,17 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         }
         const { data: inserted, error: insErr } = await supabase
           .from("contacts")
-          .upsert(
+          .insert(
             missing.map((email) => ({
               workspace_id: account.workspace_id,
               display_name: nameByEmail.get(email) ?? email,
               email,
               avatar_url: avatarUrlFor(email),
-            })),
-            { onConflict: "workspace_id,email", ignoreDuplicates: false }
+            }))
           )
           .select("id, email");
         if (insErr) {
-          report.errors.push(`contacts upsert: ${insErr.message}`);
+          report.errors.push(`contacts insert: ${insErr.message}`);
         } else {
           for (const c of inserted ?? []) {
             contactByEmail.set(c.email as string, c.id as string);
@@ -420,35 +423,72 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       }
     }
 
-    // (c) Upsert conversations
-    const convsPayload = toUpsert.map((t) => ({
-      workspace_id: account.workspace_id,
-      channel_account_id: account.id,
-      contact_id: contactByEmail.get(t.contactEmail) ?? null,
-      external_thread_id: t.threadId,
-      subject: t.subject || null,
-      preview: t.preview,
-      last_message_at: t.lastMessageAt,
-      unread_count: t.unreadCount,
-    }));
-    const { data: upsertedConvs, error: convErr } = await supabase
-      .from("conversations")
-      .upsert(convsPayload, {
-        onConflict: "workspace_id,channel_account_id,external_thread_id",
-        ignoreDuplicates: false,
-      })
-      .select("id, external_thread_id");
-    if (convErr) {
-      report.errors.push(`conv upsert: ${convErr.message}`);
-      continue;
-    }
+    // (c) Conversations: split INSERT (new) vs UPDATE (existing) instead
+    // of upsert. Two batched paths give us reliable returning rows even
+    // when the unique index resolution is fuzzy. Most batches during
+    // initial sync are 100% inserts so this is one INSERT query for the
+    // whole batch.
     const convByThread = new Map<string, string>();
-    for (const c of upsertedConvs ?? []) {
-      convByThread.set(c.external_thread_id as string, c.id as string);
-      if (!existingMap.has(c.external_thread_id as string)) {
-        report.newConversations += 1;
-        existingMap.set(c.external_thread_id as string, c.id as string);
+    const newConvs = toUpsert.filter((t) => !existingMap.has(t.threadId));
+    const existingConvsToUpdate = toUpsert.filter((t) => existingMap.has(t.threadId));
+
+    if (newConvs.length > 0) {
+      const { data: insertedConvs, error: convErr } = await supabase
+        .from("conversations")
+        .insert(
+          newConvs.map((t) => ({
+            workspace_id: account.workspace_id,
+            channel_account_id: account.id,
+            contact_id: contactByEmail.get(t.contactEmail) ?? null,
+            external_thread_id: t.threadId,
+            subject: t.subject || null,
+            preview: t.preview,
+            last_message_at: t.lastMessageAt,
+            unread_count: t.unreadCount,
+          }))
+        )
+        .select("id, external_thread_id");
+      if (convErr) {
+        report.errors.push(`conv insert: ${convErr.message}`);
+        // Try to recover by re-selecting in case some inserted before the
+        // error — otherwise messages for these threads will be orphaned.
+        const { data: recovered } = await supabase
+          .from("conversations")
+          .select("id, external_thread_id")
+          .eq("workspace_id", account.workspace_id)
+          .eq("channel_account_id", account.id)
+          .in(
+            "external_thread_id",
+            newConvs.map((t) => t.threadId)
+          );
+        for (const c of recovered ?? []) {
+          convByThread.set(c.external_thread_id as string, c.id as string);
+          existingMap.set(c.external_thread_id as string, c.id as string);
+        }
+      } else {
+        for (const c of insertedConvs ?? []) {
+          convByThread.set(c.external_thread_id as string, c.id as string);
+          existingMap.set(c.external_thread_id as string, c.id as string);
+          report.newConversations += 1;
+        }
       }
+    }
+
+    // UPDATE existing conversations (sequential — usually a tiny set
+    // during History API delta paths, zero during initial sync).
+    for (const t of existingConvsToUpdate) {
+      const convId = existingMap.get(t.threadId)!;
+      convByThread.set(t.threadId, convId);
+      await supabase
+        .from("conversations")
+        .update({
+          contact_id: contactByEmail.get(t.contactEmail) ?? null,
+          subject: t.subject || null,
+          preview: t.preview,
+          last_message_at: t.lastMessageAt,
+          unread_count: t.unreadCount,
+        })
+        .eq("id", convId);
     }
 
     // (d) Upsert messages
