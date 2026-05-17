@@ -74,20 +74,18 @@ export type SyncReport = {
 };
 
 /**
- * Mirror Gmail's Principale tab rule at the thread level:
+ * Approximate Gmail's Principale-tab inclusion rule for the History
+ * API delta path (where we can't re-run the search query). Keep a
+ * thread when it has INBOX and is NOT explicitly in Promotions /
+ * Social / Forums. We deliberately ALLOW CATEGORY_UPDATES — the debug
+ * page showed that most of the user's actual Primary mail (Doctolib,
+ * IONOS, verification codes, transactional notifications) carries
+ * CATEGORY_UPDATES + IMPORTANT and Gmail surfaces them in Principale
+ * via the "include important emails" setting.
  *
- *   in Principale  ⇔  has INBOX  AND  is NOT in (Promotions ∪ Social
- *                                                 ∪ Updates ∪ Forums)
- *
- * This is the exact same rule Gmail uses to decide which messages
- * appear in the Principale tab — including un-categorised mail
- * (Gmail puts that in Principale by default).
- *
- * Why the gate is still needed even though the messages.list query
- * already filters: the History API surfaces every label change in the
- * mailbox, including threads moving INTO or OUT of Principale. Without
- * this gate we'd never prune outgoing moves (Principale → Promotions
- * etc.) from Freescale's view.
+ * Excluding Updates wholesale would silently drop most of the user's
+ * inbox; including them errs on the side of showing too much, which
+ * the user can archive in one click.
  */
 function isInPrimaryTab(labelIds: string[] | undefined): boolean {
   const labels = labelIds ?? [];
@@ -96,7 +94,6 @@ function isInPrimaryTab(labelIds: string[] | undefined): boolean {
     (l) =>
       l === "CATEGORY_PROMOTIONS" ||
       l === "CATEGORY_SOCIAL" ||
-      l === "CATEGORY_UPDATES" ||
       l === "CATEGORY_FORUMS"
   );
 }

@@ -160,25 +160,19 @@ export type GmailMessage = {
 };
 
 /**
- * Initial / full-resync message list. Mirrors Gmail's Principale tab as
- * the user sees it, and limits to the last 30 days so the inbox stays
- * focused on what's actively worth attention.
+ * Initial / full-resync message list. Uses Gmail's OWN Principale-tab
+ * classifier (`category:primary`) — the most reliable mirror of what
+ * the user sees when they click the Principale tab in Gmail.
  *
- * The query mirrors Gmail's own UI rule for the Principale tab:
+ * Why not roll our own filter rule: the /app/debug page revealed that
+ * Gmail's Principale tab inclusion rule is non-obvious. Most of the
+ * user's Primary mail actually carries CATEGORY_UPDATES (Doctolib /
+ * IONOS / verification codes / order confirmations), not
+ * CATEGORY_PERSONAL — Gmail still surfaces them in Principale via the
+ * "include important emails" setting. Any rule we hand-roll on labels
+ * gets at least one corner case wrong. Trust Gmail's own classifier.
  *
- *   Principale = Inbox \ (Promotions ∪ Social ∪ Updates ∪ Forums)
- *
- * Strict `category:primary` was too narrow — it required Gmail's ML
- * classifier to have explicitly tagged each message with
- * CATEGORY_PERSONAL, missing legitimate Principale mail that Gmail
- * never bothered to label. The negative-exclusion filter matches
- * exactly what Gmail shows in the Principale tab itself.
- *
- * `newer_than:30d` keeps the view focused on recent activity. Old
- * un-archived mail still technically lives in the Principale tab in
- * Gmail, but the user doesn't think of January newsletters as
- * "current inbox" — they're forgotten clutter. Bounding to 30 days
- * gives the focused-inbox feel the user is after.
+ * `newer_than:30d` keeps the view focused on the active inbox.
  */
 export async function listRecentMessages(
   accessToken: string,
@@ -190,7 +184,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "in:inbox -category:promotions -category:social -category:updates -category:forums newer_than:30d",
+      q: "category:primary newer_than:30d",
     });
     if (pageToken) params.set("pageToken", pageToken);
 
