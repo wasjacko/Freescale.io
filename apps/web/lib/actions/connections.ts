@@ -193,32 +193,60 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       }
     }
 
-    // Upsert the conversation — backed by the new unique index
-    // (workspace_id, channel_account_id, external_thread_id). Idempotent and
-    // race-safe: two concurrent syncs can't create two rows for the same
-    // Gmail thread anymore.
-    const wasNew = !existingMap.has(threadId);
-    const { data: upserted } = await supabase
-      .from("conversations")
-      .upsert(
-        {
+    // Explicit insert vs update. The unique index
+    // (workspace_id, channel_account_id, external_thread_id) makes the
+    // INSERT race-safe: on conflict we catch the 23505 and switch to the
+    // UPDATE path. No silent data loss from .single() returning nothing.
+    const preview = newest.content.text.slice(0, 140).replace(/\s+/g, " ").trim();
+    const unreadCount = parsed.filter((p) => (p.raw.labelIds ?? []).includes("UNREAD")).length;
+    const lastMessageAt = newest.content.date.toISOString();
+
+    let conversationId = existingMap.get(threadId) ?? null;
+    if (conversationId) {
+      await supabase
+        .from("conversations")
+        .update({
+          contact_id: contactId,
+          subject: newest.content.subject || null,
+          preview,
+          last_message_at: lastMessageAt,
+          unread_count: unreadCount,
+        })
+        .eq("id", conversationId);
+    } else {
+      const { data: inserted, error: insErr } = await supabase
+        .from("conversations")
+        .insert({
           workspace_id: account.workspace_id,
           channel_account_id: account.id,
           contact_id: contactId,
           external_thread_id: threadId,
           subject: newest.content.subject || null,
-          preview: newest.content.text.slice(0, 140).replace(/\s+/g, " ").trim(),
-          last_message_at: newest.content.date.toISOString(),
-          unread_count: parsed.filter((p) =>
-            (p.raw.labelIds ?? []).includes("UNREAD")
-          ).length,
-        },
-        { onConflict: "workspace_id,channel_account_id,external_thread_id" }
-      )
-      .select("id")
-      .single();
-    const conversationId = (upserted?.id as string) ?? existingMap.get(threadId) ?? null;
-    if (conversationId && wasNew) report.newConversations += 1;
+          preview,
+          last_message_at: lastMessageAt,
+          unread_count: unreadCount,
+        })
+        .select("id")
+        .single();
+      if (insErr) {
+        // Most likely the unique index caught a race against another sync.
+        // Look up the row another worker just wrote and treat it as ours.
+        const { data: existing } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("workspace_id", account.workspace_id)
+          .eq("channel_account_id", account.id)
+          .eq("external_thread_id", threadId)
+          .maybeSingle();
+        conversationId = (existing?.id as string) ?? null;
+        if (!conversationId) {
+          report.errors.push(`conv insert: ${insErr.message}`);
+        }
+      } else {
+        conversationId = (inserted?.id as string) ?? null;
+        if (conversationId) report.newConversations += 1;
+      }
+    }
     if (!conversationId) continue;
 
     // Insert messages we don't have yet
