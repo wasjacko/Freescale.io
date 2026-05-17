@@ -17,10 +17,25 @@ function greeting() {
 
 export function MuePanel({ user }: { user?: CurrentUser | null }) {
   const { view, activeConvId } = useApp();
-  const { conversations, tasks, upcoming } = useData();
+  const { conversations, tasks, upcoming, events } = useData();
   const conv = conversations.find((c) => c.id === activeConvId);
   const contactName = conv?.name.split(/[ –-]/)[0]?.trim() ?? "";
-  const userName = user?.firstName ?? "there";
+  const userName = user?.firstName ?? "vous";
+
+  // Real counts so the panel never invents data
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(todayStart);
+  todayEnd.setDate(todayStart.getDate() + 1);
+  const todayEventsCount = events.filter((e) => {
+    // events are stored in minute-from-8AM form; the day check is done at
+    // adapter time, so anything in `events` is already "this week". For
+    // "today" we re-check the calendar grid: events.day matches the local day.
+    const localDay = todayStart.getDay();
+    return e.day === localDay;
+  }).length;
+  const openTasksCount = tasks.filter((t) => t.status !== "done").length;
+  const unreadCount = conversations.filter((c) => c.unread).length;
 
   return (
     <aside className="copilot" aria-label="Mue AI copilot">
@@ -45,20 +60,39 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
 
             {view === "inbox" && (
               <div className="yuka-inbox">
-                <h2>Hey, I&apos;m right here<br />with you and {contactName}.</h2>
-                <p>I&apos;m listening to every word of your chat. Whenever you need me, I can summarize the thread, draft a kind reply, or turn ideas into tasks — just ask.</p>
+                <h2>
+                  {greeting()},<br />{userName} 👋
+                </h2>
+                <p>
+                  {unreadCount > 0
+                    ? `${unreadCount} conversation${unreadCount > 1 ? "s" : ""} non lue${unreadCount > 1 ? "s" : ""} aujourd'hui.`
+                    : "Aucune conversation non lue. Inbox au clair."}
+                  {contactName ? <> Vous lisez avec <strong>{contactName}</strong>.</> : null}
+                </p>
               </div>
             )}
             {view === "tasks" && (
               <div className="yuka-tasks">
-                <h2>I&apos;ve scanned your messages.<br />Here&apos;s what matters.</h2>
-                <p>Focus on these tasks to stay ahead.</p>
+                <h2>
+                  {openTasksCount > 0
+                    ? <>{openTasksCount} tâche{openTasksCount > 1 ? "s" : ""}<br />à traiter.</>
+                    : <>Aucune tâche<br />en attente.</>}
+                </h2>
+                <p>
+                  {openTasksCount > 0
+                    ? "Focus sur celles qui débloquent quelqu'un d'autre."
+                    : "Bonne nouvelle, votre liste est vide."}
+                </p>
               </div>
             )}
             {view === "calendar" && (
               <div className="yuka-cal">
                 <h2>{greeting()},<br />{userName} 👋</h2>
-                <p>You have 3 events scheduled today.</p>
+                <p>
+                  {todayEventsCount > 0
+                    ? `${todayEventsCount} évènement${todayEventsCount > 1 ? "s" : ""} aujourd'hui.`
+                    : "Aucun évènement prévu aujourd'hui."}
+                </p>
               </div>
             )}
           </section>
@@ -109,43 +143,35 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
             )}
 
             <section className="actions" aria-label="Suggested actions">
-              <button className="action" type="button">
+              <button className="action" type="button" disabled style={{ opacity: 0.55, cursor: "not-allowed" }}>
                 <span className="action-icon"><Icon name="i-spark" /></span>
                 <span>
-                  <span className="action-title">Suggest tasks</span>
-                  <span className="action-desc">Turn key points into next steps</span>
+                  <span className="action-title">Suggérer des tâches</span>
+                  <span className="action-desc">Transformer les points clés en actions</span>
                 </span>
-                <span className="action-arrow"><Icon name="i-chevron" /></span>
+                <span className="add-channel-tag" style={{ marginLeft: "auto" }}>Bientôt</span>
               </button>
-              <button className="action" type="button">
+              <button className="action" type="button" disabled style={{ opacity: 0.55, cursor: "not-allowed" }}>
                 <span className="action-icon warm"><Icon name="i-list" /></span>
                 <span>
-                  <span className="action-title">Summarize conversation</span>
-                  <span className="action-desc">Main points in a clear summary</span>
+                  <span className="action-title">Résumer la conversation</span>
+                  <span className="action-desc">Points principaux en un résumé clair</span>
                 </span>
-                <span className="action-arrow"><Icon name="i-chevron" /></span>
+                <span className="add-channel-tag" style={{ marginLeft: "auto" }}>Bientôt</span>
               </button>
-              <button className="action" type="button">
+              <button className="action" type="button" disabled style={{ opacity: 0.55, cursor: "not-allowed" }}>
                 <span className="action-icon cool"><Icon name="i-globe" /></span>
                 <span>
-                  <span className="action-title">Translate conversation</span>
-                  <span className="action-desc">Translate to another language</span>
+                  <span className="action-title">Traduire la conversation</span>
+                  <span className="action-desc">Traduire en une autre langue</span>
                 </span>
-                <span className="action-arrow"><Icon name="i-chevron" /></span>
+                <span className="add-channel-tag" style={{ marginLeft: "auto" }}>Bientôt</span>
               </button>
             </section>
 
-            <div className="divider"><span>More ideas?</span></div>
-
-            <div className="ask">
-              <span className="ask-icon"><Icon name="i-spark" /></span>
-              <input type="text" placeholder="Ask Mue anything…" />
-              <kbd>⌘ K</kbd>
-            </div>
-
             <div className="footnote">
               <Icon name="i-info" size={13} />
-              <span>Mue adapts to the content you&apos;re working on.</span>
+              <span>L&apos;IA de Mue arrive bientôt. Pour le moment elle veille sur votre inbox.</span>
             </div>
           </div>
         </div>
