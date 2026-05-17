@@ -160,25 +160,24 @@ export type GmailMessage = {
 };
 
 /**
- * Initial / full-resync message list. Returns the most recent messages
- * that would land in Gmail's Primary tab — i.e. in the Inbox but NOT in
- * the Promotions, Social, Updates, or Forums tabs.
+ * Initial / full-resync message list. Returns messages explicitly tagged
+ * by Gmail as CATEGORY_PERSONAL (the Primary tab classifier output).
  *
- * Filtering at the QUERY level (rather than fetching all 200 inbox mails
- * and filtering after) is critical: a typical mailbox sees way more
- * Promotions than Primary mail, and a "fetch all then filter" approach
- * blew the 200-message cap on newsletter noise — leaving real Primary
- * conversations from yesterday/last week invisible to Freescale.
+ * Why strict `category:primary` rather than `in:inbox -category:X...`:
+ * Gmail leaves a lot of inbox mail un-categorised (random shopping
+ * notifications, old newsletters, ancient sales outreach). The
+ * negative-filter approach treats "no category" as "Primary by
+ * default", which mirrors Gmail's UI rendering but pulls in months of
+ * cruft that the user never thinks of as Primary. Strict matching on
+ * CATEGORY_PERSONAL gives exactly the mail Gmail's classifier picked
+ * for the Primary tab — which is what the user actually wants to see
+ * in a focused inbox view.
  *
- * Using `-category:X` exclusions catches the case where mail has been
- * manually moved to Primary by the user too: Gmail removes the other
- * CATEGORY_* label when you reclassify, so the negative filter is more
- * forgiving than `category:primary` which only matches when
- * CATEGORY_PERSONAL is explicitly present.
+ * Trade-off: brand-new mail (arrived in the last minute or two) may
+ * not be categorised yet and will be skipped this tick. The History
+ * API catches it on the next sync once Gmail's labeller has run.
  *
- * 200 keeps the first sync under Vercel's 60s server-action ceiling even
- * with the per-thread fetch fan-out below; the History API takes over
- * once the cursor is captured.
+ * 200 keeps the first sync under Vercel's 60s server-action ceiling.
  */
 export async function listRecentMessages(
   accessToken: string,
@@ -190,7 +189,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "in:inbox -category:promotions -category:social -category:updates -category:forums",
+      q: "category:primary",
     });
     if (pageToken) params.set("pageToken", pageToken);
 

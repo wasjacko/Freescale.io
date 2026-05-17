@@ -74,24 +74,20 @@ export type SyncReport = {
 };
 
 /**
- * Mirror Gmail's "Primary" tab at the thread level. A message belongs to
- * the Primary tab when it has the INBOX label AND either has
- * CATEGORY_PERSONAL or has no CATEGORY_* label at all (Gmail puts
- * un-categorized inbox mail into Primary by default).
+ * Mirror Gmail's "Primary" tab strictly at the thread level: a thread
+ * is in Primary iff it has INBOX + CATEGORY_PERSONAL on at least one
+ * message. Un-categorised mail (no CATEGORY_* tag at all) is NOT
+ * treated as Primary — that's the bug that pulled months of old
+ * newsletters and notification cruft into Freescale.
  *
- * Why the gate exists in addition to the category:primary query: the
- * History API surfaces every label change in the mailbox, so a thread
- * that moves OUT of Primary needs to be removed from Freescale (and a
- * thread that moves INTO Primary needs to be inserted even though our
- * cursor only knew about its previous label).
+ * Why the gate is still needed even though the messages.list query
+ * already filters on category:primary: the History API surfaces every
+ * label change in the mailbox, including threads moving out of
+ * Primary. Without this gate we'd never prune them.
  */
 function isInPrimaryTab(labelIds: string[] | undefined): boolean {
   const labels = labelIds ?? [];
-  if (!labels.includes("INBOX")) return false;
-  if (labels.includes("CATEGORY_PERSONAL")) return true;
-  return !labels.some(
-    (l) => l.startsWith("CATEGORY_") && l !== "CATEGORY_PERSONAL"
-  );
+  return labels.includes("INBOX") && labels.includes("CATEGORY_PERSONAL");
 }
 
 /**
