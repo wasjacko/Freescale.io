@@ -109,6 +109,61 @@ export default async function DebugPage() {
       })
     : null;
 
+  // ── DB state check: count conversations + messages, sample top 10 ──
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  const workspaceId = workspace?.id as string | undefined;
+
+  const dbState: {
+    convCount: number;
+    messageCount: number;
+    topConvs: Array<{ id: string; subject: string; preview: string; messageCount: number }>;
+  } = { convCount: 0, messageCount: 0, topConvs: [] };
+
+  if (workspaceId) {
+    const [{ count: cc }, { count: mc }, { data: tc }] = await Promise.all([
+      supabase
+        .from("conversations")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId),
+      supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId),
+      supabase
+        .from("conversations")
+        .select("id, subject, preview")
+        .eq("workspace_id", workspaceId)
+        .order("last_message_at", { ascending: false })
+        .limit(10),
+    ]);
+    dbState.convCount = cc ?? 0;
+    dbState.messageCount = mc ?? 0;
+
+    if (tc?.length) {
+      const ids = tc.map((c) => c.id as string);
+      const { data: mcounts } = await supabase
+        .from("messages")
+        .select("conversation_id")
+        .in("conversation_id", ids);
+      const byConv = new Map<string, number>();
+      for (const m of mcounts ?? []) {
+        const cid = m.conversation_id as string;
+        byConv.set(cid, (byConv.get(cid) ?? 0) + 1);
+      }
+      dbState.topConvs = tc.map((c) => ({
+        id: c.id as string,
+        subject: ((c.subject as string) || "(no subject)").slice(0, 50),
+        preview: ((c.preview as string) || "").slice(0, 60),
+        messageCount: byConv.get(c.id as string) ?? 0,
+      }));
+    }
+  }
+
   return (
     <main style={{ padding: 24, fontFamily: "monospace", fontSize: 12, lineHeight: 1.4 }}>
       <h1 style={{ fontSize: 18, marginBottom: 8 }}>Gmail debug</h1>
@@ -116,6 +171,44 @@ export default async function DebugPage() {
         Account: <strong>{profile?.emailAddress ?? account.external_id}</strong> ·{" "}
         {profile?.messagesTotal ?? "?"} messages total
       </p>
+
+      <section
+        style={{
+          marginBottom: 24,
+          padding: 12,
+          background: "#fff8dc",
+          border: "1px solid #d4c97a",
+        }}
+      >
+        <h2 style={{ fontSize: 14, marginBottom: 6 }}>DB state (Freescale)</h2>
+        <p>
+          conversations: <strong>{dbState.convCount}</strong> · messages:{" "}
+          <strong>{dbState.messageCount}</strong>
+        </p>
+        <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 8 }}>
+          <thead>
+            <tr style={{ background: "#f5f5f5", textAlign: "left" }}>
+              <th style={{ padding: 6, border: "1px solid #ddd" }}>Subject</th>
+              <th style={{ padding: 6, border: "1px solid #ddd" }}>Preview</th>
+              <th style={{ padding: 6, border: "1px solid #ddd" }}>Msg count</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dbState.topConvs.map((c) => (
+              <tr
+                key={c.id}
+                style={{ background: c.messageCount === 0 ? "#ffe6e6" : undefined }}
+              >
+                <td style={{ padding: 6, border: "1px solid #ddd" }}>{c.subject}</td>
+                <td style={{ padding: 6, border: "1px solid #ddd" }}>{c.preview}</td>
+                <td style={{ padding: 6, border: "1px solid #ddd", textAlign: "center" }}>
+                  {c.messageCount}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
       {results.map((r) => (
         <section key={r.q} style={{ marginBottom: 24 }}>

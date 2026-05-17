@@ -448,10 +448,24 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
           }))
         )
         .select("id, external_thread_id");
+
       if (convErr) {
         report.errors.push(`conv insert: ${convErr.message}`);
-        // Try to recover by re-selecting in case some inserted before the
-        // error — otherwise messages for these threads will be orphaned.
+      } else {
+        for (const c of insertedConvs ?? []) {
+          convByThread.set(c.external_thread_id as string, c.id as string);
+          existingMap.set(c.external_thread_id as string, c.id as string);
+          report.newConversations += 1;
+        }
+      }
+
+      // Defensive fallback: if any newConvs are still missing from
+      // convByThread, re-SELECT them. Catches cases where the INSERT
+      // succeeds but .select() returns an incomplete set (RLS quirks,
+      // PostgREST limits) — without this, messages for those threads
+      // get orphaned and the right panel is blank.
+      const stillMissing = newConvs.filter((t) => !convByThread.has(t.threadId));
+      if (stillMissing.length > 0) {
         const { data: recovered } = await supabase
           .from("conversations")
           .select("id, external_thread_id")
@@ -459,17 +473,14 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
           .eq("channel_account_id", account.id)
           .in(
             "external_thread_id",
-            newConvs.map((t) => t.threadId)
+            stillMissing.map((t) => t.threadId)
           );
         for (const c of recovered ?? []) {
-          convByThread.set(c.external_thread_id as string, c.id as string);
-          existingMap.set(c.external_thread_id as string, c.id as string);
-        }
-      } else {
-        for (const c of insertedConvs ?? []) {
-          convByThread.set(c.external_thread_id as string, c.id as string);
-          existingMap.set(c.external_thread_id as string, c.id as string);
-          report.newConversations += 1;
+          if (!convByThread.has(c.external_thread_id as string)) {
+            convByThread.set(c.external_thread_id as string, c.id as string);
+            existingMap.set(c.external_thread_id as string, c.id as string);
+            if (!convErr) report.newConversations += 1;
+          }
         }
       }
     }
