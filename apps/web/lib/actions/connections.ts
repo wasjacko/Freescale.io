@@ -193,12 +193,15 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       }
     }
 
-    // Upsert the conversation
-    let conversationId = existingMap.get(threadId) ?? null;
-    if (!conversationId) {
-      const { data: newConv } = await supabase
-        .from("conversations")
-        .insert({
+    // Upsert the conversation — backed by the new unique index
+    // (workspace_id, channel_account_id, external_thread_id). Idempotent and
+    // race-safe: two concurrent syncs can't create two rows for the same
+    // Gmail thread anymore.
+    const wasNew = !existingMap.has(threadId);
+    const { data: upserted } = await supabase
+      .from("conversations")
+      .upsert(
+        {
           workspace_id: account.workspace_id,
           channel_account_id: account.id,
           contact_id: contactId,
@@ -209,21 +212,13 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
           unread_count: parsed.filter((p) =>
             (p.raw.labelIds ?? []).includes("UNREAD")
           ).length,
-        })
-        .select("id")
-        .single();
-      conversationId = (newConv?.id as string) ?? null;
-      if (conversationId) report.newConversations += 1;
-    } else {
-      // Refresh preview / last_message_at on existing threads
-      await supabase
-        .from("conversations")
-        .update({
-          preview: newest.content.text.slice(0, 140).replace(/\s+/g, " ").trim(),
-          last_message_at: newest.content.date.toISOString(),
-        })
-        .eq("id", conversationId);
-    }
+        },
+        { onConflict: "workspace_id,channel_account_id,external_thread_id" }
+      )
+      .select("id")
+      .single();
+    const conversationId = (upserted?.id as string) ?? existingMap.get(threadId) ?? null;
+    if (conversationId && wasNew) report.newConversations += 1;
     if (!conversationId) continue;
 
     // Insert messages we don't have yet
@@ -251,7 +246,15 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         };
       });
     if (toInsert.length) {
-      const { error: insErr } = await supabase.from("messages").insert(toInsert);
+      // UPSERT against the existing unique (conversation_id, external_id)
+      // partial index → race-safe: if another sync just inserted the same
+      // message id, we no-op instead of erroring.
+      const { error: insErr } = await supabase
+        .from("messages")
+        .upsert(toInsert, {
+          onConflict: "conversation_id,external_id",
+          ignoreDuplicates: true,
+        });
       if (insErr) {
         report.errors.push(`messages insert: ${insErr.message}`);
       } else {

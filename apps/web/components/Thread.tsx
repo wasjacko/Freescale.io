@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
 import { useData } from "@/lib/contexts/DataContext";
@@ -334,6 +335,7 @@ function EmailComposer({
   toName: string;
   contactEmail: string | null;
 }) {
+  const router = useRouter();
   const push = useToast((s) => s.push);
   const [body, setBody] = useState("");
   const [cc, setCc] = useState("");
@@ -371,6 +373,9 @@ function EmailComposer({
       setCc("");
       setShowCc(false);
       setFiles([]);
+      // Refresh server data so the new message appears in the thread.
+      // (Combined with DataProvider's useEffect on initial props.)
+      router.refresh();
     } catch (err) {
       push({
         text: err instanceof Error ? err.message : "Envoi impossible.",

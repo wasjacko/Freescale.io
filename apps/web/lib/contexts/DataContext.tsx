@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from "react";
 import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
 import {
@@ -40,6 +40,16 @@ export function DataProvider({
   const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>(initial.messagesByConv);
   const [tasks, setTasks] = useState<Task[]>(initial.tasks);
   const [archived, setArchived] = useState<Set<string>>(new Set());
+
+  // Re-sync local state whenever the server pushes a new payload (e.g.
+  // after router.refresh()'s following an action). Without this useEffect,
+  // useState only ran the initializer once and replies never appeared in
+  // the thread until a full page reload.
+  useEffect(() => {
+    setConversations(initial.conversations);
+    setMessagesByConv(initial.messagesByConv);
+    setTasks(initial.tasks);
+  }, [initial.conversations, initial.messagesByConv, initial.tasks]);
 
   const markRead = useCallback(async (id: string) => {
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: false } : c)));

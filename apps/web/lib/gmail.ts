@@ -159,28 +159,43 @@ export type GmailMessage = {
   payload?: GmailMessagePart;
 };
 
+/**
+ * Pulls recent messages from inbox AND sent so the thread reconstruction
+ * doesn't miss the user's own outbound emails (which only live in SENT).
+ * Paginates up to `maxResults` (default 200, Gmail's hard per-page max is
+ * 500 but the user usually doesn't need more right after a connection).
+ */
 export async function listRecentMessages(
   accessToken: string,
-  maxResults = 50
+  maxResults = 200
 ): Promise<{ id: string; threadId: string }[]> {
-  const params = new URLSearchParams({
-    maxResults: String(maxResults),
-    // Skip spam and the chat / draft folders for the first sync — we want real
-    // inbox conversations only.
-    q: "in:inbox -in:chats",
-  });
-  const res = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Gmail messages.list failed: ${res.status} ${text}`);
+  const collected: { id: string; threadId: string }[] = [];
+  let pageToken: string | undefined;
+
+  while (collected.length < maxResults) {
+    const params = new URLSearchParams({
+      maxResults: String(Math.min(100, maxResults - collected.length)),
+      q: "(in:inbox OR in:sent) -in:chats -in:drafts",
+    });
+    if (pageToken) params.set("pageToken", pageToken);
+
+    const res = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Gmail messages.list failed: ${res.status} ${text}`);
+    }
+    const data = (await res.json()) as {
+      messages?: { id: string; threadId: string }[];
+      nextPageToken?: string;
+    };
+    if (data.messages?.length) collected.push(...data.messages);
+    if (!data.nextPageToken) break;
+    pageToken = data.nextPageToken;
   }
-  const data = (await res.json()) as {
-    messages?: { id: string; threadId: string }[];
-  };
-  return data.messages ?? [];
+  return collected;
 }
 
 /**
