@@ -5,6 +5,7 @@ import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
 import { useData } from "@/lib/contexts/DataContext";
 import { ChannelLogo } from "@/components/icons/Icon";
+import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
 import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
@@ -18,7 +19,7 @@ const GROUP_LABELS: Record<string, string> = {
 
 export function Inbox() {
   const { activeConvId, setActiveConv } = useApp();
-  const { conversations, archived, archive: archiveConv, unarchive, markRead, markUnread, isSyncing } = useData();
+  const { conversations, archived, archive: archiveConv, unarchive, markRead, markUnread, isSyncing, channels } = useData();
   const push = useToast((s) => s.push);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [extraUnread, setExtraUnread] = useState<Set<string>>(new Set());
@@ -110,6 +111,16 @@ export function Inbox() {
     unread: conversations.filter((c) => !archived.has(c.id) && isUnread(c.id, c.unread)).length,
     mentions: 0,
   };
+
+  // Nothing connected yet → show the hero instead of an empty conversation
+  // list. This is the single most important CTA for a fresh workspace.
+  if (channels.length === 0) {
+    return (
+      <section className="inbox">
+        <NoChannelsHero />
+      </section>
+    );
+  }
 
   return (
     <section className="inbox">

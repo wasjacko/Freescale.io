@@ -73,7 +73,13 @@ export function Thread() {
   }, [activeConvId, messages.length]);
 
   if (!conv) {
-    return <section className="thread" />;
+    return (
+      <section className="thread thread-empty-pane">
+        <div className="thread-empty-card" aria-hidden>
+          <p>Sélectionnez une conversation pour la lire ici.</p>
+        </div>
+      </section>
+    );
   }
 
   const handleSend = () => {
