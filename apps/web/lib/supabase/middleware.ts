@@ -50,6 +50,7 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const isAuthRoute =
+    pathname === "/welcome" ||
     pathname === "/sign-in" ||
     pathname === "/sign-up" ||
     pathname === "/forgot-password" ||
@@ -68,16 +69,16 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.searchParams.has("switch") ||
     request.nextUrl.searchParams.has("signedout") ||
     request.nextUrl.searchParams.has("deleted");
-  if (user && pathname === "/sign-in" && !intentionalSignIn) {
+  if (user && pathname === "/welcome" && !intentionalSignIn) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     return NextResponse.redirect(url);
   }
 
-  // Anon users on protected routes → /sign-in
+  // Anon users on protected routes → /welcome
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
+    url.pathname = "/welcome";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }

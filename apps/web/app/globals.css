@@ -3965,6 +3965,262 @@
     .mue-translated-msg p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
     /* ====================================================================
+       /welcome — unified auth surface (replaces /sign-in + /sign-up)
+       ==================================================================== */
+    .welcome-wrap {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(168, 85, 247, 0.10), transparent 50%),
+        radial-gradient(circle at 80% 100%, rgba(99, 102, 241, 0.08), transparent 55%),
+        linear-gradient(180deg, #FFFBFA 0%, #F8F8FD 100%);
+    }
+    .welcome-modal {
+      width: 100%;
+      max-width: 440px;
+      padding: 36px 32px 28px;
+      background: #fff;
+      border-radius: 24px;
+      box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 20px 60px rgba(15, 23, 42, 0.10);
+      animation: welcome-pop 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes welcome-pop {
+      from { opacity: 0; transform: translateY(8px) scale(0.985); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .welcome-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0F172A;
+      letter-spacing: -0.015em;
+    }
+    .welcome-brand > div:first-child,
+    .welcome-brand svg {
+      width: 26px;
+      height: 26px;
+      filter: drop-shadow(0 6px 14px rgba(91, 108, 255, 0.28));
+    }
+    .welcome-banner {
+      margin-bottom: 20px;
+      padding: 10px 14px;
+      background: rgba(34, 197, 94, 0.08);
+      color: #166534;
+      border-radius: 10px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      border: 1px solid rgba(34, 197, 94, 0.15);
+    }
+    .welcome-back {
+      align-self: flex-start;
+      padding: 4px 0;
+      margin-bottom: 12px;
+      background: transparent;
+      border: 0;
+      font-size: 12.5px;
+      color: #5B6475;
+      cursor: pointer;
+      transition: color 140ms;
+    }
+    .welcome-back:hover { color: #0F172A; }
+    .welcome-title {
+      margin: 0 0 10px;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.020em;
+      line-height: 1.2;
+      color: #0F172A;
+    }
+    .welcome-sub {
+      margin: 0 0 24px;
+      font-size: 14px;
+      color: #5B6475;
+      line-height: 1.55;
+    }
+    .welcome-ctas {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .welcome-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 16px;
+      width: 100%;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      cursor: pointer;
+      transition: background 160ms, border-color 160ms, transform 100ms, box-shadow 180ms;
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+    .welcome-cta-primary {
+      background: #0F172A;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.20);
+    }
+    .welcome-cta-primary:hover:not(:disabled) {
+      background: #1E293B;
+      transform: translateY(-0.5px);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.28);
+    }
+    .welcome-cta-soft {
+      background: #fff;
+      color: #0F172A;
+      border-color: rgba(15, 23, 42, 0.10);
+    }
+    .welcome-cta-soft:hover:not(:disabled) {
+      background: #FAFAFC;
+      border-color: rgba(15, 23, 42, 0.18);
+      transform: translateY(-0.5px);
+    }
+    .welcome-cta-disabled {
+      background: #FAFAFC;
+      color: #8B93A4;
+      border-color: rgba(15, 23, 42, 0.06);
+      cursor: not-allowed;
+      position: relative;
+    }
+    .welcome-cta:disabled { opacity: 0.7; cursor: wait; }
+    .welcome-cta-disabled:disabled { opacity: 1; cursor: not-allowed; }
+    .welcome-soon {
+      margin-left: auto;
+      padding: 2px 8px;
+      background: rgba(15, 23, 42, 0.08);
+      color: #5B6475;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .welcome-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .welcome-input {
+      padding: 12px 14px;
+      font-size: 14px;
+      background: #FAFAFC;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 10px;
+      color: #0F172A;
+      outline: none;
+      transition: border-color 140ms, background 140ms;
+      font-family: inherit;
+    }
+    .welcome-input:focus {
+      border-color: rgba(99, 102, 241, 0.30);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+    }
+
+    .welcome-consent-list {
+      list-style: none;
+      margin: 0 0 22px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .welcome-consent-list li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .welcome-consent-list strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F172A;
+      margin-bottom: 2px;
+    }
+    .welcome-consent-list span {
+      font-size: 12.5px;
+      color: #5B6475;
+      line-height: 1.45;
+    }
+    .welcome-check {
+      width: 18px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      background: rgba(34, 197, 94, 0.10);
+      color: #16A34A;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+    .welcome-x {
+      width: 18px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      background: rgba(15, 23, 42, 0.06);
+      color: #5B6475;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+    .welcome-consent-no {
+      padding-top: 12px;
+      border-top: 1px dashed rgba(15, 23, 42, 0.06);
+    }
+
+    .welcome-success {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(99, 102, 241, 0.14));
+      color: #4F46E5;
+      border-radius: 999px;
+    }
+    .welcome-success svg { width: 32px; height: 32px; }
+
+    .welcome-fine {
+      margin: 16px 0 0;
+      text-align: center;
+      font-size: 11.5px;
+      color: #8B93A4;
+      line-height: 1.5;
+    }
+    .welcome-link {
+      color: #4F46E5;
+      text-decoration: none;
+    }
+    .welcome-link:hover { text-decoration: underline; }
+
+    .welcome-error {
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: rgba(254, 226, 226, 0.5);
+      color: #B91C1C;
+      border-radius: 10px;
+      font-size: 12.5px;
+      border: 1px solid rgba(220, 38, 38, 0.15);
+    }
+
+    /* ====================================================================
        Danger zone (Settings → Profile) + GDPR delete confirmation modal
        ==================================================================== */
     .danger-zone {

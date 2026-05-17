@@ -31,8 +31,8 @@ export default async function LandingPage() {
             <a href="#faq">FAQ</a>
           </nav>
           <div className="land-cta">
-            <Link href="/sign-in" className="land-btn land-btn-pill">Se connecter</Link>
-            <Link href="/sign-up" className="land-btn land-btn-pill-dark">
+            <Link href={"/welcome" as never} className="land-btn land-btn-pill">Se connecter</Link>
+            <Link href={"/welcome" as never} className="land-btn land-btn-pill-dark">
               Démarrer
               <svg
                 className="land-btn-arrow"
