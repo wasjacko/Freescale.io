@@ -5667,3 +5667,58 @@
 }
 .email-composer-send:disabled { opacity: 0.5; cursor: not-allowed; }
 .email-composer-send .icon { width: 14px; height: 14px; }
+
+/* =============================================================================
+   Conversation skeleton — shown while the first sync is running
+   ============================================================================= */
+.conv-skel-list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 2px;
+}
+.conv-skel {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+.conv-skel-av {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: linear-gradient(110deg, rgba(15, 23, 42, 0.06) 8%, rgba(15, 23, 42, 0.12) 18%, rgba(15, 23, 42, 0.06) 33%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.6s linear infinite;
+}
+.conv-skel-main { display: flex; flex-direction: column; gap: 7px; }
+.conv-skel-line {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(110deg, rgba(15, 23, 42, 0.06) 8%, rgba(15, 23, 42, 0.12) 18%, rgba(15, 23, 42, 0.06) 33%);
+  background-size: 200% 100%;
+  animation: skel-shimmer 1.6s linear infinite;
+}
+.conv-skel-name { width: 58%; }
+.conv-skel-preview { width: 86%; height: 8px; opacity: 0.7; }
+
+@keyframes skel-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Slight stagger so they don't all pulse in sync — feels more alive */
+.conv-skel:nth-child(2) .conv-skel-av,
+.conv-skel:nth-child(2) .conv-skel-line { animation-delay: 0.10s; }
+.conv-skel:nth-child(3) .conv-skel-av,
+.conv-skel:nth-child(3) .conv-skel-line { animation-delay: 0.20s; }
+.conv-skel:nth-child(4) .conv-skel-av,
+.conv-skel:nth-child(4) .conv-skel-line { animation-delay: 0.30s; }
+.conv-skel:nth-child(5) .conv-skel-av,
+.conv-skel:nth-child(5) .conv-skel-line { animation-delay: 0.40s; }
+.conv-skel:nth-child(6) .conv-skel-av,
+.conv-skel:nth-child(6) .conv-skel-line { animation-delay: 0.50s; }
+.conv-skel:nth-child(7) .conv-skel-av,
+.conv-skel:nth-child(7) .conv-skel-line { animation-delay: 0.60s; }

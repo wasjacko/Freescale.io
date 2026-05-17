@@ -18,7 +18,7 @@ const GROUP_LABELS: Record<string, string> = {
 
 export function Inbox() {
   const { activeConvId, setActiveConv } = useApp();
-  const { conversations, archived, archive: archiveConv, unarchive, markRead, markUnread } = useData();
+  const { conversations, archived, archive: archiveConv, unarchive, markRead, markUnread, isSyncing } = useData();
   const push = useToast((s) => s.push);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [extraUnread, setExtraUnread] = useState<Set<string>>(new Set());
@@ -135,11 +135,24 @@ export function Inbox() {
       </header>
 
       <div className="conv-list" id="conv-list">
-        {filteredConvs.length === 0 && (
+        {filteredConvs.length === 0 && isSyncing && (
+          <div className="conv-skel-list" aria-busy="true" aria-label="Chargement des conversations">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="conv-skel">
+                <span className="conv-skel-av" />
+                <span className="conv-skel-main">
+                  <span className="conv-skel-line conv-skel-name" />
+                  <span className="conv-skel-line conv-skel-preview" />
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {filteredConvs.length === 0 && !isSyncing && (
           <div className="empty-state is-visible">
             <div className="empty-orb" />
             <div className="empty-title">Inbox zero 🎉</div>
-            <div className="empty-text">No conversations match this filter. Try another, or take a breather.</div>
+            <div className="empty-text">Aucune conversation pour ce filtre. Essayez-en un autre, ou prenez une pause.</div>
           </div>
         )}
         {Object.entries(groups).map(([group, items]) =>

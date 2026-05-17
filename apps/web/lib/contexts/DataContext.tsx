@@ -19,6 +19,8 @@ type Ctx = {
   upcoming: UpcomingEvent[];
   channels: ConnectedChannel[];
   archived: Set<string>;
+  isSyncing: boolean;
+  setIsSyncing: (b: boolean) => void;
   markRead: (id: string) => Promise<void>;
   markUnread: (id: string) => Promise<void>;
   archive: (id: string) => void;
@@ -40,6 +42,7 @@ export function DataProvider({
   const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>(initial.messagesByConv);
   const [tasks, setTasks] = useState<Task[]>(initial.tasks);
   const [archived, setArchived] = useState<Set<string>>(new Set());
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Re-sync local state whenever the server pushes a new payload (e.g.
   // after router.refresh()'s following an action). Without this useEffect,
@@ -103,6 +106,8 @@ export function DataProvider({
       upcoming: initial.upcoming,
       channels: initial.channels,
       archived,
+      isSyncing,
+      setIsSyncing,
       markRead,
       markUnread,
       archive,
@@ -117,6 +122,7 @@ export function DataProvider({
       initial.events,
       initial.upcoming,
       initial.channels,
+      isSyncing,
       archived,
       markRead,
       markUnread,

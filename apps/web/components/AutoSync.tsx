@@ -4,15 +4,19 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
 import { useToast } from "@/lib/hooks/useToast";
+import { useData } from "@/lib/contexts/DataContext";
 
 /**
  * Fires a background channel sync on mount and whenever the tab becomes
  * visible again (typical "I came back to the app after a while" moment).
- * Throttled client-side to once per 60 s to avoid hammering the server.
+ * Throttled client-side to once per 60 s. Toggles DataContext.isSyncing so
+ * downstream skeletons can show during the wait — especially important on
+ * the very first sync when conversations.length is still 0.
  */
 export function AutoSync() {
   const router = useRouter();
   const push = useToast((s) => s.push);
+  const { setIsSyncing, conversations } = useData();
   const lastRun = useRef(0);
   const inFlight = useRef(false);
 
@@ -22,22 +26,29 @@ export function AutoSync() {
       if (inFlight.current) return;
       if (now - lastRun.current < 60_000) return;
       inFlight.current = true;
+      // Only flip the global "syncing" flag when we have nothing yet — we
+      // don't want to flash skeletons over a populated inbox.
+      const hadNothing = conversations.length === 0;
+      if (hadNothing) setIsSyncing(true);
       try {
         const report = await autoSyncStaleChannels();
         lastRun.current = Date.now();
         if (report.newMessages > 0) {
-          push({
-            text: `${report.newMessages} nouveau${report.newMessages > 1 ? "x" : ""} message${
-              report.newMessages > 1 ? "s" : ""
-            }`,
-            duration: 3000,
-          });
+          if (!hadNothing) {
+            push({
+              text: `${report.newMessages} nouveau${report.newMessages > 1 ? "x" : ""} message${
+                report.newMessages > 1 ? "s" : ""
+              }`,
+              duration: 3000,
+            });
+          }
           router.refresh();
         }
       } catch {
         // Silent fail — auto-sync is best-effort.
       } finally {
         inFlight.current = false;
+        if (hadNothing) setIsSyncing(false);
       }
     };
 
@@ -47,7 +58,7 @@ export function AutoSync() {
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [router, push]);
+  }, [router, push, setIsSyncing, conversations.length]);
 
   return null;
 }
