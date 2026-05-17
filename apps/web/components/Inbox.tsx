@@ -48,6 +48,27 @@ function formatLocalTime(iso: string): string {
   return date.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
+/**
+ * Compute the inbox group ("today", "yesterday", "this-week", "earlier")
+ * in the BROWSER's local timezone rather than the server's UTC. Critical
+ * for users outside UTC: an email received at 00:15 Paris time is 22:15
+ * UTC the previous day, and the server would otherwise bucket it as
+ * "yesterday" when from the user's perspective it just arrived today.
+ */
+function clientGroupFor(iso: string): "today" | "yesterday" | "this-week" | "earlier" {
+  const date = new Date(iso);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (date >= startOfToday) return "today";
+  const startOfYest = new Date(startOfToday);
+  startOfYest.setDate(startOfToday.getDate() - 1);
+  if (date >= startOfYest) return "yesterday";
+  const startOfWeek = new Date(startOfToday);
+  startOfWeek.setDate(startOfToday.getDate() - 7);
+  if (date >= startOfWeek) return "this-week";
+  return "earlier";
+}
+
 export function Inbox() {
   const router = useRouter();
   const { activeConvId, setActiveConv } = useApp();
@@ -154,8 +175,10 @@ export function Inbox() {
     "this-week": [],
     earlier: [],
   };
+  // Use the browser-local group (not the server's), so 00:15 Paris time
+  // mail doesn't slip into "yesterday" because the server is on UTC.
   for (const c of filteredConvs) {
-    groups[c.group]?.push(c);
+    groups[clientGroupFor(c.lastAtIso)]?.push(c);
   }
 
   const counts = {

@@ -74,28 +74,6 @@ export type SyncReport = {
 };
 
 /**
- * Mirror Gmail's "Primary" tab semantics at the thread level. Returns true
- * when a message is what Gmail would surface in the default Inbox view:
- *
- *   - Has the INBOX label (not archived, not in spam/trash)
- *   - AND either has CATEGORY_PERSONAL, or has no CATEGORY_* label at all
- *     (Gmail puts un-categorized inbox mail in Primary by default)
- *
- * This excludes Promotions / Social / Updates / Forums — the categories
- * Gmail collapses behind separate tabs. Without this filter, Freescale was
- * showing LinkedIn-Social and Promotions newsletters next to the real
- * inbox, which the user perceives as "invented" mail.
- */
-function isInPrimaryTab(labelIds: string[] | undefined): boolean {
-  const labels = labelIds ?? [];
-  if (!labels.includes("INBOX")) return false;
-  if (labels.includes("CATEGORY_PERSONAL")) return true;
-  return !labels.some(
-    (l) => l.startsWith("CATEGORY_") && l !== "CATEGORY_PERSONAL"
-  );
-}
-
-/**
  * Full Gmail enumeration — used for the FIRST sync of an account, and as a
  * fallback when the History API cursor has aged out (> ~7 days). Pulls up
  * to 800 of the most recent messages across all categories, dedupes them
@@ -238,40 +216,43 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     (existingMsgs ?? []).map((m) => m.external_id as string).filter(Boolean)
   );
 
-  for (const threadId of threadIds) {
-    // Fetch the FULL thread — gives us every message in it, not just the
-    // most recent one that surfaced in messages.list. Without this the user
-    // opens a thread and only sees the last 1-2 messages, missing the
-    // context of the conversation they're replying in.
-    let thread: Awaited<ReturnType<typeof getThread>>;
-    try {
-      thread = await getThread(accessToken, threadId);
-    } catch (err) {
-      report.errors.push(`${threadId}: ${err instanceof Error ? err.message : err}`);
-      continue;
-    }
+  // Fetch threads in parallel batches. Gmail's threads.get is ~150-400ms
+  // per call; serial would push first sync to 60-90s and Vercel's server-
+  // action budget would expire mid-loop. 8 concurrent calls stays well
+  // under the API quota (250 units/sec, 10 per thread = 25/sec ceiling)
+  // and keeps first sync under ~15s for 200 messages.
+  const BATCH_SIZE = 8;
+  type FetchedThread =
+    | { ok: true; threadId: string; thread: Awaited<ReturnType<typeof getThread>> }
+    | { ok: false; threadId: string; error: unknown };
 
-    const parsed = thread.messages
-      .map((m) => ({ raw: m, content: extractMessageContent(m) }))
-      .sort((a, b) => a.content.date.getTime() - b.content.date.getTime());
-    if (parsed.length === 0) continue;
+  for (let i = 0; i < threadIds.length; i += BATCH_SIZE) {
+    const batch = threadIds.slice(i, i + BATCH_SIZE);
+    const fetched: FetchedThread[] = await Promise.all(
+      batch.map(
+        (threadId): Promise<FetchedThread> =>
+          getThread(accessToken, threadId)
+            .then((thread) => ({ ok: true as const, threadId, thread }))
+            .catch((error) => ({ ok: false as const, threadId, error }))
+      )
+    );
 
-    // Primary-tab gate. The full-sync query already filters at the message
-    // level, but History API deltas surface every label change in the
-    // mailbox — so a thread that got moved OUT of Primary needs to be
-    // removed from Freescale (and a thread that moved INTO Primary needs
-    // to be inserted even though the cursor was on the wrong label).
-    const isAnyInPrimary = parsed.some((p) => isInPrimaryTab(p.raw.labelIds));
-    if (!isAnyInPrimary) {
-      const existingId = existingMap.get(threadId);
-      if (existingId) {
-        await supabase.from("conversations").delete().eq("id", existingId);
+    for (const entry of fetched) {
+      if (!entry.ok) {
+        report.errors.push(
+          `${entry.threadId}: ${entry.error instanceof Error ? entry.error.message : String(entry.error)}`
+        );
+        continue;
       }
-      continue;
-    }
+      const { threadId, thread } = entry;
 
-    const newest = parsed[parsed.length - 1];
-    if (!newest) continue;
+      const parsed = thread.messages
+        .map((m) => ({ raw: m, content: extractMessageContent(m) }))
+        .sort((a, b) => a.content.date.getTime() - b.content.date.getTime());
+      if (parsed.length === 0) continue;
+
+      const newest = parsed[parsed.length - 1];
+      if (!newest) continue;
 
     // Resolve or create the contact (matched on the "from" email of the most
     // recent inbound message).
@@ -409,7 +390,8 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         report.newMessages += toInsert.length;
       }
     }
-  }
+    } // end of `for (const entry of fetched)` — inner per-thread processing
+  } // end of `for (i; i < threadIds.length; i += BATCH_SIZE)` — outer batch loop
 
   // Persist the new history cursor alongside last_synced_at. Next sync
   // tick will call users.history.list?startHistoryId=<this> and only pull
