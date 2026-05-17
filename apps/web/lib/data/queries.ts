@@ -97,11 +97,17 @@ export async function getInboxData(): Promise<InboxData> {
 
   let messagesByConv: Record<string, Message[]> = {};
   if (convs.length) {
-    const convIds = convs.map((c) => c.id as string);
+    const convIdSet = new Set(convs.map((c) => c.id as string));
+    // CRITICAL: do NOT use .in("conversation_id", [N UUIDs]) here. With
+    // 100+ conversations the URL crosses PostgREST's request-line limit
+    // (~4 KB) and Supabase silently returns an empty array — the right
+    // panel goes blank even though messages are in the table. Fetching
+    // by workspace_id instead keeps the URL tiny, and we filter to the
+    // visible-conversation set in memory below.
     const { data: msgs } = await supabase
       .from("messages")
       .select("id, conversation_id, direction, body_text, body_html, sent_at, metadata")
-      .in("conversation_id", convIds)
+      .eq("workspace_id", workspaceId)
       .order("sent_at", { ascending: true });
     // Build a lookup of contact email → avatar_url so we can stamp each
      // inbound email with its sender's avatar (gravatar / favicon).
@@ -116,6 +122,8 @@ export async function getInboxData(): Promise<InboxData> {
     messagesByConv = ((msgs ?? []) as Record<string, unknown>[]).reduce<Record<string, Message[]>>(
       (acc, row) => {
         const cid = row.conversation_id as string;
+        // Drop messages whose conversation isn't in the top-150 page.
+        if (!convIdSet.has(cid)) return acc;
         const msg = adaptMessage(row);
         if (msg.senderEmail) {
           const avatar = contactByEmail.get(msg.senderEmail.toLowerCase());
