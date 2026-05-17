@@ -172,11 +172,12 @@ export type GmailMessage = {
  * "include important emails" setting. Any rule we hand-roll on labels
  * gets at least one corner case wrong. Trust Gmail's own classifier.
  *
- * `newer_than:30d` keeps the view focused on the active inbox.
+ * No time bound: the user asked to see ~1000 mails of history. The
+ * batched DB writes in syncGmail keep this within Vercel's 60s budget.
  */
 export async function listRecentMessages(
   accessToken: string,
-  maxResults = 200
+  maxResults = 1000
 ): Promise<{ id: string; threadId: string }[]> {
   const collected: { id: string; threadId: string }[] = [];
   let pageToken: string | undefined;
@@ -184,7 +185,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "category:primary newer_than:30d",
+      q: "category:primary",
     });
     if (pageToken) params.set("pageToken", pageToken);
 

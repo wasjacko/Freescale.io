@@ -113,7 +113,7 @@ async function doFullList(
   accessToken: string,
   report: SyncReport
 ): Promise<string[]> {
-  const messages = await listRecentMessages(accessToken, 800);
+  const messages = await listRecentMessages(accessToken, 1000);
   report.fetched = messages.length;
   const threadIds = new Set<string>();
   for (const m of messages) threadIds.add(m.threadId);
@@ -241,12 +241,20 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     (existingMsgs ?? []).map((m) => m.external_id as string).filter(Boolean)
   );
 
-  // Fetch threads in parallel batches. Gmail's threads.get is ~150-400ms
-  // per call; serial would push first sync to 60-90s and Vercel's server-
-  // action budget would expire mid-loop. 8 concurrent calls stays well
-  // under the API quota (250 units/sec, 10 per thread = 25/sec ceiling)
-  // and keeps first sync under ~15s for 200 messages.
-  const BATCH_SIZE = 8;
+  // ─── Batched fetch + batched DB writes ─────────────────────────────────
+  // Old per-thread write loop did 4 DB calls per thread (contact SELECT,
+  // contact INSERT, conv INSERT/UPDATE, messages UPSERT) — fine for 200
+  // threads but burns ~150s on 1000 threads, well over Vercel's 60s
+  // server-action budget. Refactored to do constant-cost DB work per
+  // batch regardless of size: 5 queries total per batch of N threads
+  // (contacts SELECT, contacts UPSERT, conversations UPSERT, messages
+  // UPSERT, optional conversations DELETE for primary→other moves).
+  //
+  // Fetch fanout bumped to 16 concurrent — Gmail allows 250 quota units
+  // per second per user, threads.get costs 10, so 25 concurrent is the
+  // ceiling. 16 stays well under with room for the parallel messages.list
+  // pagination running upstream.
+  const BATCH_SIZE = 16;
   type FetchedThread =
     | { ok: true; threadId: string; thread: Awaited<ReturnType<typeof getThread>> }
     | { ok: false; threadId: string; error: unknown };
@@ -262,6 +270,28 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       )
     );
 
+    // ── Pass 1: parse + filter + collect everything we need to write ──
+    type ThreadPayload = {
+      threadId: string;
+      contactEmail: string;
+      contactName: string;
+      subject: string;
+      preview: string;
+      lastMessageAt: string;
+      unreadCount: number;
+      messages: Array<{
+        external_id: string;
+        direction: "in" | "out";
+        body_text: string | null;
+        body_html: string | null;
+        sent_at: string;
+        metadata: Record<string, unknown>;
+      }>;
+    };
+    const toUpsert: ThreadPayload[] = [];
+    const toDelete: string[] = []; // existing conv ids to remove (Primary → other)
+    const contactEmailsInBatch = new Set<string>();
+
     for (const entry of fetched) {
       if (!entry.ok) {
         report.errors.push(
@@ -270,166 +300,199 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         continue;
       }
       const { threadId, thread } = entry;
-
       const parsed = thread.messages
         .map((m) => ({ raw: m, content: extractMessageContent(m) }))
         .sort((a, b) => a.content.date.getTime() - b.content.date.getTime());
       if (parsed.length === 0) continue;
 
-      // Primary-tab gate. The full-sync query filters at the message level,
-      // but History API deltas surface label changes for every category, so
-      // a thread that moved from Primary → Promotions still needs to be
-      // pruned, and one that moved into Primary needs to be picked up.
+      // Primary-tab gate — see isInPrimaryTab() comment for rationale.
       const isAnyInPrimary = parsed.some((p) => isInPrimaryTab(p.raw.labelIds));
       if (!isAnyInPrimary) {
         const existingId = existingMap.get(threadId);
-        if (existingId) {
-          await supabase.from("conversations").delete().eq("id", existingId);
-        }
+        if (existingId) toDelete.push(existingId);
         continue;
       }
 
       const newest = parsed[parsed.length - 1];
       if (!newest) continue;
 
-    // Resolve or create the contact (matched on the "from" email of the most
-    // recent inbound message).
-    const lastInbound = [...parsed].reverse().find(
-      (p) => p.content.from.email.toLowerCase() !== account.external_id.toLowerCase()
-    );
-    const contactEmail = lastInbound?.content.from.email ?? newest.content.from.email;
-    const contactName =
-      lastInbound?.content.from.name ?? newest.content.from.name ?? contactEmail;
+      const lastInbound = [...parsed].reverse().find(
+        (p) => p.content.from.email.toLowerCase() !== account.external_id.toLowerCase()
+      );
+      const contactEmail = lastInbound?.content.from.email ?? newest.content.from.email;
+      const contactName =
+        lastInbound?.content.from.name ?? newest.content.from.name ?? contactEmail;
+      if (contactEmail) contactEmailsInBatch.add(contactEmail);
 
-    let contactId: string | null = null;
-    if (contactEmail) {
-      const { data: existingContact } = await supabase
-        .from("contacts")
-        .select("id")
-        .eq("workspace_id", account.workspace_id)
-        .eq("email", contactEmail)
-        .maybeSingle();
-      if (existingContact?.id) {
-        contactId = existingContact.id as string;
-      } else {
-        const { data: newContact } = await supabase
-          .from("contacts")
-          .insert({
-            workspace_id: account.workspace_id,
-            display_name: contactName || contactEmail,
-            email: contactEmail,
-            avatar_url: avatarUrlFor(contactEmail),
-          })
-          .select("id")
-          .single();
-        contactId = (newContact?.id as string) ?? null;
-      }
-    }
+      const preview = (newest.content.snippet || newest.content.text)
+        .slice(0, 140)
+        .replace(/\s+/g, " ")
+        .trim();
+      const unreadCount = parsed.filter((p) => (p.raw.labelIds ?? []).includes("UNREAD")).length;
+      const lastMessageAt = newest.content.date.toISOString();
 
-    // Explicit insert vs update. The unique index
-    // (workspace_id, channel_account_id, external_thread_id) makes the
-    // INSERT race-safe: on conflict we catch the 23505 and switch to the
-    // UPDATE path. No silent data loss from .single() returning nothing.
-    // Always prefer Gmail's own snippet for the sidebar preview. It's
-    // pre-cleaned text the API guarantees is safe to display — no
-    // mojibake, no HTML noise, no quoted-printable leftovers.
-    const preview = (newest.content.snippet || newest.content.text)
-      .slice(0, 140)
-      .replace(/\s+/g, " ")
-      .trim();
-    const unreadCount = parsed.filter((p) => (p.raw.labelIds ?? []).includes("UNREAD")).length;
-    const lastMessageAt = newest.content.date.toISOString();
-
-    let conversationId = existingMap.get(threadId) ?? null;
-    if (conversationId) {
-      await supabase
-        .from("conversations")
-        .update({
-          contact_id: contactId,
-          subject: newest.content.subject || null,
-          preview,
-          last_message_at: lastMessageAt,
-          unread_count: unreadCount,
-        })
-        .eq("id", conversationId);
-    } else {
-      const { data: inserted, error: insErr } = await supabase
-        .from("conversations")
-        .insert({
-          workspace_id: account.workspace_id,
-          channel_account_id: account.id,
-          contact_id: contactId,
-          external_thread_id: threadId,
-          subject: newest.content.subject || null,
-          preview,
-          last_message_at: lastMessageAt,
-          unread_count: unreadCount,
-        })
-        .select("id")
-        .single();
-      if (insErr) {
-        // Most likely the unique index caught a race against another sync.
-        // Look up the row another worker just wrote and treat it as ours.
-        const { data: existing } = await supabase
-          .from("conversations")
-          .select("id")
-          .eq("workspace_id", account.workspace_id)
-          .eq("channel_account_id", account.id)
-          .eq("external_thread_id", threadId)
-          .maybeSingle();
-        conversationId = (existing?.id as string) ?? null;
-        if (!conversationId) {
-          report.errors.push(`conv insert: ${insErr.message}`);
-        }
-      } else {
-        conversationId = (inserted?.id as string) ?? null;
-        if (conversationId) report.newConversations += 1;
-      }
-    }
-    if (!conversationId) continue;
-
-    // Insert messages we don't have yet
-    const toInsert = parsed
-      .filter((p) => !existingMessageIds.has(p.raw.id))
-      .map((p) => {
-        const isOutbound =
-          p.content.from.email.toLowerCase() === account.external_id.toLowerCase();
-        return {
-          conversation_id: conversationId,
-          workspace_id: account.workspace_id,
-          direction: isOutbound ? ("out" as const) : ("in" as const),
-          external_id: p.raw.id,
-          body_text: p.content.text || null,
-          body_html: p.content.html || null,
-          sent_at: p.content.date.toISOString(),
-          metadata: {
-            subject: p.content.subject,
-            from: p.content.from,
-            to: p.content.to,
-            labels: p.raw.labelIds ?? [],
-            messageId: p.content.messageId,
-            references: p.content.references,
-          },
-        };
+      toUpsert.push({
+        threadId,
+        contactEmail,
+        contactName,
+        subject: newest.content.subject || "",
+        preview,
+        lastMessageAt,
+        unreadCount,
+        messages: parsed
+          .filter((p) => !existingMessageIds.has(p.raw.id))
+          .map((p) => {
+            const isOutbound =
+              p.content.from.email.toLowerCase() === account.external_id.toLowerCase();
+            return {
+              external_id: p.raw.id,
+              direction: isOutbound ? ("out" as const) : ("in" as const),
+              body_text: p.content.text || null,
+              body_html: p.content.html || null,
+              sent_at: p.content.date.toISOString(),
+              metadata: {
+                subject: p.content.subject,
+                from: p.content.from,
+                to: p.content.to,
+                labels: p.raw.labelIds ?? [],
+                messageId: p.content.messageId,
+                references: p.content.references,
+              },
+            };
+          }),
       });
-    if (toInsert.length) {
-      // UPSERT against the existing unique (conversation_id, external_id)
-      // partial index → race-safe: if another sync just inserted the same
-      // message id, we no-op instead of erroring.
-      const { error: insErr } = await supabase
+    }
+
+    // ── Pass 2: batched DB writes (1-5 queries regardless of batch size) ──
+
+    // (a) Delete conversations that moved out of Primary
+    if (toDelete.length > 0) {
+      await supabase.from("conversations").delete().in("id", toDelete);
+      for (const id of toDelete) {
+        // Drop them from existingMap so we don't try to reuse later
+        for (const [tid, cid] of existingMap.entries()) {
+          if (cid === id) existingMap.delete(tid);
+        }
+      }
+    }
+
+    if (toUpsert.length === 0) continue;
+
+    // (b) Resolve contacts: fetch existing for this batch, insert missing
+    const contactByEmail = new Map<string, string>();
+    if (contactEmailsInBatch.size > 0) {
+      const { data: existingContacts } = await supabase
+        .from("contacts")
+        .select("id, email")
+        .eq("workspace_id", account.workspace_id)
+        .in("email", [...contactEmailsInBatch]);
+      for (const c of existingContacts ?? []) {
+        contactByEmail.set(c.email as string, c.id as string);
+      }
+      const missing = [...contactEmailsInBatch].filter((e) => !contactByEmail.has(e));
+      if (missing.length > 0) {
+        // Use the first thread's contact name for each missing email
+        const nameByEmail = new Map<string, string>();
+        for (const t of toUpsert) {
+          if (missing.includes(t.contactEmail) && !nameByEmail.has(t.contactEmail)) {
+            nameByEmail.set(t.contactEmail, t.contactName || t.contactEmail);
+          }
+        }
+        const { data: inserted, error: insErr } = await supabase
+          .from("contacts")
+          .upsert(
+            missing.map((email) => ({
+              workspace_id: account.workspace_id,
+              display_name: nameByEmail.get(email) ?? email,
+              email,
+              avatar_url: avatarUrlFor(email),
+            })),
+            { onConflict: "workspace_id,email", ignoreDuplicates: false }
+          )
+          .select("id, email");
+        if (insErr) {
+          report.errors.push(`contacts upsert: ${insErr.message}`);
+        } else {
+          for (const c of inserted ?? []) {
+            contactByEmail.set(c.email as string, c.id as string);
+          }
+        }
+      }
+    }
+
+    // (c) Upsert conversations
+    const convsPayload = toUpsert.map((t) => ({
+      workspace_id: account.workspace_id,
+      channel_account_id: account.id,
+      contact_id: contactByEmail.get(t.contactEmail) ?? null,
+      external_thread_id: t.threadId,
+      subject: t.subject || null,
+      preview: t.preview,
+      last_message_at: t.lastMessageAt,
+      unread_count: t.unreadCount,
+    }));
+    const { data: upsertedConvs, error: convErr } = await supabase
+      .from("conversations")
+      .upsert(convsPayload, {
+        onConflict: "workspace_id,channel_account_id,external_thread_id",
+        ignoreDuplicates: false,
+      })
+      .select("id, external_thread_id");
+    if (convErr) {
+      report.errors.push(`conv upsert: ${convErr.message}`);
+      continue;
+    }
+    const convByThread = new Map<string, string>();
+    for (const c of upsertedConvs ?? []) {
+      convByThread.set(c.external_thread_id as string, c.id as string);
+      if (!existingMap.has(c.external_thread_id as string)) {
+        report.newConversations += 1;
+        existingMap.set(c.external_thread_id as string, c.id as string);
+      }
+    }
+
+    // (d) Upsert messages
+    const messagesPayload: Array<{
+      conversation_id: string;
+      workspace_id: string;
+      direction: "in" | "out";
+      external_id: string;
+      body_text: string | null;
+      body_html: string | null;
+      sent_at: string;
+      metadata: Record<string, unknown>;
+    }> = [];
+    for (const t of toUpsert) {
+      const convId = convByThread.get(t.threadId);
+      if (!convId) continue;
+      for (const m of t.messages) {
+        messagesPayload.push({
+          conversation_id: convId,
+          workspace_id: account.workspace_id,
+          direction: m.direction,
+          external_id: m.external_id,
+          body_text: m.body_text,
+          body_html: m.body_html,
+          sent_at: m.sent_at,
+          metadata: m.metadata,
+        });
+        existingMessageIds.add(m.external_id);
+      }
+    }
+    if (messagesPayload.length > 0) {
+      const { error: msgErr } = await supabase
         .from("messages")
-        .upsert(toInsert, {
+        .upsert(messagesPayload, {
           onConflict: "conversation_id,external_id",
           ignoreDuplicates: true,
         });
-      if (insErr) {
-        report.errors.push(`messages insert: ${insErr.message}`);
+      if (msgErr) {
+        report.errors.push(`messages upsert: ${msgErr.message}`);
       } else {
-        report.newMessages += toInsert.length;
+        report.newMessages += messagesPayload.length;
       }
     }
-    } // end of `for (const entry of fetched)` — inner per-thread processing
-  } // end of `for (i; i < threadIds.length; i += BATCH_SIZE)` — outer batch loop
+  }
 
   // Persist the new history cursor alongside last_synced_at. Next sync
   // tick will call users.history.list?startHistoryId=<this> and only pull
