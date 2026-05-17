@@ -4070,18 +4070,25 @@
 }
 
 /* ---------- Nav ---------- */
+/* Header inspired by Kinso (logo · centered nav · pill login + dark CTA
+   with arrow), rendered with our own design tokens — radius 12-16,
+   Geist typography, soft warm-tinted glass backdrop, no harsh borders. */
 .land-nav {
   position: sticky;
   top: 0;
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: 28px;
-  padding: 16px 32px;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: saturate(180%) blur(18px);
-  -webkit-backdrop-filter: saturate(180%) blur(18px);
-  border-bottom: 1px solid var(--land-line);
+  gap: 32px;
+  padding: 14px 32px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 250, 244, 0.88) 0%,
+    rgba(255, 255, 255, 0.85) 100%
+  );
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
 }
 .land-logo {
   display: inline-flex;
@@ -4089,9 +4096,14 @@
   gap: 10px;
   color: var(--land-ink);
   font-weight: 600;
-  letter-spacing: -0.015em;
-  font-size: 15px;
+  letter-spacing: -0.018em;
+  font-size: 15.5px;
   text-decoration: none;
+}
+.land-logo-word {
+  /* Slight optical alignment — the orb logo already carries visual
+     weight, so the wordmark sits a hair lower for balance. */
+  transform: translateY(0.5px);
 }
 .land-logo-mark {
   width: 26px;
@@ -4108,8 +4120,9 @@
 }
 .land-links {
   display: flex;
-  gap: 24px;
-  margin-left: 16px;
+  gap: 28px;
+  /* No margin-left auto — keep links snug to the logo, like Kinso. The
+     CTAs use margin-left:auto to slide to the far right on their own. */
 }
 .land-links a {
   font-size: 13.5px;
@@ -4120,15 +4133,21 @@
   transition: color 180ms var(--ease-out-soft);
 }
 .land-links a:hover { color: var(--land-ink); }
-.land-cta { margin-left: auto; display: flex; gap: 8px; }
+.land-cta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 /* ---------- Buttons ---------- */
 .land-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 36px;
-  padding: 0 16px;
+  gap: 6px;
+  height: 38px;
+  padding: 0 18px;
   border-radius: 12px;
   font-size: 13.5px;
   font-weight: 600;
@@ -4141,6 +4160,7 @@
               transform 100ms var(--ease-out-soft),
               box-shadow 220ms var(--ease-out-soft);
 }
+/* Kept for backwards-compat with older hero CTAs */
 .land-btn-ghost {
   background: rgba(15, 23, 42, 0.04);
   color: var(--land-ink);
@@ -4156,6 +4176,46 @@
   transform: translateY(-0.5px);
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.22);
 }
+
+/* Pill variants — used in the new header (Kinso-style). Borrow the
+   silhouette; keep our DESIGN.md type, colors, and motion. */
+.land-btn-pill {
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--land-ink);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.land-btn-pill:hover {
+  background: #FAFAFC;
+  border-color: rgba(15, 23, 42, 0.14);
+  transform: translateY(-0.5px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+.land-btn-pill-dark {
+  height: 38px;
+  padding: 0 18px 0 20px;
+  border-radius: 999px;
+  background: var(--land-ink);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.20);
+}
+.land-btn-pill-dark:hover {
+  background: #1E293B;
+  transform: translateY(-0.5px);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.28);
+}
+.land-btn-pill-dark .land-btn-arrow {
+  width: 14px;
+  height: 14px;
+  transition: transform 180ms var(--ease-out-soft);
+}
+.land-btn-pill-dark:hover .land-btn-arrow {
+  transform: translateX(2px);
+}
+
 .land-btn-lg {
   height: 48px;
   padding: 0 22px;
