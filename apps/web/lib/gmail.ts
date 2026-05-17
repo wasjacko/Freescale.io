@@ -179,7 +179,10 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "-in:chats -in:drafts -in:spam -in:trash",
+      // Mirror Gmail's default Primary tab. Users expect Freescale's inbox
+      // to match what they see at gmail.com first — Promotions / Social /
+      // Updates / Forums stay reachable through tabs later if we add them.
+      q: "category:primary -in:chats -in:drafts -in:spam -in:trash",
     });
     if (pageToken) params.set("pageToken", pageToken);
 

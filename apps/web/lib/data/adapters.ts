@@ -40,32 +40,6 @@ function avatarFor(name: string, url: string | null | undefined): Avatar {
   return { kind: "initials", text: initialsOf(name), bg: "#0F172A", alt: name };
 }
 
-function formatTime(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const sameDay =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-  if (sameDay) {
-    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  }
-  const yest = new Date(now);
-  yest.setDate(now.getDate() - 1);
-  if (
-    date.getFullYear() === yest.getFullYear() &&
-    date.getMonth() === yest.getMonth() &&
-    date.getDate() === yest.getDate()
-  ) {
-    return "Yesterday";
-  }
-  const diff = (now.getTime() - date.getTime()) / 86400000;
-  if (diff < 7) {
-    return date.toLocaleDateString([], { weekday: "short" });
-  }
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
 function groupFor(iso: string): Conversation["group"] {
   const date = new Date(iso);
   const now = new Date();
@@ -89,7 +63,7 @@ export function adaptConversation(row: Row): Conversation {
     id: row.id as string,
     name,
     preview: (row.preview as string) ?? "",
-    time: formatTime(lastAt),
+    lastAtIso: lastAt,
     avatar: avatarFor(name, contact?.avatar_url as string | null | undefined),
     channel: toChannel(channelAccount?.kind),
     unread: ((row.unread_count as number) ?? 0) > 0,

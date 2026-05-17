@@ -23,7 +23,8 @@ export type Conversation = {
   id: string;
   name: string;
   preview: string;
-  time: string;
+  /** ISO date of last message; formatted client-side for correct local time */
+  lastAtIso: string;
   avatar: Avatar;
   channel: ChannelId;
   unread?: boolean;

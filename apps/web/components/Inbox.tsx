@@ -19,6 +19,35 @@ const GROUP_LABELS: Record<string, string> = {
   earlier: "Earlier",
 };
 
+/**
+ * Format the ISO timestamp in the user's BROWSER local time (e.g., Paris
+ * CEST) rather than the server UTC. Same-day → HH:MM, yesterday → "Yesterday",
+ * within a week → weekday short, otherwise short date.
+ */
+function formatLocalTime(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  if (sameDay) {
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  const yest = new Date(now);
+  yest.setDate(now.getDate() - 1);
+  if (
+    date.getFullYear() === yest.getFullYear() &&
+    date.getMonth() === yest.getMonth() &&
+    date.getDate() === yest.getDate()
+  ) {
+    return "Yesterday";
+  }
+  const diffDays = (now.getTime() - date.getTime()) / 86400000;
+  if (diffDays < 7) return date.toLocaleDateString([], { weekday: "short" });
+  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
 export function Inbox() {
   const router = useRouter();
   const { activeConvId, setActiveConv } = useApp();
@@ -231,7 +260,7 @@ export function Inbox() {
                     <span className="conv-main">
                       <span className="conv-top">
                         <span className="conv-name">{c.name}</span>
-                        <span className="conv-time">{c.time}</span>
+                        <span className="conv-time">{formatLocalTime(c.lastAtIso)}</span>
                       </span>
                       <span className="conv-bottom">
                         <span className="conv-preview">
