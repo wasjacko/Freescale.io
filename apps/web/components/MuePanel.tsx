@@ -77,21 +77,24 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
     }
   };
 
-  const handleTranslate = async () => {
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
+
+  const handleTranslate = () => {
     if (!requireConv()) return;
-    // Quick prompt for the target language. Real product would be a
-    // dropdown of supported langs; for v1 we ask once per click.
-    const lang = window.prompt(
-      "Traduire vers quelle langue ? (ex: anglais, espagnol, italien)",
-      "anglais"
-    );
-    if (!lang) return;
-    setResult({ kind: "loading", label: `Traduction en ${lang}…` });
-    const res = await translateThread(activeConvId, lang);
+    // Toggle the native in-panel picker instead of window.prompt — feels
+    // less like a browser interruption and matches the rest of Mue's UI.
+    setLangPickerOpen((open) => !open);
+  };
+
+  const runTranslation = async (langLabel: string) => {
+    setLangPickerOpen(false);
+    if (!requireConv()) return;
+    setResult({ kind: "loading", label: `Traduction en ${langLabel}…` });
+    const res = await translateThread(activeConvId, langLabel);
     if (res.error || res.messages.length === 0) {
       setResult({ kind: "error", message: res.error ?? "Aucune traduction" });
     } else {
-      setResult({ kind: "translation", data: res.messages, lang });
+      setResult({ kind: "translation", data: res.messages, lang: langLabel });
     }
   };
 
@@ -230,13 +233,49 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
                   <span className="action-desc">Points principaux en un résumé clair</span>
                 </span>
               </button>
-              <button className="action" type="button" onClick={handleTranslate}>
+              <button
+                className={`action ${langPickerOpen ? "is-active" : ""}`}
+                type="button"
+                onClick={handleTranslate}
+                aria-expanded={langPickerOpen}
+              >
                 <span className="action-icon cool"><Icon name="i-globe" /></span>
                 <span>
                   <span className="action-title">Traduire la conversation</span>
                   <span className="action-desc">Traduire en une autre langue</span>
                 </span>
+                <span className="action-chevron" aria-hidden>
+                  {langPickerOpen ? "▴" : "▾"}
+                </span>
               </button>
+
+              {langPickerOpen && (
+                <div className="mue-lang-picker" role="menu">
+                  {[
+                    { code: "en", label: "anglais", flag: "🇬🇧" },
+                    { code: "es", label: "espagnol", flag: "🇪🇸" },
+                    { code: "fr", label: "français", flag: "🇫🇷" },
+                    { code: "it", label: "italien", flag: "🇮🇹" },
+                    { code: "de", label: "allemand", flag: "🇩🇪" },
+                    { code: "pt", label: "portugais", flag: "🇵🇹" },
+                    { code: "nl", label: "néerlandais", flag: "🇳🇱" },
+                    { code: "ar", label: "arabe", flag: "🇸🇦" },
+                    { code: "zh", label: "chinois", flag: "🇨🇳" },
+                    { code: "ja", label: "japonais", flag: "🇯🇵" },
+                  ].map((l) => (
+                    <button
+                      key={l.code}
+                      type="button"
+                      role="menuitem"
+                      className="mue-lang-option"
+                      onClick={() => void runTranslation(l.label)}
+                    >
+                      <span className="mue-lang-flag" aria-hidden>{l.flag}</span>
+                      <span className="mue-lang-label">{l.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </section>
 
             {result && (
