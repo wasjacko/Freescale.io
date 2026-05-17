@@ -1,6 +1,6 @@
 "use server";
 
-import { spawn } from "node:child_process";
+import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import {
   extractMessageContent,
@@ -11,16 +11,18 @@ import {
 /**
  * Mue — the Freescale AI copilot. First feature wired: contextual reply
  * suggestions. Reads the active conversation from Gmail (same live-fetch
- * path as the thread view), feeds it to Claude via the locally-installed
- * `claude` CLI, and returns three reply drafts.
+ * path as the thread view), feeds it to Claude, and returns three reply
+ * drafts the user can one-click into the composer.
  *
- * IMPORTANT: This subprocess approach works in LOCAL DEVELOPMENT only.
- * The `claude` binary is installed on the developer's machine and
- * authenticates via the user's Claude Code session. Vercel's serverless
- * runtime does NOT have the binary — production deployment will need
- * either (a) an Anthropic API key + the @anthropic-ai/sdk path, or
- * (b) a different hosting target (Fly / Railway / a VPS) where we can
- * install the CLI in the image. For now we ship the dev-only version.
+ * Routing: this version hits a custom Anthropic-compatible endpoint
+ * (aiapiflow.com proxy) using ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN.
+ * The SDK reads those env vars automatically — same code path works
+ * locally and on Vercel. No CLI subprocess needed (Vercel serverless
+ * has no shell binaries to call).
+ *
+ * Privacy note: with a proxy, the user's email thread contents transit
+ * through aiapiflow.com on the way to Claude. The user explicitly
+ * configured this — they own the trade-off.
  */
 
 const SYSTEM_PROMPT = `You are Mue, the in-app copilot for Freescale — a unified-inbox SaaS. The user is composing a REPLY to an email conversation and wants three short, ready-to-send draft suggestions.
@@ -41,40 +43,20 @@ The "label" is what we show on the button (e.g. "Confirmer le rendez-vous", "Dem
 
 export type ReplySuggestion = { label: string; text: string };
 
-/**
- * Spawn the local `claude` CLI in headless mode and capture its stdout.
- * `-p` is print-mode: it executes a single prompt and exits. `--system-prompt`
- * lets us pin the system message. We pipe the user transcript via stdin so
- * long bodies don't blow the ARG_MAX limit.
- */
-async function callClaudeCLI(systemPrompt: string, userMessage: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(
-      "claude",
-      ["-p", "--system-prompt", systemPrompt, "--model", "claude-haiku-4-5"],
-      { stdio: ["pipe", "pipe", "pipe"] }
-    );
-
-    let stdout = "";
-    let stderr = "";
-    proc.stdout.on("data", (d) => (stdout += d.toString()));
-    proc.stderr.on("data", (d) => (stderr += d.toString()));
-    proc.on("error", (err) => reject(err));
-    proc.on("close", (code) => {
-      if (code === 0) resolve(stdout);
-      else reject(new Error(`claude CLI exited ${code}: ${stderr.slice(0, 500)}`));
-    });
-
-    // Send the conversation transcript via stdin to avoid ARG_MAX issues
-    // on large email bodies.
-    proc.stdin.write(userMessage);
-    proc.stdin.end();
-  });
-}
-
 export async function suggestReplies(
   conversationId: string
 ): Promise<{ suggestions: ReplySuggestion[]; error: string | null }> {
+  const baseUrl = process.env.ANTHROPIC_BASE_URL;
+  const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!authToken && !apiKey) {
+    return {
+      suggestions: [],
+      error:
+        "Aucun credential Claude configuré (ANTHROPIC_AUTH_TOKEN ou ANTHROPIC_API_KEY).",
+    };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -140,9 +122,25 @@ export async function suggestReplies(
 
   const userMessage = `Conversation thread (oldest → newest):\n\n${transcript}\n\nGenerate three reply drafts for me to send next.`;
 
+  // SDK auto-reads ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN from env;
+  // we only set explicitly when overriding (custom hostnames need authToken
+  // form which uses "Authorization: Bearer" vs the x-api-key header).
+  const client = new Anthropic({
+    ...(baseUrl ? { baseURL: baseUrl } : {}),
+    ...(authToken ? { authToken } : {}),
+    ...(apiKey && !authToken ? { apiKey } : {}),
+  });
+
   let raw: string;
   try {
-    raw = await callClaudeCLI(SYSTEM_PROMPT, userMessage);
+    const resp = await client.messages.create({
+      model: "claude-haiku-4-5",
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userMessage }],
+    });
+    const block = resp.content.find((b) => b.type === "text");
+    raw = block && "text" in block ? block.text : "";
   } catch (err) {
     return {
       suggestions: [],
