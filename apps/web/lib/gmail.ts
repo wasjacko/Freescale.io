@@ -412,9 +412,14 @@ export function extractMessageContent(message: GmailMessage): {
 }
 
 /**
- * Heuristic: a string is "garbage" if it has more than ~5% replacement
- * characters or more than ~15% non-printable bytes. Real email text might
- * occasionally include a stray � (forwarded mojibake) but never that often.
+ * Heuristic: detect when decoded text isn't actually text. We flag:
+ *   - U+FFFD (replacement) above ~2 %
+ *   - C0 control bytes (< 0x20, excluding TAB/LF/CR) above ~5 %
+ *   - C1 control bytes (0x80–0x9F) above ~5 %   ← this catches the bug
+ *     that just appeared: DKIM / PGP blobs decoded as Latin-1 surface as
+ *     a stream of   ½ … which are otherwise valid Unicode
+ *     code units but never appear in real human text
+ *   - Any combined non-printable above ~10 %
  */
 function looksLikeGarbage(s: string): boolean {
   if (!s) return false;
@@ -422,11 +427,17 @@ function looksLikeGarbage(s: string): boolean {
   const total = sample.length;
   if (total < 20) return false;
   let replacement = 0;
-  let nonPrintable = 0;
+  let c0 = 0;
+  let c1 = 0;
   for (let i = 0; i < total; i++) {
     const code = sample.charCodeAt(i);
     if (code === 0xfffd) replacement++;
-    else if (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d) nonPrintable++;
+    else if (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d) c0++;
+    else if (code >= 0x80 && code <= 0x9f) c1++;
   }
-  return replacement / total > 0.05 || nonPrintable / total > 0.15;
+  if (replacement / total > 0.02) return true;
+  if (c0 / total > 0.05) return true;
+  if (c1 / total > 0.05) return true;
+  if ((replacement + c0 + c1) / total > 0.10) return true;
+  return false;
 }
