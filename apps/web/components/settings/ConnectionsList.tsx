@@ -88,7 +88,7 @@ export function ConnectionsList({
       setConnecting(null);
       setToast({
         kind: "err",
-        text: "Impossible d'ouvrir la fenêtre. Autorisez les pop-ups pour freescale-io.vercel.app.",
+        text: "Impossible d'ouvrir la fenêtre. Autorisez les pop-ups pour freescale.site.",
       });
       return;
     }

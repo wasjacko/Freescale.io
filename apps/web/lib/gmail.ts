@@ -16,7 +16,7 @@ export type GmailTokens = {
 };
 
 function getOrigin(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || "https://freescale-io.vercel.app";
+  return process.env.NEXT_PUBLIC_APP_URL || "https://freescale.site";
 }
 
 export function buildGmailAuthUrl(state: string): string {
