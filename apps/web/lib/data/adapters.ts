@@ -79,6 +79,7 @@ export function adaptConversation(row: Row): Conversation {
     category,
     starred: !!(row.starred as boolean | undefined),
     snoozedUntilIso: (row.snoozed_until as string | null) ?? null,
+    tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
     ...((row.subject as string) ? { subject: row.subject as string } : {}),
     ...((contact?.email as string) ? { contactEmail: contact!.email as string } : {}),
   };

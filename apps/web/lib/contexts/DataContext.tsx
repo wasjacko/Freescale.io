@@ -13,6 +13,7 @@ import {
 import {
   toggleConversationStar as srvToggleStar,
   snoozeConversation as srvSnooze,
+  setConversationTags as srvSetTags,
 } from "@/lib/actions/conversation-flags";
 
 type Ctx = {
@@ -33,6 +34,7 @@ type Ctx = {
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   toggleStar: (convId: string, starred: boolean) => Promise<void>;
   snooze: (convId: string, untilIso: string | null) => Promise<void>;
+  setTags: (convId: string, tags: string[]) => Promise<void>;
 };
 
 const DataCtx = createContext<Ctx | null>(null);
@@ -122,6 +124,20 @@ export function DataProvider({
     await srvSnooze(convId, untilIso);
   }, []);
 
+  const setTags = useCallback(async (convId: string, tags: string[]) => {
+    // Optimistic write. The server normalizes (lower-case + dedup +
+    // clamp to 12) and returns the canonical list, which we re-apply.
+    setConversations((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, tags } : c))
+    );
+    const res = await srvSetTags(convId, tags);
+    if (res.ok) {
+      setConversations((prev) =>
+        prev.map((c) => (c.id === convId ? { ...c, tags: res.tags } : c))
+      );
+    }
+  }, []);
+
   const value = useMemo<Ctx>(
     () => ({
       conversations,
@@ -141,6 +157,7 @@ export function DataProvider({
       toggleTask,
       toggleStar,
       snooze,
+      setTags,
     }),
     [
       conversations,
@@ -159,6 +176,7 @@ export function DataProvider({
       toggleTask,
       toggleStar,
       snooze,
+      setTags,
     ]
   );
 

@@ -108,6 +108,9 @@ export function Inbox() {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<CategoryTab>("client");
   const [triaging, setTriaging] = useState(false);
+  // null = no tag filter. When set, only conversations whose .tags array
+  // contains this exact tag are shown.
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   // Bulk-select mode: when ≥1 conv is checked, the panel header swaps
   // into a "X sélectionnée(s)" toolbar with Archive / Mark / Star / Snooze.
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -277,11 +280,28 @@ export function Inbox() {
       // never "disappear" until Mue has had a chance to classify them).
       const category: ConversationCategory = c.category ?? null;
       if (category && category !== tab) return false;
-      if (filter === "unread") return isUnread(c.id, c.unread);
+      if (filter === "unread" && !isUnread(c.id, c.unread)) return false;
       if (filter === "mentions") return false;
+      // Tag filter — applies on top of everything else. Hidden when null.
+      if (tagFilter && !(c.tags ?? []).includes(tagFilter)) return false;
       return true;
     });
-  }, [conversations, archived, filter, extraUnread, readIds, tab]);
+  }, [conversations, archived, filter, extraUnread, readIds, tab, tagFilter]);
+
+  // Distinct tag list (sorted by frequency desc, then alpha) across all
+  // non-archived convs. Used to populate the tag filter row in the panel
+  // header — only shows when ≥1 tag actually exists, so an empty workspace
+  // never sees this row.
+  const tagOptions = useMemo(() => {
+    const freq = new Map<string, number>();
+    for (const c of conversations) {
+      if (archived.has(c.id)) continue;
+      for (const t of c.tags ?? []) freq.set(t, (freq.get(t) ?? 0) + 1);
+    }
+    return Array.from(freq.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([tag, count]) => ({ tag, count }));
+  }, [conversations, archived]);
 
   const groups: Record<string, typeof conversations> = {
     today: [],
@@ -406,6 +426,30 @@ export function Inbox() {
             </span>
           )}
         </div>
+
+        {tagOptions.length > 0 && (
+          <div className="tag-filter-row" role="group" aria-label="Filtrer par tag">
+            <button
+              type="button"
+              className={`tag-filter-chip ${tagFilter === null ? "is-active" : ""}`}
+              onClick={() => setTagFilter(null)}
+            >
+              Tous
+            </button>
+            {tagOptions.map(({ tag, count }) => (
+              <button
+                key={tag}
+                type="button"
+                className={`tag-filter-chip ${tagFilter === tag ? "is-active" : ""}`}
+                onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+                title={`${count} conversation${count > 1 ? "s" : ""}`}
+              >
+                {tag}
+                <span className="tag-filter-count">{count}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="conv-list" id="conv-list">
@@ -495,6 +539,18 @@ export function Inbox() {
                         </span>
                         {unread && <span className="unread" />}
                       </span>
+                      {(c.tags?.length ?? 0) > 0 && (
+                        <span className="conv-tags" aria-hidden>
+                          {(c.tags ?? []).slice(0, 3).map((t) => (
+                            <span key={t} className="conv-tag-pill">{t}</span>
+                          ))}
+                          {(c.tags?.length ?? 0) > 3 && (
+                            <span className="conv-tag-pill conv-tag-more">
+                              +{(c.tags?.length ?? 0) - 3}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </span>
                   </button>
                 );

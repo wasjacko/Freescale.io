@@ -8,6 +8,7 @@ import { useData } from "@/lib/contexts/DataContext";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
+import { TagPopover } from "@/components/TagPopover";
 import { sendEmailReply } from "@/lib/actions/inbox";
 import { getEmailSignature } from "@/lib/actions/profile";
 import { getConversationMessages } from "@/lib/actions/thread-messages";
@@ -71,7 +72,7 @@ function groupMessages(messages: Message[]): MsgGroup[] {
 
 export function Thread() {
   const { activeConvId, setActiveConv } = useApp();
-  const { conversations, messagesByConv, appendOutgoingMessage } = useData();
+  const { conversations, messagesByConv, appendOutgoingMessage, setTags } = useData();
   const conv = conversations.find((c) => c.id === activeConvId);
   const push = useToast((s) => s.push);
 
@@ -79,6 +80,9 @@ export function Thread() {
   const messagesEl = useRef<HTMLElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
   const starBtnRef = useRef<HTMLButtonElement>(null);
+  const tagBtnRef = useRef<HTMLButtonElement>(null);
+  const [tagOpen, setTagOpen] = useState(false);
+  const [tagAnchor, setTagAnchor] = useState<DOMRect | null>(null);
   const [isStarred, setIsStarred] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -228,8 +232,22 @@ export function Thread() {
           </div>
         </div>
         <div className="head-actions">
-          <button className="icon-btn" type="button" aria-label="Tag" data-tip="Add tag" onClick={() => push({ text: "Tags — coming soon" })}>
+          <button
+            ref={tagBtnRef}
+            className={`icon-btn ${(conv.tags?.length ?? 0) > 0 ? "is-on" : ""}`}
+            type="button"
+            aria-label="Tags"
+            data-tip="Tags"
+            aria-expanded={tagOpen}
+            onClick={() => {
+              setTagAnchor(tagBtnRef.current?.getBoundingClientRect() ?? null);
+              setTagOpen((v) => !v);
+            }}
+          >
             <Icon name="i-tag" />
+            {(conv.tags?.length ?? 0) > 0 && (
+              <span className="icon-btn-badge">{conv.tags?.length}</span>
+            )}
           </button>
           <button
             ref={starBtnRef}
@@ -249,6 +267,24 @@ export function Thread() {
           </button>
         </div>
       </header>
+
+      <TagPopover
+        open={tagOpen}
+        onClose={() => setTagOpen(false)}
+        tags={conv.tags ?? []}
+        anchorRect={tagAnchor}
+        onChange={(next) => void setTags(activeConvId, next)}
+      />
+
+      {/* Inline chips row showing the current tags. Always visible (not
+          behind the popover) so the user always knows what's applied. */}
+      {(conv.tags?.length ?? 0) > 0 && (
+        <div className="thread-tags-row" aria-label="Tags appliqués">
+          {(conv.tags ?? []).map((t) => (
+            <span key={t} className="tag-chip is-readonly">{t}</span>
+          ))}
+        </div>
+      )}
 
       {isEmail && <ThreadAiBar conversationId={activeConvId} />}
 

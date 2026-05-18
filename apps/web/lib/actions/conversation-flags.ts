@@ -56,6 +56,38 @@ export async function snoozeConversation(
 }
 
 /**
+ * Replace the full tag set on a conversation. Tags are normalized to
+ * lowercase trimmed strings of 1-24 chars; duplicates are dropped.
+ * Passing an empty array clears all tags.
+ */
+export async function setConversationTags(
+  conversationId: string,
+  tags: string[]
+): Promise<{ ok: boolean; tags: string[]; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, tags: [], error: "unauthenticated" };
+
+  const normalized = Array.from(
+    new Set(
+      tags
+        .map((t) => t.trim().toLowerCase())
+        .filter((t) => t.length > 0 && t.length <= 24)
+    )
+  ).slice(0, 12);
+
+  const { error } = await supabase
+    .from("conversations")
+    .update({ tags: normalized })
+    .eq("id", conversationId);
+  if (error) return { ok: false, tags: [], error: error.message };
+  revalidatePath("/app", "layout");
+  return { ok: true, tags: normalized, error: null };
+}
+
+/**
  * Bulk-apply an action to many conversations at once. Used by the
  * inbox's bulk-select mode: archive all, mark all read, snooze all, etc.
  */

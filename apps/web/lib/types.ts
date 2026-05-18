@@ -38,6 +38,8 @@ export type Conversation = {
   starred?: boolean;
   /** ISO date until which the conv is snoozed; null/undefined means active. */
   snoozedUntilIso?: string | null;
+  /** Lowercased freeform labels applied by the user. */
+  tags?: string[];
 };
 
 export type MessageDirection = "in" | "out";

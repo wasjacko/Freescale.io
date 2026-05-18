@@ -8844,3 +8844,247 @@
 }
 [data-theme="dark"] .land-btn-pill-dark { background: #6366F1; }
 [data-theme="dark"] .land-btn-pill-dark:hover { background: #7873FF; }
+
+/* ============================================================ */
+/* TAGS — popover, filter row, conv-row chips, thread-head badge */
+/* ============================================================ */
+
+/* Small numeric badge anchored to the corner of any .icon-btn (e.g. the
+   "Tags" button in the thread head, showing the current count). */
+.icon-btn { position: relative; }
+.icon-btn-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #5B6CFF;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--surface, #fff);
+}
+[data-theme="dark"] .icon-btn-badge {
+  box-shadow: 0 0 0 2px #1A1A24;
+}
+
+/* Reusable chip pill — used in TagPopover (editable) and the thread row
+   (read-only). The is-readonly variant has no × button visible. */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(91, 108, 255, 0.10);
+  color: #4F46E5;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tag-chip-x {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  margin-right: -2px;
+  border: none;
+  background: rgba(91, 108, 255, 0.18);
+  color: inherit;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms;
+}
+.tag-chip-x:hover { background: rgba(91, 108, 255, 0.35); }
+.tag-chip.is-readonly { padding-right: 10px; }
+
+[data-theme="dark"] .tag-chip {
+  background: rgba(120, 115, 255, 0.18);
+  color: #B5B0FF;
+}
+[data-theme="dark"] .tag-chip-x { background: rgba(120, 115, 255, 0.26); }
+[data-theme="dark"] .tag-chip-x:hover { background: rgba(120, 115, 255, 0.45); }
+
+/* Floating popover for editing a conv's tags. Position is set inline. */
+.tag-popover {
+  z-index: 80;
+  width: 280px;
+  padding: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16),
+              0 2px 6px rgba(15, 23, 42, 0.05);
+  animation: popIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.tag-popover-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6B7280;
+  margin-bottom: 8px;
+}
+.tag-popover-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.tag-popover-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0F172A;
+  outline: none;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.tag-popover-input:focus {
+  border-color: rgba(91, 108, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.12);
+}
+.tag-popover-hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #94A3B8;
+}
+[data-theme="dark"] .tag-popover {
+  background: #1A1A24;
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .tag-popover-label { color: #9CA3AF; }
+[data-theme="dark"] .tag-popover-input {
+  background: rgba(255, 255, 255, 0.04);
+  color: #E6E9F2;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+[data-theme="dark"] .tag-popover-hint { color: #6B7280; }
+
+/* Read-only chips row under the thread head — confirms what's applied. */
+.thread-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 28px 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .thread-tags-row {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Tag filter row in the inbox header — horizontal scrollable chip strip. */
+.tag-filter-row {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tag-filter-row::-webkit-scrollbar { display: none; }
+.tag-filter-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, color 140ms;
+}
+.tag-filter-chip:hover {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.14);
+}
+.tag-filter-chip.is-active {
+  background: rgba(91, 108, 255, 0.12);
+  border-color: rgba(91, 108, 255, 0.35);
+  color: #4F46E5;
+  font-weight: 600;
+}
+.tag-filter-count {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+[data-theme="dark"] .tag-filter-chip {
+  color: #9CA3AF;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+[data-theme="dark"] .tag-filter-chip:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+[data-theme="dark"] .tag-filter-chip.is-active {
+  background: rgba(120, 115, 255, 0.20);
+  border-color: rgba(120, 115, 255, 0.40);
+  color: #B5B0FF;
+}
+
+/* Inline tag pills inside conv rows (read-only, very compact). */
+.conv-tags {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.conv-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: rgba(91, 108, 255, 0.10);
+  color: #4F46E5;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: lowercase;
+  line-height: 1;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conv-tag-more {
+  background: rgba(15, 23, 42, 0.06);
+  color: #64748B;
+}
+[data-theme="dark"] .conv-tag-pill {
+  background: rgba(120, 115, 255, 0.18);
+  color: #B5B0FF;
+}
+[data-theme="dark"] .conv-tag-more {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94A3B8;
+}
