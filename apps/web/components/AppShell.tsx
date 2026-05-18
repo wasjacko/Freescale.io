@@ -37,12 +37,16 @@ export function AppShell({
   // First-action card: shown AFTER profiling is done (or skipped), and
   // only when the user has both channels and conversations — at that
   // point they've truly seen first value and we can offer guided next
-  // steps. Per-browser dismiss via localStorage handled inside the card.
+  // steps. Hidden as soon as the user opens any conversation (the
+  // banner has served its intro purpose; reading a mail shouldn't
+  // happen with a big onboarding card eating half the column).
+  // Per-browser dismiss via localStorage handled inside the card.
   const showFirstAction =
     !!user &&
     user.onboardedAt !== null &&
     channels.length > 0 &&
-    conversations.length > 0;
+    conversations.length > 0 &&
+    !activeConvId;
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
