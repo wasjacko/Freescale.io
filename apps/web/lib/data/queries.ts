@@ -100,7 +100,12 @@ export async function getInboxData(): Promise<InboxData> {
       .limit(100),
     supabase
       .from("channel_accounts")
-      .select("id, kind, display_name, external_id, status, last_sync_error")
+      // last_sync_error / last_sync_error_at are added by migration
+      // 20260518140000 — NOT included in the SELECT so the inbox query
+      // doesn't crash when that migration hasn't been applied to prod.
+      // The SyncErrorBanner only needs `status` to trigger the
+      // needs_reauth CTA, which is on the original init schema.
+      .select("id, kind, display_name, external_id, status")
       .eq("workspace_id", workspaceId)
       .in("status", ["active", "needs_reauth"])
       .not("encrypted_tokens", "is", null)
@@ -182,7 +187,10 @@ export async function getInboxData(): Promise<InboxData> {
       conversationCount: convsForKind.length,
       unreadCount: convsForKind.filter((c) => c.unread).length,
       status: (acc.status as string) ?? "active",
-      lastSyncError: (acc.last_sync_error as string | null) ?? null,
+      // Column is added by migration 20260518140000 — we no longer
+      // request it (see SELECT above). The SyncErrorBanner falls back
+      // to its needs_reauth code path which only needs `status`.
+      lastSyncError: null,
     };
   });
 

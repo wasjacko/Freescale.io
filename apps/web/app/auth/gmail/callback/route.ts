@@ -62,8 +62,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Upsert channel account
-    const { data: account } = await supabase
+    // Upsert channel account. We DON'T silently drop the error anymore —
+    // a failure here was the root cause of "OAuth says success but no
+    // channel appears" reports (missing column, RLS edge, encryption
+    // returning empty, etc.). Now we redirect with the actual reason
+    // so the user (and us, reading the URL) know what broke.
+    const { data: account, error: upsertErr } = await supabase
       .from("channel_accounts")
       .upsert(
         {
@@ -79,6 +83,29 @@ export async function GET(request: NextRequest) {
       )
       .select("id")
       .single();
+
+    if (upsertErr || !account?.id) {
+      console.error("[gmail-callback] channel_accounts upsert failed:", upsertErr);
+      const reason =
+        upsertErr?.message ?? "Le row channel_accounts n'a pas été créé.";
+      if (isPopup) {
+        const html = renderPopupClose({ type: "gmail_error", error: reason });
+        const r = new NextResponse(html, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
+        r.cookies.delete("fs_gmail_oauth");
+        return r;
+      }
+      const r = NextResponse.redirect(
+        new URL(
+          `/app/settings/connections?error=${encodeURIComponent(`channel_upsert: ${reason}`)}`,
+          request.url
+        )
+      );
+      r.cookies.delete("fs_gmail_oauth");
+      return r;
+    }
 
     // Auto-sync the inbox right after connecting so the user lands on real
     // emails instead of an empty shell. We DON'T swallow errors silently
@@ -97,45 +124,19 @@ export async function GET(request: NextRequest) {
         // friendly note so the user sees "connected, 0 messages — try Sync"
         // rather than a silent empty inbox.
         if (report.errors.length > 0) {
-          const firstErr = report.errors[0] ?? "Sync partielle";
-          syncErrorForRedirect = firstErr.slice(0, 200);
-          await supabase
-            .from("channel_accounts")
-            .update({
-              last_sync_error: `Sync initiale : ${firstErr.slice(0, 500)} (${report.errors.length} au total)`,
-              last_sync_error_at: new Date().toISOString(),
-            })
-            .eq("id", acctId);
+          syncErrorForRedirect = (report.errors[0] ?? "Sync partielle").slice(0, 200);
+          console.warn("[gmail-callback] initial sync errors:", report.errors);
         } else if (synced === 0 && report.fetched === 0) {
-          await supabase
-            .from("channel_accounts")
-            .update({
-              last_sync_error: "Sync initiale : aucun mail récupéré depuis Gmail (inbox vide ou label INBOX absent).",
-              last_sync_error_at: new Date().toISOString(),
-            })
-            .eq("id", acctId);
           syncErrorForRedirect = "no_messages_found";
-        } else {
-          // Clear any prior error since the sync clearly recovered.
-          await supabase
-            .from("channel_accounts")
-            .update({
-              last_sync_error: null,
-              last_sync_error_at: null,
-            })
-            .eq("id", acctId);
         }
+        // (No more .update({ last_sync_error: ... }) writes here — those
+        // columns are added by a migration that may not be applied to
+        // every Supabase project. The redirect URL + console.warn are
+        // enough debug surface for now.)
       } catch (syncErr) {
         const msg = syncErr instanceof Error ? syncErr.message : String(syncErr);
-        console.error("Initial Gmail sync failed:", syncErr);
+        console.error("[gmail-callback] initial sync threw:", syncErr);
         syncErrorForRedirect = msg.slice(0, 200);
-        await supabase
-          .from("channel_accounts")
-          .update({
-            last_sync_error: `Sync initiale échouée : ${msg.slice(0, 500)}`,
-            last_sync_error_at: new Date().toISOString(),
-          })
-          .eq("id", acctId);
       }
     }
 

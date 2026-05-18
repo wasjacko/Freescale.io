@@ -160,15 +160,18 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     // grant from their Google account, or the refresh_token rotated
     // out and we missed it). Flag the channel as needs_reauth so the
     // SyncErrorBanner surfaces a 1-click reconnect CTA.
+    //
+    // We only update `status` here, NOT last_sync_error /
+    // last_sync_error_at — those columns come from migration
+    // 20260518140000 which may not be applied on every project.
+    // Writing to them when they don't exist returns a PostgREST error
+    // that supabase-js swallows, but it also means the status update
+    // doesn't happen because the row patch is rejected wholesale.
     const msg = err instanceof Error ? err.message : "Refresh failed";
     report.errors.push(msg);
     await supabase
       .from("channel_accounts")
-      .update({
-        status: "needs_reauth",
-        last_sync_error: msg,
-        last_sync_error_at: new Date().toISOString(),
-      })
+      .update({ status: "needs_reauth" })
       .eq("id", account.id);
     return report;
   }
