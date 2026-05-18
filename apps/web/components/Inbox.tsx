@@ -12,6 +12,7 @@ import { classifyAllUncategorized } from "@/lib/actions/triage";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
 import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
+import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
 import type { ConversationCategory } from "@/lib/types";
 
 const GROUP_LABELS: Record<string, string> = {
@@ -330,17 +331,24 @@ export function Inbox() {
 
       <div className="conv-list" id="conv-list">
         {filteredConvs.length === 0 && isSyncing && (
-          <div className="conv-skel-list" aria-busy="true" aria-label="Chargement des conversations">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <div key={i} className="conv-skel">
-                <span className="conv-skel-av" />
-                <span className="conv-skel-main">
-                  <span className="conv-skel-line conv-skel-name" />
-                  <span className="conv-skel-line conv-skel-preview" />
-                </span>
-              </div>
-            ))}
-          </div>
+          <>
+            {/* First-sync banner: friendly, honest status. Surfaces ONLY
+                during the very first sync (when the inbox is empty AND
+                sync is in flight). On subsequent refreshes the existing
+                spinning refresh button in the header is enough. */}
+            <InitialSyncIndicator />
+            <div className="conv-skel-list" aria-busy="true" aria-label="Chargement des conversations">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="conv-skel">
+                  <span className="conv-skel-av" />
+                  <span className="conv-skel-main">
+                    <span className="conv-skel-line conv-skel-name" />
+                    <span className="conv-skel-line conv-skel-preview" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
         )}
         {filteredConvs.length === 0 && !isSyncing && (
           <div className="empty-state is-visible">
