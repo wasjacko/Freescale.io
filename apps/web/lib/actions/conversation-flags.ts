@@ -54,3 +54,52 @@ export async function snoozeConversation(
   revalidatePath("/app", "layout");
   return { ok: true, error: null };
 }
+
+/**
+ * Bulk-apply an action to many conversations at once. Used by the
+ * inbox's bulk-select mode: archive all, mark all read, snooze all, etc.
+ */
+export async function bulkConversationAction(
+  conversationIds: string[],
+  action: "archive" | "mark-read" | "mark-unread" | "star" | "unstar" | "snooze",
+  snoozeUntilIso?: string | null
+): Promise<{ ok: boolean; count: number; error: string | null }> {
+  if (conversationIds.length === 0) {
+    return { ok: true, count: 0, error: null };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, count: 0, error: "unauthenticated" };
+
+  let patch: Record<string, unknown> = {};
+  switch (action) {
+    case "archive":
+      patch = { archived: true };
+      break;
+    case "mark-read":
+      patch = { unread_count: 0 };
+      break;
+    case "mark-unread":
+      patch = { unread_count: 1 };
+      break;
+    case "star":
+      patch = { starred: true };
+      break;
+    case "unstar":
+      patch = { starred: false };
+      break;
+    case "snooze":
+      patch = { snoozed_until: snoozeUntilIso ?? null };
+      break;
+  }
+
+  const { error } = await supabase
+    .from("conversations")
+    .update(patch)
+    .in("id", conversationIds);
+  if (error) return { ok: false, count: 0, error: error.message };
+  revalidatePath("/app", "layout");
+  return { ok: true, count: conversationIds.length, error: null };
+}

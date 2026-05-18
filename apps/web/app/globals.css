@@ -4076,6 +4076,88 @@
     }
 
     /* ====================================================================
+       Bulk-select mode in the inbox header
+       ==================================================================== */
+    .panel-head.is-bulk { background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.06)); }
+    .bulk-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: bulk-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes bulk-in {
+      from { opacity: 0; transform: translateX(-4px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .bulk-clear {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      color: #5B6475;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 140ms;
+    }
+    .bulk-clear:hover { background: rgba(15, 23, 42, 0.06); color: #0F172A; }
+    .bulk-count {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4F46E5;
+    }
+    .bulk-spacer { flex: 1; }
+    .bulk-btn {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 8px;
+      color: #0F172A;
+      cursor: pointer;
+      transition: background 140ms, border-color 140ms, color 140ms;
+    }
+    .bulk-btn .icon { width: 14px; height: 14px; }
+    .bulk-btn:hover { background: #F4F5FF; border-color: rgba(99, 102, 241, 0.30); }
+    .bulk-btn-danger:hover { background: #FEF2F2; border-color: rgba(220, 38, 38, 0.30); color: #B91C1C; }
+
+    [data-theme="dark"] .panel-head.is-bulk { background: linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(168, 85, 247, 0.10)); }
+    [data-theme="dark"] .bulk-clear { color: #B0B4C0; }
+    [data-theme="dark"] .bulk-clear:hover { background: rgba(255, 255, 255, 0.08); color: #F4F4F7; }
+    [data-theme="dark"] .bulk-count { color: #A5B4FC; }
+    [data-theme="dark"] .bulk-btn {
+      background: #25252F;
+      border-color: rgba(255, 255, 255, 0.08);
+      color: #F4F4F7;
+    }
+    [data-theme="dark"] .bulk-btn:hover { background: rgba(99, 102, 241, 0.20); }
+    [data-theme="dark"] .bulk-btn-danger:hover { background: rgba(220, 38, 38, 0.18); color: #FCA5A5; }
+
+    /* Selected conv state — slight indigo bg + check overlay on avatar */
+    .conv.is-selected {
+      background: rgba(99, 102, 241, 0.08);
+    }
+    .conv.is-selected:hover { background: rgba(99, 102, 241, 0.14); }
+    .conv-check {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      background: #4F46E5;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    [data-theme="dark"] .conv.is-selected { background: rgba(99, 102, 241, 0.18); }
+    [data-theme="dark"] .conv.is-selected:hover { background: rgba(99, 102, 241, 0.25); }
+    [data-theme="dark"] .conv-check { background: #6366F1; }
+
+    /* ====================================================================
        Cmd+K — additions for server-side global search
        ==================================================================== */
     .cmdk-server-orb {

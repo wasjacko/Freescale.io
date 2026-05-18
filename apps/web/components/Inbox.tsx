@@ -9,10 +9,12 @@ import { ChannelLogo } from "@/components/icons/Icon";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
 import { classifyAllUncategorized } from "@/lib/actions/triage";
+import { bulkConversationAction } from "@/lib/actions/conversation-flags";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
 import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
+import { useRouter as useRouterBulk } from "next/navigation";
 import type { ConversationCategory } from "@/lib/types";
 
 const GROUP_LABELS: Record<string, string> = {
@@ -106,6 +108,38 @@ export function Inbox() {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<CategoryTab>("client");
   const [triaging, setTriaging] = useState(false);
+  // Bulk-select mode: when ≥1 conv is checked, the panel header swaps
+  // into a "X sélectionnée(s)" toolbar with Archive / Mark / Star / Snooze.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const bulkRouter = useRouterBulk();
+
+  const toggleBulk = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const clearBulk = () => setSelected(new Set());
+
+  const runBulk = async (
+    action: "archive" | "mark-read" | "mark-unread" | "star" | "unstar"
+  ) => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    clearBulk();
+    const res = await bulkConversationAction(ids, action);
+    if (res.ok) {
+      push({
+        kind: "info",
+        text: `${res.count} conversation${res.count > 1 ? "s" : ""} mises à jour.`,
+      });
+      bulkRouter.refresh();
+    } else {
+      push({ kind: "error", text: `Erreur : ${res.error}` });
+    }
+  };
 
   const handleTriage = async () => {
     if (triaging) return;
@@ -277,10 +311,35 @@ export function Inbox() {
     );
   }
 
+  const bulkActive = selected.size > 0;
+
   return (
     <section className="inbox">
-      <header className="panel-head">
-        <div className="panel-title-row">
+      <header className={`panel-head ${bulkActive ? "is-bulk" : ""}`}>
+        {bulkActive && (
+          <div className="bulk-bar" role="toolbar" aria-label="Actions groupées">
+            <button
+              type="button"
+              className="bulk-clear"
+              onClick={clearBulk}
+              aria-label="Désélectionner"
+            >
+              ✕
+            </button>
+            <span className="bulk-count">{selected.size} sélectionnée{selected.size > 1 ? "s" : ""}</span>
+            <span className="bulk-spacer" />
+            <button type="button" className="bulk-btn" onClick={() => runBulk("mark-read")} data-tip="Marquer lu">
+              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            </button>
+            <button type="button" className="bulk-btn" onClick={() => runBulk("star")} data-tip="Étoiler">
+              <svg className="icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+            </button>
+            <button type="button" className="bulk-btn bulk-btn-danger" onClick={() => runBulk("archive")} data-tip="Archiver">
+              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>
+            </button>
+          </div>
+        )}
+        <div className="panel-title-row" style={bulkActive ? { display: "none" } : undefined}>
           <h2 className="panel-title">Inbox</h2>
           <span className="panel-count">{tabCounts[tab]} {TAB_LABELS[tab].toLowerCase()}</span>
           <button
@@ -384,19 +443,42 @@ export function Inbox() {
               {items.map((c) => {
                 const isActive = c.id === activeConvId;
                 const unread = isUnread(c.id, c.unread);
+                const isSel = selected.has(c.id);
                 return (
                   <button
                     key={c.id}
                     type="button"
-                    className={`conv ${isActive ? "active" : ""}`}
-                    onClick={() => handleSelect(c.id)}
+                    className={`conv ${isActive ? "active" : ""} ${isSel ? "is-selected" : ""}`}
+                    onClick={(e) => {
+                      // Shift / cmd click → toggle bulk selection without opening.
+                      // Bulk mode is also active when ≥1 conv is already selected.
+                      if (e.shiftKey || e.metaKey || e.ctrlKey || bulkActive) {
+                        e.preventDefault();
+                        toggleBulk(c.id);
+                        return;
+                      }
+                      handleSelect(c.id);
+                    }}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       setCtx({ x: e.clientX, y: e.clientY, convId: c.id });
                     }}
                   >
-                    <span className="conv-avatar">
-                      <Avatar avatar={c.avatar} />
+                    <span
+                      className="conv-avatar"
+                      onClick={(e) => {
+                        // Click on the avatar = toggle selection (don't open).
+                        e.stopPropagation();
+                        toggleBulk(c.id);
+                      }}
+                      role="checkbox"
+                      aria-checked={isSel}
+                    >
+                      {isSel ? (
+                        <span className="conv-check" aria-hidden>✓</span>
+                      ) : (
+                        <Avatar avatar={c.avatar} />
+                      )}
                       <span className="conv-badge">
                         <ChannelLogo channel={c.channel} className="" />
                       </span>
