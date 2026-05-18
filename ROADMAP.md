@@ -11,19 +11,19 @@ Légende : `[ ]` = à faire · `[x]` = fait · ⚡ = quick win (≤1j) · 🔥 =
 ## ✨ Phase 1 — Polish & solidité (1-13)
 *Le produit fait le job mais doit donner sensation premium dès la 1ère interaction.*
 
-- [ ] **1.** ⚡ Audit dark mode complet (chaque composant, chaque hover, chaque modal)
-- [ ] **2.** Responsive mobile <768px (sidebar drawer, inbox plein écran, MuePanel bottom sheet)
-- [ ] **3.** Responsive tablette 768-1024px (sidebar collapsable, panneau Mue accordéon)
+- [x] **1.** ⚡ Audit dark mode complet (chaque composant, chaque hover, chaque modal)
+- [x] **2.** Responsive mobile <768px (sidebar drawer, inbox plein écran, MuePanel bottom sheet)
+- [x] **3.** Responsive tablette 768-1024px (sidebar collapsable, panneau Mue accordéon)
 - [ ] **4.** ⚡ Skeleton loaders Tasks / Calendar / AI Knowledge (cohérence avec Inbox)
-- [ ] **5.** ⚡ Empty states polis (Tasks vide, Calendar vide, Knowledge vide — chacun avec CTA)
-- [ ] **6.** 🔥 Error state sync : token Gmail expiré → bandeau "Reconnecter Gmail" en 1 clic
-- [ ] **7.** Error state sync : rate limit Gmail → retry backoff + indicateur visible
-- [ ] **8.** Offline indicator (navigateur déconnecté → bandeau top, reconnect auto)
-- [ ] **9.** ⚡ Toast system 4 niveaux (success / info / warning / error) avec icônes uniformes
-- [ ] **10.** ⚡ Tooltip system standardisé (data-tip existe déjà → cleanup + ARIA)
-- [ ] **11.** Animations transitions panel (Framer Motion ou CSS) — Inbox → Thread, Mue brief
-- [ ] **12.** ⚡ Cleanup : retirer `/app/debug`, console.log de dev, code mort post-refactor
-- [ ] **13.** ⚡ Bandeau d'erreur Mue centralisé (rate-limited Anthropic → "Mue se repose, retentez dans 30s")
+- [x] **5.** ⚡ Empty states polis (Tasks vide, Calendar vide, Knowledge vide — chacun avec CTA)
+- [x] **6.** 🔥 Error state sync : token Gmail expiré → bandeau "Reconnecter Gmail" en 1 clic
+- [x] **7.** Error state sync : rate limit Gmail → retry backoff + indicateur visible
+- [x] **8.** Offline indicator (navigateur déconnecté → bandeau top, reconnect auto)
+- [x] **9.** ⚡ Toast system 4 niveaux (success / info / warning / error) avec icônes uniformes
+- [x] **10.** ⚡ Tooltip system standardisé (data-tip existe déjà → cleanup + ARIA)
+- [x] **11.** Animations transitions panel (Framer Motion ou CSS) — Inbox → Thread, Mue brief
+- [x] **12.** ⚡ Cleanup : retirer `/app/debug`, console.log de dev, code mort post-refactor
+- [x] **13.** ⚡ Bandeau d'erreur Mue centralisé (rate-limited Anthropic → "Mue se repose, retentez dans 30s")
 
 ## 🛠 Phase 2 — Productivité core (14-27)
 *Faire de l'inbox un vrai centre opérationnel.*
