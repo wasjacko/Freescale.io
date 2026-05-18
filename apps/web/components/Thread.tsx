@@ -69,7 +69,7 @@ function groupMessages(messages: Message[]): MsgGroup[] {
 }
 
 export function Thread() {
-  const { activeConvId } = useApp();
+  const { activeConvId, setActiveConv } = useApp();
   const { conversations, messagesByConv, appendOutgoingMessage } = useData();
   const conv = conversations.find((c) => c.id === activeConvId);
   const push = useToast((s) => s.push);
@@ -203,6 +203,16 @@ export function Thread() {
   return (
     <main className="thread">
       <header className="thread-head">
+        {/* Mobile-only back button — returns to the inbox list. Hidden
+            on desktop by CSS (display:none above 768px). */}
+        <button
+          type="button"
+          className="thread-back"
+          onClick={() => setActiveConv("")}
+          aria-label="Retour à l'inbox"
+        >
+          ←
+        </button>
         <div className="contact">
           <span className="avatar large">
             <Avatar avatar={conv.avatar} className="" />

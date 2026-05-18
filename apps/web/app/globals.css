@@ -5773,20 +5773,109 @@
     }
 
     /* ====== RESPONSIVE ====== */
-    @media (max-width: 1280px) {
-      .workspace { grid-template-columns: 280px minmax(0, 1fr) 340px; }
+    /* Mobile-only "back to inbox" button in thread head. Hidden on
+       desktop where there's no need to navigate — both inbox and
+       thread are visible at the same time. */
+    .thread-back {
+      display: none;
+      width: 32px;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      color: #0F172A;
+      font-size: 18px;
+      cursor: pointer;
+      margin-right: 8px;
+      flex: 0 0 auto;
+      transition: background 140ms;
     }
+    .thread-back:hover { background: rgba(15, 23, 42, 0.06); }
+    [data-theme="dark"] .thread-back { color: #F4F4F7; }
+    [data-theme="dark"] .thread-back:hover { background: rgba(255, 255, 255, 0.08); }
+
+    /* ─── Responsive ────────────────────────────────────────────────────
+       Three breakpoints: desktop (>1280) · narrow desktop (1100-1280) ·
+       tablet (768-1100) · mobile (<768).
+       Mobile and tablet hide the Mue panel and the sidebar to focus
+       on the inbox + thread pair. Mobile additionally toggles between
+       inbox and thread based on whether a conversation is active. */
+
+    /* Narrow desktop: trim column widths */
+    @media (max-width: 1280px) {
+      .workspace { grid-template-columns: 280px minmax(0, 1fr) 320px; }
+    }
+
+    /* Tablet (768-1100): sidebar still visible but the workspace
+       drops the Mue panel. Two columns instead of three. */
     @media (max-width: 1100px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
       .workspace { grid-template-columns: 280px minmax(0, 1fr); }
       .copilot { display: none; }
     }
-    @media (max-width: 720px) {
+
+    /* Mobile (<768): single column. Sidebar becomes drawer-only via
+       sidebar-collapsed; we deliberately let the user toggle from the
+       Account menu since there's still a Sprite drawer in the layout.
+       Show EITHER inbox OR thread based on whether a conv is active. */
+    @media (max-width: 767px) {
       body { overflow: auto; }
-      .app { height: auto; min-height: 100vh; }
+      .app {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: 100vh;
+      }
+      .sidebar {
+        position: fixed;
+        inset: 0 30% 0 0;
+        z-index: 40;
+        transform: translateX(-100%);
+        transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.20);
+      }
+      .app:not(.sidebar-collapsed) .sidebar { transform: translateX(0); }
+
       .workspace { grid-template-columns: 1fr; }
-      .inbox { border-right: 0; border-bottom: 1px solid var(--line); }
+      .conv-shell {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      /* No conv active → show inbox, hide thread */
+      .app[data-active-conv="0"] .inbox { display: flex; }
+      .app[data-active-conv="0"] .thread { display: none; }
+
+      /* Conv active → show thread, hide inbox + show back arrow */
+      .app[data-active-conv="1"] .inbox { display: none; }
+      .app[data-active-conv="1"] .thread { display: flex; }
+      .app[data-active-conv="1"] .thread-back { display: inline-flex; }
+
+      /* MuePanel is the right column normally; on mobile we hide it
+         until the user wants it. Future iteration: a bottom-sheet
+         toggle. */
+      .copilot { display: none; }
+
+      .inbox-tabs { gap: 2px; padding: 3px; }
+      .inbox-tab { padding: 4px 8px; font-size: 11.5px; }
+      .panel-head { padding: 14px 14px 10px; }
+
+      /* Banners (sync error, onboarding, first-action) drop side
+         padding on mobile to maximize useful width. */
+      .sync-error-banner,
+      .first-action,
+      .onb-chips { margin-left: 8px; margin-right: 8px; }
+
+      /* Welcome modal: full-width on mobile (no horizontal gutters
+         on a tiny screen). */
+      .welcome-wrap { padding: 12px; }
+      .welcome-modal { padding: 24px 20px 18px; border-radius: 18px; }
+    }
+
+    /* Tiny phones: dial down chrome further */
+    @media (max-width: 380px) {
+      .inbox-tabs { display: none; } /* tabs are too cramped, rely on filter menu */
+      .panel-head { padding: 12px 12px 8px; }
     }
 
 /* =============================================================================

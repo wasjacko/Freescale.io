@@ -158,7 +158,10 @@ export function AppShell({
       </a>
       <Sprite />
       <OfflineIndicator />
-      <div className={appClasses}>
+      <div
+        className={appClasses}
+        data-active-conv={activeConvId ? "1" : "0"}
+      >
         <Sidebar user={user} />
         <div className="workspace">
           <SyncErrorBanner channels={channels} />
