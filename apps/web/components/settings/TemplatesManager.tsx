@@ -133,6 +133,12 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
           Snippets prêts à insérer en un clic dans le composer. Le modèle
           remplace votre brouillon en cours mais conserve votre signature.
         </p>
+        <p className="settings-vars-hint">
+          Variables disponibles dans le corps :{" "}
+          <code>{`{{firstName}}`}</code> · <code>{`{{lastName}}`}</code> ·{" "}
+          <code>{`{{fullName}}`}</code> · <code>{`{{date}}`}</code> ·{" "}
+          <code>{`{{time}}`}</code>
+        </p>
       </header>
 
       <div className="settings-card">

@@ -28,18 +28,18 @@ Légende : `[ ]` = à faire · `[x]` = fait · ⚡ = quick win (≤1j) · 🔥 =
 ## 🛠 Phase 2 — Productivité core (14-27)
 *Faire de l'inbox un vrai centre opérationnel.*
 
-- [ ] **14.** Conversation : star / favorite (DB + UI étoile dorée)
-- [ ] **15.** Conversation : snooze jusqu'à date (table `conversation_snoozes`, badge "Snoozed until X")
-- [ ] **16.** 🔥 Recherche globale fuzzy (Cmd+K) — `messages.body_text` + sender + subject
-- [ ] **17.** Tags custom : CRUD côté Settings + tag par conv (UI chips)
-- [ ] **18.** Filtre inbox par tag (en plus des tabs Clients/Promos/Notifs)
-- [ ] **19.** Bulk actions : sélection multiple via checkbox + archive/tag/mark-read en masse
-- [ ] **20.** Tasks : edit (title, priorité, due, description rich-text)
-- [ ] **21.** Tasks : delete avec confirmation
+- [x] **14.** Conversation : star / favorite (DB + UI étoile dorée)
+- [x] **15.** Conversation : snooze jusqu'à date (`conversations.snoozed_until`, optimistic filter dans l'inbox)
+- [x] **16.** 🔥 Recherche globale fuzzy (Cmd+K) — `messages.body_text` + sender + subject
+- [x] **17.** Tags custom : CRUD inline depuis le thread head + tag par conv (UI chips)
+- [x] **18.** Filtre inbox par tag (en plus des tabs Clients/Promos/Notifs)
+- [x] **19.** Bulk actions : sélection multiple via checkbox + archive/mark-read/star en masse
+- [x] **20.** Tasks : edit (title, priorité, due, description)
+- [x] **21.** Tasks : delete avec confirmation deux temps
 - [ ] **22.** Tasks : subtasks (parent_task_id)
 - [ ] **23.** Tasks : drag-drop reorder (sortable_index)
-- [ ] **24.** Templates de réponse : CRUD + insertion dans composer avec variables `{{firstName}}`, `{{date}}`
-- [ ] **25.** Signature email : éditable dans Settings, auto-append au composer
+- [x] **24.** Templates de réponse : CRUD + insertion dans composer avec variables `{{firstName}}`, `{{lastName}}`, `{{fullName}}`, `{{date}}`, `{{time}}`
+- [x] **25.** Signature email : éditable dans Settings, auto-append au composer (séparateur `-- \n`)
 - [ ] **26.** Calendar : intégration Google Calendar (OAuth scope + sync events)
 - [ ] **27.** Calendar : créer event depuis conversation (lien conv → event)
 

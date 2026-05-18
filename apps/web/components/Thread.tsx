@@ -807,9 +807,30 @@ function EmailComposer({
   };
 
   const insertTemplate = (t: EmailTemplate) => {
-    // Replace the current draft with the template body, keeping the
-    // signature appended below so the user doesn't lose their sig.
-    setBody(signature ? `${t.body}${SIGNATURE_SEP}${signature}` : t.body);
+    // Replace template variables with their concrete values:
+    //   {{firstName}}  — first token of the contact's name
+    //   {{lastName}}   — remaining tokens of the contact's name (may be empty)
+    //   {{fullName}}   — full contact name
+    //   {{date}}       — today's date in the user's locale (long format)
+    //   {{time}}       — current time HH:MM (24h)
+    // Unknown variables are left as-is so the user spots typos. Then
+    // append the signature so it survives the template swap.
+    const first = toName.split(/[ –-]/)[0]?.trim() ?? "";
+    const rest = toName.slice(first.length).trim();
+    const now = new Date();
+    const date = now.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const replaced = t.body
+      .replace(/\{\{\s*firstName\s*\}\}/gi, first)
+      .replace(/\{\{\s*lastName\s*\}\}/gi, rest)
+      .replace(/\{\{\s*fullName\s*\}\}/gi, toName)
+      .replace(/\{\{\s*date\s*\}\}/gi, date)
+      .replace(/\{\{\s*time\s*\}\}/gi, time);
+    setBody(signature ? `${replaced}${SIGNATURE_SEP}${signature}` : replaced);
     setTemplatesOpen(false);
   };
 
