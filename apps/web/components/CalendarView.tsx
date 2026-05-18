@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useData } from "@/lib/contexts/DataContext";
+import { useToast } from "@/lib/hooks/useToast";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const HOURS = ["8 AM", "9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM"];
 
@@ -38,6 +40,7 @@ const ROW_HEIGHT = 32; // px per 30-min slot
 
 export function CalendarView() {
   const { events } = useData();
+  const push = useToast((s) => s.push);
   const dayLabels = useMemo(buildWeekLabels, []);
   const weekRange = useMemo(weekRangeLabel, []);
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
@@ -103,6 +106,26 @@ export function CalendarView() {
             </div>
           ))}
 
+          {events.length === 0 && (
+            <div
+              className="cal-empty-overlay"
+              style={{ gridColumn: "2 / -1", gridRow: "1 / -1" }}
+            >
+              <EmptyState
+                icon="i-calendar"
+                title="Aucun évènement cette semaine"
+                description="Connecte Google Calendar pour voir tes rendez-vous ici, ou crée-en un manuellement."
+                cta={{
+                  label: "Bientôt — Connecter Calendar",
+                  onClick: () =>
+                    push({
+                      text: "L'intégration Google Calendar arrive bientôt.",
+                      duration: 2600,
+                    }),
+                }}
+              />
+            </div>
+          )}
           {events.map((ev) => {
             // startMinutes in [0, 660] (8AM-7PM range)
             const rowStart = ev.startMinutes / 30 + 1;

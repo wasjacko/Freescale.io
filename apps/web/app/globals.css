@@ -3965,6 +3965,98 @@
     .mue-translated-msg p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
     /* ====================================================================
+       EmptyState — reusable "nothing here yet" card for Tasks, Calendar,
+       and any future zero-data surface. Shares the visual language with
+       NoChannelsHero so empty moments feel consistent.
+       ==================================================================== */
+    .empty-state-card {
+      max-width: 380px;
+      margin: 48px auto;
+      padding: 24px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 8px;
+      background: linear-gradient(160deg, rgba(168, 85, 247, 0.04), rgba(99, 102, 241, 0.03) 60%, transparent);
+      border: 1px solid rgba(15, 23, 42, 0.05);
+      border-radius: 18px;
+    }
+    .empty-state-orb {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 6px;
+    }
+    .empty-state-orb-core {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(99, 102, 241, 0.14), rgba(249, 115, 22, 0.08));
+    }
+    .empty-state-orb-icon {
+      position: relative;
+      color: #4F46E5;
+      display: grid;
+      place-items: center;
+    }
+    .empty-state-orb-icon .icon { width: 22px; height: 22px; }
+    .empty-state-title {
+      margin: 0;
+      font-size: 14.5px;
+      font-weight: 600;
+      letter-spacing: -0.010em;
+      color: #0F172A;
+    }
+    .empty-state-desc {
+      margin: 0;
+      font-size: 12.5px;
+      color: #5B6475;
+      line-height: 1.55;
+      max-width: 320px;
+    }
+    .empty-state-cta {
+      margin-top: 8px;
+      padding: 8px 14px;
+      background: #0F172A;
+      color: #fff;
+      border: 0;
+      border-radius: 9px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 140ms, transform 80ms;
+      font-family: inherit;
+    }
+    .empty-state-cta:hover {
+      background: #1E293B;
+      transform: translateY(-0.5px);
+    }
+
+    /* Tasks list specific: empty wrap needs to fill the available space
+       so the card centers properly when it's the only item. */
+    .task-empty-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Calendar overlay: the empty card floats centered over the grid
+       when there are no events for the visible week. */
+    .cal-empty-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+    }
+
+    /* ====================================================================
        NewTaskModal — manual task creation from the TasksView header
        ==================================================================== */
     .new-task-overlay {

@@ -7,8 +7,35 @@ import { useToast } from "@/lib/hooks/useToast";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { NewTaskModal } from "@/components/NewTaskModal";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { dailyBriefing } from "@/lib/actions/mue";
 import { createTask } from "@/lib/actions/inbox";
+
+const EMPTY_COPY: Record<
+  string,
+  { title: string; description: string; cta: string }
+> = {
+  todo: {
+    title: "Aucune tâche à faire",
+    description: "Tu peux en créer une manuellement ou laisser Mue scanner tes mails.",
+    cta: "Nouvelle tâche",
+  },
+  "in-progress": {
+    title: "Rien en cours",
+    description: "Marque une tâche en progression pour la voir ici.",
+    cta: "Nouvelle tâche",
+  },
+  "awaiting-reply": {
+    title: "Personne ne te bloque",
+    description: "Les tâches en attente d'une réponse de quelqu'un apparaissent ici.",
+    cta: "Nouvelle tâche",
+  },
+  done: {
+    title: "Rien de terminé pour l'instant",
+    description: "Les tâches que tu marques comme faites apparaissent ici.",
+    cta: "Nouvelle tâche",
+  },
+};
 
 const TAB_STATUSES = [
   { id: "todo", label: "To do" },
@@ -122,8 +149,16 @@ export function TasksView() {
 
       <ul className="task-list">
         {visible.length === 0 && (
-          <li className="task-item" style={{ justifyContent: "center", opacity: 0.6 }}>
-            No tasks here.
+          <li className="task-empty-wrap">
+            <EmptyState
+              icon={activeTab === "done" ? "i-check" : "i-task"}
+              title={EMPTY_COPY[activeTab]?.title ?? "Aucune tâche"}
+              description={EMPTY_COPY[activeTab]?.description}
+              cta={{
+                label: EMPTY_COPY[activeTab]?.cta ?? "Nouvelle tâche",
+                onClick: () => setNewTaskOpen(true),
+              }}
+            />
           </li>
         )}
         {visible.map((task) => {
