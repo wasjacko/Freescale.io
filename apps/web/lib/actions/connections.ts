@@ -87,15 +87,20 @@ export type SyncReport = {
  * inbox; including them errs on the side of showing too much, which
  * the user can archive in one click.
  */
-function isInPrimaryTab(labelIds: string[] | undefined): boolean {
-  const labels = labelIds ?? [];
-  if (!labels.includes("INBOX")) return false;
-  return !labels.some(
-    (l) =>
-      l === "CATEGORY_PROMOTIONS" ||
-      l === "CATEGORY_SOCIAL" ||
-      l === "CATEGORY_FORUMS"
-  );
+/**
+ * Lightweight inbox gate: ANY thread that's still in the inbox label
+ * survives. We ingest Promos / Social / Forums too — the app has
+ * dedicated tabs (Clients / Promos / Notifs / Autres) populated by
+ * Mue's classifier, so dropping them at sync time leaves those tabs
+ * permanently empty.
+ *
+ * (Previous version filtered to a hand-rolled "Primary tab" rule
+ *  excluding PROMOTIONS/SOCIAL/FORUMS, which made the inbox look empty
+ *  for users whose mail lives in those categories and silently broke
+ *  the Promos/Notifs/Autres tabs everywhere else.)
+ */
+function isInInbox(labelIds: string[] | undefined): boolean {
+  return (labelIds ?? []).includes("INBOX");
 }
 
 /**
@@ -319,9 +324,12 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         .sort((a, b) => a.content.date.getTime() - b.content.date.getTime());
       if (parsed.length === 0) continue;
 
-      // Primary-tab gate — see isInPrimaryTab() comment for rationale.
-      const isAnyInPrimary = parsed.some((p) => isInPrimaryTab(p.raw.labelIds));
-      if (!isAnyInPrimary) {
+      // Inbox gate — keep threads as long as at least one of their
+      // messages still has INBOX. Threads fully archived since last
+      // sync are dropped from our DB (and so are existing convs that
+      // moved out of inbox).
+      const isAnyInInbox = parsed.some((p) => isInInbox(p.raw.labelIds));
+      if (!isAnyInInbox) {
         const existingId = existingMap.get(threadId);
         if (existingId) toDelete.push(existingId);
         continue;
