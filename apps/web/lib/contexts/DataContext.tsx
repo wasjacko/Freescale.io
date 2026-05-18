@@ -197,8 +197,21 @@ export function DataProvider({
   }, []);
 
   const toggleTask = useCallback(async (taskId: string, done: boolean) => {
+    // Mirror the server-side cascade exactly: checking a parent also
+    // marks all its currently-open children as done (no half-completed
+    // parents on screen). Un-checking is non-cascading on both sides —
+    // some subtasks might legitimately be done while the parent isn't,
+    // so we don't second-guess the user.
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, isDone: done, status: done ? "done" : "todo" } : t))
+      prev.map((t) => {
+        if (t.id === taskId) {
+          return { ...t, isDone: done, status: done ? "done" : "todo" };
+        }
+        if (done && t.parentTaskId === taskId && !t.isDone) {
+          return { ...t, isDone: true, status: "done" };
+        }
+        return t;
+      })
     );
     await srvToggleTask(taskId, done);
   }, []);
