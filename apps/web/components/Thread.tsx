@@ -11,6 +11,10 @@ import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import { TagPopover } from "@/components/TagPopover";
 import { sendEmailReply } from "@/lib/actions/inbox";
 import { getEmailSignature } from "@/lib/actions/profile";
+import {
+  listEmailTemplates,
+  type EmailTemplate,
+} from "@/lib/actions/email-templates";
 import { getConversationMessages } from "@/lib/actions/thread-messages";
 import {
   suggestReplies,
@@ -680,6 +684,13 @@ function EmailComposer({
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
   const [suggesting, setSuggesting] = useState(false);
 
+  // User-saved reply templates. Lazy-loaded the first time the user opens
+  // the picker (no network on every conv switch) — then kept in memory
+  // for the session.
+  const [templates, setTemplates] = useState<EmailTemplate[] | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+
   // Reset suggestions + pre-fill body with the signature whenever the
   // user switches to a different conv. We prefill (rather than appending
   // on send) so the user sees exactly what will be sent and can tweak it.
@@ -695,6 +706,38 @@ function EmailComposer({
       cancelled = true;
     };
   }, [conversationId]);
+
+  // Close the templates menu on outside-click or Escape.
+  useEffect(() => {
+    if (!templatesOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTemplatesOpen(false);
+    };
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".email-composer-templates-wrap")) return;
+      setTemplatesOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    // Defer so the open click doesn't immediately close.
+    const t = setTimeout(() => document.addEventListener("mousedown", onDocClick), 0);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDocClick);
+      clearTimeout(t);
+    };
+  }, [templatesOpen]);
+
+  // Listen for TemplatesManager mutations so the composer cache stays in
+  // sync without a page reload.
+  useEffect(() => {
+    const onChanged = () => {
+      setTemplates(null); // Force re-fetch on next open.
+    };
+    window.addEventListener("freescale:templates-changed", onChanged);
+    return () => window.removeEventListener("freescale:templates-changed", onChanged);
+  }, []);
 
   // Listen for ProfileForm saves to refresh the cached signature and
   // update the current draft (only if the user hasn't started typing).
@@ -741,6 +784,33 @@ function EmailComposer({
     } finally {
       setSuggesting(false);
     }
+  };
+
+  const openTemplates = async () => {
+    // Toggle close if already open. Lazy-load on first open.
+    if (templatesOpen) {
+      setTemplatesOpen(false);
+      return;
+    }
+    if (templates === null) {
+      setTemplatesLoading(true);
+      try {
+        const list = await listEmailTemplates();
+        setTemplates(list);
+      } catch {
+        setTemplates([]);
+      } finally {
+        setTemplatesLoading(false);
+      }
+    }
+    setTemplatesOpen(true);
+  };
+
+  const insertTemplate = (t: EmailTemplate) => {
+    // Replace the current draft with the template body, keeping the
+    // signature appended below so the user doesn't lose their sig.
+    setBody(signature ? `${t.body}${SIGNATURE_SEP}${signature}` : t.body);
+    setTemplatesOpen(false);
   };
 
   const addFiles = (incoming: FileList | null) => {
@@ -910,6 +980,47 @@ function EmailComposer({
           <Icon name="i-clip" />
           Joindre
         </button>
+        <div className="email-composer-templates-wrap">
+          <button
+            type="button"
+            className="email-composer-templates"
+            onClick={openTemplates}
+            disabled={sending}
+            aria-expanded={templatesOpen}
+            title="Insérer un modèle de réponse"
+          >
+            <Icon name="i-edit" />
+            Modèles
+          </button>
+          {templatesOpen && (
+            <div className="templates-menu" role="menu">
+              {templatesLoading && (
+                <div className="templates-menu-empty">Chargement…</div>
+              )}
+              {!templatesLoading && templates && templates.length === 0 && (
+                <div className="templates-menu-empty">
+                  Aucun modèle. Créez-en dans Paramètres → Modèles.
+                </div>
+              )}
+              {!templatesLoading &&
+                templates &&
+                templates.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className="templates-menu-item"
+                    role="menuitem"
+                    onClick={() => insertTemplate(t)}
+                  >
+                    <span className="templates-menu-name">{t.name}</span>
+                    <span className="templates-menu-preview">
+                      {t.body.replace(/\s+/g, " ").slice(0, 60) || "Modèle vide"}
+                    </span>
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
         <button
           type="button"
           className="email-composer-mue"

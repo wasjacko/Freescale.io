@@ -9088,3 +9088,193 @@
   background: rgba(255, 255, 255, 0.06);
   color: #94A3B8;
 }
+
+/* =================================================================== */
+/* REPLY TEMPLATES — Settings manager + composer picker dropdown        */
+/* =================================================================== */
+
+/* ----- Settings page list ------------------------------------------- */
+
+.templates-list { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+.templates-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: #94A3B8;
+  font-size: 13px;
+}
+
+.template-row {
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+  background: #FAFAFC;
+  transition: border-color 160ms, background 160ms;
+}
+.template-row:has(.template-edit) {
+  background: #fff;
+  border-color: rgba(91, 108, 255, 0.20);
+  box-shadow: 0 6px 18px rgba(91, 108, 255, 0.06);
+}
+
+.template-display {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+}
+.template-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.template-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0F172A;
+  letter-spacing: -0.01em;
+}
+.template-preview {
+  font-size: 12px;
+  color: #64748B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 480px;
+}
+
+.template-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.template-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+.template-display .template-actions { flex: none; }
+
+/* Danger variant for the second-click "Confirmer ?" state on delete. */
+.set-btn-danger {
+  color: #fff !important;
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
+}
+.set-btn-danger:hover { background: #B91C1C !important; }
+
+[data-theme="dark"] .template-row {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .template-row:has(.template-edit) {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(120, 115, 255, 0.32);
+}
+[data-theme="dark"] .template-name { color: #E6E9F2; }
+[data-theme="dark"] .template-preview { color: #9CA3AF; }
+
+/* ----- Composer "Modèles" button + dropdown ------------------------- */
+
+.email-composer-templates-wrap { position: relative; }
+
+.email-composer-templates {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, color 140ms;
+}
+.email-composer-templates:hover {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.16);
+}
+.email-composer-templates:disabled { opacity: 0.5; cursor: not-allowed; }
+.email-composer-templates .icon { width: 14px; height: 14px; }
+
+.templates-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  min-width: 280px;
+  max-width: 360px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16),
+              0 2px 6px rgba(15, 23, 42, 0.06);
+  animation: popIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.templates-menu-empty {
+  padding: 18px 14px;
+  font-size: 12px;
+  color: #94A3B8;
+  text-align: center;
+}
+.templates-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 11px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.templates-menu-item:hover {
+  background: rgba(91, 108, 255, 0.08);
+}
+.templates-menu-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+}
+.templates-menu-preview {
+  font-size: 11.5px;
+  color: #64748B;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .email-composer-templates {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #CBD5E1;
+}
+[data-theme="dark"] .email-composer-templates:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+[data-theme="dark"] .templates-menu {
+  background: #1A1A24;
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .templates-menu-item:hover {
+  background: rgba(120, 115, 255, 0.14);
+}
+[data-theme="dark"] .templates-menu-name { color: #E6E9F2; }
+[data-theme="dark"] .templates-menu-preview { color: #9CA3AF; }

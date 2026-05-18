@@ -5,6 +5,7 @@ import { Icon } from "@/components/icons/Icon";
 const NAV = [
   { href: "/app/settings/profile" as const, label: "Profil", icon: "i-user" },
   { href: "/app/settings/connections" as const, label: "Connexions", icon: "i-globe" },
+  { href: "/app/settings/templates" as const, label: "Modèles", icon: "i-edit" },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
