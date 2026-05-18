@@ -4035,6 +4035,56 @@
     .mue-translated-msg p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
     /* ====================================================================
+       OfflineIndicator — fixed top pill, surfaces network state changes
+       ==================================================================== */
+    .offline-indicator {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 110;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px 10px 14px;
+      background: #0F172A;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 12.5px;
+      letter-spacing: -0.005em;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.30);
+      animation: offline-in 240ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes offline-in {
+      from { opacity: 0; transform: translate(-50%, -8px); }
+      to   { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .offline-indicator strong { font-weight: 600; margin-right: 4px; }
+    .offline-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+    .offline-indicator.is-offline {
+      background: #B91C1C;
+      box-shadow: 0 12px 32px rgba(220, 38, 38, 0.35);
+    }
+    .offline-indicator.is-offline .offline-dot {
+      background: #FCA5A5;
+      animation: offline-pulse 1.6s ease-in-out infinite;
+    }
+    .offline-indicator.is-reconnected {
+      background: #16A34A;
+      box-shadow: 0 12px 32px rgba(22, 163, 74, 0.30);
+    }
+    .offline-indicator.is-reconnected .offline-dot { background: #86EFAC; }
+    @keyframes offline-pulse {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50%      { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* ====================================================================
        SyncErrorBanner — top of workspace, shown when a channel needs_reauth
        ==================================================================== */
     .sync-error-banner {

@@ -20,6 +20,7 @@ import { AutoSync } from "@/components/AutoSync";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
 import { FirstActionBanner } from "@/components/onboarding/FirstActionBanner";
 import { SyncErrorBanner } from "@/components/SyncErrorBanner";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 export function AppShell({
   user,
@@ -156,6 +157,7 @@ export function AppShell({
         Skip to content
       </a>
       <Sprite />
+      <OfflineIndicator />
       <div className={appClasses}>
         <Sidebar user={user} />
         <div className="workspace">
