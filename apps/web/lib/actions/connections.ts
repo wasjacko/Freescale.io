@@ -101,8 +101,9 @@ function isInPrimaryTab(labelIds: string[] | undefined): boolean {
 /**
  * Full Gmail enumeration — used for the FIRST sync of an account, and as a
  * fallback when the History API cursor has aged out (> ~7 days). Pulls up
- * to 200 of the most recent Primary-tab messages, dedupes them down to
- * unique thread IDs, and reports how many message ids we saw.
+ * to 1000 of the most recent inbox messages (all tabs: Principale, Promos,
+ * Réseaux, Notifications, Forums), dedupes them down to unique thread IDs,
+ * and reports how many message ids we saw.
  *
  * We sync THREADS (not individual messages) because Gmail's model is
  * thread-first: a single thread can contain dozens of messages, and we

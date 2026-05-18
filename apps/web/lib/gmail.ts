@@ -160,17 +160,18 @@ export type GmailMessage = {
 };
 
 /**
- * Initial / full-resync message list. Uses Gmail's OWN Principale-tab
- * classifier (`category:primary`) — the most reliable mirror of what
- * the user sees when they click the Principale tab in Gmail.
+ * Initial / full-resync message list. Fetches everything in the user's
+ * Gmail inbox (Primary + Promotions + Social + Updates + Forums),
+ * because the Freescale app has dedicated tabs (Clients / Promos /
+ * Notifs / Autres) that Mue populates by classifying each conversation
+ * AFTER the sync.
  *
- * Why not roll our own filter rule: the /app/debug page revealed that
- * Gmail's Principale tab inclusion rule is non-obvious. Most of the
- * user's Primary mail actually carries CATEGORY_UPDATES (Doctolib /
- * IONOS / verification codes / order confirmations), not
- * CATEGORY_PERSONAL — Gmail still surfaces them in Principale via the
- * "include important emails" setting. Any rule we hand-roll on labels
- * gets at least one corner case wrong. Trust Gmail's own classifier.
+ * An earlier version filtered with `q: "category:primary"` to mirror
+ * Gmail's Principale tab, but that broke the Promos/Notifs/Autres tabs
+ * completely (and made the inbox look empty for users whose mail lives
+ * mostly outside Principale — promotional accounts, dev accounts, etc.).
+ * The current filter `in:inbox` matches what Gmail itself shows when
+ * you open "Inbox" — all tabs aggregated, no archived/trashed/sent.
  *
  * No time bound: the user asked to see ~1000 mails of history. The
  * batched DB writes in syncGmail keep this within Vercel's 60s budget.
@@ -185,7 +186,7 @@ export async function listRecentMessages(
   while (collected.length < maxResults) {
     const params = new URLSearchParams({
       maxResults: String(Math.min(100, maxResults - collected.length)),
-      q: "category:primary",
+      q: "in:inbox",
     });
     if (pageToken) params.set("pageToken", pageToken);
 
