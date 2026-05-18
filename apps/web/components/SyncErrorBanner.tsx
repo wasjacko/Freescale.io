@@ -19,10 +19,21 @@ export function SyncErrorBanner({ channels }: { channels: ConnectedChannel[] }) 
   const push = useToast((s) => s.push);
   const [reconnecting, setReconnecting] = useState<string | null>(null);
 
-  const broken = channels.filter((c) => c.status === "needs_reauth");
-  if (broken.length === 0) return null;
+  // Surface two distinct broken states:
+  //   1. needs_reauth → token expired, user must reconnect (CTA: Reconnecter)
+  //   2. status=active but last_sync_error → sync ran with errors. We
+  //      show the actual error so the user knows WHY their inbox is empty
+  //      instead of staring at a blank panel and assuming the app is dead.
+  const needsReauth = channels.filter((c) => c.status === "needs_reauth");
+  const otherErrors = channels.filter(
+    (c) => c.status !== "needs_reauth" && c.lastSyncError
+  );
+  if (needsReauth.length === 0 && otherErrors.length === 0) return null;
 
-  const ch = broken[0]!; // surface the first one; rest get the same UX
+  // Reauth gets priority since it's actionable; "other errors" fall through.
+  const broken = needsReauth.length > 0 ? needsReauth : otherErrors;
+  const ch = broken[0]!;
+  const isReauth = needsReauth.length > 0;
 
   const handleReconnect = () => {
     setReconnecting(ch.id);
@@ -75,11 +86,17 @@ export function SyncErrorBanner({ channels }: { channels: ConnectedChannel[] }) 
         <Icon name="i-info" />
       </span>
       <div className="sync-error-text">
-        <strong>Reconnexion {ch.displayName} requise.</strong>
+        <strong>
+          {isReauth
+            ? `Reconnexion ${ch.displayName} requise.`
+            : `Sync ${ch.displayName} en erreur.`}
+        </strong>
         <span>
-          {broken.length > 1
-            ? `${broken.length} connexions ont expiré. Reconnectez pour reprendre la synchronisation.`
-            : "L'autorisation a expiré. Reconnectez pour reprendre la synchronisation."}
+          {isReauth
+            ? broken.length > 1
+              ? `${broken.length} connexions ont expiré. Reconnectez pour reprendre la synchronisation.`
+              : "L'autorisation a expiré. Reconnectez pour reprendre la synchronisation."
+            : ch.lastSyncError ?? "Erreur inconnue — réessayez."}
         </span>
       </div>
       <button
@@ -88,7 +105,11 @@ export function SyncErrorBanner({ channels }: { channels: ConnectedChannel[] }) 
         onClick={handleReconnect}
         disabled={reconnecting !== null}
       >
-        {reconnecting === ch.id ? "Reconnexion…" : "Reconnecter"}
+        {reconnecting === ch.id
+          ? "Reconnexion…"
+          : isReauth
+          ? "Reconnecter"
+          : "Réessayer"}
       </button>
     </div>
   );

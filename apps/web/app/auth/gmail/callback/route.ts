@@ -81,16 +81,61 @@ export async function GET(request: NextRequest) {
       .single();
 
     // Auto-sync the inbox right after connecting so the user lands on real
-    // emails instead of an empty shell. Capped at 50 messages — feels instant,
-    // gives Mue real context.
+    // emails instead of an empty shell. We DON'T swallow errors silently
+    // anymore — anything that goes wrong is persisted on the channel row
+    // so the SyncErrorBanner / Connections page can surface it instead
+    // of leaving the user with a blank inbox and no clue why.
     let synced = 0;
+    let syncErrorForRedirect: string | null = null;
     if (account?.id) {
+      const acctId = account.id as string;
       try {
-        const report = await syncGmail(account.id as string);
+        const report = await syncGmail(acctId);
         synced = report.newMessages;
+        // Sync ran but didn't recover any new messages: either the inbox is
+        // truly empty OR thread.get failed on every one of them. We store a
+        // friendly note so the user sees "connected, 0 messages — try Sync"
+        // rather than a silent empty inbox.
+        if (report.errors.length > 0) {
+          const firstErr = report.errors[0] ?? "Sync partielle";
+          syncErrorForRedirect = firstErr.slice(0, 200);
+          await supabase
+            .from("channel_accounts")
+            .update({
+              last_sync_error: `Sync initiale : ${firstErr.slice(0, 500)} (${report.errors.length} au total)`,
+              last_sync_error_at: new Date().toISOString(),
+            })
+            .eq("id", acctId);
+        } else if (synced === 0 && report.fetched === 0) {
+          await supabase
+            .from("channel_accounts")
+            .update({
+              last_sync_error: "Sync initiale : aucun mail récupéré depuis Gmail (inbox vide ou label INBOX absent).",
+              last_sync_error_at: new Date().toISOString(),
+            })
+            .eq("id", acctId);
+          syncErrorForRedirect = "no_messages_found";
+        } else {
+          // Clear any prior error since the sync clearly recovered.
+          await supabase
+            .from("channel_accounts")
+            .update({
+              last_sync_error: null,
+              last_sync_error_at: null,
+            })
+            .eq("id", acctId);
+        }
       } catch (syncErr) {
+        const msg = syncErr instanceof Error ? syncErr.message : String(syncErr);
         console.error("Initial Gmail sync failed:", syncErr);
-        // Don't block the redirect — the user can re-sync manually if needed.
+        syncErrorForRedirect = msg.slice(0, 200);
+        await supabase
+          .from("channel_accounts")
+          .update({
+            last_sync_error: `Sync initiale échouée : ${msg.slice(0, 500)}`,
+            last_sync_error_at: new Date().toISOString(),
+          })
+          .eq("id", acctId);
       }
     }
 
@@ -99,6 +144,7 @@ export async function GET(request: NextRequest) {
         type: "gmail_connected",
         email: tokens.email,
         synced,
+        syncError: syncErrorForRedirect,
       });
       const res = new NextResponse(html, {
         status: 200,
@@ -108,12 +154,13 @@ export async function GET(request: NextRequest) {
       return res;
     }
 
-    const res = NextResponse.redirect(
-      new URL(
-        `/app?connected=gmail&email=${encodeURIComponent(tokens.email)}&synced=${synced}`,
-        request.url
-      )
-    );
+    const params = new URLSearchParams({
+      connected: "gmail",
+      email: tokens.email,
+      synced: String(synced),
+    });
+    if (syncErrorForRedirect) params.set("sync_error", syncErrorForRedirect);
+    const res = NextResponse.redirect(new URL(`/app?${params}`, request.url));
     res.cookies.delete("fs_gmail_oauth");
     return res;
   } catch (err) {
