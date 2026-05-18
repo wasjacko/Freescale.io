@@ -76,7 +76,13 @@ function groupMessages(messages: Message[]): MsgGroup[] {
 
 export function Thread() {
   const { activeConvId, setActiveConv } = useApp();
-  const { conversations, messagesByConv, appendOutgoingMessage, setTags } = useData();
+  const {
+    conversations,
+    messagesByConv,
+    appendOutgoingMessage,
+    setTags,
+    toggleStar,
+  } = useData();
   const conv = conversations.find((c) => c.id === activeConvId);
   const push = useToast((s) => s.push);
 
@@ -87,8 +93,12 @@ export function Thread() {
   const tagBtnRef = useRef<HTMLButtonElement>(null);
   const [tagOpen, setTagOpen] = useState(false);
   const [tagAnchor, setTagAnchor] = useState<DOMRect | null>(null);
-  const [isStarred, setIsStarred] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // The "starred" state lives on the conversation row in the DB —
+  // we derive the visual flag from it (no local mirror) so the
+  // server is always the source of truth and the bouton stops being
+  // purely cosmetic.
+  const isStarred = !!conv?.starred;
 
   // Live-fetch messages from Gmail on conv open. messagesByConv (server
   // DB cache) used only as an INSTANT fallback for the conv we last
@@ -185,9 +195,13 @@ export function Thread() {
 
   const handleStarClick = () => {
     const next = !isStarred;
-    setIsStarred(next);
+    // Persist on the server (DataContext does the optimistic flip on
+    // conversations[…].starred, which is what isStarred now reads from).
+    // Without this call the bouton was purely cosmetic and reset on reload.
+    void toggleStar(activeConvId, next);
     if (next && starBtnRef.current) {
-      // Particle burst
+      // Particle burst — keep the celebratory animation, but only on
+      // the star-ON transition (un-starring shouldn't celebrate).
       const burst = document.createElement("span");
       burst.className = "star-burst";
       const angles = 8;
@@ -203,7 +217,7 @@ export function Thread() {
       }
       starBtnRef.current.appendChild(burst);
       setTimeout(() => burst.remove(), 600);
-      push({ text: `★ Starred ${conv.name}`, duration: 1800 });
+      push({ kind: "info", text: `★ ${conv.name}`, duration: 1800 });
     }
   };
 
