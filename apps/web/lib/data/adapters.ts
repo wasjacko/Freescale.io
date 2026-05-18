@@ -162,6 +162,9 @@ export function adaptTask(row: Row): Task {
     avatar: avatarFor(name, contact?.avatar_url as string | null | undefined),
     channel: toChannel(channelAccount?.kind),
     status: statusFor(row.status),
+    parentTaskId: (row.parent_task_id as string | null | undefined) ?? null,
+    sortableIndex:
+      typeof row.sortable_index === "number" ? (row.sortable_index as number) : 0,
   };
 }
 

@@ -2797,6 +2797,154 @@
     .task-expand:hover { background: rgba(15, 23, 42, 0.05); color: #0F172A; }
     .task-expand .icon { width: 16px; height: 16px; stroke-width: 1.8; }
 
+    /* ====== SUBTASKS + DRAG-REORDER ======
+       Parent rows get extra columns for the drag-handle (left) and the
+       "+ subtask" button (right of due). Subtask rows use a shorter grid:
+       no avatar, no drag handle, indented with an elbow "tee" on the left. */
+    .task-group { list-style: none; padding: 0; margin: 0; }
+    .task-group > .task-item {
+      grid-template-columns: 14px 22px 36px minmax(0, 1fr) auto auto 24px 24px;
+    }
+    .task-item.is-subtask {
+      grid-template-columns: 24px 18px minmax(0, 1fr) auto auto 24px;
+      padding-left: 32px;
+      background: rgba(15, 23, 42, 0.015);
+    }
+    .task-item.is-subtask:hover { background: rgba(15, 23, 42, 0.035); }
+
+    .task-drag-handle {
+      display: grid;
+      place-items: center;
+      width: 14px;
+      height: 100%;
+      color: #C4C9D2;
+      cursor: grab;
+      opacity: 0;
+      transition: opacity 140ms, color 140ms;
+    }
+    .task-group:hover > .task-item > .task-drag-handle { opacity: 1; }
+    .task-drag-handle:hover { color: #6B7280; }
+    .task-drag-handle:active { cursor: grabbing; }
+
+    .task-item.is-dragging {
+      opacity: 0.4;
+    }
+    .task-group.is-drop-target > .task-item {
+      box-shadow: 0 -2px 0 0 #5B6CFF inset;
+      background: rgba(91, 108, 255, 0.05);
+    }
+
+    .task-add-sub {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      color: #94A3B8;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 140ms, background 140ms, color 140ms;
+    }
+    .task-group:hover > .task-item > .task-add-sub { opacity: 1; }
+    .task-add-sub:hover { background: rgba(91, 108, 255, 0.10); color: #4F46E5; }
+    .task-add-sub .icon { width: 13px; height: 13px; stroke-width: 2; }
+
+    .task-subtask-tee {
+      position: relative;
+      width: 24px;
+      height: 100%;
+    }
+    .task-subtask-tee::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 50%;
+      border-left: 1.5px solid rgba(15, 23, 42, 0.12);
+    }
+    .task-subtask-tee::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      width: 12px;
+      height: 1.5px;
+      background: rgba(15, 23, 42, 0.12);
+    }
+    .task-subtask-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    .task-subtask-input-field {
+      grid-column: 3 / span 4;
+      height: 28px;
+      padding: 0 10px;
+      border: 1px solid rgba(91, 108, 255, 0.30);
+      background: #fff;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #0F172A;
+      outline: none;
+    }
+    .task-subtask-input-field:focus {
+      border-color: rgba(91, 108, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.12);
+    }
+    .task-item.is-subtask-input { padding-top: 8px; padding-bottom: 8px; }
+
+    .task-subcount {
+      display: inline-flex;
+      align-items: center;
+      height: 18px;
+      padding: 0 7px;
+      margin-left: 8px;
+      border-radius: 999px;
+      background: rgba(91, 108, 255, 0.10);
+      color: #4F46E5;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      vertical-align: 2px;
+    }
+
+    [data-theme="dark"] .task-item.is-subtask {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    [data-theme="dark"] .task-item.is-subtask:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    [data-theme="dark"] .task-subtask-tee::before,
+    [data-theme="dark"] .task-subtask-tee::after {
+      border-color: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.12);
+    }
+    [data-theme="dark"] .task-subtask-title { color: #CBD5E1; }
+    [data-theme="dark"] .task-subtask-input-field {
+      background: rgba(255, 255, 255, 0.04);
+      color: #E6E9F2;
+      border-color: rgba(120, 115, 255, 0.40);
+    }
+    [data-theme="dark"] .task-drag-handle { color: rgba(255, 255, 255, 0.20); }
+    [data-theme="dark"] .task-drag-handle:hover { color: rgba(255, 255, 255, 0.50); }
+    [data-theme="dark"] .task-add-sub { color: #6B7280; }
+    [data-theme="dark"] .task-add-sub:hover {
+      background: rgba(120, 115, 255, 0.18);
+      color: #B5B0FF;
+    }
+    [data-theme="dark"] .task-subcount {
+      background: rgba(120, 115, 255, 0.18);
+      color: #B5B0FF;
+    }
+    [data-theme="dark"] .task-group.is-drop-target > .task-item {
+      box-shadow: 0 -2px 0 0 #7873FF inset;
+      background: rgba(120, 115, 255, 0.10);
+    }
+
     /* ====== INBOX (nested card) ====== */
     .inbox {
       display: flex;

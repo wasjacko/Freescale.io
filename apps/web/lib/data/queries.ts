@@ -77,10 +77,14 @@ export async function getInboxData(): Promise<InboxData> {
     supabase
       .from("tasks")
       .select(
-        "id, title, status, priority, due_at, conversations(contacts(display_name, avatar_url), channel_accounts(kind))"
+        "id, title, status, priority, due_at, parent_task_id, sortable_index, conversations(contacts(display_name, avatar_url), channel_accounts(kind))"
       )
       .eq("workspace_id", workspaceId)
       .neq("status", "done")
+      // Manual order first (sortable_index), with due_at as tiebreaker so
+      // newly-created tasks still surface by their deadline when the user
+      // hasn't reordered yet.
+      .order("sortable_index", { ascending: true, nullsFirst: false })
       .order("due_at", { ascending: true, nullsFirst: false })
       .limit(50),
     supabase

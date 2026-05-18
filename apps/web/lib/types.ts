@@ -72,6 +72,10 @@ export type Task = {
   avatar: Avatar;
   channel: ChannelId;
   status: "todo" | "in-progress" | "awaiting-reply" | "done";
+  /** Parent task id when this task is a subtask; null/undefined for top-level tasks. */
+  parentTaskId?: string | null;
+  /** Manual sort rank — higher = later in the list. */
+  sortableIndex?: number;
 };
 
 export type CalEvent = {

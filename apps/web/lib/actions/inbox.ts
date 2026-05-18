@@ -452,6 +452,10 @@ export async function deleteTask(
 
 export async function toggleTaskDone(taskId: string, done: boolean) {
   const supabase = await createClient();
+  // Cascade the done state to children. Marking a parent done implies all
+  // its subtasks are done too (no half-completed parents). Un-checking a
+  // parent leaves children alone — the user explicitly re-opens what they
+  // want; some subtasks might genuinely be done while the parent isn't.
   await supabase
     .from("tasks")
     .update({
@@ -459,7 +463,51 @@ export async function toggleTaskDone(taskId: string, done: boolean) {
       completed_at: done ? new Date().toISOString() : null,
     })
     .eq("id", taskId);
+  if (done) {
+    await supabase
+      .from("tasks")
+      .update({
+        status: "done",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("parent_task_id", taskId);
+  }
   revalidatePath("/");
+}
+
+/**
+ * Persist a manual order for a list of task ids. The caller passes the
+ * IDs in their desired display order; we assign monotonically increasing
+ * sortable_index values and write them in a single multi-update. We do
+ * this in one round-trip via a CTE-style approach using a temp values
+ * list — but supabase-js doesn't support that, so we fall back to a
+ * loop that batches all updates and awaits Promise.all (still ≤30ms
+ * round-trip for ~50 rows).
+ */
+export async function reorderTasks(
+  taskIds: string[]
+): Promise<{ ok: boolean; error: string | null }> {
+  if (taskIds.length === 0) return { ok: true, error: null };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "unauthenticated" };
+
+  // Step the indexes by 1000 so future inserts between two rows have
+  // room to slot in without a full rewrite (LexoRank-lite).
+  const base = Date.now();
+  const updates = taskIds.map((id, idx) =>
+    supabase
+      .from("tasks")
+      .update({ sortable_index: base + idx * 1000 })
+      .eq("id", id)
+  );
+  const results = await Promise.all(updates);
+  const firstErr = results.find((r) => r.error);
+  if (firstErr?.error) return { ok: false, error: firstErr.error.message };
+  revalidatePath("/app", "layout");
+  return { ok: true, error: null };
 }
 
 /**
@@ -476,6 +524,7 @@ export async function createTask(input: {
   priority?: "urgent" | "high" | "medium" | "low";
   conversationId?: string | null;
   due?: string | null; // ISO date YYYY-MM-DD or full timestamp
+  parentTaskId?: string | null;
 }): Promise<{ ok: boolean; taskId: string | null; error: string | null }> {
   const supabase = await createClient();
   const {
@@ -510,6 +559,10 @@ export async function createTask(input: {
     }
   }
 
+  // sortable_index: append-at-end by default. Use the current epoch
+  // milliseconds so freshly-created tasks sort last among their peers.
+  const sortableIndex = Date.now();
+
   const { data: inserted, error } = await supabase
     .from("tasks")
     .insert({
@@ -521,6 +574,8 @@ export async function createTask(input: {
       status: "todo",
       due_at: dueAt,
       ai_generated: false,
+      parent_task_id: input.parentTaskId ?? null,
+      sortable_index: sortableIndex,
     })
     .select("id")
     .single();

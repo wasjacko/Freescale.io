@@ -36,8 +36,8 @@ Légende : `[ ]` = à faire · `[x]` = fait · ⚡ = quick win (≤1j) · 🔥 =
 - [x] **19.** Bulk actions : sélection multiple via checkbox + archive/mark-read/star en masse
 - [x] **20.** Tasks : edit (title, priorité, due, description)
 - [x] **21.** Tasks : delete avec confirmation deux temps
-- [ ] **22.** Tasks : subtasks (parent_task_id)
-- [ ] **23.** Tasks : drag-drop reorder (sortable_index)
+- [x] **22.** Tasks : subtasks (parent_task_id, cascade-done sur parent, "+ sous-tâche" inline)
+- [x] **23.** Tasks : drag-drop reorder (sortable_index avec LexoRank-lite, optimistic UI)
 - [x] **24.** Templates de réponse : CRUD + insertion dans composer avec variables `{{firstName}}`, `{{lastName}}`, `{{fullName}}`, `{{date}}`, `{{time}}`
 - [x] **25.** Signature email : éditable dans Settings, auto-append au composer (séparateur `-- \n`)
 - [ ] **26.** Calendar : intégration Google Calendar (OAuth scope + sync events)
