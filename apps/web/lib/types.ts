@@ -58,6 +58,13 @@ export type Message = {
   senderAvatarUrl?: string;
   dateLong?: string;
   bodyHtml?: string;
+  /**
+   * Delivery status for OUTGOING optimistic messages only. Absent means
+   * the message is server-confirmed (the normal case after a refresh).
+   * - "pending" : sent optimistically, awaiting server ACK
+   * - "failed"  : srvSend threw; user should retry
+   */
+  status?: "pending" | "failed";
 };
 
 export type Priority = "high" | "medium" | "low";

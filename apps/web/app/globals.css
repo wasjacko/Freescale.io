@@ -3441,6 +3441,70 @@
     .msg-group.in .bubble p { color: #0F172A; }
     .msg-group.out .bubble p { color: #fff; }
 
+    /* Pending — message en cours d'envoi : opacité réduite + spinner discret
+       côté droit pour signaler "pas encore confirmé". */
+    .bubble.is-pending {
+      opacity: 0.72;
+      position: relative;
+    }
+    .bubble.is-pending::after {
+      content: "";
+      position: absolute;
+      right: -22px;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      margin-top: -6px;
+      border: 1.5px solid rgba(79, 70, 229, 0.35);
+      border-top-color: #4F46E5;
+      border-radius: 50%;
+      animation: spinPending 700ms linear infinite;
+    }
+    @keyframes spinPending {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Failed — bordure rouge + bouton "Réessayer" sous la bulle. Le user
+       garde son texte visible (le draft n'est pas perdu) et peut retaper. */
+    .bubble.is-failed {
+      background: #FEE2E2 !important;
+      color: #7F1D1D !important;
+      border: 1px solid #FCA5A5 !important;
+      box-shadow: none !important;
+    }
+    .bubble.is-failed p { color: #7F1D1D !important; }
+    .bubble-retry {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      padding: 3px 9px;
+      border: 1px solid #DC2626;
+      background: #fff;
+      color: #DC2626;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms;
+    }
+    .bubble-retry:hover { background: #FEE2E2; }
+
+    [data-theme="dark"] .bubble.is-failed {
+      background: rgba(220, 38, 38, 0.18) !important;
+      color: #FCA5A5 !important;
+      border-color: rgba(220, 38, 38, 0.40) !important;
+    }
+    [data-theme="dark"] .bubble.is-failed p { color: #FCA5A5 !important; }
+    [data-theme="dark"] .bubble-retry {
+      background: rgba(220, 38, 38, 0.20);
+      border-color: rgba(220, 38, 38, 0.50);
+      color: #FCA5A5;
+    }
+    [data-theme="dark"] .bubble-retry:hover {
+      background: rgba(220, 38, 38, 0.30);
+    }
+
     /* Subtle metadata row above first message of group */
     .msg-meta {
       display: flex;

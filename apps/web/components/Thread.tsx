@@ -80,6 +80,7 @@ export function Thread() {
     conversations,
     messagesByConv,
     appendOutgoingMessage,
+    retryFailedMessage,
     setTags,
     toggleStar,
   } = useData();
@@ -177,13 +178,27 @@ export function Thread() {
     );
   }
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim();
     if (!text) return;
     sendBtnRef.current?.classList.add("is-sending");
     setTimeout(() => sendBtnRef.current?.classList.remove("is-sending"), 500);
-    void appendOutgoingMessage(activeConvId, text);
+    // Clear the input optimistically. If the send fails, the message
+    // stays visible in the thread tagged "failed" — the user's draft
+    // isn't lost, they just retap to retry.
     setInput("");
+    try {
+      await appendOutgoingMessage(activeConvId, text);
+    } catch (err) {
+      push({
+        kind: "error",
+        text:
+          err instanceof Error
+            ? `Envoi échoué : ${err.message}`
+            : "Envoi échoué — réessayez.",
+        duration: 5000,
+      });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -358,6 +373,8 @@ export function Thread() {
                   {g.items.map((m, idx) => {
                     const isLast = idx === g.items.length - 1;
                     const hidden = !isLast;
+                    const isPending = m.status === "pending";
+                    const isFailed = m.status === "failed";
                     return (
                       <div key={m.id} className="msg-row">
                         {!isOut && (
@@ -365,7 +382,35 @@ export function Thread() {
                             <Avatar avatar={conv.avatar} className="" />
                           </div>
                         )}
-                        <div className="bubble"><p>{m.text}</p></div>
+                        <div
+                          className={`bubble ${isPending ? "is-pending" : ""} ${
+                            isFailed ? "is-failed" : ""
+                          }`}
+                        >
+                          <p>{m.text}</p>
+                          {isFailed && (
+                            <button
+                              type="button"
+                              className="bubble-retry"
+                              onClick={async () => {
+                                try {
+                                  await retryFailedMessage(activeConvId, m.id);
+                                } catch (err) {
+                                  push({
+                                    kind: "error",
+                                    text:
+                                      err instanceof Error
+                                        ? `Envoi échoué : ${err.message}`
+                                        : "Envoi échoué — réessayez.",
+                                    duration: 5000,
+                                  });
+                                }
+                              }}
+                            >
+                              ↻ Réessayer
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

@@ -31,6 +31,7 @@ type Ctx = {
   archive: (id: string) => void;
   unarchive: (id: string) => void;
   appendOutgoingMessage: (convId: string, text: string) => Promise<void>;
+  retryFailedMessage: (convId: string, msgId: string) => Promise<void>;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   toggleStar: (convId: string, starred: boolean) => Promise<void>;
   snooze: (convId: string, untilIso: string | null) => Promise<void>;
@@ -88,14 +89,111 @@ export function DataProvider({
   const appendOutgoingMessage = useCallback(async (convId: string, text: string) => {
     const tempId = `temp-${crypto.randomUUID()}`;
     const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    // Snapshot the bits we mutate optimistically so we can roll them back
+    // if srvSend rejects (rate-limited Gmail, network glitch, etc.).
+    // Without this, a failed send LOOKED successful — the temp message
+    // sat in the thread forever and the destinataire never received it.
+    let prevPreview: string | undefined;
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id !== convId) return c;
+        prevPreview = c.preview;
+        return { ...c, preview: text.slice(0, 80) };
+      })
+    );
     setMessagesByConv((prev) => ({
       ...prev,
-      [convId]: [...(prev[convId] ?? []), { id: tempId, dir: "out", text, time }],
+      [convId]: [
+        ...(prev[convId] ?? []),
+        { id: tempId, dir: "out", text, time, status: "pending" },
+      ],
     }));
-    setConversations((prev) =>
-      prev.map((c) => (c.id === convId ? { ...c, preview: text.slice(0, 80), time: "now" } : c))
-    );
-    await srvSend(convId, text);
+
+    try {
+      await srvSend(convId, text);
+      // Success — strip the "pending" badge. The next router.refresh()
+      // will replace this temp row with the real server message anyway.
+      // (exactOptionalPropertyTypes forbids assigning undefined, so we
+      // destructure the field out instead of overwriting it.)
+      setMessagesByConv((prev) => {
+        const list = prev[convId] ?? [];
+        return {
+          ...prev,
+          [convId]: list.map((m) => {
+            if (m.id !== tempId) return m;
+            const { status: _drop, ...rest } = m;
+            void _drop;
+            return rest;
+          }),
+        };
+      });
+    } catch (err) {
+      // Rollback: flip the temp message to "failed" so the user keeps
+      // their draft visible and knows it didn't go through. Restore
+      // the conv preview so the inbox row stops claiming "you replied".
+      setMessagesByConv((prev) => {
+        const list = prev[convId] ?? [];
+        return {
+          ...prev,
+          [convId]: list.map((m) =>
+            m.id === tempId ? { ...m, status: "failed" } : m
+          ),
+        };
+      });
+      if (prevPreview !== undefined) {
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, preview: prevPreview as string } : c))
+        );
+      }
+      // Re-throw so the caller can surface a toast with the real reason.
+      throw err;
+    }
+  }, []);
+
+  const retryFailedMessage = useCallback(async (convId: string, msgId: string) => {
+    // Re-send a previously-failed optimistic message in place. Same id
+    // (no duplicates in the thread), flip pending → success/failed
+    // based on the srvSend outcome.
+    let textToSend: string | null = null;
+    setMessagesByConv((prev) => {
+      const list = prev[convId] ?? [];
+      return {
+        ...prev,
+        [convId]: list.map((m) => {
+          if (m.id !== msgId) return m;
+          textToSend = m.text;
+          return { ...m, status: "pending" };
+        }),
+      };
+    });
+    if (!textToSend) return;
+
+    try {
+      await srvSend(convId, textToSend);
+      setMessagesByConv((prev) => {
+        const list = prev[convId] ?? [];
+        return {
+          ...prev,
+          [convId]: list.map((m) => {
+            if (m.id !== msgId) return m;
+            const { status: _drop, ...rest } = m;
+            void _drop;
+            return rest;
+          }),
+        };
+      });
+    } catch (err) {
+      setMessagesByConv((prev) => {
+        const list = prev[convId] ?? [];
+        return {
+          ...prev,
+          [convId]: list.map((m) =>
+            m.id === msgId ? { ...m, status: "failed" } : m
+          ),
+        };
+      });
+      throw err;
+    }
   }, []);
 
   const toggleTask = useCallback(async (taskId: string, done: boolean) => {
@@ -154,6 +252,7 @@ export function DataProvider({
       archive,
       unarchive,
       appendOutgoingMessage,
+      retryFailedMessage,
       toggleTask,
       toggleStar,
       snooze,
@@ -173,6 +272,7 @@ export function DataProvider({
       archive,
       unarchive,
       appendOutgoingMessage,
+      retryFailedMessage,
       toggleTask,
       toggleStar,
       snooze,
