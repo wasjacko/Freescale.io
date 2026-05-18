@@ -60,23 +60,26 @@ export async function getInboxData(): Promise<InboxData> {
     };
   }
 
+  // Inbox SELECT — kept to columns guaranteed by the init schema, so the
+  // query NEVER fails because of an unapplied migration. The optional
+  // feature columns (category, snoozed_until, tags) are fetched in a
+  // separate best-effort query below and merged client-side; if they
+  // don't exist in the user's Supabase yet, the inbox still loads
+  // without those features instead of returning empty.
+  //
+  // Background: 0823b7b → df836e9 → 3ec84cb tried to fix "no Gmail
+  // channel after connect" by stripping last_sync_error from the
+  // channel SELECT. That fixed ONE missing column, but category /
+  // snoozed_until / tags can be missing too on the same DB — any one
+  // of them rejects the WHOLE SELECT and the inbox goes empty.
   const [convsRes, tasksRes, eventsRes, channelsRes] = await Promise.all([
     supabase
       .from("conversations")
       .select(
-        "id, preview, subject, last_message_at, unread_count, archived, category, starred, snoozed_until, tags, contacts(display_name, avatar_url, email), channel_accounts(kind)"
+        "id, preview, subject, last_message_at, unread_count, archived, starred, contacts(display_name, avatar_url, email), channel_accounts(kind)"
       )
       .eq("workspace_id", workspaceId)
       .eq("archived", false)
-      // Hide snoozed convs whose snoozed_until is still in the future.
-      // Postgres treats null in `or` as "doesn't match", so we explicitly
-      // include rows where snoozed_until is null.
-      //
-      // NOTE: an earlier commit (b38e3ac) tried to push this into a
-      // conversations_active Postgres view, but the migration wasn't
-      // applied yet in production → the inbox went empty. We reverted
-      // to the inline filter until the view migration is applied.
-      .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
       .order("last_message_at", { ascending: false })
       .limit(150),
     supabase
@@ -113,6 +116,47 @@ export async function getInboxData(): Promise<InboxData> {
   ]);
 
   const convs = (convsRes.data ?? []) as Record<string, unknown>[];
+
+  // Best-effort second query for the optional feature columns. If the
+  // user's Supabase has applied the relevant migrations, we merge the
+  // extras into each conv row by id; if PostgREST rejects it because
+  // a column is missing, we skip merging and the adapter falls back
+  // to safe defaults (category=null, snoozedUntilIso=null, tags=[]).
+  // This way the inbox loads regardless of migration state, and
+  // features re-activate automatically once migrations are applied.
+  if (convs.length > 0) {
+    const ids = convs.map((c) => c.id as string);
+    const { data: extras, error: extrasErr } = await supabase
+      .from("conversations")
+      .select("id, category, snoozed_until, tags")
+      .in("id", ids);
+    if (!extrasErr && extras) {
+      const extrasById = new Map<string, Record<string, unknown>>();
+      for (const e of extras as Record<string, unknown>[]) {
+        extrasById.set(e.id as string, e);
+      }
+      const now = new Date();
+      for (const c of convs) {
+        const ex = extrasById.get(c.id as string);
+        if (ex) {
+          c.category = ex.category;
+          c.snoozed_until = ex.snoozed_until;
+          c.tags = ex.tags;
+        }
+      }
+      // Client-side snooze filter — only applied when the column was
+      // actually returned (otherwise the field is undefined and the
+      // conv stays visible, which is what we want pre-migration).
+      const visible = convs.filter((c) => {
+        const su = c.snoozed_until as string | null | undefined;
+        if (!su) return true;
+        return new Date(su) <= now;
+      });
+      convs.length = 0;
+      convs.push(...visible);
+    }
+  }
+
   const conversations = convs.map(adaptConversation);
 
   let messagesByConv: Record<string, Message[]> = {};
