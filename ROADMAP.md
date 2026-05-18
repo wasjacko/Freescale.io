@@ -1,148 +1,156 @@
-# Freescale — Roadmap 100 étapes
+# Freescale — Roadmap 90 étapes (v2, du Beta privée → Launch public)
 
-> **Vision** : Inbox unifié multi-canaux (Gmail, Instagram, WhatsApp, Slack, Discord, X, LinkedIn) avec un copilot IA — **Mue** — qui résume, répond, et transforme les conversations en actions.
-> **Cible MVP** : freelances et solopreneurs gérant 5+ canaux clients.
-> **North Star Metric** : minutes/jour économisées par utilisateur.
+> **État de départ (mai 2026)** : Beta privée, ~3 testeuses. Auth + onboarding + Gmail + Mue MVP shippés.
+> **Cible** : SaaS production-ready, vendable, scalable, audit-proof, lancement public à la fin.
+> **North Star** : `time-to-aha` < 60s pour un nouveau user, rétention D30 > 30%.
 
----
-
-## 🏗 Phase 1 — Foundation & stack (1–10)
-
-- [ ] **1.** Choisir le stack : **Next.js 15** (App Router) + **Supabase** (DB/Auth/Realtime/Storage) + **Hono** (edge API) + **TypeScript strict** — voir `ARCHITECTURE.md`
-- [ ] **2.** Acheter domaine `freescale.app` + DNS Cloudflare
-- [ ] **3.** Repo GitHub `freescale/freescale` + branch strategy `main` / `dev` / feature/*
-- [ ] **4.** Monorepo Turborepo : `apps/web`, `apps/api`, `packages/ui`, `packages/db`
-- [ ] **5.** CI/CD Vercel + preview deploys par PR
-- [ ] **6.** Secrets : Doppler ou Vercel env
-- [ ] **7.** **Migrer l'UI HTML actuelle vers React/Next** (composants : Sidebar, Inbox, Thread, Copilot, Tasks, Calendar, AI Knowledge)
-- [ ] **8.** Design tokens → `tailwind.config.ts`
-- [ ] **9.** Storybook + Chromatic
-- [ ] **10.** Biome (lint/format) + Husky pre-commit
-
-## 🔐 Phase 2 — Auth & users (11–20)
-
-- [ ] **11.** Supabase Auth : email + Google + Apple OAuth
-- [ ] **12.** Pages sign up / sign in
-- [ ] **13.** Email de vérification + magic link
-- [ ] **14.** Password reset
-- [ ] **15.** Page profile (nom, avatar, fuseau, langue)
-- [ ] **16.** 2FA TOTP
-- [ ] **17.** Liste devices connectés + révocation
-- [ ] **18.** Account deletion (GDPR)
-- [ ] **19.** Onboarding wizard 3 étapes
-- [ ] **20.** SSO entreprise (Clerk/WorkOS) — optionnel
-
-## 🗄 Phase 3 — Database & schema (21–30)
-
-- [ ] **21.** Schema `users`, `workspaces`, `workspace_members`
-- [ ] **22.** Schema `channels`, `channel_accounts` (tokens encrypted)
-- [ ] **23.** Schema `conversations`, `messages`, `attachments`
-- [ ] **24.** Schema `contacts` + merge algorithm
-- [ ] **25.** Schema `tasks`, `calendar_events`, `event_attendees`
-- [ ] **26.** Schema `ai_memories` + `mue_threads`
-- [ ] **27.** Row-Level Security (RLS) policies
-- [ ] **28.** Migrations workflow (Supabase CLI)
-- [ ] **29.** Backups + Point-in-Time Recovery
-- [ ] **30.** Table `audit_log`
-
-## 🔌 Phase 4 — Intégrations channels (31–50)
-
-- [ ] **31.** Gmail OAuth + Pub/Sub push notifications
-- [ ] **32.** Gmail send/reply/attachments
-- [ ] **33.** Gmail labels sync bidirectionnel
-- [ ] **34.** Instagram Business OAuth + webhooks
-- [ ] **35.** Instagram DM send/receive
-- [ ] **36.** Instagram médias
-- [ ] **37.** WhatsApp Business Cloud API
-- [ ] **38.** WhatsApp template approval
-- [ ] **39.** Slack OAuth + Events API
-- [ ] **40.** Slack DM + threads
-- [ ] **41.** Discord OAuth + bot
-- [ ] **42.** Discord DM + serveurs
-- [ ] **43.** LinkedIn Sales Nav
-- [ ] **44.** X/Twitter DM API v2
-- [ ] **45.** Telegram bot
-- [ ] **46.** SMS via Twilio
-- [ ] **47.** Webhook receiver (Cloudflare Worker)
-- [ ] **48.** Job scheduler refresh tokens (Inngest)
-- [ ] **49.** Rate limiting par channel
-- [ ] **50.** Reconnexion flow
-
-## 💬 Phase 5 — Messaging engine (51–60)
-
-- [ ] **51.** Realtime Supabase ou Ably
-- [ ] **52.** Schema message unifié cross-channel
-- [ ] **53.** Conversation threading
-- [ ] **54.** Read receipts & delivery
-- [ ] **55.** Typing indicators
-- [ ] **56.** Upload attachments → Cloudflare R2
-- [ ] **57.** Génération previews (images/PDF/vidéo)
-- [ ] **58.** Search Typesense
-- [ ] **59.** Préférences notifications
-- [ ] **60.** Queue offline + retry
-
-## 🤖 Phase 6 — Mue (IA Copilot) (61–70)
-
-- [ ] **61.** Anthropic API : Claude Sonnet 4.5 + **prompt caching**
-- [ ] **62.** System prompt Mue (personality)
-- [ ] **63.** RAG sur 50 derniers messages d'une conv
-- [ ] **64.** AI Knowledge → embeddings pgvector
-- [ ] **65.** Tuning du ton sur 100 convs réelles
-- [ ] **66.** Extraction de tâches automatique
-- [ ] **67.** Smart replies (3 suggestions contextuelles)
-- [ ] **68.** Summarize long threads
-- [ ] **69.** Translate (DeepL ou Claude natif)
-- [ ] **70.** Mémoire long-terme Mue
-
-## 🛠 Phase 7 — Productivité (71–80)
-
-- [ ] **71.** Tasks CRUD + priorités + dates + tags
-- [ ] **72.** Calendar sync Google + Outlook (Nylas)
-- [ ] **73.** Création event + .ics invites
-- [ ] **74.** Récurrences (RRULE)
-- [ ] **75.** Snooze/archive conversations
-- [ ] **76.** Filtres custom + saved views
-- [ ] **77.** Multi-select messages/tasks
-- [ ] **78.** Tags & labels
-- [ ] **79.** Templates / canned responses
-- [ ] **80.** Working hours & DND mode
-
-## 💰 Phase 8 — Pricing & billing (81–85)
-
-- [ ] **81.** Stripe Products : Free, Pro 19€/mo, Team 49€/seat/mo
-- [ ] **82.** Subscription tiers avec quotas
-- [ ] **83.** Trial 14 jours sans CB
-- [ ] **84.** Usage metering + warnings
-- [ ] **85.** Stripe Tax + invoicing
-
-## 📣 Phase 9 — Launch prep (86–95)
-
-- [ ] **86.** Landing page marketing
-- [ ] **87.** Page pricing comparator
-- [ ] **88.** Doc site (Mintlify/Nextra)
-- [ ] **89.** Public roadmap (Canny)
-- [ ] **90.** Privacy Policy + ToS
-- [ ] **91.** GDPR export + suppression
-- [ ] **92.** Cookie consent (Klaro)
-- [ ] **93.** Pentest externe
-- [ ] **94.** Lighthouse 95+ + Core Web Vitals
-- [ ] **95.** WCAG AA audit
-
-## 🚦 Phase 10 — Go-live (96–100)
-
-- [ ] **96.** PostHog analytics + feature flags
-- [ ] **97.** Sentry error monitoring
-- [ ] **98.** Status page (Instatus)
-- [ ] **99.** Support Plain.com
-- [ ] **100.** Launch Product Hunt + AppSumo
+Légende : `[ ]` = à faire · `[x]` = fait · ⚡ = quick win (≤1j) · 🔥 = bloquant pour le launch
 
 ---
 
-## 🔥 Chemin critique 90 jours (MVP en ligne)
+## ✨ Phase 1 — Polish & solidité (1-13)
+*Le produit fait le job mais doit donner sensation premium dès la 1ère interaction.*
 
-**Sem 1-2** : 1, 2, 3, 5, 7, 11, 12, 21, 22, 23
-**Sem 3-4** : 27, 31, 32, 39, 40, 51, 52
-**Sem 5-6** : 61, 62, 63, 67
-**Sem 7-8** : 81, 82, 86, 90, 96
+- [ ] **1.** ⚡ Audit dark mode complet (chaque composant, chaque hover, chaque modal)
+- [ ] **2.** Responsive mobile <768px (sidebar drawer, inbox plein écran, MuePanel bottom sheet)
+- [ ] **3.** Responsive tablette 768-1024px (sidebar collapsable, panneau Mue accordéon)
+- [ ] **4.** ⚡ Skeleton loaders Tasks / Calendar / AI Knowledge (cohérence avec Inbox)
+- [ ] **5.** ⚡ Empty states polis (Tasks vide, Calendar vide, Knowledge vide — chacun avec CTA)
+- [ ] **6.** 🔥 Error state sync : token Gmail expiré → bandeau "Reconnecter Gmail" en 1 clic
+- [ ] **7.** Error state sync : rate limit Gmail → retry backoff + indicateur visible
+- [ ] **8.** Offline indicator (navigateur déconnecté → bandeau top, reconnect auto)
+- [ ] **9.** ⚡ Toast system 4 niveaux (success / info / warning / error) avec icônes uniformes
+- [ ] **10.** ⚡ Tooltip system standardisé (data-tip existe déjà → cleanup + ARIA)
+- [ ] **11.** Animations transitions panel (Framer Motion ou CSS) — Inbox → Thread, Mue brief
+- [ ] **12.** ⚡ Cleanup : retirer `/app/debug`, console.log de dev, code mort post-refactor
+- [ ] **13.** ⚡ Bandeau d'erreur Mue centralisé (rate-limited Anthropic → "Mue se repose, retentez dans 30s")
 
-Le reste : 75 étapes post-launch sur 6-12 mois.
+## 🛠 Phase 2 — Productivité core (14-27)
+*Faire de l'inbox un vrai centre opérationnel.*
+
+- [ ] **14.** Conversation : star / favorite (DB + UI étoile dorée)
+- [ ] **15.** Conversation : snooze jusqu'à date (table `conversation_snoozes`, badge "Snoozed until X")
+- [ ] **16.** 🔥 Recherche globale fuzzy (Cmd+K) — `messages.body_text` + sender + subject
+- [ ] **17.** Tags custom : CRUD côté Settings + tag par conv (UI chips)
+- [ ] **18.** Filtre inbox par tag (en plus des tabs Clients/Promos/Notifs)
+- [ ] **19.** Bulk actions : sélection multiple via checkbox + archive/tag/mark-read en masse
+- [ ] **20.** Tasks : edit (title, priorité, due, description rich-text)
+- [ ] **21.** Tasks : delete avec confirmation
+- [ ] **22.** Tasks : subtasks (parent_task_id)
+- [ ] **23.** Tasks : drag-drop reorder (sortable_index)
+- [ ] **24.** Templates de réponse : CRUD + insertion dans composer avec variables `{{firstName}}`, `{{date}}`
+- [ ] **25.** Signature email : éditable dans Settings, auto-append au composer
+- [ ] **26.** Calendar : intégration Google Calendar (OAuth scope + sync events)
+- [ ] **27.** Calendar : créer event depuis conversation (lien conv → event)
+
+## 🌐 Phase 3 — Multi-provider (28-41)
+*Élargir au-delà de Gmail pour tenir la promesse "inbox unifié".*
+
+- [ ] **28.** 🔥 Outlook OAuth via Microsoft Graph (scopes Mail.ReadWrite + Mail.Send)
+- [ ] **29.** Outlook sync (delta queries + subscriptions push)
+- [ ] **30.** Outlook send avec attachments
+- [ ] **31.** Apple Sign In (identité seulement — Apple Developer requis $99/an)
+- [ ] **32.** iCloud Mail via IMAP + app-specific password Apple
+- [ ] **33.** IMAP générique (config serveur / port / user / pwd)
+- [ ] **34.** Multi-inbox : switcher dans sidebar (passer entre Gmail / Outlook / iCloud)
+- [ ] **35.** Multi-inbox : vue agrégée "Tous les canaux" (toggleable)
+- [ ] **36.** Slack OAuth + DM sync
+- [ ] **37.** Slack channel mentions ingestion
+- [ ] **38.** WhatsApp Business API integration
+- [ ] **39.** LinkedIn InMail (scraping ou API officielle)
+- [ ] **40.** Telegram bot setup
+- [ ] **41.** Discord DM via bot
+
+## 🤖 Phase 4 — Mue AI expansion (42-55)
+*Transformer Mue d'un copilot en un assistant proactif.*
+
+- [ ] **42.** 🔥 Ask Mue chat mode (multi-turn, persistant par conv)
+- [ ] **43.** Mue apprend ton style (analyse des 20 derniers mails envoyés → ton)
+- [ ] **44.** Auto-rules : "Quand sender = X → catégorie Y" (Settings + DB)
+- [ ] **45.** Tone shifter dans le composer (boutons Formal / Casual / Friendly)
+- [ ] **46.** Auto-draft replies (background pre-generation pour les 5 dernières convs)
+- [ ] **47.** Smart follow-up : "Tu attends une réponse de X depuis 7j, relancer ?"
+- [ ] **48.** Action extraction automatique au sync (nouveau mail = tâche détectée éventuelle)
+- [ ] **49.** Smart unsubscribe : Mue détecte newsletters → propose unsubscribe groupé
+- [ ] **50.** Meeting scheduler : Mue propose 3 créneaux libres dans la réponse
+- [ ] **51.** Auto-detect langue + ton (FR / EN bilingual seamless)
+- [ ] **52.** Daily digest cron email : "Voici tes 5 mails importants du jour" à 8h
+- [ ] **53.** Custom Mue persona : instructions perso dans Settings ("Réponds en formel B2B")
+- [ ] **54.** Mue insights dashboard : stats hebdo (mails reçus, tâches créées, temps économisé)
+- [ ] **55.** Cost optimization : cache des prompts répétés + fallback haiku→sonnet sur erreurs
+
+## 👥 Phase 5 — Collaboration (56-67)
+*Sortir du solo pour ouvrir aux équipes (≥2 personnes).*
+
+- [ ] **56.** Workspaces multiples (créer nouveau workspace, switcher)
+- [ ] **57.** Invite teammate par email (token unique)
+- [ ] **58.** Roles : owner / admin / member (avec permissions différentes)
+- [ ] **59.** Assign conversation à un teammate (avatar + filtre "Mes assignations")
+- [ ] **60.** Internal notes par conv (visibles équipe, non envoyées au client)
+- [ ] **61.** @mentions dans les notes (notification au mentionné)
+- [ ] **62.** Activity log par conv (qui a lu, qui a répondu, quand)
+- [ ] **63.** Shared tags équipe
+- [ ] **64.** Shared templates équipe (vs perso)
+- [ ] **65.** Team-wide search (chercher dans toutes les convs de l'équipe)
+- [ ] **66.** Notifications équipe (Slack webhook / email digest)
+- [ ] **67.** Permissions granulaires (qui peut connecter un canal, qui peut inviter, etc.)
+
+## 🔒 Phase 6 — Qualité / Sécurité / Compliance (68-79)
+*Faire que le produit tienne en audit + en charge.*
+
+- [ ] **68.** 🔥 2FA TOTP optionnel (Supabase Auth MFA)
+- [ ] **69.** Sessions actives : liste dans Settings + révocation distante
+- [ ] **70.** Audit log compte (login, deconnexion, changements settings)
+- [ ] **71.** 🔥 Data export GDPR : "Télécharger toutes mes données" (JSON dump)
+- [ ] **72.** 🔥 Privacy policy page (rédigée + accessible)
+- [ ] **73.** 🔥 Terms of service page
+- [ ] **74.** Cookie consent banner (CNIL-compliant, granulaire)
+- [ ] **75.** Tests E2E Playwright (parcours auth, sync, send, task creation)
+- [ ] **76.** Lighthouse perf audit : score >90 sur landing + /app
+- [ ] **77.** A11y audit WCAG AA (focus management, ARIA, contrastes)
+- [ ] **78.** Sentry intégration (error tracking front + server actions)
+- [ ] **79.** Rate limiting côté server actions (anti-abuse)
+
+## 🚀 Phase 7 — Launch & growth (80-90)
+*Préparer le lancement public + monétisation.*
+
+- [ ] **80.** Landing : section Features détaillée (3-4 features avec screenshots animés)
+- [ ] **81.** Landing : section Pricing (Free / Pro / Team)
+- [ ] **82.** Landing : section FAQ (10-15 questions)
+- [ ] **83.** Landing : témoignages / social proof (logos clients beta)
+- [ ] **84.** 🔥 Stripe integration (subscriptions + webhook → DB plan_tier)
+- [ ] **85.** Free vs Pro tier : limites (1 inbox / 3 inbox illimité), paywalls UI
+- [ ] **86.** Trial 14 jours auto sur Pro (carte requise ou non, à décider)
+- [ ] **87.** 🔥 Google OAuth verification (passage In production verified) — Privacy URL + demo vidéo
+- [ ] **88.** Changelog public (`/changelog`)
+- [ ] **89.** Documentation / Help center (`/docs` ou Notion intégré)
+- [ ] **90.** 🚀 Launch Product Hunt + Hacker News + Twitter (post coordonné)
+
+---
+
+## 📊 Métriques à instrumenter dès phase 1
+
+- **Activation rate** : % users qui connectent ≥1 inbox dans les 24h
+- **Time-to-aha** : `account_created → first_actionable_task_seen`
+- **D7 / D30 retention** : cohortes de signup
+- **Mue adoption** : % users qui cliquent ≥1 fois sur Mue dans la 1ère semaine
+- **Provider mix** : Gmail vs Outlook vs autres
+- **Coût Mue moyen** par user actif (suivi via aiapiflow + future Anthropic verified)
+
+## 🧭 Ordre recommandé d'exécution
+
+1. **Quinzaine 1-2** : Phase 1 (polish + erreurs) — donne sensation premium immédiate
+2. **Quinzaine 3-4** : Phase 2 partial (search, star, snooze, edit tasks) — productivité de base
+3. **Mois 2** : Phase 6 critique (privacy/terms/GDPR export) — bloquant pour Google verification
+4. **Mois 3** : Phase 3 Outlook + Phase 4 Ask Mue chat — différenciation produit
+5. **Mois 4** : Phase 5 collaboration light + Phase 7 Stripe + paywalls
+6. **Mois 5-6** : verification Google OAuth (en arrière-plan) + landing finitions
+7. **Lancement public** quand Phase 1 + 2 + 6 + 7 sont 100%, le reste peut suivre
+
+## ⚠️ Dépendances externes critiques
+
+- **Google OAuth verification** : 2-6 semaines, requis pour ouvrir à >100 users (étape 87)
+- **Apple Developer** : 99$/an pour Sign in with Apple + iCloud (étapes 31-32)
+- **Anthropic API** : passage de aiapiflow → direct quand volumes augmentent (cost optim étape 55)
+- **Stripe** : compte vérifié + KYC pour subscriptions (étape 84)
+- **CNIL** : déclaration éventuelle selon volume + audit privacy (étape 72)
