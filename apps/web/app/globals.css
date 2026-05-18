@@ -4035,6 +4035,47 @@
     .mue-translated-msg p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
     /* ====================================================================
+       Motion polish — small consistency tweaks across the app
+       ==================================================================== */
+
+    /* Smooth tab indicator on the inbox category tabs (Clients/Promos/...)
+       so the "active" pill slides in instead of just appearing. */
+    .inbox-tab {
+      transition:
+        background 180ms cubic-bezier(0.16, 1, 0.3, 1),
+        color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Conversation row : tighter spring on hover/active so clicking
+       feels physical without being noisy. */
+    .conv {
+      transition:
+        background 160ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 80ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .conv:active { transform: scale(0.998); }
+
+    /* Active conv ripple: when a new conv becomes active, a soft
+       indigo glow fades in over ~280ms. Better than the abrupt
+       background swap. */
+    .conv.active {
+      animation: conv-active-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes conv-active-in {
+      from { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+      to   { box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.10) inset; }
+    }
+
+    /* Buttons general: small scale-down on press for tactile feel.
+       Only applies to native buttons that haven't opted out via a
+       specific transform animation already. */
+    button:active:not(:disabled):not(.no-press) {
+      transform: scale(0.985);
+      transition: transform 60ms ease-out;
+    }
+
+    /* ====================================================================
        OfflineIndicator — fixed top pill, surfaces network state changes
        ==================================================================== */
     .offline-indicator {
