@@ -14,7 +14,9 @@ import {
   toggleConversationStar as srvToggleStar,
   snoozeConversation as srvSnooze,
   setConversationTags as srvSetTags,
+  setConversationCategory as srvSetCategory,
 } from "@/lib/actions/conversation-flags";
+import type { ConversationCategory } from "@/lib/types";
 
 type Ctx = {
   conversations: Conversation[];
@@ -36,6 +38,7 @@ type Ctx = {
   toggleStar: (convId: string, starred: boolean) => Promise<void>;
   snooze: (convId: string, untilIso: string | null) => Promise<void>;
   setTags: (convId: string, tags: string[]) => Promise<void>;
+  setCategory: (convId: string, category: ConversationCategory) => Promise<void>;
 };
 
 const DataCtx = createContext<Ctx | null>(null);
@@ -235,6 +238,15 @@ export function DataProvider({
     await srvSnooze(convId, untilIso);
   }, []);
 
+  const setCategory = useCallback(async (convId: string, category: ConversationCategory) => {
+    // Optimistic flip — UI snaps to the new tab/badge instantly. If the
+    // server write fails, the next router.refresh() re-syncs.
+    setConversations((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, category } : c))
+    );
+    await srvSetCategory(convId, category);
+  }, []);
+
   const setTags = useCallback(async (convId: string, tags: string[]) => {
     // Optimistic write. The server normalizes (lower-case + dedup +
     // clamp to 12) and returns the canonical list, which we re-apply.
@@ -270,6 +282,7 @@ export function DataProvider({
       toggleStar,
       snooze,
       setTags,
+      setCategory,
     }),
     [
       conversations,
@@ -290,6 +303,7 @@ export function DataProvider({
       toggleStar,
       snooze,
       setTags,
+      setCategory,
     ]
   );
 

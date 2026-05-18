@@ -98,6 +98,7 @@ export function Inbox() {
     channels,
     toggleStar,
     snooze,
+    setCategory,
   } = useData();
   const push = useToast((s) => s.push);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
@@ -227,13 +228,24 @@ export function Inbox() {
     const conv = conversations.find((c) => c.id === convId);
     if (!conv) return;
 
-    // The "snooze" action carries a payload, so check for the object form first.
+    // Payload-carrying actions (snooze + set-category) check first.
     if (typeof action === "object" && action.kind === "snooze") {
       void snooze(convId, action.untilIso);
       push({
         kind: "info",
         text: action.untilIso ? `Snoozed: ${action.label}` : "Snooze annulé",
       });
+      return;
+    }
+    if (typeof action === "object" && action.kind === "set-category") {
+      void setCategory(convId, action.category);
+      const label =
+        action.category === "client" ? "Client" :
+        action.category === "promo" ? "Promo" :
+        action.category === "notif" ? "Notif" :
+        action.category === "other" ? "Autre" :
+        "à trier";
+      push({ kind: "info", text: `Catégorie : ${label}` });
       return;
     }
 
@@ -591,7 +603,24 @@ export function Inbox() {
                     </span>
                     <span className="conv-main">
                       <span className="conv-top">
-                        <span className="conv-name">{c.name}</span>
+                        <span className="conv-name">
+                          {c.category && (
+                            <span
+                              className={`conv-cat conv-cat-${c.category}`}
+                              aria-label={`Catégorie ${c.category}`}
+                              title={
+                                c.category === "client" ? "Client" :
+                                c.category === "promo" ? "Promo" :
+                                c.category === "notif" ? "Notif" : "Autre"
+                              }
+                            >
+                              {c.category === "client" ? "👤" :
+                               c.category === "promo" ? "🏷" :
+                               c.category === "notif" ? "🔔" : "📂"}
+                            </span>
+                          )}
+                          {c.name}
+                        </span>
                         <span className="conv-time">{formatLocalTime(c.lastAtIso)}</span>
                       </span>
                       <span className="conv-bottom">
@@ -641,6 +670,7 @@ export function Inbox() {
             isUnread={isUnread(ctx.convId, ctxConv?.unread)}
             isStarred={!!ctxConv?.starred}
             isSnoozed={!!ctxConv?.snoozedUntilIso}
+            currentCategory={ctxConv?.category ?? null}
             onClose={() => setCtx(null)}
             onAction={(action) => onContextAction(ctx.convId, action)}
           />

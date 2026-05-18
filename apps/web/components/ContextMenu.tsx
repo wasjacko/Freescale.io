@@ -11,7 +11,8 @@ export type ContextAction =
   | "star"
   | "unstar"
   | "archive"
-  | { kind: "snooze"; untilIso: string | null; label: string };
+  | { kind: "snooze"; untilIso: string | null; label: string }
+  | { kind: "set-category"; category: "client" | "promo" | "notif" | "other" | null };
 
 type Props = {
   x: number;
@@ -19,9 +20,22 @@ type Props = {
   isUnread: boolean;
   isStarred?: boolean;
   isSnoozed?: boolean;
+  /** Current category if set — used to render a check mark next to the active option. */
+  currentCategory?: "client" | "promo" | "notif" | "other" | null;
   onClose: () => void;
   onAction: (action: ContextAction) => void;
 };
+
+const CATEGORY_OPTIONS: ReadonlyArray<{
+  id: "client" | "promo" | "notif" | "other";
+  label: string;
+  emoji: string;
+}> = [
+  { id: "client", label: "Client", emoji: "👤" },
+  { id: "promo", label: "Promo", emoji: "🏷" },
+  { id: "notif", label: "Notification", emoji: "🔔" },
+  { id: "other", label: "Autre", emoji: "📂" },
+];
 
 export function ContextMenu({
   x,
@@ -29,11 +43,13 @@ export function ContextMenu({
   isUnread,
   isStarred,
   isSnoozed,
+  currentCategory,
   onClose,
   onAction,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [snoozeOpen, setSnoozeOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -112,6 +128,51 @@ export function ContextMenu({
               }}
             >
               Annuler le snooze
+            </button>
+          )}
+        </div>
+      )}
+      <button
+        className="ctx-item ctx-item-expand"
+        type="button"
+        onClick={() => setCategoryOpen((v) => !v)}
+        aria-expanded={categoryOpen}
+      >
+        <Icon name="i-tag" /> Catégorie
+        {currentCategory && (
+          <span className="ctx-item-current" aria-hidden>
+            {CATEGORY_OPTIONS.find((c) => c.id === currentCategory)?.emoji}
+          </span>
+        )}
+        <span className="ctx-item-chevron" aria-hidden>{categoryOpen ? "▴" : "▸"}</span>
+      </button>
+      {categoryOpen && (
+        <div className="ctx-submenu">
+          {CATEGORY_OPTIONS.map((c) => (
+            <button
+              key={c.id}
+              className={`ctx-item ctx-item-sub ${currentCategory === c.id ? "is-current" : ""}`}
+              type="button"
+              onClick={() => {
+                onAction({ kind: "set-category", category: c.id });
+                onClose();
+              }}
+            >
+              <span aria-hidden style={{ marginRight: 8 }}>{c.emoji}</span>
+              {c.label}
+              {currentCategory === c.id && <span style={{ marginLeft: "auto" }}>✓</span>}
+            </button>
+          ))}
+          {currentCategory && (
+            <button
+              className="ctx-item ctx-item-sub"
+              type="button"
+              onClick={() => {
+                onAction({ kind: "set-category", category: null });
+                onClose();
+              }}
+            >
+              Réinitialiser (laisser Mue trier)
             </button>
           )}
         </div>

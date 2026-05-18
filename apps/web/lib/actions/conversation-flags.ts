@@ -56,6 +56,39 @@ export async function snoozeConversation(
 }
 
 /**
+ * Manual category assignment. Mue's classifier writes this column
+ * automatically (see classifyAllUncategorized), but the user can
+ * override / correct it from the conv's right-click menu.
+ *
+ * Setting category to null clears it (the conv becomes "à trier"
+ * again and Mue can re-classify it on the next triage run).
+ *
+ * `category_confidence` is forced to 1.0 on manual override so the
+ * row is treated as ground-truth and Mue won't auto-overwrite it.
+ */
+export async function setConversationCategory(
+  conversationId: string,
+  category: "client" | "promo" | "notif" | "other" | null
+): Promise<{ ok: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "unauthenticated" };
+
+  const { error } = await supabase
+    .from("conversations")
+    .update({
+      category,
+      category_confidence: category === null ? null : 1.0,
+    })
+    .eq("id", conversationId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/app", "layout");
+  return { ok: true, error: null };
+}
+
+/**
  * Replace the full tag set on a conversation. Tags are normalized to
  * lowercase trimmed strings of 1-24 chars; duplicates are dropped.
  * Passing an empty array clears all tags.
