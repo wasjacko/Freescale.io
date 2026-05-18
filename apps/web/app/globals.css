@@ -4076,6 +4076,49 @@
     }
 
     /* ====================================================================
+       Cmd+K — additions for server-side global search
+       ==================================================================== */
+    .cmdk-server-orb {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(99, 102, 241, 0.15));
+      color: #4F46E5;
+      font-weight: 600;
+      font-size: 13px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+    [data-theme="dark"] .cmdk-server-orb {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(99, 102, 241, 0.20));
+      color: #A5B4FC;
+    }
+    .cmdk-match-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      margin-right: 6px;
+      background: rgba(99, 102, 241, 0.10);
+      color: #4F46E5;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    [data-theme="dark"] .cmdk-match-badge {
+      background: rgba(99, 102, 241, 0.20);
+      color: #A5B4FC;
+    }
+    .cmdk-spin {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(99, 102, 241, 0.18);
+      border-top-color: #6366F1;
+      border-radius: 50%;
+      animation: mue-spin 0.8s linear infinite;
+    }
+
+    /* ====================================================================
        Star + Snooze visual primitives in the conv list
        ==================================================================== */
     .conv-star {
