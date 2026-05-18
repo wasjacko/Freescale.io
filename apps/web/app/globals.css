@@ -4363,6 +4363,55 @@
     [data-theme="dark"] .bulk-btn:hover { background: rgba(99, 102, 241, 0.20); }
     [data-theme="dark"] .bulk-btn-danger:hover { background: rgba(220, 38, 38, 0.18); color: #FCA5A5; }
 
+    /* Bulk Snooze dropdown — anchored to the snooze button in the
+       bulk toolbar. Same visual language as templates-menu / cmdk
+       (rounded card, soft shadow, hover indigo tint). */
+    .bulk-snooze-wrap { position: relative; }
+    .bulk-snooze-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      z-index: 30;
+      min-width: 220px;
+      padding: 6px;
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 12px;
+      box-shadow:
+        0 12px 32px rgba(15, 23, 42, 0.16),
+        0 2px 6px rgba(15, 23, 42, 0.06);
+      animation: popIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bulk-snooze-item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 8px 11px;
+      border: none;
+      background: transparent;
+      color: #0F172A;
+      text-align: left;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 120ms;
+    }
+    .bulk-snooze-item:hover {
+      background: rgba(91, 108, 255, 0.08);
+      color: #4F46E5;
+    }
+    [data-theme="dark"] .bulk-snooze-menu {
+      background: #1A1A24;
+      border-color: rgba(255, 255, 255, 0.10);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="dark"] .bulk-snooze-item { color: #E6E9F2; }
+    [data-theme="dark"] .bulk-snooze-item:hover {
+      background: rgba(120, 115, 255, 0.14);
+      color: #B5B0FF;
+    }
+
     /* Selected conv state — slight indigo bg + check overlay on avatar */
     .conv.is-selected {
       background: rgba(99, 102, 241, 0.08);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/store";
 import { useToast } from "@/lib/hooks/useToast";
@@ -13,6 +13,7 @@ import { bulkConversationAction } from "@/lib/actions/conversation-flags";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
 import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
+import { snoozeTargets } from "@/lib/snooze-targets";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
 import { useRouter as useRouterBulk } from "next/navigation";
 import type { ConversationCategory } from "@/lib/types";
@@ -126,13 +127,19 @@ export function Inbox() {
   };
   const clearBulk = () => setSelected(new Set());
 
+  // Snooze sub-menu anchored to the bulk toolbar — opens on click,
+  // closes on outside-click / Escape (handled by useEffect below).
+  const [bulkSnoozeOpen, setBulkSnoozeOpen] = useState(false);
+  const bulkSnoozeBtnRef = useRef<HTMLButtonElement>(null);
+
   const runBulk = async (
-    action: "archive" | "mark-read" | "mark-unread" | "star" | "unstar"
+    action: "archive" | "mark-read" | "mark-unread" | "star" | "unstar" | "snooze",
+    snoozeUntilIso?: string | null
   ) => {
     const ids = [...selected];
     if (ids.length === 0) return;
     clearBulk();
-    const res = await bulkConversationAction(ids, action);
+    const res = await bulkConversationAction(ids, action, snoozeUntilIso ?? null);
     if (res.ok) {
       push({
         kind: "info",
@@ -143,6 +150,27 @@ export function Inbox() {
       push({ kind: "error", text: `Erreur : ${res.error}` });
     }
   };
+
+  // Outside-click + Escape close the bulk snooze dropdown.
+  useEffect(() => {
+    if (!bulkSnoozeOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setBulkSnoozeOpen(false);
+    };
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".bulk-snooze-wrap")) return;
+      setBulkSnoozeOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const t = setTimeout(() => document.addEventListener("mousedown", onDocClick), 0);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDocClick);
+      clearTimeout(t);
+    };
+  }, [bulkSnoozeOpen]);
 
   const handleTriage = async () => {
     if (triaging) return;
@@ -354,6 +382,40 @@ export function Inbox() {
             <button type="button" className="bulk-btn" onClick={() => runBulk("star")} data-tip="Étoiler">
               <svg className="icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
             </button>
+            <div className="bulk-snooze-wrap">
+              <button
+                ref={bulkSnoozeBtnRef}
+                type="button"
+                className="bulk-btn"
+                onClick={() => setBulkSnoozeOpen((v) => !v)}
+                data-tip="Snooze"
+                aria-expanded={bulkSnoozeOpen}
+                aria-haspopup="menu"
+              >
+                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </button>
+              {bulkSnoozeOpen && (
+                <div className="bulk-snooze-menu" role="menu">
+                  {snoozeTargets().map((t) => (
+                    <button
+                      key={t.iso}
+                      type="button"
+                      className="bulk-snooze-item"
+                      role="menuitem"
+                      onClick={() => {
+                        setBulkSnoozeOpen(false);
+                        void runBulk("snooze", t.iso);
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button type="button" className="bulk-btn bulk-btn-danger" onClick={() => runBulk("archive")} data-tip="Archiver">
               <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>
             </button>
