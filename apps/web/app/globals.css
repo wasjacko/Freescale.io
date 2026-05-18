@@ -4485,6 +4485,41 @@
     }
     .new-task-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* EditTaskModal — adds a destructive "Supprimer" button on the left
+       of the cancel/save row. Two-step arming: first click turns it
+       red-outlined ("Confirmer la suppression"); second click deletes. */
+    .edit-task-actions { align-items: center; }
+    .edit-task-delete {
+      color: #B91C1C;
+      border-color: rgba(220, 38, 38, 0.30);
+    }
+    .edit-task-delete:hover:not(:disabled) {
+      background: #FEF2F2;
+      border-color: rgba(220, 38, 38, 0.50);
+    }
+    .edit-task-delete.is-armed {
+      background: #DC2626;
+      color: #fff;
+      border-color: #DC2626;
+    }
+    .edit-task-delete.is-armed:hover:not(:disabled) {
+      background: #B91C1C;
+      border-color: #B91C1C;
+    }
+    [data-theme="dark"] .edit-task-delete {
+      color: #FCA5A5;
+      border-color: rgba(220, 38, 38, 0.40);
+    }
+    [data-theme="dark"] .edit-task-delete:hover:not(:disabled) {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: rgba(220, 38, 38, 0.60);
+    }
+    [data-theme="dark"] .edit-task-delete.is-armed {
+      background: #DC2626;
+      color: #fff;
+      border-color: #DC2626;
+    }
+
     /* ====================================================================
        LandingFlash — top-of-page confirmation banner shown on the
        marketing landing after a sign-out or account deletion.

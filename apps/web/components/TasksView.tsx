@@ -7,9 +7,11 @@ import { useToast } from "@/lib/hooks/useToast";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { NewTaskModal } from "@/components/NewTaskModal";
+import { EditTaskModal } from "@/components/EditTaskModal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { dailyBriefing } from "@/lib/actions/mue";
 import { createTask } from "@/lib/actions/inbox";
+import type { Task } from "@/lib/types";
 
 const EMPTY_COPY: Record<
   string,
@@ -50,6 +52,7 @@ export function TasksView() {
   const { tasks, toggleTask } = useData();
   const [activeTab, setActiveTab] = useState<string>("todo");
   const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [analyzing, startAnalyzing] = useTransition();
 
   const handleAnalyze = () => {
@@ -180,7 +183,12 @@ export function TasksView() {
                 {task.priority[0]?.toUpperCase()}{task.priority.slice(1)}
               </span>
               <span className={`task-due ${task.isToday ? "is-today" : ""}`}>{task.dueLabel}</span>
-              <button className="task-expand" type="button" aria-label="Expand">
+              <button
+                className="task-expand"
+                type="button"
+                aria-label="Modifier"
+                onClick={() => setEditingTask(task)}
+              >
                 <Icon name="i-chevron-down" />
               </button>
             </li>
@@ -189,6 +197,13 @@ export function TasksView() {
       </ul>
 
       <NewTaskModal open={newTaskOpen} onClose={() => setNewTaskOpen(false)} />
+      {editingTask && (
+        <EditTaskModal
+          task={editingTask}
+          open={!!editingTask}
+          onClose={() => setEditingTask(null)}
+        />
+      )}
     </section>
   );
 }

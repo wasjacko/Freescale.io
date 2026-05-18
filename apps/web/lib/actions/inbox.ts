@@ -390,6 +390,66 @@ export async function sendEmailReply(formData: FormData): Promise<void> {
   revalidatePath("/app", "layout");
 }
 
+/**
+ * Update an existing task — used by the "Edit task" inline editor.
+ * Only writes the fields the caller explicitly passes (partial update),
+ * so changing just a priority doesn't clobber the title.
+ */
+export async function updateTask(
+  taskId: string,
+  input: {
+    title?: string;
+    description?: string | null;
+    priority?: "urgent" | "high" | "medium" | "low";
+    due?: string | null;
+    status?: "todo" | "in-progress" | "awaiting-reply" | "done";
+  }
+): Promise<{ ok: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "unauthenticated" };
+
+  const patch: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (input.title !== undefined) patch.title = input.title.trim();
+  if (input.description !== undefined) patch.description = input.description;
+  if (input.priority !== undefined) patch.priority = input.priority;
+  if (input.status !== undefined) patch.status = input.status;
+  if (input.due !== undefined) {
+    if (!input.due) patch.due_at = null;
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(input.due)) {
+      const d = new Date(`${input.due}T23:59:00`);
+      patch.due_at = isNaN(d.getTime()) ? null : d.toISOString();
+    } else {
+      const d = new Date(input.due);
+      patch.due_at = isNaN(d.getTime()) ? null : d.toISOString();
+    }
+  }
+
+  const { error } = await supabase.from("tasks").update(patch).eq("id", taskId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/app", "layout");
+  return { ok: true, error: null };
+}
+
+export async function deleteTask(
+  taskId: string
+): Promise<{ ok: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "unauthenticated" };
+
+  const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/app", "layout");
+  return { ok: true, error: null };
+}
+
 export async function toggleTaskDone(taskId: string, done: boolean) {
   const supabase = await createClient();
   await supabase
