@@ -15,6 +15,8 @@ export type ConnectedChannel = {
   displayName: string;
   conversationCount: number;
   unreadCount: number;
+  status: "active" | "needs_reauth" | string;
+  lastSyncError: string | null;
 };
 
 export type InboxData = {
@@ -85,9 +87,9 @@ export async function getInboxData(): Promise<InboxData> {
       .limit(100),
     supabase
       .from("channel_accounts")
-      .select("id, kind, display_name, external_id")
+      .select("id, kind, display_name, external_id, status, last_sync_error")
       .eq("workspace_id", workspaceId)
-      .eq("status", "active")
+      .in("status", ["active", "needs_reauth"])
       .not("encrypted_tokens", "is", null)
       .order("connected_at", { ascending: true }),
   ]);
@@ -166,6 +168,8 @@ export async function getInboxData(): Promise<InboxData> {
         (acc.display_name as string) || (acc.external_id as string) || kind,
       conversationCount: convsForKind.length,
       unreadCount: convsForKind.filter((c) => c.unread).length,
+      status: (acc.status as string) ?? "active",
+      lastSyncError: (acc.last_sync_error as string | null) ?? null,
     };
   });
 

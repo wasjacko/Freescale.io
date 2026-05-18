@@ -150,7 +150,20 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         .eq("id", account.id);
     }
   } catch (err) {
-    report.errors.push(err instanceof Error ? err.message : "Refresh failed");
+    // Token refresh failed: usually invalid_grant (user revoked the
+    // grant from their Google account, or the refresh_token rotated
+    // out and we missed it). Flag the channel as needs_reauth so the
+    // SyncErrorBanner surfaces a 1-click reconnect CTA.
+    const msg = err instanceof Error ? err.message : "Refresh failed";
+    report.errors.push(msg);
+    await supabase
+      .from("channel_accounts")
+      .update({
+        status: "needs_reauth",
+        last_sync_error: msg,
+        last_sync_error_at: new Date().toISOString(),
+      })
+      .eq("id", account.id);
     return report;
   }
 

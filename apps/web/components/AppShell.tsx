@@ -19,6 +19,7 @@ import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { AutoSync } from "@/components/AutoSync";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
 import { FirstActionBanner } from "@/components/onboarding/FirstActionBanner";
+import { SyncErrorBanner } from "@/components/SyncErrorBanner";
 
 export function AppShell({
   user,
@@ -158,6 +159,7 @@ export function AppShell({
       <div className={appClasses}>
         <Sidebar user={user} />
         <div className="workspace">
+          <SyncErrorBanner channels={channels} />
           <div className="conv-shell">
             {showOnboardingChips && view === "inbox" && (
               <OnboardingChips
