@@ -3965,6 +3965,67 @@
     .mue-translated-msg p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
     /* ====================================================================
+       LandingFlash — top-of-page confirmation banner shown on the
+       marketing landing after a sign-out or account deletion.
+       ==================================================================== */
+    .landing-flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      color: #fff;
+      font-size: 13.5px;
+      letter-spacing: -0.005em;
+      animation: landing-flash-in 320ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes landing-flash-in {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .landing-flash.is-deleted {
+      background: linear-gradient(90deg, rgba(220, 38, 38, 0.95), rgba(15, 23, 42, 0.95));
+    }
+    .landing-flash-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      font-size: 14px;
+      flex: 0 0 auto;
+    }
+    .landing-flash-text {
+      flex: 1;
+      line-height: 1.4;
+    }
+    .landing-flash-text strong {
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .landing-flash-close {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.10);
+      border: 0;
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.85);
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 140ms;
+    }
+    .landing-flash-close:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+
+    /* ====================================================================
        FirstActionBanner — "guided action" card after sync + profiling.
        Audit-aligned: a real next step, not a product tour.
        ==================================================================== */

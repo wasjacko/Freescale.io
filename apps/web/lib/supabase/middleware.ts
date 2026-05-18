@@ -60,27 +60,26 @@ export async function updateSession(request: NextRequest) {
     isAuthRoute ||
     pathname.startsWith("/preview/");
 
-  // Authed users on the sign-in page → straight to /app, UNLESS they
-  // explicitly came to switch accounts (?switch=1) or just signed out
-  // (?signedout=1). Without these escape hatches the user is forever
-  // trapped in whatever account they first signed into — that was the
-  // "I changed Gmail but still see the old emails" bug.
-  const intentionalSignIn =
-    request.nextUrl.searchParams.has("switch") ||
-    request.nextUrl.searchParams.has("signedout") ||
-    request.nextUrl.searchParams.has("deleted");
-  if (user && pathname === "/welcome" && !intentionalSignIn) {
+  // Authed users on /welcome → straight to /app, UNLESS they explicitly
+  // came to switch accounts (?switch=1). Sign-out and account-deletion
+  // flows now redirect to "/" (the marketing landing) instead of
+  // /welcome, so ?signedout / ?deleted no longer need to bypass here.
+  if (user && pathname === "/welcome" && !request.nextUrl.searchParams.has("switch")) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     return NextResponse.redirect(url);
   }
 
-  // Authed user on the marketing landing → straight to /app. Defensive
-  // against Supabase falling back to Site URL after a misconfigured
-  // redirectTo: the session cookie is set but the OAuth chain dropped
-  // them on /, this catches that race so they don't see the landing
-  // for half a second before /app loads.
-  if (user && pathname === "/") {
+  // Authed user on the marketing landing → straight to /app. EXCEPT
+  // when they just came back from sign-out or account deletion (the
+  // session cookie should already be cleared by then; this is a
+  // defense-in-depth for the edge case where the cookie purge raced
+  // with the redirect). Letting these users see the landing once is
+  // fine — they explicitly chose to leave.
+  const hasLandingFlash =
+    request.nextUrl.searchParams.has("signedout") ||
+    request.nextUrl.searchParams.has("deleted");
+  if (user && pathname === "/" && !hasLandingFlash) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
     return NextResponse.redirect(url);

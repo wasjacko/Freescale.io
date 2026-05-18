@@ -1,20 +1,39 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MueAvatar } from "@/components/MueAvatar";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Sprite } from "@/components/icons/Sprite";
+import { LandingFlash } from "@/components/LandingFlash";
 
-export default async function LandingPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect("/app");
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const params = await searchParams;
+  // Authed user lands on /. Normally we'd bounce them to /app — UNLESS
+  // they just signed out / deleted their account, in which case the
+  // session cookie isn't really there anymore and we want them to see
+  // the confirmation banner first. Middleware handles the bounce too,
+  // belt-and-suspenders here.
+  const hasFlashIntent =
+    params.signedout !== undefined || params.deleted !== undefined;
+  if (!hasFlashIntent) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) redirect("/app");
+  }
 
   return (
     <div className="land">
       <Sprite />
+      <Suspense>
+        <LandingFlash />
+      </Suspense>
 
       <div className="land-nav-wrap">
         <header className="land-nav">

@@ -34,9 +34,12 @@ export function DangerZone({ email }: { email: string }) {
         setDeleting(false);
         return;
       }
-      // Hard navigation (not router.push) so we get a clean RSC tree
-      // with the now-invalid session evicted.
-      window.location.href = "/sign-in?deleted=1";
+      // Hard navigation to the marketing landing — the user just
+      // erased their account, they should land somewhere reassuring
+      // with a confirmation message, not the auth form. RSC tree is
+      // recomputed cleanly because window.location.href is a full
+      // page navigation.
+      window.location.href = "/?deleted=1";
     } catch (err) {
       push({
         text: err instanceof Error ? err.message : "Suppression impossible.",

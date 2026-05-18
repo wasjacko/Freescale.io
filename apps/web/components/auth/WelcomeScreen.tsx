@@ -29,24 +29,26 @@ export function WelcomeScreen() {
   const searchParams = useSearchParams();
   const supabase = createClient();
   const next = searchParams.get("next") ?? "/app";
-  const justSignedOut = searchParams.has("signedout");
-  const justDeleted = searchParams.has("deleted");
   const isSwitching = searchParams.has("switch");
+  const oauthError = searchParams.get("error");
 
   const [mode, setMode] = useState<"choice" | "google-consent" | "email" | "email-sent">(
     "choice"
   );
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState<"google" | "email" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    oauthError === "auth_callback"
+      ? "Connexion interrompue. Réessayez ou choisissez une autre méthode."
+      : oauthError === "missing_code"
+        ? "Code de connexion manquant. Réessayez."
+        : null
+  );
 
-  const banner = justDeleted
-    ? "Votre compte a été supprimé. Toutes vos données ont été effacées."
-    : justSignedOut
-      ? "Vous êtes bien déconnecté."
-      : isSwitching
-        ? "Connectez-vous avec un autre compte."
-        : null;
+  // The "switch account" intent gets a non-error informational banner.
+  // Sign-out / deletion confirmations live on the landing now — they
+  // don't pass through /welcome anymore.
+  const banner = isSwitching ? "Connectez-vous avec un autre compte." : null;
 
   const handleGoogleConfirm = async () => {
     setError(null);

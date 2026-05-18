@@ -48,8 +48,11 @@ async function handleSignOut(request: NextRequest) {
     // Network blip — fall through to local cookie purge regardless.
   }
 
+  // Bounce to the marketing landing, not the auth modal — signing out
+  // is "I'm done", not "I want to log in again right now". The landing
+  // shows a small confirmation banner via the ?signedout=1 query.
   const response = NextResponse.redirect(
-    new URL("/sign-in?signedout=1", request.url),
+    new URL("/?signedout=1", request.url),
     { status: 303 }
   );
 
