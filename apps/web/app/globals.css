@@ -3965,6 +3965,184 @@
     .mue-translated-msg p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
     /* ====================================================================
+       FirstActionBanner — "guided action" card after sync + profiling.
+       Audit-aligned: a real next step, not a product tour.
+       ==================================================================== */
+    .first-action {
+      margin: 12px 12px 0;
+      padding: 18px;
+      background:
+        linear-gradient(155deg, rgba(168, 85, 247, 0.10), rgba(99, 102, 241, 0.06) 50%, rgba(249, 115, 22, 0.04) 100%),
+        #fff;
+      border: 1px solid rgba(99, 102, 241, 0.16);
+      border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+      animation: first-action-in 320ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes first-action-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .first-action-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .first-action-orb {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+    .first-action-core {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #A855F7, #6366F1, #F97316);
+      box-shadow: 0 0 16px rgba(124, 58, 237, 0.40);
+    }
+    .first-action-text { flex: 1; min-width: 0; }
+    .first-action-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #0F172A;
+      letter-spacing: -0.010em;
+      line-height: 1.3;
+    }
+    .first-action-sub {
+      margin: 2px 0 0;
+      font-size: 12.5px;
+      color: #5B6475;
+      line-height: 1.5;
+    }
+    .first-action-close {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      color: #8B93A4;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .first-action-close:hover { background: rgba(0, 0, 0, 0.05); color: #0F172A; }
+
+    .first-action-ctas {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .first-action-cta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: background 140ms, border-color 140ms, transform 80ms, box-shadow 180ms;
+      font-family: inherit;
+      color: #0F172A;
+    }
+    .first-action-cta:hover:not(:disabled) {
+      background: #FAFAFC;
+      border-color: rgba(99, 102, 241, 0.30);
+      transform: translateY(-0.5px);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    }
+    .first-action-cta:disabled { opacity: 0.55; cursor: wait; }
+    .first-action-cta strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+    }
+    .first-action-cta em {
+      display: block;
+      font-style: normal;
+      font-size: 11.5px;
+      color: #5B6475;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .first-action-cta svg {
+      flex: 0 0 auto;
+      color: #6366F1;
+    }
+    .first-action-cta-primary {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.10), rgba(168, 85, 247, 0.06));
+      border-color: rgba(99, 102, 241, 0.25);
+    }
+    .first-action-cta-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(168, 85, 247, 0.10));
+      border-color: rgba(99, 102, 241, 0.40);
+    }
+    .first-action-cta-quiet svg { color: #8B93A4; }
+    .first-action-cta-quiet strong { color: #5B6475; }
+    .first-action-cta-quiet:hover:not(:disabled) strong { color: #0F172A; }
+    .first-action-cta-full {
+      justify-content: center;
+      width: 100%;
+      padding: 10px;
+    }
+
+    .first-action-brief {
+      padding: 8px 4px;
+    }
+    .first-action-brief-headline {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #0F172A;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+    .first-action-brief-list {
+      list-style: none;
+      margin: 0 0 12px;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .first-action-brief-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 8px 10px;
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      border-radius: 8px;
+    }
+    .first-action-brief-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      margin-top: 6px;
+    }
+    .first-action-brief-item.is-high   .first-action-brief-dot { background: #EF4444; }
+    .first-action-brief-item.is-medium .first-action-brief-dot { background: #F59E0B; }
+    .first-action-brief-item.is-low    .first-action-brief-dot { background: #8B93A4; }
+    .first-action-brief-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #0F172A;
+      line-height: 1.35;
+    }
+    .first-action-brief-who {
+      font-size: 11px;
+      color: #8B93A4;
+      margin-top: 1px;
+    }
+
+    /* ====================================================================
        InitialSyncIndicator — friendly progress during the FIRST sync.
        Audit-aligned: honest progress + reassuring message, never silent.
        ==================================================================== */

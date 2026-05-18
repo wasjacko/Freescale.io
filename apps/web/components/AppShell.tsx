@@ -18,6 +18,7 @@ import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { AutoSync } from "@/components/AutoSync";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
+import { FirstActionBanner } from "@/components/onboarding/FirstActionBanner";
 
 export function AppShell({
   user,
@@ -33,6 +34,15 @@ export function AppShell({
   // = first value already delivered). Audit-aligned.
   const showOnboardingChips =
     !!user && user.onboardedAt === null && channels.length > 0;
+  // First-action card: shown AFTER profiling is done (or skipped), and
+  // only when the user has both channels and conversations — at that
+  // point they've truly seen first value and we can offer guided next
+  // steps. Per-browser dismiss via localStorage handled inside the card.
+  const showFirstAction =
+    !!user &&
+    user.onboardedAt !== null &&
+    channels.length > 0 &&
+    conversations.length > 0;
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -150,6 +160,12 @@ export function AppShell({
                 initialRole={user?.profileRole}
                 initialObjective={user?.profileObjective}
                 initialUsageMode={user?.profileUsageMode}
+              />
+            )}
+            {showFirstAction && view === "inbox" && !showOnboardingChips && (
+              <FirstActionBanner
+                firstName={user?.firstName ?? "vous"}
+                conversationCount={conversations.length}
               />
             )}
             <Inbox />
