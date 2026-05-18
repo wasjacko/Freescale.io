@@ -62,18 +62,21 @@ export async function getInboxData(): Promise<InboxData> {
 
   const [convsRes, tasksRes, eventsRes, channelsRes] = await Promise.all([
     supabase
-      // conversations_active is a view that already filters out rows
-      // snoozed into the future via Postgres' native now(). Querying it
-      // (instead of conversations + an .or() filter) keeps the snooze
-      // comparison fully server-side — no JS-built ISO strings injected
-      // into the PostgREST URL, no coercion edge cases. The view has
-      // security_invoker = on, so workspace RLS still applies.
-      .from("conversations_active")
+      .from("conversations")
       .select(
         "id, preview, subject, last_message_at, unread_count, archived, category, starred, snoozed_until, tags, contacts(display_name, avatar_url, email), channel_accounts(kind)"
       )
       .eq("workspace_id", workspaceId)
       .eq("archived", false)
+      // Hide snoozed convs whose snoozed_until is still in the future.
+      // Postgres treats null in `or` as "doesn't match", so we explicitly
+      // include rows where snoozed_until is null.
+      //
+      // NOTE: an earlier commit (b38e3ac) tried to push this into a
+      // conversations_active Postgres view, but the migration wasn't
+      // applied yet in production → the inbox went empty. We reverted
+      // to the inline filter until the view migration is applied.
+      .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
       .order("last_message_at", { ascending: false })
       .limit(150),
     supabase
