@@ -9,25 +9,35 @@ export type SearchHit = {
   subject: string | null;
   preview: string;
   /** Where the match was found — drives the "matched in body" hint. */
-  matchedIn: "subject" | "preview" | "contact" | "body";
+  matchedIn: "subject" | "preview" | "contact" | "body" | "tag";
   lastMessageAt: string;
 };
 
 /**
  * Global inbox search — covers the user's full workspace, not just
- * the 150 conversations the inbox page eagerly loads. Three ILIKE
- * scans run in parallel:
+ * the 150 conversations the inbox page eagerly loads. Four scans
+ * run in parallel:
  *
  *   1. conversations: subject ILIKE %q% OR preview ILIKE %q%
  *   2. contacts:      display_name ILIKE %q% OR email ILIKE %q%
  *      (then walk back to the conversations they appear on)
  *   3. messages:      body_text ILIKE %q%
  *      (then walk back to the parent conversation)
+ *   4. conversations: tags @> [lowercased q] — exact-element contains.
+ *      Tag values are short normalized labels (lowercase, ≤24 chars),
+ *      so exact-match is the right level of strictness here. "fact"
+ *      won't match a "facture" tag — the user types the full tag name.
  *
- * Results are merged, deduplicated by conversation_id, sorted by
- * recency, and capped at `limit`. For workspaces under a few thousand
- * messages this is well under 200ms; past that we'd want a tsvector
- * full-text index (future work, not blocking).
+ * Results are merged, deduplicated by conversation_id (first-write
+ * wins, ordered subject → contact → tag → body), sorted by recency,
+ * and capped at `limit`. For workspaces under a few thousand messages
+ * this is well under 200ms; past that we'd want a tsvector full-text
+ * index (future work, not blocking).
+ *
+ * The tag query is guarded: if the user's Supabase doesn't have the
+ * conversations.tags column yet (migration 20260518200000 not applied),
+ * the .contains() call returns an error which we swallow — the other
+ * three scans still run and the search degrades gracefully.
  */
 export async function searchInbox(
   query: string,
@@ -56,8 +66,17 @@ export async function searchInbox(
   const safe = q.replace(/[%_]/g, "\\$&");
   const pattern = `%${safe}%`;
 
-  // Run three searches in parallel.
-  const [bySubjectPreview, byContact, byBody] = await Promise.all([
+  // Lowercase + trim for the tag scan; tags are normalized to lowercase
+  // server-side in setConversationTags, so an exact match needs the same
+  // shape. We only attempt the tag scan when q looks like a plausible
+  // single tag (no spaces, ≤24 chars) — otherwise it'd never match.
+  const tagCandidate = q.toLowerCase();
+  const isPlausibleTag = tagCandidate.length <= 24 && !/\s/.test(tagCandidate);
+
+  // Run four searches in parallel. The tag query is wrapped so a
+  // missing tags column (migration not applied yet) doesn't kill the
+  // rest of the search.
+  const [bySubjectPreview, byContact, byBody, byTag] = await Promise.all([
     supabase
       .from("conversations")
       .select(
@@ -89,6 +108,18 @@ export async function searchInbox(
       .ilike("body_text", pattern)
       .order("sent_at", { ascending: false })
       .limit(limit * 2),
+    isPlausibleTag
+      ? supabase
+          .from("conversations")
+          .select(
+            "id, subject, preview, last_message_at, contacts(display_name, email)"
+          )
+          .eq("workspace_id", workspace.id)
+          .eq("archived", false)
+          .contains("tags", [tagCandidate])
+          .order("last_message_at", { ascending: false })
+          .limit(limit)
+      : Promise.resolve({ data: [] as unknown[], error: null }),
   ]);
 
   const byConvId = new Map<string, SearchHit>();
@@ -120,6 +151,9 @@ export async function searchInbox(
   };
   collect(bySubjectPreview.data ?? [], "subject");
   collect(byContact.data ?? [], "contact");
+  // Tag results before body because a tag match is a stronger signal
+  // (user explicitly labeled the conv) than a substring in the body.
+  collect(byTag.data ?? [], "tag");
   collect(byBody.data ?? [], "body");
 
   const results = Array.from(byConvId.values())

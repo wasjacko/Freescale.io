@@ -17,6 +17,7 @@ const MATCH_LABEL: Record<SearchHit["matchedIn"], string> = {
   preview: "Aperçu",
   contact: "Contact",
   body: "Corps du mail",
+  tag: "Tag",
 };
 
 export function CommandPalette({ open, onClose }: CmdkProps) {
