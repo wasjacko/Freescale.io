@@ -75,6 +75,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Authed user on the marketing landing → straight to /app. Defensive
+  // against Supabase falling back to Site URL after a misconfigured
+  // redirectTo: the session cookie is set but the OAuth chain dropped
+  // them on /, this catches that race so they don't see the landing
+  // for half a second before /app loads.
+  if (user && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/app";
+    return NextResponse.redirect(url);
+  }
+
   // Anon users on protected routes → /welcome
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();

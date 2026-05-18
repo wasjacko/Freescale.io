@@ -20,17 +20,25 @@ import { encryptJSON } from "@/lib/encryption";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/app";
+  // Sanitize `next`: must be a same-origin relative path that points
+  // somewhere in /app. Some flows lose the query param or get it as "/"
+  // (e.g. Supabase falling back to Site URL) → in those cases default
+  // to /app so the user never lands on the marketing landing post-auth.
+  const rawNext = searchParams.get("next") ?? "/app";
+  const next =
+    rawNext.startsWith("/") && rawNext !== "/" && !rawNext.startsWith("//")
+      ? rawNext
+      : "/app";
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/sign-in?error=missing_code`);
+    return NextResponse.redirect(`${origin}/welcome?error=missing_code`);
   }
 
   const supabase = await createClient();
   const { data: sessionData, error: exchangeErr } =
     await supabase.auth.exchangeCodeForSession(code);
   if (exchangeErr || !sessionData.session) {
-    return NextResponse.redirect(`${origin}/sign-in?error=auth_callback`);
+    return NextResponse.redirect(`${origin}/welcome?error=auth_callback`);
   }
 
   const session = sessionData.session;
