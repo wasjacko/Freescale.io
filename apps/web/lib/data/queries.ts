@@ -64,10 +64,14 @@ export async function getInboxData(): Promise<InboxData> {
     supabase
       .from("conversations")
       .select(
-        "id, preview, subject, last_message_at, unread_count, archived, category, contacts(display_name, avatar_url, email), channel_accounts(kind)"
+        "id, preview, subject, last_message_at, unread_count, archived, category, starred, snoozed_until, contacts(display_name, avatar_url, email), channel_accounts(kind)"
       )
       .eq("workspace_id", workspaceId)
       .eq("archived", false)
+      // Hide snoozed convs whose snoozed_until is still in the future.
+      // Postgres treats null in `or` as "doesn't match", so we explicitly
+      // include rows where snoozed_until is null.
+      .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
       .order("last_message_at", { ascending: false })
       .limit(150),
     supabase

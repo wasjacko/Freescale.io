@@ -84,11 +84,21 @@ const TAB_LABELS: Record<CategoryTab, string> = {
 export function Inbox() {
   const router = useRouter();
   const { activeConvId, setActiveConv } = useApp();
-  const { conversations, archived, archive: archiveConv, unarchive, markRead, markUnread, isSyncing, channels } = useData();
+  const {
+    conversations,
+    archived,
+    archive: archiveConv,
+    unarchive,
+    markRead,
+    markUnread,
+    isSyncing,
+    channels,
+    toggleStar,
+    snooze,
+  } = useData();
   const push = useToast((s) => s.push);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [extraUnread, setExtraUnread] = useState<Set<string>>(new Set());
-  const [starred, setStarred] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FilterMode>("all");
   const [filterAnchor, setFilterAnchor] = useState<HTMLElement | null>(null);
   const filterBtnRef = useRef<HTMLButtonElement>(null);
@@ -151,6 +161,17 @@ export function Inbox() {
   const onContextAction = (convId: string, action: ContextAction) => {
     const conv = conversations.find((c) => c.id === convId);
     if (!conv) return;
+
+    // The "snooze" action carries a payload, so check for the object form first.
+    if (typeof action === "object" && action.kind === "snooze") {
+      void snooze(convId, action.untilIso);
+      push({
+        kind: "info",
+        text: action.untilIso ? `Snoozed: ${action.label}` : "Snooze annulé",
+      });
+      return;
+    }
+
     switch (action) {
       case "open":
         handleSelect(convId);
@@ -163,7 +184,7 @@ export function Inbox() {
           return next;
         });
         void markRead(convId);
-        push({ text: "Marked as read" });
+        push({ kind: "info", text: "Marqué comme lu" });
         break;
       case "mark-unread":
         setReadIds((prev) => {
@@ -173,22 +194,21 @@ export function Inbox() {
         });
         setExtraUnread((prev) => new Set(prev).add(convId));
         void markUnread(convId);
-        push({ text: "Marked as unread" });
+        push({ kind: "info", text: "Marqué comme non lu" });
         break;
       case "star":
-        setStarred((prev) => {
-          const next = new Set(prev);
-          if (next.has(convId)) next.delete(convId);
-          else next.add(convId);
-          return next;
-        });
-        push({ text: `★ Starred ${conv.name}` });
+        void toggleStar(convId, true);
+        push({ kind: "info", text: `★ ${conv.name}` });
+        break;
+      case "unstar":
+        void toggleStar(convId, false);
         break;
       case "archive":
         archiveConv(convId);
         push({
-          text: `${conv.name} archived`,
-          action: { label: "Undo", fn: () => unarchive(convId) },
+          kind: "info",
+          text: `${conv.name} archivé`,
+          action: { label: "Annuler", fn: () => unarchive(convId) },
         });
         break;
     }
@@ -388,7 +408,7 @@ export function Inbox() {
                       </span>
                       <span className="conv-bottom">
                         <span className="conv-preview">
-                          {starred.has(c.id) && "★ "}
+                          {c.starred && <span className="conv-star" aria-label="Étoile">★</span>}
                           {c.preview}
                         </span>
                         {unread && <span className="unread" />}
@@ -412,15 +432,20 @@ export function Inbox() {
         />
       )}
 
-      {ctx && (
-        <ContextMenu
-          x={ctx.x}
-          y={ctx.y}
-          isUnread={isUnread(ctx.convId, conversations.find((c) => c.id === ctx.convId)?.unread)}
-          onClose={() => setCtx(null)}
-          onAction={(action) => onContextAction(ctx.convId, action)}
-        />
-      )}
+      {ctx && (() => {
+        const ctxConv = conversations.find((c) => c.id === ctx.convId);
+        return (
+          <ContextMenu
+            x={ctx.x}
+            y={ctx.y}
+            isUnread={isUnread(ctx.convId, ctxConv?.unread)}
+            isStarred={!!ctxConv?.starred}
+            isSnoozed={!!ctxConv?.snoozedUntilIso}
+            onClose={() => setCtx(null)}
+            onAction={(action) => onContextAction(ctx.convId, action)}
+          />
+        );
+      })()}
     </section>
   );
 }

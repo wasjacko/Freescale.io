@@ -4076,6 +4076,44 @@
     }
 
     /* ====================================================================
+       Star + Snooze visual primitives in the conv list
+       ==================================================================== */
+    .conv-star {
+      color: #F59E0B;
+      margin-right: 4px;
+      font-size: 12px;
+      line-height: 1;
+    }
+    [data-theme="dark"] .conv-star { color: #FBBF24; }
+
+    /* Context menu: snooze submenu (expand row + nested items) */
+    .ctx-item-expand {
+      display: flex;
+      align-items: center;
+    }
+    .ctx-item-chevron {
+      margin-left: auto;
+      color: #8B93A4;
+      font-size: 10px;
+    }
+    .ctx-submenu {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      margin: 2px 0 4px 22px;
+      padding-left: 6px;
+      border-left: 2px solid rgba(99, 102, 241, 0.20);
+    }
+    .ctx-item-sub {
+      font-size: 12px;
+      padding: 5px 8px;
+      color: #2A3242;
+    }
+    [data-theme="dark"] .ctx-item-sub { color: #B0B4C0; }
+    [data-theme="dark"] .ctx-item-chevron { color: #71747F; }
+    [data-theme="dark"] .ctx-submenu { border-left-color: rgba(99, 102, 241, 0.35); }
+
+    /* ====================================================================
        OfflineIndicator — fixed top pill, surfaces network state changes
        ==================================================================== */
     .offline-indicator {

@@ -10,6 +10,10 @@ import {
   sendMessage as srvSend,
   toggleTaskDone as srvToggleTask,
 } from "@/lib/actions/inbox";
+import {
+  toggleConversationStar as srvToggleStar,
+  snoozeConversation as srvSnooze,
+} from "@/lib/actions/conversation-flags";
 
 type Ctx = {
   conversations: Conversation[];
@@ -27,6 +31,8 @@ type Ctx = {
   unarchive: (id: string) => void;
   appendOutgoingMessage: (convId: string, text: string) => Promise<void>;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
+  toggleStar: (convId: string, starred: boolean) => Promise<void>;
+  snooze: (convId: string, untilIso: string | null) => Promise<void>;
 };
 
 const DataCtx = createContext<Ctx | null>(null);
@@ -97,6 +103,25 @@ export function DataProvider({
     await srvToggleTask(taskId, done);
   }, []);
 
+  const toggleStar = useCallback(async (convId: string, starred: boolean) => {
+    // Optimistic flip — UI updates instantly, server catches up.
+    setConversations((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, starred } : c))
+    );
+    await srvToggleStar(convId, starred);
+  }, []);
+
+  const snooze = useCallback(async (convId: string, untilIso: string | null) => {
+    // Optimistic remove from the list when snoozing into the future,
+    // or update the field if un-snoozing. Server confirms async.
+    setConversations((prev) =>
+      untilIso && new Date(untilIso) > new Date()
+        ? prev.filter((c) => c.id !== convId)
+        : prev.map((c) => (c.id === convId ? { ...c, snoozedUntilIso: untilIso } : c))
+    );
+    await srvSnooze(convId, untilIso);
+  }, []);
+
   const value = useMemo<Ctx>(
     () => ({
       conversations,
@@ -114,6 +139,8 @@ export function DataProvider({
       unarchive,
       appendOutgoingMessage,
       toggleTask,
+      toggleStar,
+      snooze,
     }),
     [
       conversations,
@@ -130,6 +157,8 @@ export function DataProvider({
       unarchive,
       appendOutgoingMessage,
       toggleTask,
+      toggleStar,
+      snooze,
     ]
   );
 

@@ -77,6 +77,8 @@ export function adaptConversation(row: Row): Conversation {
     unread: ((row.unread_count as number) ?? 0) > 0,
     group: groupFor(lastAt),
     category,
+    starred: !!(row.starred as boolean | undefined),
+    snoozedUntilIso: (row.snoozed_until as string | null) ?? null,
     ...((row.subject as string) ? { subject: row.subject as string } : {}),
     ...((contact?.email as string) ? { contactEmail: contact!.email as string } : {}),
   };

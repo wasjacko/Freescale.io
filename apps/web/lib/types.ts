@@ -35,6 +35,9 @@ export type Conversation = {
   subject?: string;
   contactEmail?: string;
   category?: ConversationCategory;
+  starred?: boolean;
+  /** ISO date until which the conv is snoozed; null/undefined means active. */
+  snoozedUntilIso?: string | null;
 };
 
 export type MessageDirection = "in" | "out";
