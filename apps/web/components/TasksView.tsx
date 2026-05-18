@@ -181,7 +181,33 @@ export function TasksView() {
     }
   };
 
-  // -- Drag handlers (top-level only) -----------------------------------
+  // -- Reorder logic (top-level only) -----------------------------------
+  //
+  // Shared by BOTH the HTML5 drag-and-drop path (mouse on desktop) and
+  // the Pointer/touch path (mobile fallback). Computes a new sequence
+  // by moving sourceId to just before targetId, persists it optimistically,
+  // and sends reorderTasks() to the server. Returns silently on a no-op.
+
+  const commitReorder = async (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    const seq = grouped.map((g) => g.parent.id);
+    const without = seq.filter((id) => id !== sourceId);
+    const insertAt = without.indexOf(targetId);
+    if (insertAt === -1) return;
+    const next = [...without.slice(0, insertAt), sourceId, ...without.slice(insertAt)];
+    const override: Record<string, number> = {};
+    next.forEach((id, idx) => (override[id] = idx));
+    setOrderOverride(override);
+    const res = await reorderTasks(next);
+    if (!res.ok) {
+      push({ kind: "error", text: res.error ?? "Réorganisation impossible." });
+      setOrderOverride(null);
+      return;
+    }
+    setTimeout(() => setOrderOverride(null), 1500);
+  };
+
+  // -- HTML5 drag-and-drop (mouse/keyboard, desktop) --------------------
 
   const onDragStart = (e: React.DragEvent, id: string) => {
     setDragId(id);
@@ -204,39 +230,67 @@ export function TasksView() {
   };
   const onDrop = async (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
-    if (!dragId || dragId === targetId) {
-      setDragId(null);
+    if (!dragId) {
       setDragOverId(null);
       return;
     }
-    // Compute the new order: take the current top-level sequence and
-    // move dragId to just before targetId. Single pass, O(n).
-    const seq = grouped.map((g) => g.parent.id);
-    const without = seq.filter((id) => id !== dragId);
-    const insertAt = without.indexOf(targetId);
-    if (insertAt === -1) {
-      setDragId(null);
-      setDragOverId(null);
-      return;
-    }
-    const next = [...without.slice(0, insertAt), dragId, ...without.slice(insertAt)];
-    // Optimistic override so the UI rearranges before the server confirms.
-    const override: Record<string, number> = {};
-    next.forEach((id, idx) => (override[id] = idx));
-    setOrderOverride(override);
+    const sourceId = dragId;
     setDragId(null);
     setDragOverId(null);
-    const res = await reorderTasks(next);
-    if (!res.ok) {
-      push({ kind: "error", text: res.error ?? "Réorganisation impossible." });
-      setOrderOverride(null);
-      return;
-    }
-    // The server-issued revalidatePath refreshes the page payload; clear
-    // the override once that lands (or after a short delay as a fallback).
-    setTimeout(() => setOrderOverride(null), 1500);
+    await commitReorder(sourceId, targetId);
   };
   const onDragEnd = () => {
+    setDragId(null);
+    setDragOverId(null);
+  };
+
+  // -- Pointer/touch fallback (iOS / Android) ---------------------------
+  //
+  // HTML5 dragstart is dead on iOS Safari and most Android browsers, so
+  // we add a parallel Pointer-events path on the drag handle itself.
+  // We only engage it for pointerType === "touch" — mouse / pen users
+  // keep the native HTML5 path with its OS-level drag image + auto-scroll.
+
+  const touchPointerIdRef = useRef<number | null>(null);
+
+  const onHandlePointerDown = (e: React.PointerEvent, id: string) => {
+    if (e.pointerType !== "touch") return; // Mouse / pen → let HTML5 drag run.
+    e.preventDefault();
+    e.stopPropagation();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    touchPointerIdRef.current = e.pointerId;
+    setDragId(id);
+  };
+
+  const onHandlePointerMove = (e: React.PointerEvent) => {
+    if (e.pointerId !== touchPointerIdRef.current) return;
+    if (!dragId) return;
+    // Walk up from the element under the touch point to find the nearest
+    // task row, so the drop target snaps row-by-row regardless of where
+    // the user's finger landed within a row.
+    const under = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const groupEl = under?.closest("[data-task-id]") as HTMLElement | null;
+    const targetId = groupEl?.getAttribute("data-task-id") ?? null;
+    if (targetId && targetId !== dragId) {
+      setDragOverId(targetId);
+    } else if (!targetId) {
+      setDragOverId(null);
+    }
+  };
+
+  const onHandlePointerUp = async (e: React.PointerEvent) => {
+    if (e.pointerId !== touchPointerIdRef.current) return;
+    touchPointerIdRef.current = null;
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    const sourceId = dragId;
+    const targetId = dragOverId;
+    setDragId(null);
+    setDragOverId(null);
+    if (sourceId && targetId) await commitReorder(sourceId, targetId);
+  };
+
+  const onHandlePointerCancel = () => {
+    touchPointerIdRef.current = null;
     setDragId(null);
     setDragOverId(null);
   };
@@ -316,6 +370,7 @@ export function TasksView() {
           return (
             <li
               key={parent.id}
+              data-task-id={parent.id}
               className={`task-group ${isDropTarget ? "is-drop-target" : ""}`}
             >
               <div
@@ -329,7 +384,16 @@ export function TasksView() {
                 onDrop={(e) => onDrop(e, parent.id)}
                 onDragEnd={onDragEnd}
               >
-                <span className="task-drag-handle" aria-hidden title="Glisser pour réorganiser">
+                <span
+                  className="task-drag-handle"
+                  title="Glisser pour réorganiser"
+                  aria-label="Glisser pour réorganiser"
+                  role="button"
+                  onPointerDown={(e) => onHandlePointerDown(e, parent.id)}
+                  onPointerMove={onHandlePointerMove}
+                  onPointerUp={onHandlePointerUp}
+                  onPointerCancel={onHandlePointerCancel}
+                >
                   <svg viewBox="0 0 8 14" width="8" height="14" fill="currentColor">
                     <circle cx="2" cy="2" r="1.2" />
                     <circle cx="6" cy="2" r="1.2" />

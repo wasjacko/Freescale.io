@@ -2821,10 +2821,24 @@
       cursor: grab;
       opacity: 0;
       transition: opacity 140ms, color 140ms;
+      /* Block iOS / Android default touch behaviour (scroll, pinch) so a
+         finger press on the handle goes straight into our drag logic
+         instead of scrolling the task list. */
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     .task-group:hover > .task-item > .task-drag-handle { opacity: 1; }
     .task-drag-handle:hover { color: #6B7280; }
     .task-drag-handle:active { cursor: grabbing; }
+
+    /* On devices without hover (mobile, tablets) we can't rely on a
+       hover state to reveal the handle. Make it permanently visible
+       (still subtle, since it lives at the very left edge of the row). */
+    @media (hover: none) {
+      .task-drag-handle { opacity: 0.55; }
+      .task-drag-handle:active { opacity: 1; }
+    }
 
     .task-item.is-dragging {
       opacity: 0.4;
