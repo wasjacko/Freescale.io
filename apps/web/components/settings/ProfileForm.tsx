@@ -10,6 +10,7 @@ type Initial = {
   timezone: string;
   locale: string;
   email: string;
+  signature: string;
 };
 
 const LANGS = [
@@ -62,6 +63,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [fullName, setFullName] = useState(initial.fullName);
   const [timezone, setTimezone] = useState(initial.timezone);
   const [locale, setLocale] = useState(initial.locale);
+  const [signature, setSignature] = useState(initial.signature);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -118,12 +120,20 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const dirty =
     fullName !== initial.fullName ||
     timezone !== initial.timezone ||
-    locale !== initial.locale;
+    locale !== initial.locale ||
+    signature !== initial.signature;
 
   const handleSave = () => {
     startTransition(async () => {
       try {
-        await savePersonalProfile({ fullName, timezone, locale });
+        await savePersonalProfile({ fullName, timezone, locale, signature });
+        // Bust the EmailComposer's module-level signature cache so the
+        // next reply uses the fresh value without a page reload.
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("freescale:signature-updated", { detail: signature })
+          );
+        }
         setToast({ kind: "ok", text: "Profil enregistré." });
       } catch (err) {
         setToast({
@@ -297,6 +307,28 @@ export function ProfileForm({ initial }: { initial: Initial }) {
                 <option key={l.id} value={l.id}>{l.label}</option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="settings-divider" />
+
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Signature email</h3>
+            <p>
+              Ajoutée automatiquement à la fin de chaque réponse envoyée
+              depuis Freescale, séparée du corps par une ligne « -- ».
+            </p>
+          </div>
+          <div className="settings-row-control">
+            <textarea
+              className="settings-input settings-textarea"
+              value={signature}
+              onChange={(e) => setSignature(e.target.value)}
+              rows={5}
+              placeholder={"Wacil Ait\nFondateur — Freescale\nfreescale.site"}
+              maxLength={1000}
+            />
           </div>
         </div>
       </div>

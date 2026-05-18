@@ -9,6 +9,7 @@ import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import { sendEmailReply } from "@/lib/actions/inbox";
+import { getEmailSignature } from "@/lib/actions/profile";
 import { getConversationMessages } from "@/lib/actions/thread-messages";
 import {
   suggestReplies,
@@ -603,6 +604,23 @@ function EmailCard({
   );
 }
 
+// Module-level memo for the user's email signature. Fetched once per
+// session so we don't hit the server every time the composer mounts.
+// Reset implicitly when the page reloads (e.g. after a profile save).
+let _cachedSignature: string | null = null;
+async function loadSignatureCached(): Promise<string> {
+  if (_cachedSignature !== null) return _cachedSignature;
+  try {
+    const sig = await getEmailSignature();
+    _cachedSignature = sig;
+    return sig;
+  } catch {
+    return "";
+  }
+}
+
+const SIGNATURE_SEP = "\n\n-- \n";
+
 function EmailComposer({
   conversationId,
   toName,
@@ -619,17 +637,49 @@ function EmailComposer({
   const [showCc, setShowCc] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
+  const [signature, setSignature] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Mue — AI reply suggestions
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
   const [suggesting, setSuggesting] = useState(false);
 
-  // Reset suggestions whenever the user switches to a different conv
+  // Reset suggestions + pre-fill body with the signature whenever the
+  // user switches to a different conv. We prefill (rather than appending
+  // on send) so the user sees exactly what will be sent and can tweak it.
   useEffect(() => {
+    let cancelled = false;
     setSuggestions([]);
-    setBody("");
+    void loadSignatureCached().then((sig) => {
+      if (cancelled) return;
+      setSignature(sig);
+      setBody(sig ? `${SIGNATURE_SEP}${sig}` : "");
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [conversationId]);
+
+  // Listen for ProfileForm saves to refresh the cached signature and
+  // update the current draft (only if the user hasn't started typing).
+  useEffect(() => {
+    const onUpdate = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail ?? "";
+      _cachedSignature = detail;
+      setSignature(detail);
+      // Only auto-refresh the draft body if the user's draft is still
+      // just the previous signature (i.e. they haven't typed anything).
+      setBody((prev) => {
+        const isJustSignature =
+          prev.trim() === "" ||
+          (signature && prev === `${SIGNATURE_SEP}${signature}`);
+        if (isJustSignature) return detail ? `${SIGNATURE_SEP}${detail}` : "";
+        return prev;
+      });
+    };
+    window.addEventListener("freescale:signature-updated", onUpdate);
+    return () => window.removeEventListener("freescale:signature-updated", onUpdate);
+  }, [signature]);
 
   const handleSuggest = async () => {
     setSuggesting(true);
@@ -682,7 +732,9 @@ function EmailComposer({
 
       await sendEmailReply(fd);
       push({ text: "Email envoyé via Gmail ✉", duration: 3000 });
-      setBody("");
+      // Reset back to a fresh draft with just the signature, so the
+      // next reply opens ready-to-type.
+      setBody(signature ? `${SIGNATURE_SEP}${signature}` : "");
       setCc("");
       setShowCc(false);
       setFiles([]);
@@ -758,7 +810,12 @@ function EmailComposer({
               type="button"
               className="mue-suggestion-chip"
               onClick={() => {
-                setBody(s.text);
+                // Insert the suggestion above the signature so the user
+                // doesn't lose their auto-appended sig when picking a
+                // Mue-generated reply.
+                setBody(
+                  signature ? `${s.text}${SIGNATURE_SEP}${signature}` : s.text
+                );
                 setSuggestions([]);
               }}
               title={s.text}

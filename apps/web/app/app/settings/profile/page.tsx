@@ -14,7 +14,7 @@ export default async function ProfileSettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, avatar_url, timezone, locale, email")
+    .select("full_name, avatar_url, timezone, locale, email, signature")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -29,6 +29,7 @@ export default async function ProfileSettingsPage() {
           timezone: (profile?.timezone as string) ?? "Europe/Paris",
           locale: (profile?.locale as string) ?? "fr",
           email: profileEmail,
+          signature: (profile?.signature as string | null) ?? "",
         }}
       />
       <DangerZone email={profileEmail} />

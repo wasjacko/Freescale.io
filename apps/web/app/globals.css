@@ -7546,6 +7546,23 @@
 }
 .settings-input:disabled { background: #FAFAFC; color: #8B93A4; cursor: not-allowed; }
 
+/* Multiline variant for fields like the email signature. */
+.settings-textarea {
+  height: auto;
+  min-height: 120px;
+  padding: 12px 14px;
+  line-height: 1.55;
+  resize: vertical;
+  font-family: inherit;
+  white-space: pre-wrap;
+}
+
+[data-theme="dark"] .settings-textarea {
+  background: rgba(255, 255, 255, 0.04);
+  color: #E6E9F2;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
 .settings-avatar {
   width: 64px;
   height: 64px;

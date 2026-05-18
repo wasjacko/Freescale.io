@@ -8,6 +8,7 @@ export type ProfileUpdate = {
   fullName: string;
   timezone: string;
   locale: string;
+  signature?: string;
 };
 
 export async function savePersonalProfile(input: ProfileUpdate) {
@@ -17,17 +18,44 @@ export async function savePersonalProfile(input: ProfileUpdate) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
+  // Trim the signature but preserve internal newlines — the user often
+  // formats their sig with explicit line breaks (name / role / company).
+  const sig = input.signature?.replace(/\s+$/g, "") ?? "";
+
   await supabase
     .from("profiles")
     .update({
       full_name: input.fullName.trim() || null,
       timezone: input.timezone || "Europe/Paris",
       locale: input.locale || "fr",
+      signature: sig.length ? sig : null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);
 
   revalidatePath("/app", "layout");
+}
+
+/**
+ * Fetch just the email signature for the current user. Called by the
+ * EmailComposer to auto-prepend it when the user opens a reply draft.
+ * Returns an empty string if no signature is configured (so the caller
+ * can safely concatenate without null-checks).
+ */
+export async function getEmailSignature(): Promise<string> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return "";
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("signature")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return (data?.signature as string | null) ?? "";
 }
 
 /**
