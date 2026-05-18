@@ -9050,13 +9050,13 @@
   color: #B5B0FF;
 }
 
-/* Inline tag pills inside conv rows (read-only, very compact). */
+/* Inline tag pills inside conv rows (read-only, very compact). Sits
+   inside .conv-main (a flex column) so it lines up under .conv-bottom. */
 .conv-tags {
-  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 .conv-tag-pill {
   display: inline-flex;
