@@ -51,7 +51,17 @@ export async function GET(request: NextRequest) {
   // refresh token (some re-sign-ins don't, even with prompt=consent) and
   // (b) we know the Google email. Otherwise the user is logged in but
   // the channel isn't created — they can still hit Settings → Connect
-  // Gmail manually as a fallback.
+  // Gmail manually as a fallback (NoChannelsHero on /app surfaces it).
+  if (!providerRefreshToken) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[auth/callback] no provider_refresh_token for ${userEmail || user.id}` +
+        ` — user signed in but Gmail bootstrap skipped.` +
+        ` Likely Google didn't re-issue a refresh token because the` +
+        ` user previously authorized this app on another account.` +
+        ` Fallback: Settings → Connections → Connect Gmail.`
+    );
+  }
   if (providerToken && providerRefreshToken && userEmail) {
     try {
       // Find the workspace this user owns. The handle_new_user trigger

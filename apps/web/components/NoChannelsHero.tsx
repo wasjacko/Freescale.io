@@ -18,16 +18,17 @@ export function NoChannelsHero() {
         <span className="no-channels-icon">
           <Icon name="i-inbox" />
         </span>
-        <h2 className="no-channels-title">Aucun canal connecté</h2>
+        <h2 className="no-channels-title">Connectons votre boîte mail</h2>
         <p className="no-channels-sub">
-          Branchez un outil pour voir vos messages ici.
+          Freescale unifie vos messages en un seul endroit. Commencez par votre
+          Gmail — c'est instantané.
         </p>
         <button
           type="button"
           className="no-channels-cta"
           onClick={() => setOpen(true)}
         >
-          Connecter un outil
+          Connecter Gmail
         </button>
       </div>
 
