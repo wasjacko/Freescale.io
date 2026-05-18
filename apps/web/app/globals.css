@@ -3965,6 +3965,175 @@
     .mue-translated-msg p { margin: 0; font-size: 12.5px; line-height: 1.5; }
 
     /* ====================================================================
+       NewTaskModal — manual task creation from the TasksView header
+       ==================================================================== */
+    .new-task-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+      animation: dz-fade-in 180ms ease-out;
+    }
+    .new-task-modal {
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 24px 18px;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.28);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: dz-pop-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .new-task-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+    .new-task-head h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.010em;
+      color: #0F172A;
+    }
+    .new-task-close {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      border: 0;
+      border-radius: 8px;
+      color: #8B93A4;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .new-task-close:hover { background: rgba(0, 0, 0, 0.05); color: #0F172A; }
+    .new-task-label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .new-task-label span {
+      font-size: 12px;
+      font-weight: 500;
+      color: #5B6475;
+    }
+    .new-task-label input,
+    .new-task-date {
+      padding: 10px 12px;
+      font-size: 14px;
+      background: #FAFAFC;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 10px;
+      color: #0F172A;
+      outline: none;
+      transition: border-color 140ms, background 140ms;
+      font-family: inherit;
+    }
+    .new-task-label input:focus,
+    .new-task-date:focus {
+      border-color: rgba(99, 102, 241, 0.30);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+    }
+    .new-task-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .new-task-col { display: flex; flex-direction: column; gap: 6px; }
+    .new-task-col-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #5B6475;
+    }
+    .new-task-priority {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .new-task-prio-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 10px;
+      background: #FAFAFC;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #0F172A;
+      cursor: pointer;
+      transition: background 120ms, border-color 120ms, transform 80ms;
+      font-family: inherit;
+    }
+    .new-task-prio-chip:hover:not(:disabled) {
+      background: #fff;
+      border-color: rgba(99, 102, 241, 0.30);
+      transform: translateY(-0.5px);
+    }
+    .new-task-prio-chip.is-active {
+      background: #fff;
+      border-color: #6366F1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18);
+    }
+    .new-task-prio-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+    .new-task-prio-chip.is-low    .new-task-prio-dot { background: #8B93A4; }
+    .new-task-prio-chip.is-medium .new-task-prio-dot { background: #F59E0B; }
+    .new-task-prio-chip.is-high   .new-task-prio-dot { background: #EF4444; }
+    .new-task-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(15, 23, 42, 0.04);
+    }
+    .new-task-cancel {
+      padding: 8px 14px;
+      background: transparent;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      border-radius: 9px;
+      color: #2A3242;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 140ms;
+    }
+    .new-task-cancel:hover:not(:disabled) { background: #FAFAFC; }
+    .new-task-submit {
+      padding: 8px 16px;
+      background: #0F172A;
+      border: 0;
+      border-radius: 9px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 140ms, transform 80ms, opacity 140ms;
+    }
+    .new-task-submit:hover:not(:disabled) {
+      background: #1E293B;
+      transform: translateY(-0.5px);
+    }
+    .new-task-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ====================================================================
        LandingFlash — top-of-page confirmation banner shown on the
        marketing landing after a sign-out or account deletion.
        ==================================================================== */

@@ -401,3 +401,71 @@ export async function toggleTaskDone(taskId: string, done: boolean) {
     .eq("id", taskId);
   revalidatePath("/");
 }
+
+/**
+ * Create a task manually from the TasksView "New task" button (or
+ * anywhere else that needs a one-off task without Mue context).
+ *
+ * Resolves the user's workspace via owner_id so we don't need the
+ * client to pass it. Returns the new task id on success so callers
+ * can do optimistic UI rather than a full refresh if they prefer.
+ */
+export async function createTask(input: {
+  title: string;
+  description?: string | null;
+  priority?: "urgent" | "high" | "medium" | "low";
+  conversationId?: string | null;
+  due?: string | null; // ISO date YYYY-MM-DD or full timestamp
+}): Promise<{ ok: boolean; taskId: string | null; error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, taskId: null, error: "unauthenticated" };
+
+  const title = input.title.trim();
+  if (!title) return { ok: false, taskId: null, error: "Title is required." };
+
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!workspace?.id) {
+    return { ok: false, taskId: null, error: "no workspace" };
+  }
+
+  // Normalise the due date: accept "YYYY-MM-DD" by widening to end-of-day
+  // local time (so "due tomorrow" doesn't expire at 00:00 of that day).
+  let dueAt: string | null = null;
+  if (input.due) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input.due)) {
+      const d = new Date(`${input.due}T23:59:00`);
+      dueAt = isNaN(d.getTime()) ? null : d.toISOString();
+    } else {
+      const d = new Date(input.due);
+      dueAt = isNaN(d.getTime()) ? null : d.toISOString();
+    }
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("tasks")
+    .insert({
+      workspace_id: workspace.id,
+      conversation_id: input.conversationId ?? null,
+      title,
+      description: input.description ?? null,
+      priority: input.priority ?? "medium",
+      status: "todo",
+      due_at: dueAt,
+      ai_generated: false,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { ok: false, taskId: null, error: error.message };
+  revalidatePath("/app", "layout");
+  return { ok: true, taskId: (inserted?.id as string) ?? null, error: null };
+}

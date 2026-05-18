@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useData } from "@/lib/contexts/DataContext";
+import { useToast } from "@/lib/hooks/useToast";
 import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
+import { NewTaskModal } from "@/components/NewTaskModal";
+import { dailyBriefing } from "@/lib/actions/mue";
+import { createTask } from "@/lib/actions/inbox";
 
 const TAB_STATUSES = [
   { id: "todo", label: "To do" },
@@ -13,8 +18,49 @@ const TAB_STATUSES = [
 ] as const;
 
 export function TasksView() {
+  const router = useRouter();
+  const push = useToast((s) => s.push);
   const { tasks, toggleTask } = useData();
   const [activeTab, setActiveTab] = useState<string>("todo");
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [analyzing, startAnalyzing] = useTransition();
+
+  const handleAnalyze = () => {
+    startAnalyzing(async () => {
+      try {
+        const res = await dailyBriefing();
+        if (res.error || !res.briefing) {
+          push({ text: `Mue : ${res.error ?? "impossible"}`, duration: 4000 });
+          return;
+        }
+        if (res.briefing.items.length === 0) {
+          push({ text: res.briefing.headline ?? "Rien d'actionnable détecté." });
+          return;
+        }
+        let created = 0;
+        for (const item of res.briefing.items) {
+          const r = await createTask({
+            title: item.title,
+            description: item.why,
+            priority: item.priority,
+            conversationId: item.conversationId,
+            due: item.due,
+          });
+          if (r.ok) created += 1;
+        }
+        push({
+          text: `Mue a créé ${created} tâche${created > 1 ? "s" : ""}.`,
+          duration: 2800,
+        });
+        router.refresh();
+      } catch (err) {
+        push({
+          text: err instanceof Error ? err.message : "Analyse impossible.",
+          duration: 4000,
+        });
+      }
+    });
+  };
 
   const counts = {
     todo: tasks.filter((t) => t.status === "todo").length,
@@ -33,18 +79,31 @@ export function TasksView() {
     <section className="tasks-view" aria-label="Tasks">
       <header className="tasks-head">
         <h1>Tasks</h1>
-        <button className="btn-new-task" type="button">
+        <button
+          className="btn-new-task"
+          type="button"
+          onClick={() => setNewTaskOpen(true)}
+        >
           <Icon name="i-plus" />
-          New task
+          Nouvelle tâche
         </button>
       </header>
 
       <div className="scan-banner">
         <span className="scan-icon"><Icon name="i-spark" /></span>
-        <span className="scan-text">Scan and analyze new messages</span>
-        <button className="btn-analyze" type="button">
+        <span className="scan-text">
+          {analyzing
+            ? "Mue analyse vos conversations…"
+            : "Laissez Mue détecter les actions dans vos mails"}
+        </span>
+        <button
+          className="btn-analyze"
+          type="button"
+          onClick={handleAnalyze}
+          disabled={analyzing}
+        >
           <Icon name="i-spark" className="scan-spark icon" />
-          Analyze now
+          {analyzing ? "Analyse…" : "Analyser avec Mue"}
         </button>
       </div>
 
@@ -93,6 +152,8 @@ export function TasksView() {
           );
         })}
       </ul>
+
+      <NewTaskModal open={newTaskOpen} onClose={() => setNewTaskOpen(false)} />
     </section>
   );
 }
