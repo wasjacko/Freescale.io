@@ -703,21 +703,6 @@ function EmailCard({
   );
 }
 
-// Module-level memo for the user's email signature. Fetched once per
-// session so we don't hit the server every time the composer mounts.
-// Reset implicitly when the page reloads (e.g. after a profile save).
-let _cachedSignature: string | null = null;
-async function loadSignatureCached(): Promise<string> {
-  if (_cachedSignature !== null) return _cachedSignature;
-  try {
-    const sig = await getEmailSignature();
-    _cachedSignature = sig;
-    return sig;
-  } catch {
-    return "";
-  }
-}
-
 const SIGNATURE_SEP = "\n\n-- \n";
 
 function EmailComposer({
@@ -736,7 +721,12 @@ function EmailComposer({
   const [showCc, setShowCc] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
+  // Signature lives in component state (not a module-level cache) so it
+  // can't leak between users on a shared device. When user A signs out,
+  // the EmailComposer instance unmounts and the state is collected; the
+  // next sign-in mounts a fresh component with a fresh fetch.
   const [signature, setSignature] = useState("");
+  const [signatureLoaded, setSignatureLoaded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Mue — AI reply suggestions
@@ -750,21 +740,40 @@ function EmailComposer({
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(false);
 
-  // Reset suggestions + pre-fill body with the signature whenever the
-  // user switches to a different conv. We prefill (rather than appending
-  // on send) so the user sees exactly what will be sent and can tweak it.
+  // Fetch the signature ONCE per component lifecycle. The Composer mounts
+  // when the user enters /app and unmounts on sign-out → no cross-user
+  // leak (which the module-level cache used to have).
   useEffect(() => {
     let cancelled = false;
-    setSuggestions([]);
-    void loadSignatureCached().then((sig) => {
-      if (cancelled) return;
-      setSignature(sig);
-      setBody(sig ? `${SIGNATURE_SEP}${sig}` : "");
-    });
+    void (async () => {
+      try {
+        const sig = await getEmailSignature();
+        if (!cancelled) {
+          setSignature(sig);
+          setSignatureLoaded(true);
+        }
+      } catch {
+        if (!cancelled) setSignatureLoaded(true); // mark loaded even on error so the conv-switch effect can run with empty sig
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [conversationId]);
+  }, []);
+
+  // Reset suggestions + pre-fill body with the signature whenever the
+  // user switches to a different conv. We prefill (rather than appending
+  // on send) so the user sees exactly what will be sent and can tweak it.
+  // signature is NOT in the deps — that's intentional: if the user edits
+  // their sig in Settings mid-draft, the draft shouldn't be wiped. The
+  // dedicated "signature-updated" listener below handles that case
+  // conditionally (only updates body if it was still empty/just-the-sig).
+  useEffect(() => {
+    setSuggestions([]);
+    if (!signatureLoaded) return; // Wait for first fetch; avoids a "" → sig flash.
+    setBody(signature ? `${SIGNATURE_SEP}${signature}` : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, signatureLoaded]);
 
   // Close the templates menu on outside-click or Escape.
   useEffect(() => {
@@ -798,15 +807,14 @@ function EmailComposer({
     return () => window.removeEventListener("freescale:templates-changed", onChanged);
   }, []);
 
-  // Listen for ProfileForm saves to refresh the cached signature and
-  // update the current draft (only if the user hasn't started typing).
+  // Listen for ProfileForm saves so the composer reflects an in-session
+  // signature edit without a page reload. The body only auto-refreshes
+  // if the user's draft is still just the previous signature (i.e. they
+  // haven't typed anything) — otherwise we'd nuke a half-written reply.
   useEffect(() => {
     const onUpdate = (e: Event) => {
       const detail = (e as CustomEvent<string>).detail ?? "";
-      _cachedSignature = detail;
       setSignature(detail);
-      // Only auto-refresh the draft body if the user's draft is still
-      // just the previous signature (i.e. they haven't typed anything).
       setBody((prev) => {
         const isJustSignature =
           prev.trim() === "" ||
