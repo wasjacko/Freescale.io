@@ -3882,11 +3882,9 @@
     .btn-primary .icon { width: 15px; height: 15px; stroke-width: 1.8; }
 
     /* ====== AI COPILOT (Mue) ======
-       Warm-to-cool watercolor gradient — peach in the top half (matches
-       the blob mascot) fading to soft lavender-blue at the bottom.
-       Brought back per the user's request. The noise texture on
-       ::before stays subtle (0.35 opacity) to avoid banding without
-       leaning into a glassmorphism look. */
+       Solid white — no gradient, no noise. The user explicitly didn't
+       want the glassmorphism / transparent vibe on this block. The
+       blob mascot inside carries the visual warmth on its own. */
     .copilot {
       position: relative;
       min-height: 0;
@@ -3894,28 +3892,10 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: var(--r-xl);
-      border: 1px solid rgba(15, 23, 42, 0.04);
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.05);
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-      background:
-        radial-gradient(circle at 12% 0%, rgba(255, 200, 152, 0.58), transparent 52%),
-        radial-gradient(circle at 92% 18%, rgba(255, 215, 178, 0.45), transparent 50%),
-        radial-gradient(circle at 90% 100%, rgba(150, 190, 255, 0.55), transparent 55%),
-        radial-gradient(circle at 5% 88%, rgba(180, 210, 255, 0.50), transparent 58%),
-        linear-gradient(165deg, #FFF1E2 0%, #FFE8D5 22%, #F3ECFB 52%, #DDE7FF 80%, #CFDEFF 100%);
     }
-    .copilot::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.35;
-      mix-blend-mode: multiply;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.15  0 0 0 0 0.12  0 0 0 0 0.25  0 0 0 0.5 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
-      background-size: 180px 180px;
-    }
-    /* All direct children of .copilot need z-index so they sit ABOVE the
-       noise ::before pseudo-element. */
-    .copilot > * { position: relative; z-index: 1; }
 
     .copilot-inner {
       position: relative;
