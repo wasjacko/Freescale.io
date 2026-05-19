@@ -3879,9 +3879,11 @@
     .btn-primary .icon { width: 15px; height: 15px; stroke-width: 1.8; }
 
     /* ====== AI COPILOT (Mue) ======
-       Solid white — no gradient, no noise. The user explicitly didn't
-       want the glassmorphism / transparent vibe on this block. The
-       blob mascot inside carries the visual warmth on its own. */
+       Pastel violet → peach gradient — 4 radial-gradient corners
+       (peach top-left, peach top-right, lavender bottom-right,
+       lavender bottom-left) layered over a diagonal linear from
+       cream-peach at the top to soft lavender at the bottom.
+       No noise texture this time so it stays clean, not glassmorphism. */
     .copilot {
       position: relative;
       min-height: 0;
@@ -3889,9 +3891,14 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: var(--r-xl);
-      background: #FFFFFF;
       border: 1px solid rgba(15, 23, 42, 0.05);
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255, 200, 152, 0.58), transparent 52%),
+        radial-gradient(circle at 92% 18%, rgba(255, 215, 178, 0.45), transparent 50%),
+        radial-gradient(circle at 90% 100%, rgba(150, 190, 255, 0.55), transparent 55%),
+        radial-gradient(circle at 5% 88%, rgba(180, 210, 255, 0.50), transparent 58%),
+        linear-gradient(165deg, #FFF1E2 0%, #FFE8D5 22%, #F3ECFB 52%, #DDE7FF 80%, #CFDEFF 100%);
     }
 
     .copilot-inner {
