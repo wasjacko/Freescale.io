@@ -3,6 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { quickClassify, type Category as RuleCategory } from "@/lib/triage-rules";
 
 /**
  * Mue Triage — classify each conversation into one of four buckets so the
@@ -24,7 +25,119 @@ import { createClient } from "@/lib/supabase/server";
  *  - other: doesn't fit cleanly.
  */
 
-export type Category = "client" | "promo" | "notif" | "other";
+export type Category = RuleCategory;
+
+/**
+ * Fast deterministic triage — runs the rule-based quickClassify on every
+ * uncategorized conv in the user's workspace and writes the result in
+ * bulk. No external API, no env vars, runs in ~100ms for 500 convs.
+ *
+ * Designed to be called automatically when the user first opens the
+ * inbox with uncategorized mail — fills the tabs immediately. Mue's
+ * LLM classifier (classifyAllUncategorized) is still available via the
+ * ✨ button for users who want to refine the ambiguous cases.
+ */
+export async function triageHeuristic(): Promise<{
+  classified: number;
+  byCategory: Record<Category, number>;
+  errors: string[];
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      classified: 0,
+      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      errors: ["unauthenticated"],
+    };
+  }
+
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!workspace?.id) {
+    return {
+      classified: 0,
+      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      errors: ["no workspace"],
+    };
+  }
+
+  // Pull uncategorized convs. If the category column doesn't exist yet
+  // (migration 20260517180000 not applied), the .is() throws and we
+  // surface a clear error instead of looping forever.
+  const { data: convs, error: convErr } = await supabase
+    .from("conversations")
+    .select("id, subject, preview, contacts(display_name, email)")
+    .eq("workspace_id", workspace.id)
+    .is("category", null)
+    .limit(500);
+  if (convErr) {
+    return {
+      classified: 0,
+      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      errors: [`SELECT failed: ${convErr.message} (migration 20260517180000 may not be applied)`],
+    };
+  }
+  if (!convs?.length) {
+    return {
+      classified: 0,
+      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      errors: [],
+    };
+  }
+
+  // Classify in-memory, then bulk-write per category (4 UPDATEs max).
+  const byCategory: Record<Category, string[]> = {
+    client: [],
+    promo: [],
+    notif: [],
+    other: [],
+  };
+  for (const c of convs) {
+    const contact = Array.isArray(c.contacts) ? c.contacts[0] : c.contacts;
+    const cat = quickClassify({
+      fromEmail: (contact?.email as string) ?? "",
+      subject: (c.subject as string) ?? "",
+      preview: (c.preview as string) ?? "",
+    });
+    byCategory[cat].push(c.id as string);
+  }
+
+  const errors: string[] = [];
+  let classified = 0;
+  for (const cat of ["client", "promo", "notif", "other"] as Category[]) {
+    const ids = byCategory[cat];
+    if (ids.length === 0) continue;
+    const { error: upErr } = await supabase
+      .from("conversations")
+      .update({ category: cat, category_confidence: 0.6 })
+      .in("id", ids);
+    if (upErr) {
+      errors.push(`${cat}: ${upErr.message}`);
+    } else {
+      classified += ids.length;
+    }
+  }
+
+  revalidatePath("/app", "layout");
+  return {
+    classified,
+    byCategory: {
+      client: byCategory.client.length,
+      promo: byCategory.promo.length,
+      notif: byCategory.notif.length,
+      other: byCategory.other.length,
+    },
+    errors,
+  };
+}
 
 const SYSTEM_PROMPT = `You triage email conversations for an inbox app. Each conversation gets exactly one category:
 

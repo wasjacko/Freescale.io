@@ -8,7 +8,7 @@ import { useData } from "@/lib/contexts/DataContext";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
-import { classifyAllUncategorized } from "@/lib/actions/triage";
+import { classifyAllUncategorized, triageHeuristic } from "@/lib/actions/triage";
 import { bulkConversationAction } from "@/lib/actions/conversation-flags";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
@@ -110,6 +110,12 @@ export function Inbox() {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<CategoryTab>("client");
   const [triaging, setTriaging] = useState(false);
+  // Auto-triage state — fires once per inbox mount when unclassified > 0.
+  // "idle" → waiting to start, "running" → heuristic in flight,
+  // "done" → already ran this session, "skipped" → migration missing.
+  const [autoTriageState, setAutoTriageState] = useState<
+    "idle" | "running" | "done" | "skipped"
+  >("idle");
   // null = no tag filter. When set, only conversations whose .tags array
   // contains this exact tag are shown.
   const [tagFilter, setTagFilter] = useState<string | null>(null);
@@ -311,6 +317,51 @@ export function Inbox() {
     }
     return counts;
   }, [conversations, archived]);
+
+  // Auto-triage: when the inbox first loads with ≥1 unclassified conv,
+  // fire the heuristic classifier in the background. No LLM cost, no
+  // user click required — convs are routed into Clients/Promos/Notifs
+  // /Autres tabs within ~100ms. State machine prevents re-runs on every
+  // render. If the heuristic fails (e.g. category column missing in DB
+  // because migration 20260517180000 isn't applied), we flip to
+  // "skipped" so it doesn't keep retrying — user gets one toast and
+  // the manual flow still works.
+  useEffect(() => {
+    if (autoTriageState !== "idle") return;
+    if (tabCounts.unclassified < 1) return;
+    setAutoTriageState("running");
+    void (async () => {
+      try {
+        const report = await triageHeuristic();
+        if (report.errors.length > 0) {
+          setAutoTriageState("skipped");
+          push({
+            kind: "warning",
+            text: `Auto-tri non lancé : ${report.errors[0]?.slice(0, 90)}`,
+            duration: 5000,
+          });
+          return;
+        }
+        if (report.classified > 0) {
+          push({
+            kind: "info",
+            text: `Mue a auto-trié ${report.classified} conv${report.classified > 1 ? "s" : ""} · ${report.byCategory.client} client / ${report.byCategory.promo} promo / ${report.byCategory.notif} notif / ${report.byCategory.other} autre`,
+            duration: 3500,
+          });
+          router.refresh();
+        }
+        setAutoTriageState("done");
+      } catch (err) {
+        setAutoTriageState("skipped");
+        push({
+          kind: "error",
+          text: err instanceof Error ? err.message : "Auto-tri échoué",
+          duration: 4000,
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabCounts.unclassified, autoTriageState]);
 
   const filteredConvs = useMemo(() => {
     return conversations.filter((c) => {
