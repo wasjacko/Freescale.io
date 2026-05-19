@@ -18,6 +18,8 @@ import { useEffect, useState } from "react";
 
 type Theme = "auto" | "light" | "dark";
 const STORAGE_KEY = "fs-theme";
+const COOKIE_KEY = "fs-theme";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 function readStored(): Theme {
   if (typeof window === "undefined") return "auto";
@@ -28,6 +30,18 @@ function readStored(): Theme {
     /* ignore quota / storage-disabled */
   }
   return "auto";
+}
+
+function writeCookie(theme: Theme) {
+  if (typeof document === "undefined") return;
+  // Set cookie so the server can read it on next render and emit
+  // <html data-theme=…> before paint — no FOUC.
+  if (theme === "auto") {
+    // Expire the cookie immediately.
+    document.cookie = `${COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+  } else {
+    document.cookie = `${COOKIE_KEY}=${theme}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+  }
 }
 
 function apply(theme: Theme) {
@@ -59,6 +73,8 @@ export function ThemeToggle() {
     } catch {
       /* ignore */
     }
+    // Also persist as a cookie so SSR can emit data-theme on first paint.
+    writeCookie(next);
   };
 
   return (
