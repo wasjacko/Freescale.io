@@ -295,9 +295,10 @@ export function Thread() {
               <use href="#i-star" />
             </svg>
           </button>
-          <button className="icon-btn" type="button" aria-label="More" data-tip="More actions" onClick={() => push({ text: "More actions — coming soon" })}>
-            <Icon name="i-more" />
-          </button>
+          {/* "More actions" stub removed — every previously planned
+              option (mark unread, archive, snooze, set category, etc.)
+              is already reachable via the right-click context menu on
+              the conv row in the inbox. Audit #14. */}
         </div>
       </header>
 

@@ -121,7 +121,38 @@ create index if not exists tasks_parent_idx
   on public.tasks(parent_task_id)
   where parent_task_id is not null;
 
--- 10. conversations_active view — server-side snooze filter
+-- 10a. tasks: prevent grandchildren via trigger (audit #10)
+create or replace function public.task_no_grandchildren()
+returns trigger
+language plpgsql
+as $$
+begin
+  if NEW.parent_task_id is null then return NEW; end if;
+  if exists (
+    select 1 from public.tasks p
+    where p.id = NEW.parent_task_id
+      and p.parent_task_id is not null
+  ) then
+    raise exception 'tasks cannot nest more than 1 level deep'
+      using errcode = 'check_violation';
+  end if;
+  if exists (
+    select 1 from public.tasks c
+    where c.parent_task_id = NEW.id
+  ) then
+    raise exception 'task has subtasks and cannot become a subtask itself'
+      using errcode = 'check_violation';
+  end if;
+  return NEW;
+end;
+$$;
+drop trigger if exists tasks_no_grandchildren on public.tasks;
+create trigger tasks_no_grandchildren
+before insert or update on public.tasks
+for each row
+execute function public.task_no_grandchildren();
+
+-- 10b. conversations_active view — server-side snooze filter
 create or replace view public.conversations_active
 with (security_invoker = on)
 as

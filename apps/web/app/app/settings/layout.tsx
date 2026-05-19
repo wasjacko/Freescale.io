@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { Sprite } from "@/components/icons/Sprite";
-import { Icon } from "@/components/icons/Icon";
-
-const NAV = [
-  { href: "/app/settings/profile" as const, label: "Profil", icon: "i-user" },
-  { href: "/app/settings/connections" as const, label: "Connexions", icon: "i-globe" },
-  { href: "/app/settings/templates" as const, label: "Modèles", icon: "i-edit" },
-];
+import { SettingsNav } from "@/components/settings/SettingsNav";
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,14 +14,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           <span>Retour à l&apos;inbox</span>
         </Link>
         <div className="settings-rail-title">Paramètres</div>
-        <nav className="settings-nav">
-          {NAV.map((item) => (
-            <Link key={item.href} href={item.href} className="settings-nav-item">
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
+        <SettingsNav />
       </aside>
       <main className="settings-main">{children}</main>
     </div>
