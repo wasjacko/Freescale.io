@@ -5,12 +5,26 @@ import { useApp } from "@/lib/store";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import type { CurrentUser } from "@/lib/auth";
-import { summarizeThread, type ThreadSummary } from "@/lib/actions/mue";
+import {
+  summarizeThread,
+  suggestTasks,
+  type ThreadSummary,
+  type SuggestedTask,
+} from "@/lib/actions/mue";
+import { createTask } from "@/lib/actions/inbox";
+import { useRouter } from "next/navigation";
 
 type BriefState =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "result"; data: ThreadSummary }
+  | { kind: "error"; message: string };
+
+type ActionScanState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "found"; tasks: SuggestedTask[] }
+  | { kind: "empty" }
   | { kind: "error"; message: string };
 
 /**
@@ -32,7 +46,11 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
   const { activeConvId } = useApp();
   const { conversations } = useData();
   const push = useToast((s) => s.push);
+  const router = useRouter();
   const [askInput, setAskInput] = useState("");
+  // Tasks created from suggestions — used to disable their "Créer"
+  // button after a successful create so the user doesn't double-fire.
+  const [createdSuggestionIdx, setCreatedSuggestionIdx] = useState<Set<number>>(new Set());
 
   const conv = useMemo(
     () => conversations.find((c) => c.id === activeConvId) ?? null,
@@ -52,8 +70,11 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
   // user switches conversation so a stale brief never hangs over a
   // different thread.
   const [brief, setBrief] = useState<BriefState>({ kind: "idle" });
+  const [scan, setScan] = useState<ActionScanState>({ kind: "idle" });
   useEffect(() => {
     setBrief({ kind: "idle" });
+    setScan({ kind: "idle" });
+    setCreatedSuggestionIdx(new Set());
   }, [activeConvId]);
 
   const handleBrief = async () => {
@@ -75,8 +96,70 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
     }
   };
 
-  const handleAction = (label: string) => {
-    push({ kind: "info", text: `${label} — bientôt branché à Mue` });
+  // "Trouver une action ?" — scans the active conv for actionable
+  // items, only proposes a task AFTER finding one. Never auto-pushes.
+  // The user explicitly asks; Mue answers with "found X" or "rien".
+  const handleScan = async () => {
+    if (!activeConvId) return;
+    if (scan.kind === "loading") return;
+    setScan({ kind: "loading" });
+    try {
+      const res = await suggestTasks(activeConvId);
+      if (res.error) {
+        setScan({ kind: "error", message: res.error });
+      } else if (res.tasks.length === 0) {
+        setScan({ kind: "empty" });
+      } else {
+        setScan({ kind: "found", tasks: res.tasks });
+      }
+    } catch (err) {
+      setScan({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Erreur inconnue",
+      });
+    }
+  };
+
+  const handleCreateTaskFromSuggestion = async (
+    idx: number,
+    task: SuggestedTask
+  ) => {
+    if (createdSuggestionIdx.has(idx)) return;
+    setCreatedSuggestionIdx((prev) => new Set(prev).add(idx));
+    try {
+      const res = await createTask({
+        title: task.title,
+        priority: task.priority,
+        due: task.due,
+        conversationId: activeConvId || null,
+      });
+      if (res.ok) {
+        push({
+          kind: "info",
+          text: `Tâche créée : ${task.title.slice(0, 50)}`,
+          duration: 2500,
+        });
+        router.refresh();
+      } else {
+        // Rollback the optimistic "created" flag so the user can retry.
+        setCreatedSuggestionIdx((prev) => {
+          const next = new Set(prev);
+          next.delete(idx);
+          return next;
+        });
+        push({ kind: "error", text: res.error ?? "Création impossible." });
+      }
+    } catch (err) {
+      setCreatedSuggestionIdx((prev) => {
+        const next = new Set(prev);
+        next.delete(idx);
+        return next;
+      });
+      push({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Création impossible.",
+      });
+    }
   };
 
   const handleAsk = (e: React.FormEvent) => {
@@ -102,40 +185,23 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
         <MueBlob />
       </div>
 
-      {/* Headline — Mue's voice, tailored to the active conv */}
+      {/* Headline — neutral idle state. No fake "X veut une démo
+          lundi" anymore — Mue never proposes a task before having
+          actually read the thread. */}
       <h2 className="mue-headline">
         {conv
-          ? `${firstName} veut une démo lundi. Tu confirmes ?`
+          ? `Coucou ! Je suis là si tu veux que je regarde avec toi.`
           : "Sélectionne une conversation, je regarde avec toi."}
       </h2>
 
-      {/* Quick actions — Confirmer + Reporter are still placeholders
-          (will wire to action detection later). "Résumer" is the first
-          real Mue capability surfaced from the panel: hits summarizeThread
-          and renders a brief card below. */}
+      {/* Two real Mue capabilities — both REACTIVE (user-triggered),
+          never automatic:
+            • Résumer → summarizeThread, renders the brief card below
+            • Trouver une action ? → suggestTasks, renders the scan
+              result card below. Mue only proposes a task AFTER it
+              found one, never up-front. */}
       {conv && (
-        <div className="mue-chips" role="group" aria-label="Actions rapides">
-          <button
-            type="button"
-            className="mue-chip"
-            onClick={() => handleAction("Confirmer")}
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            Confirmer
-          </button>
-          <button
-            type="button"
-            className="mue-chip"
-            onClick={() => handleAction("Reporter")}
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="12" r="9" />
-              <polyline points="12 7 12 12 16 14" />
-            </svg>
-            Reporter
-          </button>
+        <div className="mue-chips" role="group" aria-label="Actions Mue">
           <button
             type="button"
             className="mue-chip mue-chip-primary"
@@ -153,6 +219,89 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
             </svg>
             {brief.kind === "loading" ? "Mue lit…" : "Résumer"}
           </button>
+          <button
+            type="button"
+            className="mue-chip"
+            onClick={handleScan}
+            disabled={scan.kind === "loading"}
+            aria-label="Trouver une action à faire"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            {scan.kind === "loading" ? "Mue cherche…" : "Trouver une action ?"}
+          </button>
+        </div>
+      )}
+
+      {/* Scan result card — appears after the user clicks "Trouver une
+          action ?". Mue's findings + explicit confirmation per task
+          before any creation. Pattern matches the brief card. */}
+      {scan.kind !== "idle" && conv && (
+        <div className="mue-brief-card" role="region" aria-live="polite" aria-label="Action détectée">
+          <header className="mue-brief-card-head">
+            <span className="mue-brief-card-label">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Action
+            </span>
+            <button
+              type="button"
+              className="mue-brief-card-close"
+              onClick={() => setScan({ kind: "idle" })}
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
+          </header>
+
+          {scan.kind === "loading" && (
+            <p className="mue-brief-card-loading">Mue lit la conversation…</p>
+          )}
+
+          {scan.kind === "error" && (
+            <p className="mue-brief-card-error">{scan.message}</p>
+          )}
+
+          {scan.kind === "empty" && (
+            <p className="mue-brief-card-tldr" style={{ color: "#94A3B8" }}>
+              Rien d&apos;urgent ici. Mue ne voit pas d&apos;action concrète à faire.
+            </p>
+          )}
+
+          {scan.kind === "found" && (
+            <>
+              <p className="mue-brief-card-tldr">
+                J&apos;ai trouvé {scan.tasks.length === 1 ? "une action" : `${scan.tasks.length} actions`} :
+              </p>
+              <ul className="mue-action-list">
+                {scan.tasks.map((task, i) => {
+                  const created = createdSuggestionIdx.has(i);
+                  return (
+                    <li key={i} className={`mue-action-item is-${task.priority}`}>
+                      <div className="mue-action-text">
+                        <span className="mue-action-title">{task.title}</span>
+                        {task.due && (
+                          <span className="mue-action-due"> · {task.due}</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className={`mue-action-confirm ${created ? "is-done" : ""}`}
+                        onClick={() => handleCreateTaskFromSuggestion(i, task)}
+                        disabled={created}
+                        aria-label={created ? "Tâche créée" : "Créer la tâche"}
+                      >
+                        {created ? "✓ Créée" : "Créer la tâche"}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
         </div>
       )}
 
