@@ -3036,76 +3036,62 @@
     }
     .filter-btn:hover { background: #FAFAFC; color: #0F172A; border-color: rgba(15, 23, 42, 0.12); }
     .filter-btn .icon { width: 16px; height: 16px; }
-    /* Subtle visual grouping: the Mue (action) button is followed by
-       a 1px divider that separates it from Refresh + Filter (utility).
-       Audit #12 — without this the 3 buttons read as a flat row with
-       no hierarchy. */
-    .filter-btn-action + .filter-btn {
-      margin-left: 8px;
-      position: relative;
-    }
-    .filter-btn-action + .filter-btn::before {
-      content: "";
-      position: absolute;
-      left: -5px;
-      top: 14%;
-      bottom: 14%;
-      width: 1px;
-      background: rgba(15, 23, 42, 0.10);
-    }
-    [data-theme="dark"] .filter-btn-action + .filter-btn::before {
-      background: rgba(255, 255, 255, 0.12);
-    }
+    /* Note: the old .filter-btn-action + ::before divider is gone now
+       that the inbox header uses the new .inbox-action stacked layout.
+       .filter-btn is still kept around for use elsewhere (e.g. small
+       icon-only buttons that aren't part of the main inbox actions). */
 
-    /* Mue category tabs — Clients / Promos / Notifs / Autres.
-       The "Clients" bucket is the default the user lands on. */
+    /* Inbox tabs — flat underline style. Active tab gets a 2px indigo
+       underline + bold indigo text. Inactive tabs are muted grey. No
+       pill background, no card — clean horizontal text row to match
+       the design spec. */
     .inbox-tabs {
       display: flex;
       align-items: center;
-      gap: 4px;
-      margin-top: 12px;
-      padding: 4px;
-      background: rgba(15, 23, 42, 0.04);
-      border-radius: 10px;
+      gap: 18px;
+      margin-top: 18px;
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
       flex-wrap: wrap;
     }
     .inbox-tab {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 5px 10px;
+      padding: 8px 0;
       background: transparent;
       border: 0;
-      border-radius: 7px;
-      font-size: 12.5px;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      font-size: 13.5px;
       font-weight: 500;
-      color: #5B6475;
+      color: #8B93A4;
       cursor: pointer;
-      transition: background 120ms, color 120ms;
+      transition: color 140ms, border-color 140ms;
     }
-    .inbox-tab:hover { background: rgba(255, 255, 255, 0.6); color: #0F172A; }
+    .inbox-tab:hover { color: #0F172A; }
     .inbox-tab.is-active {
-      background: #fff;
-      color: #0F172A;
+      color: #4F46E5;
       font-weight: 600;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      border-bottom-color: #4F46E5;
     }
     .inbox-tab-count {
       display: inline-grid;
       place-items: center;
-      min-width: 18px;
-      height: 18px;
-      padding: 0 5px;
-      font-size: 10.5px;
+      min-width: 22px;
+      height: 20px;
+      padding: 0 7px;
+      font-size: 11.5px;
       font-weight: 600;
-      color: #8B93A4;
+      color: #64748B;
       background: rgba(15, 23, 42, 0.06);
-      border-radius: 999px;
+      border-radius: 6px;
       line-height: 1;
     }
     .inbox-tab.is-active .inbox-tab-count {
       color: #4F46E5;
-      background: rgba(99, 102, 241, 0.12);
+      background: rgba(79, 70, 229, 0.12);
     }
     /* Muted "0" — keep the spacing rhythm without screaming an empty
        bucket. Audit #19. */
@@ -3121,10 +3107,12 @@
     }
 
     .panel-title {
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 700;
       letter-spacing: -0.02em;
       color: #0F172A;
+      line-height: 1.1;
+      margin: 0;
     }
 
     .panel-count {
@@ -3132,6 +3120,80 @@
       font-weight: 500;
       color: #B0B5C0;
       letter-spacing: -0.005em;
+    }
+
+    /* Stacked inbox head — title alone, then a row of labeled action
+       buttons (Mue primary + Refresh / Filter outlined). Replaces the
+       previous side-by-side icon-only layout. */
+    .inbox-head-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .inbox-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .inbox-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 38px;
+      padding: 0 14px;
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      background: #fff;
+      color: #0F172A;
+      font-size: 13.5px;
+      font-weight: 500;
+      font-family: inherit;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 80ms ease;
+    }
+    .inbox-action:hover {
+      background: #FAFAFC;
+      border-color: rgba(15, 23, 42, 0.16);
+    }
+    .inbox-action:active { transform: scale(0.985); }
+    .inbox-action:disabled { opacity: 0.55; cursor: not-allowed; }
+    .inbox-action .icon { width: 16px; height: 16px; }
+    .inbox-action-primary {
+      background: #4F46E5;
+      border-color: #4F46E5;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.24);
+    }
+    .inbox-action-primary:hover {
+      background: #4338CA;
+      border-color: #4338CA;
+    }
+    .inbox-action-primary:disabled { background: #4F46E5; border-color: #4F46E5; }
+    .icon-sparkle {
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
+      opacity: 0.95;
+    }
+    [data-theme="dark"] .inbox-action {
+      background: #1F1F28;
+      border-color: rgba(255, 255, 255, 0.10);
+      color: #E6E9F2;
+    }
+    [data-theme="dark"] .inbox-action:hover {
+      background: #25252F;
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+    [data-theme="dark"] .inbox-action-primary {
+      background: #6366F1;
+      border-color: #6366F1;
+      color: #fff;
+    }
+    [data-theme="dark"] .inbox-action-primary:hover {
+      background: #7C72FF;
+      border-color: #7C72FF;
     }
 
     .search {
@@ -4385,13 +4447,12 @@
        Motion polish — small consistency tweaks across the app
        ==================================================================== */
 
-    /* Smooth tab indicator on the inbox category tabs (Clients/Promos/...)
-       so the "active" pill slides in instead of just appearing. */
+    /* Smooth fade on the underline + color of inbox tabs (Clients /
+       Promos / Notifs / Autres) when switching active state. */
     .inbox-tab {
       transition:
-        background 180ms cubic-bezier(0.16, 1, 0.3, 1),
         color 180ms cubic-bezier(0.16, 1, 0.3, 1),
-        box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+        border-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     /* Conversation row : tighter spring on hover/active so clicking
@@ -9196,17 +9257,23 @@
   border-color: rgba(99, 102, 241, 0.40);
 }
 
-/* Inbox category tabs (Clients / Promos / Notifs / Autres) */
-[data-theme="dark"] .inbox-tabs { background: rgba(255, 255, 255, 0.04); }
-[data-theme="dark"] .inbox-tab  { color: #B0B4C0; }
-[data-theme="dark"] .inbox-tab:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #F4F4F7;
-}
+/* Inbox category tabs — flat underline style (dark) */
+[data-theme="dark"] .inbox-tabs { background: transparent; }
+[data-theme="dark"] .inbox-tab  { color: #6B7280; border-bottom-color: transparent; }
+[data-theme="dark"] .inbox-tab:hover { color: #E6E9F2; }
 [data-theme="dark"] .inbox-tab.is-active {
-  background: #1B1B25;
-  color: #F4F4F7;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.40);
+  color: #A5B4FC;
+  border-bottom-color: #A5B4FC;
+  background: transparent;
+  box-shadow: none;
+}
+[data-theme="dark"] .inbox-tab-count {
+  background: rgba(255, 255, 255, 0.06);
+  color: #9CA3AF;
+}
+[data-theme="dark"] .inbox-tab.is-active .inbox-tab-count {
+  background: rgba(165, 180, 252, 0.16);
+  color: #A5B4FC;
 }
 [data-theme="dark"] .inbox-tab-count {
   background: rgba(255, 255, 255, 0.08);

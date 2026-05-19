@@ -556,60 +556,61 @@ export function Inbox() {
             </button>
           </div>
         )}
-        <div className="panel-title-row" style={bulkActive ? { display: "none" } : undefined}>
+        {/* Inbox header — stacked layout matching the design spec:
+            1) "Inbox" title alone
+            2) Three LABELED action buttons (Mue primary filled, Refresh
+               + Filter outlined)
+            3) Tabs row below (rendered further down)
+            Hidden when bulk-select is active so the bulk toolbar takes
+            over the full header surface. */}
+        <div className="inbox-head-stack" style={bulkActive ? { display: "none" } : undefined}>
           <h2 className="panel-title">Inbox</h2>
-          <span className="panel-count">
-            {tabCounts[tab]} conversation{tabCounts[tab] > 1 ? "s" : ""}
-            {tab !== "all" && (
-              <span className="panel-count-tab"> · {TAB_LABELS[tab]}</span>
-            )}
-          </span>
-          <button
-            className="filter-btn filter-btn-action"
-            type="button"
-            aria-label="Trier avec Mue"
-            data-tip="Mue trie tes mails par catégorie"
-            onClick={handleTriage}
-            disabled={triaging}
-            style={triaging ? { opacity: 0.5 } : undefined}
-          >
-            {/* Sparkle (Mue's signature mark) — replaces the previous
-                sunburst which read as "sun" not "sort/classify".
-                Audit #10. */}
-            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}>
-              <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4L12 3z" />
-              <path d="M19 14l.8 2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-1L19 14z" />
-            </svg>
-          </button>
-          <button
-            className="filter-btn"
-            type="button"
-            aria-label="Rafraîchir"
-            data-tip="Rafraîchir"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            style={refreshing ? { opacity: 0.5 } : undefined}
-          >
-            <svg className={`icon ${refreshing ? "is-spinning" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-          </button>
-          <button
-            ref={filterBtnRef}
-            className="filter-btn"
-            type="button"
-            aria-label="Filtrer"
-            data-tip="Filtrer"
-            onClick={() => setFilterAnchor(filterBtnRef.current)}
-          >
-            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="6" y1="12" x2="18" y2="12" />
-              <line x1="10" y1="18" x2="14" y2="18" />
-            </svg>
-          </button>
+          <div className="inbox-actions">
+            <button
+              type="button"
+              className="inbox-action inbox-action-primary"
+              aria-label="Trier avec Mue"
+              data-tip="Mue trie tes mails par catégorie"
+              onClick={handleTriage}
+              disabled={triaging}
+            >
+              {/* Filter/funnel icon to evoke "sort", paired with a
+                  small sparkle suffix that's Mue's signature. */}
+              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              <span>{triaging ? "Mue trie…" : "Trier avec Mue"}</span>
+              <svg className="icon-sparkle" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M12 3l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5L12 3z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="inbox-action"
+              aria-label="Rafraîchir"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <svg className={`icon ${refreshing ? "is-spinning" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              <span>Refresh</span>
+            </button>
+            <button
+              ref={filterBtnRef}
+              type="button"
+              className="inbox-action"
+              aria-label="Filtrer"
+              onClick={() => setFilterAnchor(filterBtnRef.current)}
+            >
+              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              <span>Filter</span>
+            </button>
+          </div>
         </div>
         <div className="inbox-tabs" role="tablist">
           {ALL_TABS.map((t) => (
