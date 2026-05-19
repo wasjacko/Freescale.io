@@ -1,296 +1,240 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useApp } from "@/lib/store";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import type { CurrentUser } from "@/lib/auth";
-import { Icon, ChannelLogo } from "@/components/icons/Icon";
-import { Avatar } from "@/components/ui/Avatar";
-import { MueAvatar } from "@/components/MueAvatar";
-import { useRouter } from "next/navigation";
-import {
-  dailyBriefing,
-  createTaskFromBrief,
-  type DailyBriefing,
-  type DailyBriefingItem,
-} from "@/lib/actions/mue";
-
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 5) return "Bonsoir";
-  if (h < 12) return "Bonjour";
-  if (h < 18) return "Bon après-midi";
-  return "Bonsoir";
-}
 
 /**
- * MuePanel — the "morning briefing" copilot panel on the right side.
+ * MuePanel — companion-style AI panel.
  *
- * Inspired by Kinso's daily-brief pattern (greeting + counts + briefing
- * CTA + ask bar). The three thread-level actions (Résumer / Tâches /
- * Traduire) moved out of here into Thread.tsx, where they live inline
- * with the conversation the user is reading — much closer to where
- * the action context actually is.
+ * Visual: a cute peach blob mascot at the top with eyes + a smile and
+ * floating particles, then a headline tailored to the active
+ * conversation, two quick-action chips, a quiet contact line, a tiny
+ * 2-bubble chat history, and an "Ask Mue" input at the bottom.
  *
- * This panel now plays the "concierge" role: a warm greeting at top,
- * a quick read on what's in the inbox today, and one big "Brief du
- * jour" button that asks Claude to summarise the day so the user can
- * triage at a glance. An "Ask Mue" input sits at the bottom as a
- * placeholder for the upcoming chat-with-Mue mode.
+ * The blob is pure SVG (radial gradients + organic path) so it scales
+ * crisply and animates via CSS keyframes — no Lottie or images.
+ *
+ * Mue's content is mocked for now (matched to the active conv when
+ * possible). Wiring to real Mue logic (summary/actions/follow-ups) is
+ * a follow-up — this pass nails the visual character.
  */
-export function MuePanel({ user }: { user?: CurrentUser | null }) {
-  const router = useRouter();
-  const { view, setActiveConv } = useApp();
-  const { conversations, tasks } = useData();
+export function MuePanel(_props: { user?: CurrentUser | null }) {
+  const { activeConvId } = useApp();
+  const { conversations } = useData();
   const push = useToast((s) => s.push);
-  const userName = user?.firstName ?? "vous";
-
-  // Real, currently-loaded inbox numbers so the greeting never lies.
-  const newCount = conversations.filter((c) => c.unread).length;
-  const activeCount = conversations.length - newCount;
-  const openTasksCount = tasks.filter((t) => t.status !== "done").length;
-
-  const [briefing, setBriefing] = useState<DailyBriefing | null>(null);
-  const [briefingLoading, setBriefingLoading] = useState(false);
-  const [briefingError, setBriefingError] = useState<string | null>(null);
   const [askInput, setAskInput] = useState("");
-  const [createdTaskTitles, setCreatedTaskTitles] = useState<Set<string>>(new Set());
 
-  const handleCreateTask = async (item: DailyBriefingItem) => {
-    const key = `${item.conversationId}__${item.title}`;
-    if (createdTaskTitles.has(key)) return;
-    setCreatedTaskTitles((s) => new Set(s).add(key));
-    try {
-      const res = await createTaskFromBrief({
-        conversationId: item.conversationId,
-        title: item.title,
-        description: item.why,
-        priority: item.priority,
-        due: item.due,
-      });
-      if (res.ok) {
-        push({ text: `Tâche créée : ${item.title.slice(0, 50)}…`, duration: 2400 });
-        router.refresh();
-      } else {
-        // Roll back the optimistic "created" so the user can retry.
-        setCreatedTaskTitles((s) => {
-          const next = new Set(s);
-          next.delete(key);
-          return next;
-        });
-        push({ text: `Erreur : ${res.error}`, duration: 4000 });
-      }
-    } catch (err) {
-      setCreatedTaskTitles((s) => {
-        const next = new Set(s);
-        next.delete(key);
-        return next;
-      });
-      push({
-        text: err instanceof Error ? err.message : "Création impossible.",
-      });
-    }
+  const conv = useMemo(
+    () => conversations.find((c) => c.id === activeConvId) ?? null,
+    [conversations, activeConvId]
+  );
+  const firstName = conv?.name.split(/[ –-]/)[0]?.trim() ?? "ton contact";
+
+  // Count other convs with the same contact (cross-thread context)
+  const sameContactCount = useMemo(() => {
+    if (!conv) return 0;
+    return conversations.filter((c) => c.name === conv.name).length;
+  }, [conversations, conv]);
+
+  const handleAction = (label: string) => {
+    push({ kind: "info", text: `${label} — bientôt branché à Mue` });
   };
 
-  const handleOpenConv = (id: string) => {
-    setActiveConv(id);
-  };
-
-  const handleBriefing = async () => {
-    if (briefingLoading) return;
-    setBriefingLoading(true);
-    setBriefingError(null);
-    setBriefing(null);
-    try {
-      const res = await dailyBriefing();
-      if (res.error || !res.briefing) {
-        setBriefingError(res.error ?? "Brief indisponible");
-      } else {
-        setBriefing(res.briefing);
-      }
-    } catch (err) {
-      setBriefingError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBriefingLoading(false);
-    }
+  const handleAsk = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!askInput.trim()) return;
+    push({ kind: "info", text: "Mue te répond bientôt — wired soon" });
+    setAskInput("");
   };
 
   return (
-    <aside className="copilot" aria-label="Mue AI copilot">
-      <header className="copilot-head">
-        <div className="ai-brand">
-          <span className="ai-name">Mue</span>
-          <span className="ai-pill">AI Copilot</span>
+    <aside className="copilot mue-pane" aria-label="Mue copilot">
+      {/* Stage — the blob mascot, its glow, and floating particles */}
+      <div className="mue-stage" aria-hidden>
+        <div className="mue-glow" />
+        <div className="mue-particles">
+          <span className="mue-particle mue-p1" />
+          <span className="mue-particle mue-p2" />
+          <span className="mue-particle mue-p3" />
+          <span className="mue-particle mue-p4" />
+          <span className="mue-particle mue-p5" />
+          <span className="mue-particle mue-p6" />
         </div>
-      </header>
+        <MueBlob />
+      </div>
 
-      <div className="copilot-inner">
-        <section className="mue-greet" aria-label="Daily greeting">
-          <div className="mue-greet-avatar">
-            <MueAvatar />
-          </div>
-          <h2 className="mue-greet-title">
-            {greeting()}, <span className="mue-greet-name">{userName}.</span>
-          </h2>
-          <p className="mue-greet-sub">
-            Vous avez{" "}
-            <strong>{newCount}</strong>{" "}
-            nouveau{newCount > 1 ? "x" : ""} message{newCount > 1 ? "s" : ""}{" "}
-            et <strong>{activeCount}</strong> conversation{activeCount > 1 ? "s" : ""} active{activeCount > 1 ? "s" : ""}.
-          </p>
+      {/* Headline — Mue's voice, tailored to the active conv */}
+      <h2 className="mue-headline">
+        {conv
+          ? `${firstName} veut une démo lundi. Tu confirmes ?`
+          : "Sélectionne une conversation, je regarde avec toi."}
+      </h2>
+
+      {/* Two quick actions */}
+      {conv && (
+        <div className="mue-chips" role="group" aria-label="Actions rapides">
           <button
             type="button"
-            className="mue-brief-btn"
-            onClick={handleBriefing}
-            disabled={briefingLoading}
+            className="mue-chip"
+            onClick={() => handleAction("Confirmer")}
           >
-            <Icon name="i-spark" />
-            {briefingLoading ? "Brief en cours…" : "Brief du jour"}
-            {!briefingLoading && (
-              <svg className="mue-brief-arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M6 12l4-4-4-4" />
-              </svg>
-            )}
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Confirmer
           </button>
-        </section>
+          <button
+            type="button"
+            className="mue-chip"
+            onClick={() => handleAction("Reporter")}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="9" />
+              <polyline points="12 7 12 12 16 14" />
+            </svg>
+            Reporter
+          </button>
+        </div>
+      )}
 
-        {briefing && (
-          <section className="mue-brief-card" aria-live="polite">
-            <header className="mue-brief-card-head">
-              <span className="mue-brief-card-label">
-                Brief du jour
-                {briefing.items.length > 0 && (
-                  <span className="mue-brief-count">
-                    {briefing.items.length} action{briefing.items.length > 1 ? "s" : ""}
-                  </span>
-                )}
-              </span>
-              <button
-                type="button"
-                className="mue-brief-card-close"
-                onClick={() => setBriefing(null)}
-                aria-label="Fermer"
-              >
-                ✕
-              </button>
-            </header>
-            <p className="mue-brief-headline">{briefing.headline}</p>
+      {/* Quiet contact line */}
+      {conv && (
+        <p className="mue-contact-line">
+          {sameContactCount} conversation{sameContactCount > 1 ? "s" : ""} avec{" "}
+          {firstName} · répond en 4h
+        </p>
+      )}
 
-            {briefing.items.length > 0 && (
-              <ul className="mue-brief-list">
-                {briefing.items.map((it, i) => {
-                  const key = `${it.conversationId}__${it.title}`;
-                  const created = createdTaskTitles.has(key);
-                  return (
-                    <li key={i} className={`mue-brief-item is-${it.priority}`}>
-                      <button
-                        type="button"
-                        className="mue-brief-item-link"
-                        onClick={() => handleOpenConv(it.conversationId)}
-                        title="Ouvrir la conversation"
-                      >
-                        <span className="mue-brief-priority" />
-                        <div className="mue-brief-text">
-                          <div className="mue-brief-title">{it.title}</div>
-                          <div className="mue-brief-meta">
-                            <span className="mue-brief-who">{it.contactName}</span>
-                            {it.due && (
-                              <span className="mue-brief-due">· {it.due}</span>
-                            )}
-                          </div>
-                          {it.why && <div className="mue-brief-why">{it.why}</div>}
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        className={`mue-brief-task-btn ${created ? "is-done" : ""}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!created) void handleCreateTask(it);
-                        }}
-                        disabled={created}
-                        title={created ? "Tâche créée" : "Créer cette tâche"}
-                        aria-label={created ? "Tâche créée" : "Créer cette tâche"}
-                      >
-                        {created ? "✓" : "+ Tâche"}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-        )}
-
-        {briefingError && (
-          <section className="mue-brief-card is-error" aria-live="polite">
-            <p>{briefingError}</p>
-            <button
-              type="button"
-              className="mue-brief-card-close"
-              onClick={() => setBriefingError(null)}
-              aria-label="Fermer"
-            >✕</button>
-          </section>
-        )}
-
-        {view === "tasks" && (
-          <section className="mue-quick" aria-label="Open tasks">
-            <div className="section-label">Tâches ouvertes</div>
-            <div className="schedule-list">
-              {tasks.slice(0, 3).map((t) => (
-                <button key={t.id} className="sched-card" type="button">
-                  <span className="sched-av">
-                    <Avatar avatar={t.avatar} />
-                    <span className="conv-badge"><ChannelLogo channel={t.channel} className="" /></span>
-                  </span>
-                  <span className="sched-body">
-                    <span className="sched-title">{t.title}</span>
-                    <span className="sched-time"><Icon name="i-clock" />{t.dueLabel}</span>
-                  </span>
-                  <span className={`priority ${t.priority}`}>{t.priority[0]?.toUpperCase()}{t.priority.slice(1)}</span>
-                </button>
-              ))}
-            </div>
-            {openTasksCount > 3 && (
-              <button className="view-full" type="button">
-                Voir toutes les tâches
-                <Icon name="i-chevron" />
-              </button>
-            )}
-          </section>
-        )}
-
-        <form
-          className="mue-ask"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!askInput.trim()) return;
-            push({ text: "L'ask de Mue arrive bientôt — pour l'instant utilisez le Brief.", duration: 3000 });
-            setAskInput("");
-          }}
-        >
-          <Icon name="i-spark" />
-          <input
-            type="text"
-            placeholder="Demandez à Mue..."
-            value={askInput}
-            onChange={(e) => setAskInput(e.target.value)}
-            aria-label="Demander à Mue"
-          />
-          {askInput && (
-            <button type="submit" className="mue-ask-send" aria-label="Envoyer">
-              →
-            </button>
-          )}
-        </form>
-
-        <div className="footnote">
-          <Icon name="i-info" size={13} />
-          <span>Brief et actions Mue activés sur cette inbox.</span>
+      {/* Mini chat history with Mue */}
+      <div className="mue-chat">
+        <div className="mue-msg mue-msg-user">
+          Tu penses qu&apos;elle est dispo mardi ?
+        </div>
+        <div className="mue-msg mue-msg-bot">
+          <span className="mue-msg-avatar" aria-hidden>
+            <MueBlob mini />
+          </span>
+          <span className="mue-msg-text">
+            Je crois que oui. Lundi ou mardi semblent bien.
+          </span>
         </div>
       </div>
+
+      {/* Ask input */}
+      <form className="mue-ask-form" onSubmit={handleAsk}>
+        <input
+          type="text"
+          className="mue-ask-input"
+          placeholder="Demande à Mue..."
+          value={askInput}
+          onChange={(e) => setAskInput(e.target.value)}
+          aria-label="Demander à Mue"
+        />
+        <button
+          type="submit"
+          className="mue-ask-send"
+          aria-label="Envoyer"
+          disabled={!askInput.trim()}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+        </button>
+      </form>
     </aside>
+  );
+}
+
+/**
+ * MueBlob — the cute peach blob mascot.
+ *
+ * The shape is a hand-tuned organic path (slightly asymmetric "fat
+ * droplet" with a soft top). A radial gradient gives the dimensional
+ * peach tone; a smaller white ellipse at the top-left is the specular
+ * highlight; two black almond-shaped eyes + a single curve = the face.
+ *
+ * `mini` renders a 28×26 inline avatar (used inside chat bubbles).
+ */
+function MueBlob({ mini = false }: { mini?: boolean }) {
+  const size = mini ? 28 : 200;
+  return (
+    <svg
+      className={`mue-blob ${mini ? "is-mini" : ""}`}
+      viewBox="0 0 220 200"
+      width={size}
+      height={mini ? 26 : Math.round(size * 0.91)}
+      aria-hidden
+    >
+      <defs>
+        <radialGradient id={mini ? "mueBodyMini" : "mueBody"} cx="38%" cy="32%" r="78%">
+          <stop offset="0%" stopColor="#FFE3CA" />
+          <stop offset="35%" stopColor="#FFC299" />
+          <stop offset="72%" stopColor="#F49B6A" />
+          <stop offset="100%" stopColor="#E37A4A" />
+        </radialGradient>
+        <radialGradient id={mini ? "mueHighlightMini" : "mueHighlight"} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+      </defs>
+
+      {/* Body — organic droplet shape, slightly asymmetric */}
+      <path
+        d="
+          M 110,18
+          C 156,18  198,52  198,108
+          C 198,156 162,184 110,184
+          C 58,184   24,156  24,108
+          C 24,62    62,18  110,18
+          Z
+        "
+        fill={`url(#${mini ? "mueBodyMini" : "mueBody"})`}
+      />
+
+      {/* Top-left specular highlight */}
+      <ellipse
+        cx="78"
+        cy="62"
+        rx="36"
+        ry="22"
+        fill={`url(#${mini ? "mueHighlightMini" : "mueHighlight"})`}
+        transform="rotate(-22 78 62)"
+      />
+
+      {!mini && (
+        <>
+          {/* Tiny top sparkle */}
+          <ellipse cx="105" cy="38" rx="6" ry="3" fill="rgba(255,255,255,0.55)" transform="rotate(-15 105 38)" />
+
+          {/* Eyes — two soft almond-shaped pupils */}
+          <ellipse cx="86" cy="108" rx="6" ry="9" fill="#1C1B2C" />
+          <ellipse cx="134" cy="108" rx="6" ry="9" fill="#1C1B2C" />
+          {/* Eye glints (catch light) */}
+          <circle cx="88" cy="103" r="1.6" fill="rgba(255,255,255,0.9)" />
+          <circle cx="136" cy="103" r="1.6" fill="rgba(255,255,255,0.9)" />
+
+          {/* Smile — gentle curve */}
+          <path
+            d="M 96,132 Q 110,142 124,132"
+            fill="none"
+            stroke="#1C1B2C"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </>
+      )}
+
+      {mini && (
+        <>
+          {/* Mini eyes only — too small for full face */}
+          <circle cx="90" cy="115" r="9" fill="#1C1B2C" />
+          <circle cx="130" cy="115" r="9" fill="#1C1B2C" />
+        </>
+      )}
+    </svg>
   );
 }

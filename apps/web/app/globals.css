@@ -3867,7 +3867,10 @@
     .btn-primary:active { transform: translateY(0); }
     .btn-primary .icon { width: 15px; height: 15px; stroke-width: 1.8; }
 
-    /* ====== AI COPILOT ====== */
+    /* ====== AI COPILOT (Mue) ======
+       Calm cream surface — no glassmorphism, no noise texture. The
+       blob mascot inside provides the visual warmth; the surface just
+       holds it gently. */
     .copilot {
       position: relative;
       min-height: 0;
@@ -3875,29 +3878,13 @@
       flex-direction: column;
       overflow: hidden;
       border-radius: var(--r-xl);
-      border: 1.5px solid rgba(255, 255, 255, 0.95);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.95) inset,
-        0 0 0 1px rgba(180, 190, 220, 0.35),
-        0 8px 24px rgba(91, 108, 255, 0.12),
-        0 1px 2px rgba(15, 23, 42, 0.04);
-      background:
-        radial-gradient(circle at 12% 0%, rgba(255, 200, 152, 0.58), transparent 52%),
-        radial-gradient(circle at 92% 18%, rgba(255, 215, 178, 0.45), transparent 50%),
-        radial-gradient(circle at 90% 100%, rgba(150, 190, 255, 0.55), transparent 55%),
-        radial-gradient(circle at 5% 88%, rgba(180, 210, 255, 0.50), transparent 58%),
-        linear-gradient(165deg, #FFF1E2 0%, #FFE8D5 22%, #F3ECFB 52%, #DDE7FF 80%, #CFDEFF 100%);
+      background: #FCF7F0;
+      border: 1px solid rgba(15, 23, 42, 0.05);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     }
-    .copilot::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.5;
-      mix-blend-mode: multiply;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.15  0 0 0 0 0.12  0 0 0 0 0.25  0 0 0 0.5 0'/></filter><rect width='180' height='180' filter='url(%23n)'/></svg>");
-      background-size: 180px 180px;
-    }
+    /* (Previous .copilot::before noise texture removed — the cream
+       surface no longer needs grain to fight against gradient banding,
+       and the user explicitly didn't want glassmorphism vibes here.) */
 
     .copilot-inner {
       position: relative;
@@ -10009,4 +9996,251 @@
   background: rgba(120, 115, 255, 0.14);
 }
 [data-theme="dark"] .templates-menu-name { color: #E6E9F2; }
+
+/* =====================================================================
+   MUE PANEL (Companion AI agent on the right side)
+   Peach blob mascot + headline + chips + contact line + mini chat + ask
+   ===================================================================== */
+
+.mue-pane {
+  padding: 28px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Stage holds the blob, its glow, and floating particles */
+.mue-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 0.95;
+  display: grid;
+  place-items: center;
+  margin-bottom: 22px;
+}
+
+.mue-glow {
+  position: absolute;
+  inset: 8% 6% 12% 6%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 36%,
+    rgba(255, 198, 156, 0.55) 0%,
+    rgba(255, 198, 156, 0.18) 35%,
+    rgba(255, 198, 156, 0) 70%
+  );
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+.mue-blob {
+  position: relative;
+  width: 78%;
+  max-width: 240px;
+  height: auto;
+  filter: drop-shadow(0 18px 28px rgba(228, 130, 76, 0.18));
+  animation: mueBreathe 4s ease-in-out infinite;
+}
+.mue-blob.is-mini {
+  width: 28px;
+  height: 26px;
+  filter: drop-shadow(0 2px 4px rgba(228, 130, 76, 0.25));
+  animation: none;
+}
+@keyframes mueBreathe {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50%      { transform: scale(1.03) translateY(-3px); }
+}
+
+/* Floating orange particles around the blob */
+.mue-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mue-particle {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #FFD2A8, #F49B6A);
+  box-shadow: 0 0 6px rgba(244, 155, 106, 0.5);
+  opacity: 0.85;
+  animation: mueFloat 5s ease-in-out infinite;
+}
+.mue-p1 { top: 6%;  left: 48%; width: 8px; height: 8px; animation-delay: 0s;   animation-duration: 4.5s; }
+.mue-p2 { top: 32%; left: 90%; width: 6px; height: 6px; animation-delay: 0.6s; animation-duration: 5.5s; }
+.mue-p3 { top: 80%; left: 6%;  width: 8px; height: 8px; animation-delay: 1.2s; animation-duration: 5s; }
+.mue-p4 { top: 88%; left: 86%; width: 7px; height: 7px; animation-delay: 0.3s; animation-duration: 6s; }
+.mue-p5 { top: 18%; left: 14%; width: 5px; height: 5px; animation-delay: 1.8s; animation-duration: 4.8s; }
+.mue-p6 { top: 56%; left: 92%; width: 4px; height: 4px; animation-delay: 2.4s; animation-duration: 5.2s; }
+@keyframes mueFloat {
+  0%, 100% { transform: translateY(0) scale(1);    opacity: 0.85; }
+  50%      { transform: translateY(-8px) scale(1.1); opacity: 1; }
+}
+
+/* Headline */
+.mue-headline {
+  margin: 0 6px 18px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: #1B1B25;
+  text-align: center;
+}
+
+/* Quick-action chips */
+.mue-chips {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+}
+.mue-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  border: none;
+  background: rgba(167, 139, 250, 0.16);
+  color: #5B45D9;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 80ms ease;
+}
+.mue-chip:hover { background: rgba(167, 139, 250, 0.24); }
+.mue-chip:active { transform: scale(0.97); }
+.mue-chip svg { flex: none; opacity: 0.9; }
+
+/* Quiet contact line — tiny, grey, low-key */
+.mue-contact-line {
+  margin: 4px 0 18px;
+  font-size: 12.5px;
+  color: #94A3B8;
+  text-align: center;
+  letter-spacing: -0.005em;
+}
+
+/* Mini chat with Mue — 2 bubbles (user + bot with mini blob avatar) */
+.mue-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 0 4px;
+}
+.mue-msg {
+  max-width: 86%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #1B1B25;
+}
+.mue-msg-user {
+  align-self: flex-end;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom-right-radius: 5px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+.mue-msg-bot {
+  align-self: flex-start;
+  background: #FFD9BC;
+  border-bottom-left-radius: 5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding-left: 38px;
+  position: relative;
+}
+.mue-msg-avatar {
+  position: absolute;
+  left: -10px;
+  bottom: -6px;
+  width: 28px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.mue-msg-text {
+  display: inline-block;
+  flex: 1;
+}
+
+/* Ask Mue input */
+.mue-ask-form {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 18px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.mue-ask-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1B1B25;
+}
+.mue-ask-input::placeholder { color: #B0B5C0; }
+.mue-ask-send {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #C5C9D2;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color 140ms, background 140ms;
+}
+.mue-ask-send:not(:disabled):hover { color: #F49B6A; background: rgba(244, 155, 106, 0.10); }
+.mue-ask-send:disabled { cursor: default; }
+
+/* Dark mode — keep the warmth but tone the cream down */
+[data-theme="dark"] .copilot {
+  background: #221C19;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+[data-theme="dark"] .mue-headline { color: #F5EBE2; }
+[data-theme="dark"] .mue-chip {
+  background: rgba(165, 180, 252, 0.18);
+  color: #C5BFFF;
+}
+[data-theme="dark"] .mue-chip:hover { background: rgba(165, 180, 252, 0.28); }
+[data-theme="dark"] .mue-contact-line { color: #8B8076; }
+[data-theme="dark"] .mue-msg-user {
+  background: #2C2622;
+  border-color: rgba(255, 255, 255, 0.06);
+  color: #F5EBE2;
+}
+[data-theme="dark"] .mue-msg-bot {
+  background: #4A3220;
+  color: #F5EBE2;
+}
+[data-theme="dark"] .mue-ask-form {
+  background: #2A231F;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .mue-ask-input { color: #F5EBE2; }
+[data-theme="dark"] .mue-ask-input::placeholder { color: #6B5F55; }
+
 [data-theme="dark"] .templates-menu-preview { color: #9CA3AF; }
