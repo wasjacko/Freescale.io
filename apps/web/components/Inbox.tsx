@@ -767,7 +767,7 @@ export function Inbox() {
                   <button
                     key={c.id}
                     type="button"
-                    className={`conv ${isActive ? "active" : ""} ${isSel ? "is-selected" : ""}`}
+                    className={`conv ${isActive ? "active" : ""} ${isSel ? "is-selected" : ""} ${unread ? "is-unread" : ""}`}
                     onClick={(e) => {
                       // Shift / cmd click → toggle bulk selection without opening.
                       // Bulk mode is also active when ≥1 conv is already selected.
