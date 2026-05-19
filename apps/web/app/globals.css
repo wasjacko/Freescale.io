@@ -9482,6 +9482,57 @@
   color: #B5B0FF;
 }
 
+/* Theme toggle — 3-way pill (Auto / Clair / Sombre). Audit #11. */
+.theme-toggle {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #FAFAFC;
+  border-radius: 10px;
+  gap: 2px;
+}
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 140ms, color 140ms;
+}
+.theme-toggle-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: #0F172A;
+}
+.theme-toggle-btn.is-active {
+  background: #fff;
+  color: #0F172A;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+.theme-toggle-btn svg { flex: none; }
+
+[data-theme="dark"] .theme-toggle {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+[data-theme="dark"] .theme-toggle-btn { color: #9CA3AF; }
+[data-theme="dark"] .theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #E6E9F2;
+}
+[data-theme="dark"] .theme-toggle-btn.is-active {
+  background: #25252F;
+  color: #E6E9F2;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
 .templates-list { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
 .templates-empty {
   padding: 24px 16px;

@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { savePersonalProfile, uploadAvatar, removeAvatar } from "@/lib/actions/profile";
 import { createClient } from "@/lib/supabase/client";
+import { ThemeToggle } from "@/components/settings/ThemeToggle";
 
 type Initial = {
   fullName: string;
@@ -307,6 +308,18 @@ export function ProfileForm({ initial }: { initial: Initial }) {
                 <option key={l.id} value={l.id}>{l.label}</option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="settings-divider" />
+
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Thème</h3>
+            <p>Auto suit votre OS. Choisissez Clair ou Sombre pour forcer.</p>
+          </div>
+          <div className="settings-row-control">
+            <ThemeToggle />
           </div>
         </div>
 
