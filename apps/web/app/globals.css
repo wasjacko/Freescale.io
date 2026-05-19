@@ -2058,14 +2058,20 @@
       gap: 16px;
     }
 
-    /* Combined Inbox + Thread shell — nested cards.
-       Solid white wrapper (no grey-blue tint, no gradient). The inner
-       .inbox + .thread cards each have their own 1px border + subtle
-       shadow so they stay visually distinct against the white frame. */
+    /* Combined Inbox + Thread shell — single-column layout that swaps
+       between Inbox and Thread based on whether a conversation is
+       active. When no conv is selected → Inbox takes 100% width.
+       When a conv is opened → Thread takes 100% width with a back
+       arrow in its head to return to Inbox. Replaces the previous
+       side-by-side 320px + flex layout that crammed both into the
+       same screen.
+       The Mue panel on the right remains a separate column in the
+       outer .workspace grid — only the inbox⇄thread swap happens
+       inside .conv-shell. */
     .conv-shell {
       display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
-      gap: 8px;
+      grid-template-columns: 1fr;
+      gap: 0;
       padding: 8px;
       min-height: 0;
       border-radius: var(--r-xl);
@@ -2074,6 +2080,13 @@
       box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
       overflow: hidden;
     }
+    /* Inbox⇄thread swap, applies at ALL viewports (was previously
+       only inside the <768px mobile media query). */
+    .app[data-active-conv="0"] .conv-shell .inbox { display: flex; }
+    .app[data-active-conv="0"] .conv-shell .thread { display: none; }
+    .app[data-active-conv="1"] .conv-shell .inbox { display: none; }
+    .app[data-active-conv="1"] .conv-shell .thread { display: flex; }
+    .app[data-active-conv="1"] .thread-back { display: inline-flex; }
     [data-theme="dark"] .conv-shell {
       background: #1A1A22;
       border-color: rgba(255, 255, 255, 0.05);
@@ -6562,28 +6575,32 @@
     }
 
     /* ====== RESPONSIVE ====== */
-    /* Mobile-only "back to inbox" button in thread head. Hidden on
-       desktop where there's no need to navigate — both inbox and
-       thread are visible at the same time. */
+    /* "Back to inbox" button in the thread head. Shown at ALL
+       viewports now (since the inbox⇄thread swap is universal —
+       opening a conv hides the inbox list, so we need a way back).
+       Visibility toggled via the .app[data-active-conv="1"] .thread-back
+       { display: inline-flex } rule above. */
     .thread-back {
       display: none;
-      width: 32px;
-      height: 32px;
       align-items: center;
-      justify-content: center;
+      gap: 5px;
+      height: 32px;
+      padding: 0 12px 0 8px;
       background: transparent;
       border: 0;
       border-radius: 8px;
-      color: #0F172A;
-      font-size: 18px;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
-      margin-right: 8px;
+      margin-right: 10px;
       flex: 0 0 auto;
-      transition: background 140ms;
+      transition: background 140ms, color 140ms;
     }
-    .thread-back:hover { background: rgba(15, 23, 42, 0.06); }
-    [data-theme="dark"] .thread-back { color: #F4F4F7; }
-    [data-theme="dark"] .thread-back:hover { background: rgba(255, 255, 255, 0.08); }
+    .thread-back:hover { background: rgba(15, 23, 42, 0.06); color: #0F172A; }
+    .thread-back svg { flex: none; width: 16px; height: 16px; }
+    [data-theme="dark"] .thread-back { color: #B0B4C0; }
+    [data-theme="dark"] .thread-back:hover { background: rgba(255, 255, 255, 0.08); color: #F4F4F7; }
 
     /* ─── Responsive ────────────────────────────────────────────────────
        Three breakpoints: desktop (>1280) · narrow desktop (1100-1280) ·
@@ -6626,19 +6643,8 @@
       .app:not(.sidebar-collapsed) .sidebar { transform: translateX(0); }
 
       .workspace { grid-template-columns: 1fr; }
-      .conv-shell {
-        display: grid;
-        grid-template-columns: 1fr;
-      }
-
-      /* No conv active → show inbox, hide thread */
-      .app[data-active-conv="0"] .inbox { display: flex; }
-      .app[data-active-conv="0"] .thread { display: none; }
-
-      /* Conv active → show thread, hide inbox + show back arrow */
-      .app[data-active-conv="1"] .inbox { display: none; }
-      .app[data-active-conv="1"] .thread { display: flex; }
-      .app[data-active-conv="1"] .thread-back { display: inline-flex; }
+      /* The inbox⇄thread swap + .thread-back visibility now live in
+         the global rules above .conv-shell — no need to redefine here. */
 
       /* MuePanel is the right column normally; on mobile we hide it
          until the user wants it. Future iteration: a bottom-sheet

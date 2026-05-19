@@ -242,15 +242,19 @@ export function Thread() {
   return (
     <main className="thread">
       <header className="thread-head">
-        {/* Mobile-only back button — returns to the inbox list. Hidden
-            on desktop by CSS (display:none above 768px). */}
+        {/* Back-to-inbox button — visible at all viewports now since
+            opening a conv hides the inbox list entirely. Returns the
+            user to the conv list by clearing activeConvId. */}
         <button
           type="button"
           className="thread-back"
           onClick={() => setActiveConv("")}
           aria-label="Retour à l'inbox"
         >
-          ←
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          <span>Inbox</span>
         </button>
         <div className="contact">
           <span className="avatar large">
