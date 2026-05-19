@@ -19,7 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "inbox", label: "Inbox", icon: "i-inbox" },
   { id: "tasks", label: "Tasks", icon: "i-task" },
   { id: "calendar", label: "Calendar", icon: "i-cal" },
-  { id: "ai-knowledge", label: "AI Knowledge", icon: "i-spark", beta: true },
+  { id: "ai-knowledge", label: "AI Knowledge", icon: "i-book", beta: true },
 ];
 
 export function Sidebar({ user }: { user: CurrentUser | null }) {
@@ -76,15 +76,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
               onClick={() => setView(item.id)}
             >
               <span className="nav-left">
-                {/* AI Knowledge gets a book emoji per the user's
-                    request — emoji is rendered as plain text so it
-                    keeps the OS-native style. Everything else uses the
-                    SVG sprite for cross-OS visual consistency. */}
-                {item.id === "ai-knowledge" ? (
-                  <span className="nav-emoji" aria-hidden>📚</span>
-                ) : (
-                  <Icon name={item.icon} />
-                )}
+                <Icon name={item.icon} />
                 <span className="nav-text">
                   {item.label}
                   {item.beta && <span className="nav-beta">Beta</span>}
