@@ -8,6 +8,7 @@ import { useData } from "@/lib/contexts/DataContext";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
+import { cleanEmailBody } from "@/lib/email-body-clean";
 import { TagPopover } from "@/components/TagPopover";
 import { sendEmailReply } from "@/lib/actions/inbox";
 import { getEmailSignature } from "@/lib/actions/profile";
@@ -658,7 +659,7 @@ function EmailCard({
 
   // Strip the long auto-footers (=== separator, "View this email in browser"…)
   // for a tighter preview. Keep the first ~80 lines / 4000 chars max.
-  const cleaned = (message.text || "").replace(/ /g, " ").trim();
+  const cleaned = cleanEmailBody(message.text || "");
 
   return (
     <article className={`email-card ${message.dir === "out" ? "is-out" : ""}`}>
