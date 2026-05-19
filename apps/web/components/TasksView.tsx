@@ -116,32 +116,68 @@ export function TasksView() {
     done: tasks.filter((t) => t.status === "done").length,
   };
 
-  // Build the tree: top-level tasks (no parent) at root, with each top-level
-  // task having its children attached in their natural order. Children of
-  // top-level tasks for the OTHER statuses are intentionally hidden — only
-  // children matching the active tab show under their visible parent.
+  // Build the tree of rows to render in the active tab. Two sources of
+  // top-level rows:
   //
-  // For drag-reorder we only consider top-level rows; the optimistic
-  // `orderOverride` (if set) replaces the server-supplied sortable_index.
+  //   1. Top-level tasks whose own status matches the active tab — these
+  //      render normally (draggable, clickable check, normal opacity).
+  //   2. Top-level tasks whose own status DOESN'T match BUT who have at
+  //      least one subtask in the active tab. We surface these as
+  //      "context-only" parents (faded, non-draggable, check disabled)
+  //      so the matching subtask never appears orphaned from its parent.
+  //      Audit #9 — the previous version dropped subtasks entirely
+  //      whenever their parent was in a different tab.
+  //
+  // For drag-reorder we only consider real (non-context) top-level rows;
+  // the optimistic `orderOverride` (if set) replaces the server-supplied
+  // sortable_index for those.
   const grouped = useMemo(() => {
     const inTab = tasks.filter((t) => t.status === activeTab);
     const byId = new Map(tasks.map((t) => [t.id, t]));
-    const topLevel = inTab.filter((t) => !t.parentTaskId);
-    // Sort: optimistic override > sortable_index > insertion order.
-    const sorted = [...topLevel].sort((a, b) => {
+
+    // Direct match: top-level tasks already in this tab.
+    const directTopLevel = inTab.filter((t) => !t.parentTaskId);
+    const directIds = new Set(directTopLevel.map((t) => t.id));
+
+    // Context parents: subtasks in this tab whose parent is top-level
+    // but lives in a different tab. We pull the parent in as a faded
+    // context row so the subtask isn't shown floating without its
+    // hierarchy.
+    const contextParents: Task[] = [];
+    const seenCtx = new Set<string>();
+    for (const t of inTab) {
+      if (!t.parentTaskId) continue;
+      if (directIds.has(t.parentTaskId)) continue;
+      if (seenCtx.has(t.parentTaskId)) continue;
+      const parent = byId.get(t.parentTaskId);
+      // Only surface as context if the parent itself is top-level
+      // (one-level subtask model — we don't render grandchildren).
+      if (parent && !parent.parentTaskId) {
+        contextParents.push(parent);
+        seenCtx.add(parent.id);
+      }
+    }
+
+    const allTopLevel = [...directTopLevel, ...contextParents];
+
+    // Sort by the same rank function. Context parents fall in
+    // naturally with the rest based on their sortable_index — they
+    // don't bunch up at top or bottom.
+    const sorted = allTopLevel.sort((a, b) => {
       const ax = orderOverride?.[a.id] ?? a.sortableIndex ?? 0;
       const bx = orderOverride?.[b.id] ?? b.sortableIndex ?? 0;
       return ax - bx;
     });
-    // For each top-level, collect children present in the same tab.
+
     return sorted.map((parent) => {
-      const childrenOfParent = inTab.filter(
-        (t) => t.parentTaskId === parent.id && byId.has(parent.id)
-      );
+      const childrenOfParent = inTab.filter((t) => t.parentTaskId === parent.id);
       childrenOfParent.sort(
         (a, b) => (a.sortableIndex ?? 0) - (b.sortableIndex ?? 0)
       );
-      return { parent, children: childrenOfParent };
+      // A parent is "context-only" when its own status doesn't match
+      // the active tab — we only included it to host its in-tab subtask.
+      const isContextOnly = parent.status !== activeTab;
+      return { parent, children: childrenOfParent, isContextOnly };
     });
   }, [tasks, activeTab, orderOverride]);
 
@@ -363,7 +399,7 @@ export function TasksView() {
           </li>
         )}
 
-        {grouped.map(({ parent, children }) => {
+        {grouped.map(({ parent, children, isContextOnly }) => {
           const isDone = !!parent.isDone;
           const isDragging = dragId === parent.id;
           const isDropTarget = dragOverId === parent.id;
@@ -371,28 +407,37 @@ export function TasksView() {
             <li
               key={parent.id}
               data-task-id={parent.id}
-              className={`task-group ${isDropTarget ? "is-drop-target" : ""}`}
+              className={`task-group ${isDropTarget ? "is-drop-target" : ""} ${
+                isContextOnly ? "is-context-only" : ""
+              }`}
             >
               <div
                 className={`task-item ${isDone ? "is-done" : ""} ${
                   isDragging ? "is-dragging" : ""
-                }`}
-                draggable
-                onDragStart={(e) => onDragStart(e, parent.id)}
-                onDragOver={(e) => onDragOver(e, parent.id)}
-                onDragLeave={() => onDragLeave(parent.id)}
-                onDrop={(e) => onDrop(e, parent.id)}
-                onDragEnd={onDragEnd}
+                } ${isContextOnly ? "is-parent-context" : ""}`}
+                // Context-only parents (own status differs from active
+                // tab) are NOT draggable — drag-reorder only applies to
+                // tasks that actually belong to this tab.
+                {...(!isContextOnly && {
+                  draggable: true,
+                  onDragStart: (e: React.DragEvent) => onDragStart(e, parent.id),
+                  onDragOver: (e: React.DragEvent) => onDragOver(e, parent.id),
+                  onDragLeave: () => onDragLeave(parent.id),
+                  onDrop: (e: React.DragEvent) => onDrop(e, parent.id),
+                  onDragEnd: onDragEnd,
+                })}
               >
                 <span
                   className="task-drag-handle"
-                  title="Glisser pour réorganiser"
+                  title={isContextOnly ? "Contexte (parent dans un autre onglet)" : "Glisser pour réorganiser"}
                   aria-label="Glisser pour réorganiser"
-                  role="button"
-                  onPointerDown={(e) => onHandlePointerDown(e, parent.id)}
-                  onPointerMove={onHandlePointerMove}
-                  onPointerUp={onHandlePointerUp}
-                  onPointerCancel={onHandlePointerCancel}
+                  role={isContextOnly ? "img" : "button"}
+                  {...(!isContextOnly && {
+                    onPointerDown: (e: React.PointerEvent) => onHandlePointerDown(e, parent.id),
+                    onPointerMove: onHandlePointerMove,
+                    onPointerUp: onHandlePointerUp,
+                    onPointerCancel: onHandlePointerCancel,
+                  })}
                 >
                   <svg viewBox="0 0 8 14" width="8" height="14" fill="currentColor">
                     <circle cx="2" cy="2" r="1.2" />
@@ -407,7 +452,13 @@ export function TasksView() {
                   className={`task-check ${isDone ? "is-done" : ""}`}
                   type="button"
                   aria-label="Mark done"
-                  onClick={() => toggleCheck(parent.id, isDone)}
+                  // Context-only parent's checkbox is disabled — toggling
+                  // it would move the parent into this tab silently,
+                  // which is not what the user expects.
+                  disabled={isContextOnly}
+                  onClick={() => {
+                    if (!isContextOnly) toggleCheck(parent.id, isDone);
+                  }}
                 />
                 <span className="task-avatar">
                   <Avatar avatar={parent.avatar} />
@@ -415,6 +466,11 @@ export function TasksView() {
                 </span>
                 <span className="task-title">
                   {parent.title}
+                  {isContextOnly && (
+                    <span className="task-context-badge" title={`Parent en "${parent.status}"`}>
+                      {parent.status}
+                    </span>
+                  )}
                   {children.length > 0 && (
                     <span className="task-subcount" aria-label={`${children.length} sous-tâches`}>
                       {children.filter((c) => !c.isDone).length}/{children.length}
