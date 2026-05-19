@@ -69,6 +69,11 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
+  // "Enregistré ✓" badge shown next to the avatar buttons after a
+  // successful upload/remove. Persists for 3.5s then fades — the
+  // avatar flow self-saves (no "Save" click needed), and that confused
+  // users who saw the bottom Save button stay disabled. Audit #12.
+  const [avatarSaved, setAvatarSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Password change state
@@ -145,6 +150,11 @@ export function ProfileForm({ initial }: { initial: Initial }) {
     });
   };
 
+  const flashAvatarSaved = () => {
+    setAvatarSaved(true);
+    setTimeout(() => setAvatarSaved(false), 3500);
+  };
+
   const handleFile = async (file: File) => {
     setUploading(true);
     setToast(null);
@@ -154,6 +164,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
       const url = await uploadAvatar(fd);
       if (url) setAvatarUrl(url);
       setToast({ kind: "ok", text: "Avatar mis à jour." });
+      flashAvatarSaved();
     } catch (err) {
       setToast({
         kind: "err",
@@ -170,6 +181,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         await removeAvatar();
         setAvatarUrl(null);
         setToast({ kind: "ok", text: "Avatar supprimé." });
+        flashAvatarSaved();
       } catch (err) {
         setToast({
           kind: "err",
@@ -190,7 +202,10 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         <div className="settings-row">
           <div className="settings-row-label">
             <h3>Avatar</h3>
-            <p>PNG, JPG, WEBP ou GIF. 2 Mo max.</p>
+            <p>
+              PNG, JPG, WEBP ou GIF. 2 Mo max.{" "}
+              <strong>Enregistré dès l&apos;import — pas besoin de cliquer Enregistrer.</strong>
+            </p>
           </div>
           <div className="settings-row-control">
             <div className="settings-avatar">
@@ -219,6 +234,14 @@ export function ProfileForm({ initial }: { initial: Initial }) {
                 >
                   Retirer
                 </button>
+              )}
+              {avatarSaved && (
+                <span className="avatar-saved-badge" aria-live="polite">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Enregistré
+                </span>
               )}
               <input
                 ref={fileRef}

@@ -130,6 +130,10 @@ export function Inbox() {
   // null = no tag filter. When set, only conversations whose .tags array
   // contains this exact tag are shown.
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  // Overflow dropdown for tag filter strip. Audit #15 — without this,
+  // a workspace with 30+ tags pushed the chip strip off-screen.
+  const [tagOverflowOpen, setTagOverflowOpen] = useState(false);
+  const tagOverflowBtnRef = useRef<HTMLButtonElement>(null);
   // Bulk-select mode: when ≥1 conv is checked, the panel header swaps
   // into a "X sélectionnée(s)" toolbar with Archive / Mark / Star / Snooze.
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -168,6 +172,27 @@ export function Inbox() {
       push({ kind: "error", text: `Erreur : ${res.error}` });
     }
   };
+
+  // Outside-click + Escape close the tag overflow dropdown.
+  useEffect(() => {
+    if (!tagOverflowOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTagOverflowOpen(false);
+    };
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".tag-filter-overflow-wrap")) return;
+      setTagOverflowOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const t = setTimeout(() => document.addEventListener("mousedown", onDocClick), 0);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDocClick);
+      clearTimeout(t);
+    };
+  }, [tagOverflowOpen]);
 
   // Outside-click + Escape close the bulk snooze dropdown.
   useEffect(() => {
@@ -596,29 +621,81 @@ export function Inbox() {
           )}
         </div>
 
-        {tagOptions.length > 0 && (
-          <div className="tag-filter-row" role="group" aria-label="Filtrer par tag">
-            <button
-              type="button"
-              className={`tag-filter-chip ${tagFilter === null ? "is-active" : ""}`}
-              onClick={() => setTagFilter(null)}
-            >
-              Tous
-            </button>
-            {tagOptions.map(({ tag, count }) => (
+        {tagOptions.length > 0 && (() => {
+          // Visible vs overflow split. Top N (most-used) tags stay
+          // inline; the rest go behind a "+X" button that opens a
+          // scrollable dropdown. The currently-selected filter tag,
+          // if it's in the overflow, gets pulled into the visible
+          // strip so the user always sees what's active.
+          const VISIBLE_CAP = 7;
+          let visible = tagOptions.slice(0, VISIBLE_CAP);
+          let overflow = tagOptions.slice(VISIBLE_CAP);
+          if (tagFilter && !visible.some((t) => t.tag === tagFilter)) {
+            const found = overflow.find((t) => t.tag === tagFilter);
+            if (found) {
+              visible = [...visible.slice(0, VISIBLE_CAP - 1), found];
+              overflow = tagOptions
+                .filter((t) => !visible.includes(t));
+            }
+          }
+          return (
+            <div className="tag-filter-row" role="group" aria-label="Filtrer par tag">
               <button
-                key={tag}
                 type="button"
-                className={`tag-filter-chip ${tagFilter === tag ? "is-active" : ""}`}
-                onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-                title={`${count} conversation${count > 1 ? "s" : ""}`}
+                className={`tag-filter-chip ${tagFilter === null ? "is-active" : ""}`}
+                onClick={() => setTagFilter(null)}
               >
-                {tag}
-                <span className="tag-filter-count">{count}</span>
+                Tous
               </button>
-            ))}
-          </div>
-        )}
+              {visible.map(({ tag, count }) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`tag-filter-chip ${tagFilter === tag ? "is-active" : ""}`}
+                  onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+                  title={`${count} conversation${count > 1 ? "s" : ""}`}
+                >
+                  {tag}
+                  <span className="tag-filter-count">{count}</span>
+                </button>
+              ))}
+              {overflow.length > 0 && (
+                <div className="tag-filter-overflow-wrap">
+                  <button
+                    ref={tagOverflowBtnRef}
+                    type="button"
+                    className="tag-filter-chip tag-filter-overflow"
+                    onClick={() => setTagOverflowOpen((v) => !v)}
+                    aria-expanded={tagOverflowOpen}
+                    aria-haspopup="menu"
+                    title={`${overflow.length} autres tags`}
+                  >
+                    +{overflow.length}
+                  </button>
+                  {tagOverflowOpen && (
+                    <div className="tag-filter-overflow-menu" role="menu">
+                      {overflow.map(({ tag, count }) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          role="menuitem"
+                          className={`tag-filter-overflow-item ${tagFilter === tag ? "is-active" : ""}`}
+                          onClick={() => {
+                            setTagFilter(tagFilter === tag ? null : tag);
+                            setTagOverflowOpen(false);
+                          }}
+                        >
+                          <span className="tag-filter-overflow-name">{tag}</span>
+                          <span className="tag-filter-overflow-count">{count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </header>
 
       <div className="conv-list" id="conv-list">
