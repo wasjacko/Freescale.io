@@ -556,15 +556,14 @@ export function Inbox() {
             </button>
           </div>
         )}
-        {/* Inbox header — stacked layout matching the design spec:
-            1) "Inbox" title alone
-            2) Three LABELED action buttons (Mue primary filled, Refresh
-               + Filter outlined)
-            3) Tabs row below (rendered further down)
+        {/* Inbox header — single row of 3 compact actions.
+            "Inbox" title removed (redundant — the user knows where they
+            are). Three buttons: primary "Trier" + Mue sparkle, then
+            two icon-only utility buttons (Refresh + Filter) which fit
+            on the same line even on narrow panel widths.
             Hidden when bulk-select is active so the bulk toolbar takes
             over the full header surface. */}
         <div className="inbox-head-stack" style={bulkActive ? { display: "none" } : undefined}>
-          <h2 className="panel-title">Inbox</h2>
           <div className="inbox-actions">
             <button
               type="button"
@@ -574,8 +573,6 @@ export function Inbox() {
               onClick={handleTriage}
               disabled={triaging}
             >
-              {/* Filter/funnel icon to evoke "sort", paired with a
-                  small sparkle suffix that's Mue's signature. */}
               <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
@@ -586,8 +583,9 @@ export function Inbox() {
             </button>
             <button
               type="button"
-              className="inbox-action"
+              className="inbox-action inbox-action-icon"
               aria-label="Rafraîchir"
+              data-tip="Rafraîchir"
               onClick={handleRefresh}
               disabled={refreshing}
             >
@@ -596,19 +594,18 @@ export function Inbox() {
                 <polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
               </svg>
-              <span>Refresh</span>
             </button>
             <button
               ref={filterBtnRef}
               type="button"
-              className="inbox-action"
+              className="inbox-action inbox-action-icon"
               aria-label="Filtrer"
+              data-tip="Filtrer"
               onClick={() => setFilterAnchor(filterBtnRef.current)}
             >
               <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
-              <span>Filter</span>
             </button>
           </div>
         </div>
