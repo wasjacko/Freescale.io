@@ -792,6 +792,20 @@
     .conv:nth-child(8)  { animation-delay: 210ms; }
     .conv:nth-child(n+9) { animation-delay: 240ms; }
 
+    /* Emoji glyph used in place of an SVG icon for select nav items
+       (e.g. AI Knowledge → 📚). Matches the SVG icon size so the rest
+       of the row alignment doesn't shift. */
+    .nav-emoji {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      font-size: 16px;
+      line-height: 1;
+      flex: none;
+    }
+
     /* Nav active morph — pill grows from press */
     .nav-item {
       transition:
