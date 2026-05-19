@@ -3013,6 +3013,9 @@
       flex: 0 0 auto;
       padding: 20px 18px 14px;
       border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+      /* Smooth fade when entering / leaving bulk-select mode (the
+         .is-bulk variant flips background to a gradient). Audit #13. */
+      transition: background 240ms cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .panel-title-row {
@@ -3033,6 +3036,26 @@
     }
     .filter-btn:hover { background: #FAFAFC; color: #0F172A; border-color: rgba(15, 23, 42, 0.12); }
     .filter-btn .icon { width: 16px; height: 16px; }
+    /* Subtle visual grouping: the Mue (action) button is followed by
+       a 1px divider that separates it from Refresh + Filter (utility).
+       Audit #12 — without this the 3 buttons read as a flat row with
+       no hierarchy. */
+    .filter-btn-action + .filter-btn {
+      margin-left: 8px;
+      position: relative;
+    }
+    .filter-btn-action + .filter-btn::before {
+      content: "";
+      position: absolute;
+      left: -5px;
+      top: 14%;
+      bottom: 14%;
+      width: 1px;
+      background: rgba(15, 23, 42, 0.10);
+    }
+    [data-theme="dark"] .filter-btn-action + .filter-btn::before {
+      background: rgba(255, 255, 255, 0.12);
+    }
 
     /* Mue category tabs — Clients / Promos / Notifs / Autres.
        The "Clients" bucket is the default the user lands on. */
@@ -3196,6 +3219,24 @@
       padding: 4px 8px 24px;
       scrollbar-width: thin;
       scrollbar-color: rgba(15, 23, 42, 0.08) transparent;
+      /* Fade-to-transparent at top + bottom edges so the user has a
+         clear visual cue that the list scrolls past the visible
+         viewport. The 24px ramps blend with the panel background.
+         Audit #15. */
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 24px,
+        #000 calc(100% - 24px),
+        transparent 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 24px,
+        #000 calc(100% - 24px),
+        transparent 100%
+      );
     }
 
     /* Day separators in the conv list. Was 10px UPPERCASE + 0.12em
@@ -3246,7 +3287,7 @@
     .conv-badge {
       position: absolute;
       right: -3px; bottom: -3px;
-      width: 19px; height: 19px;
+      width: 21px; height: 21px;
       display: grid; place-items: center;
       border: 2px solid #fff;
       border-radius: 6px;
@@ -3254,7 +3295,10 @@
       background: #fff;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.10);
     }
-    .conv-badge svg { width: 15px; height: 15px; }
+    /* Bumped from 15→17px (badge bumped 19→21px to keep proportion).
+       The provider logo was barely legible at 15px on a 19px square.
+       Audit #14. */
+    .conv-badge svg { width: 17px; height: 17px; }
 
     .conv-main { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
     .conv-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

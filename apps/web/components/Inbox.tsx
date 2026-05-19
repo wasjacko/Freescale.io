@@ -565,7 +565,7 @@ export function Inbox() {
             )}
           </span>
           <button
-            className="filter-btn"
+            className="filter-btn filter-btn-action"
             type="button"
             aria-label="Trier avec Mue"
             data-tip="Mue trie tes mails par catégorie"
