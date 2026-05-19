@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useApp } from "@/lib/store";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import type { CurrentUser } from "@/lib/auth";
+import { summarizeThread, type ThreadSummary } from "@/lib/actions/mue";
+
+type BriefState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "result"; data: ThreadSummary }
+  | { kind: "error"; message: string };
 
 /**
  * MuePanel — companion-style AI panel.
@@ -38,6 +45,35 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
     if (!conv) return 0;
     return conversations.filter((c) => c.name === conv.name).length;
   }, [conversations, conv]);
+
+  // Brief / summary state — Mue's "summarize this conversation"
+  // capability. Calls summarizeThread on click, shows loading then
+  // displays the tldr + bullets inside a card. Reset whenever the
+  // user switches conversation so a stale brief never hangs over a
+  // different thread.
+  const [brief, setBrief] = useState<BriefState>({ kind: "idle" });
+  useEffect(() => {
+    setBrief({ kind: "idle" });
+  }, [activeConvId]);
+
+  const handleBrief = async () => {
+    if (!activeConvId) return;
+    if (brief.kind === "loading") return;
+    setBrief({ kind: "loading" });
+    try {
+      const res = await summarizeThread(activeConvId);
+      if (res.error || !res.summary) {
+        setBrief({ kind: "error", message: res.error ?? "Erreur Mue" });
+      } else {
+        setBrief({ kind: "result", data: res.summary });
+      }
+    } catch (err) {
+      setBrief({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Erreur inconnue",
+      });
+    }
+  };
 
   const handleAction = (label: string) => {
     push({ kind: "info", text: `${label} — bientôt branché à Mue` });
@@ -73,7 +109,10 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
           : "Sélectionne une conversation, je regarde avec toi."}
       </h2>
 
-      {/* Two quick actions */}
+      {/* Quick actions — Confirmer + Reporter are still placeholders
+          (will wire to action detection later). "Résumer" is the first
+          real Mue capability surfaced from the panel: hits summarizeThread
+          and renders a brief card below. */}
       {conv && (
         <div className="mue-chips" role="group" aria-label="Actions rapides">
           <button
@@ -97,6 +136,73 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
             </svg>
             Reporter
           </button>
+          <button
+            type="button"
+            className="mue-chip mue-chip-primary"
+            onClick={handleBrief}
+            disabled={brief.kind === "loading"}
+            aria-label="Résumer la conversation"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" />
+              <line x1="3" y1="12" x2="3.01" y2="12" />
+              <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+            {brief.kind === "loading" ? "Mue lit…" : "Résumer"}
+          </button>
+        </div>
+      )}
+
+      {/* Brief result card — sits between the chips and the contact
+          line. Renders the tldr as a small headline + the bullets
+          beneath, with an × to dismiss. Loading + error states share
+          the same shell so the layout doesn't jump. */}
+      {brief.kind !== "idle" && conv && (
+        <div className="mue-brief-card" role="region" aria-live="polite" aria-label="Brief Mue">
+          <header className="mue-brief-card-head">
+            <span className="mue-brief-card-label">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden>
+                <path d="M12 3l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5L12 3z" />
+              </svg>
+              Brief
+            </span>
+            <button
+              type="button"
+              className="mue-brief-card-close"
+              onClick={() => setBrief({ kind: "idle" })}
+              aria-label="Fermer"
+            >
+              ✕
+            </button>
+          </header>
+
+          {brief.kind === "loading" && (
+            <p className="mue-brief-card-loading">
+              Mue lit la conversation…
+            </p>
+          )}
+
+          {brief.kind === "error" && (
+            <p className="mue-brief-card-error">
+              {brief.message}
+            </p>
+          )}
+
+          {brief.kind === "result" && (
+            <>
+              <p className="mue-brief-card-tldr">{brief.data.tldr}</p>
+              {brief.data.bullets.length > 0 && (
+                <ul className="mue-brief-card-bullets">
+                  {brief.data.bullets.map((b, i) => (
+                    <li key={i}>{b}</li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
         </div>
       )}
 
