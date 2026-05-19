@@ -3044,22 +3044,29 @@
     /* Inbox tabs — flat underline style. Active tab gets a 2px indigo
        underline + bold indigo text. Inactive tabs are muted grey. No
        pill background, no card — clean horizontal text row to match
-       the design spec. */
+       the design spec. Scrolls horizontally when the panel is too
+       narrow for all 5 tabs, instead of wrapping to a second row. */
     .inbox-tabs {
       display: flex;
       align-items: center;
       gap: 18px;
       margin-top: 18px;
-      padding: 0;
+      padding: 0 0 1px; /* 1px bottom so the indigo underline doesn't get clipped by overflow */
       background: transparent;
       border-radius: 0;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;        /* Firefox */
+      -ms-overflow-style: none;      /* IE/Edge legacy */
     }
+    .inbox-tabs::-webkit-scrollbar { display: none; }  /* Chromium/Safari */
     .inbox-tab {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 8px 0;
+      flex-shrink: 0;          /* Don't squeeze tabs — let them overflow */
       background: transparent;
       border: 0;
       border-bottom: 2px solid transparent;
@@ -3069,6 +3076,7 @@
       color: #8B93A4;
       cursor: pointer;
       transition: color 140ms, border-color 140ms;
+      white-space: nowrap;     /* Keep "Tout 150" on one line */
     }
     .inbox-tab:hover { color: #0F172A; }
     .inbox-tab.is-active {
