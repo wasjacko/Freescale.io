@@ -10037,11 +10037,11 @@
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 36%,
-    rgba(255, 198, 156, 0.55) 0%,
-    rgba(255, 198, 156, 0.18) 35%,
-    rgba(255, 198, 156, 0) 70%
+    rgba(186, 182, 255, 0.55) 0%,
+    rgba(186, 182, 255, 0.18) 35%,
+    rgba(186, 182, 255, 0) 70%
   );
-  filter: blur(6px);
+  filter: blur(8px);
   pointer-events: none;
 }
 
@@ -10050,21 +10050,28 @@
   width: 78%;
   max-width: 240px;
   height: auto;
-  filter: drop-shadow(0 18px 28px rgba(228, 130, 76, 0.18));
+  /* Pixel-art rendering — keeps each rect crisp when scaled rather
+     than smoothing the edges (which would defeat the pixel look). */
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  filter: drop-shadow(0 16px 24px rgba(142, 137, 232, 0.22));
   animation: mueBreathe 4s ease-in-out infinite;
 }
 .mue-blob.is-mini {
   width: 28px;
-  height: 26px;
-  filter: drop-shadow(0 2px 4px rgba(228, 130, 76, 0.25));
+  height: 30px;
+  filter: drop-shadow(0 2px 4px rgba(142, 137, 232, 0.28));
   animation: none;
 }
 @keyframes mueBreathe {
-  0%, 100% { transform: scale(1) translateY(0); }
-  50%      { transform: scale(1.03) translateY(-3px); }
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
 }
 
-/* Floating orange particles around the blob */
+/* Floating pixel-art particles — mix of yellow, blue, pink to echo
+   the tiny squares scattered around the ghost in the reference. Each
+   one is a pure CSS square (not radial gradient) so it reads as
+   pixel art too. */
 .mue-particles {
   position: absolute;
   inset: 0;
@@ -10074,21 +10081,19 @@
   position: absolute;
   width: 7px;
   height: 7px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #FFD2A8, #F49B6A);
-  box-shadow: 0 0 6px rgba(244, 155, 106, 0.5);
-  opacity: 0.85;
+  border-radius: 1px;
+  opacity: 0.9;
   animation: mueFloat 5s ease-in-out infinite;
 }
-.mue-p1 { top: 6%;  left: 48%; width: 8px; height: 8px; animation-delay: 0s;   animation-duration: 4.5s; }
-.mue-p2 { top: 32%; left: 90%; width: 6px; height: 6px; animation-delay: 0.6s; animation-duration: 5.5s; }
-.mue-p3 { top: 80%; left: 6%;  width: 8px; height: 8px; animation-delay: 1.2s; animation-duration: 5s; }
-.mue-p4 { top: 88%; left: 86%; width: 7px; height: 7px; animation-delay: 0.3s; animation-duration: 6s; }
-.mue-p5 { top: 18%; left: 14%; width: 5px; height: 5px; animation-delay: 1.8s; animation-duration: 4.8s; }
-.mue-p6 { top: 56%; left: 92%; width: 4px; height: 4px; animation-delay: 2.4s; animation-duration: 5.2s; }
+.mue-p1 { top: 6%;  left: 48%; width: 8px; height: 8px; background: #FFD767; animation-delay: 0s;   animation-duration: 4.5s; }
+.mue-p2 { top: 32%; left: 90%; width: 6px; height: 6px; background: #FFD767; animation-delay: 0.6s; animation-duration: 5.5s; }
+.mue-p3 { top: 80%; left: 6%;  width: 8px; height: 8px; background: #8FB3FF; animation-delay: 1.2s; animation-duration: 5s; }
+.mue-p4 { top: 88%; left: 86%; width: 7px; height: 7px; background: #FFB7C9; animation-delay: 0.3s; animation-duration: 6s; }
+.mue-p5 { top: 18%; left: 14%; width: 5px; height: 5px; background: #FFB7C9; animation-delay: 1.8s; animation-duration: 4.8s; }
+.mue-p6 { top: 56%; left: 92%; width: 4px; height: 4px; background: #8FB3FF; animation-delay: 2.4s; animation-duration: 5.2s; }
 @keyframes mueFloat {
-  0%, 100% { transform: translateY(0) scale(1);    opacity: 0.85; }
-  50%      { transform: translateY(-8px) scale(1.1); opacity: 1; }
+  0%, 100% { transform: translateY(0);    opacity: 0.85; }
+  50%      { transform: translateY(-6px); opacity: 1; }
 }
 
 /* Headline */

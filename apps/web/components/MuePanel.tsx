@@ -135,89 +135,77 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
 }
 
 /**
- * MueBlob — the cute peach blob mascot.
+ * MueBlob — pixel-art lavender ghost.
  *
- * The shape is a hand-tuned organic path (slightly asymmetric "fat
- * droplet" with a soft top). A radial gradient gives the dimensional
- * peach tone; a smaller white ellipse at the top-left is the specular
- * highlight; two black almond-shaped eyes + a single curve = the face.
+ * Built as crisp-edges SVG with rect/path "pixels" on a 24×26 grid so
+ * it scales without smoothing (CSS image-rendering: pixelated +
+ * shape-rendering: crispEdges). Lavender body with a white face
+ * panel, black eyes, pink cheeks, and an open pink-tongue mouth.
  *
- * `mini` renders a 28×26 inline avatar (used inside chat bubbles).
+ * `mini` renders a tiny 28×30 version used inside chat bubbles or
+ * other compact contexts.
  */
 function MueBlob({ mini = false }: { mini?: boolean }) {
   const size = mini ? 28 : 200;
+  // The body silhouette is a single stair-stepped polygon. Each
+  // change in y is exactly 1 grid-unit so the edges read as crisp
+  // pixels rather than smooth curves.
+  const bodyPath =
+    "M 8 2 L 16 2 L 16 3 L 18 3 L 18 4 L 19 4 L 19 5 L 20 5 L 20 7 L 21 7 L 21 16 L 20 16 L 20 18 L 19 18 L 19 19 L 18 19 L 18 20 L 17 20 L 17 21 L 16 21 L 16 22 L 14 22 L 14 23 L 11 23 L 11 22 L 9 22 L 9 21 L 8 21 L 8 20 L 7 20 L 7 19 L 6 19 L 6 18 L 5 18 L 5 16 L 4 16 L 4 7 L 5 7 L 5 5 L 6 5 L 6 4 L 7 4 L 7 3 L 8 3 Z";
+
   return (
     <svg
       className={`mue-blob ${mini ? "is-mini" : ""}`}
-      viewBox="0 0 220 200"
+      viewBox="0 0 25 26"
       width={size}
-      height={mini ? 26 : Math.round(size * 0.91)}
+      height={mini ? 30 : Math.round(size * 1.04)}
+      shapeRendering="crispEdges"
       aria-hidden
     >
-      <defs>
-        <radialGradient id={mini ? "mueBodyMini" : "mueBody"} cx="38%" cy="32%" r="78%">
-          <stop offset="0%" stopColor="#FFE3CA" />
-          <stop offset="35%" stopColor="#FFC299" />
-          <stop offset="72%" stopColor="#F49B6A" />
-          <stop offset="100%" stopColor="#E37A4A" />
-        </radialGradient>
-        <radialGradient id={mini ? "mueHighlightMini" : "mueHighlight"} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </radialGradient>
-      </defs>
+      {/* Outer outline (slightly darker lavender, 1px wider on each
+          side — drawn first so the body fill sits on top) */}
+      <path d={bodyPath} fill="#8E89E8" />
 
-      {/* Body — organic droplet shape, slightly asymmetric */}
+      {/* Body fill — main lavender, 1 unit inset from the outline */}
       <path
-        d="
-          M 110,18
-          C 156,18  198,52  198,108
-          C 198,156 162,184 110,184
-          C 58,184   24,156  24,108
-          C 24,62    62,18  110,18
-          Z
-        "
-        fill={`url(#${mini ? "mueBodyMini" : "mueBody"})`}
+        d="M 9 3 L 15 3 L 15 4 L 17 4 L 17 5 L 18 5 L 18 6 L 19 6 L 19 7 L 20 7 L 20 16 L 19 16 L 19 17 L 18 17 L 18 18 L 17 18 L 17 19 L 16 19 L 16 20 L 15 20 L 15 21 L 14 21 L 14 22 L 11 22 L 11 21 L 10 21 L 10 20 L 9 20 L 9 19 L 8 19 L 8 18 L 7 18 L 7 17 L 6 17 L 6 16 L 5 16 L 5 7 L 6 7 L 6 6 L 7 6 L 7 5 L 8 5 L 8 4 L 9 4 Z"
+        fill="#BAB6FF"
       />
 
-      {/* Top-left specular highlight */}
-      <ellipse
-        cx="78"
-        cy="62"
-        rx="36"
-        ry="22"
-        fill={`url(#${mini ? "mueHighlightMini" : "mueHighlight"})`}
-        transform="rotate(-22 78 62)"
+      {/* White face panel — a chunky rounded rect in the upper-center */}
+      <path
+        d="M 8 7 L 16 7 L 16 8 L 17 8 L 17 13 L 16 13 L 16 14 L 8 14 L 8 13 L 7 13 L 7 8 L 8 8 Z"
+        fill="#FAFAFF"
       />
+
+      {/* Subtle light highlight on the upper-left of the body */}
+      <rect x="6" y="5" width="2" height="1" fill="#D9D6FF" />
+      <rect x="5" y="6" width="1" height="3" fill="#D9D6FF" />
 
       {!mini && (
         <>
-          {/* Tiny top sparkle */}
-          <ellipse cx="105" cy="38" rx="6" ry="3" fill="rgba(255,255,255,0.55)" transform="rotate(-15 105 38)" />
+          {/* Eyes — two crisp pixel-blocks, slightly almond-leaning */}
+          <rect x="9" y="9" width="2" height="3" fill="#0F0E1F" />
+          <rect x="13" y="9" width="2" height="3" fill="#0F0E1F" />
+          {/* Eye glints */}
+          <rect x="9" y="9" width="1" height="1" fill="#FAFAFF" />
+          <rect x="13" y="9" width="1" height="1" fill="#FAFAFF" />
 
-          {/* Eyes — two soft almond-shaped pupils */}
-          <ellipse cx="86" cy="108" rx="6" ry="9" fill="#1C1B2C" />
-          <ellipse cx="134" cy="108" rx="6" ry="9" fill="#1C1B2C" />
-          {/* Eye glints (catch light) */}
-          <circle cx="88" cy="103" r="1.6" fill="rgba(255,255,255,0.9)" />
-          <circle cx="136" cy="103" r="1.6" fill="rgba(255,255,255,0.9)" />
+          {/* Cheeks — small pink dots flanking the mouth */}
+          <rect x="8" y="12" width="1" height="1" fill="#FFB7C9" />
+          <rect x="15" y="12" width="1" height="1" fill="#FFB7C9" />
 
-          {/* Smile — gentle curve */}
-          <path
-            d="M 96,132 Q 110,142 124,132"
-            fill="none"
-            stroke="#1C1B2C"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
+          {/* Open mouth (dark) + tongue (pink) */}
+          <rect x="11" y="12" width="2" height="2" fill="#1A1620" />
+          <rect x="11" y="13" width="2" height="1" fill="#FF5C84" />
         </>
       )}
 
       {mini && (
         <>
-          {/* Mini eyes only — too small for full face */}
-          <circle cx="90" cy="115" r="9" fill="#1C1B2C" />
-          <circle cx="130" cy="115" r="9" fill="#1C1B2C" />
+          {/* Mini face — eyes only */}
+          <rect x="9" y="9" width="2" height="3" fill="#0F0E1F" />
+          <rect x="13" y="9" width="2" height="3" fill="#0F0E1F" />
         </>
       )}
     </svg>
