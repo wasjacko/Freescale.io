@@ -619,7 +619,14 @@ export function Inbox() {
               onClick={() => setTab(t)}
             >
               {TAB_LABELS[t]}
-              {tabCounts[t] > 0 && <span className="inbox-tab-count">{tabCounts[t]}</span>}
+              {/* Count always rendered (even at 0) so the spacing rhythm
+                  stays consistent across tabs. Muted at 0 so visual
+                  hierarchy still emphasizes non-empty buckets. Audit #19. */}
+              <span
+                className={`inbox-tab-count ${tabCounts[t] === 0 ? "is-zero" : ""}`}
+              >
+                {tabCounts[t]}
+              </span>
             </button>
           ))}
           {/* `unclassified` counter removed — since the client-side

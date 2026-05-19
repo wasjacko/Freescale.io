@@ -3084,6 +3084,12 @@
       color: #4F46E5;
       background: rgba(99, 102, 241, 0.12);
     }
+    /* Muted "0" — keep the spacing rhythm without screaming an empty
+       bucket. Audit #19. */
+    .inbox-tab-count.is-zero {
+      opacity: 0.4;
+      background: transparent;
+    }
     .inbox-tab-pending {
       margin-left: auto;
       font-size: 11px;
@@ -3192,14 +3198,18 @@
       scrollbar-color: rgba(15, 23, 42, 0.08) transparent;
     }
 
+    /* Day separators in the conv list. Was 10px UPPERCASE + 0.12em
+       tracking — too "techy" for the soft modern UI. Now sentence-case
+       11.5px with subtle medium weight, reads as a quiet hint rather
+       than shouting. Audit item #6. */
     .day-label {
-      padding: 22px 10px 10px;
-      font-size: 10px;
-      font-weight: 600;
-      color: #C5CAD3;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+      padding: 22px 12px 8px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #8B93A4;
+      letter-spacing: -0.005em;
     }
+    [data-theme="dark"] .day-label { color: #6B7280; }
 
     .conv {
       position: relative;
