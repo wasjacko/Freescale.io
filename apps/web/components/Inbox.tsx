@@ -9,6 +9,7 @@ import { ChannelLogo } from "@/components/icons/Icon";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
 import { classifyAllUncategorized, triageHeuristic } from "@/lib/actions/triage";
+import { quickClassify } from "@/lib/triage-rules";
 import { bulkConversationAction } from "@/lib/actions/conversation-flags";
 import { Avatar } from "@/components/ui/Avatar";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
@@ -16,7 +17,8 @@ import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
 import { snoozeTargets } from "@/lib/snooze-targets";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
 import { useRouter as useRouterBulk } from "next/navigation";
-import type { ConversationCategory } from "@/lib/types";
+// ConversationCategory import removed — effectiveCategory now derives
+// the bucket directly via quickClassify when c.category is missing.
 
 const GROUP_LABELS: Record<string, string> = {
   today: "Today",
@@ -297,8 +299,40 @@ export function Inbox() {
     }
   };
 
+  // Effective category for tab counts + filtering. Falls back to a
+  // pure client-side heuristic (quickClassify) when c.category is
+  // undefined — which happens when:
+  //   (a) the user's Supabase doesn't have the category migration
+  //       applied (column missing → not returned in extras query)
+  //   (b) triageHeuristic hasn't run yet for this conv
+  //   (c) Mue's LLM classifier hasn't been triggered
+  //
+  // The fallback means the inbox tabs ALWAYS show real numbers — the
+  // server-persisted category just refines / overrides the heuristic
+  // when available. No more "0 clients / 0 promo" when the user
+  // clearly has both.
+  const effectiveCategory = (c: typeof conversations[number]): CategoryTab => {
+    if (
+      c.category === "client" ||
+      c.category === "promo" ||
+      c.category === "notif" ||
+      c.category === "other"
+    ) {
+      return c.category;
+    }
+    return quickClassify({
+      fromEmail: c.contactEmail ?? "",
+      subject: c.subject ?? "",
+      preview: c.preview ?? "",
+    });
+  };
+
   // Per-tab counts (computed across all non-archived convs, ignoring the
   // active read/mentions filter — tabs always show their full bucket).
+  // "unclassified" only counts convs that have NEITHER a stored category
+  // NOR a derivable one — since the heuristic always returns one of the
+  // 4 buckets, unclassified is now always 0 unless something is very
+  // wrong. We keep the field for backwards compat with the header label.
   const tabCounts = useMemo(() => {
     const counts: Record<CategoryTab, number> & { unclassified: number } = {
       client: 0,
@@ -309,13 +343,11 @@ export function Inbox() {
     };
     for (const c of conversations) {
       if (archived.has(c.id)) continue;
-      if (c.category === "client") counts.client += 1;
-      else if (c.category === "promo") counts.promo += 1;
-      else if (c.category === "notif") counts.notif += 1;
-      else if (c.category === "other") counts.other += 1;
-      else counts.unclassified += 1;
+      counts[effectiveCategory(c)] += 1;
     }
     return counts;
+    // effectiveCategory is a stable closure over quickClassify; safe to omit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversations, archived]);
 
   // Auto-triage: when the inbox first loads with ≥1 unclassified conv,
@@ -366,17 +398,19 @@ export function Inbox() {
   const filteredConvs = useMemo(() => {
     return conversations.filter((c) => {
       if (archived.has(c.id)) return false;
-      // Tab filter — pin to the bucket the user selected. Unclassified
-      // conversations show under whichever tab the user is on (so they
-      // never "disappear" until Mue has had a chance to classify them).
-      const category: ConversationCategory = c.category ?? null;
-      if (category && category !== tab) return false;
+      // Tab filter — use effective category (server-stored OR heuristic
+      // fallback) so the tab content matches what tabCounts displays.
+      // Convs are NEVER "unclassified" anymore — quickClassify always
+      // returns one of the 4 buckets.
+      if (effectiveCategory(c) !== tab) return false;
       if (filter === "unread" && !isUnread(c.id, c.unread)) return false;
       if (filter === "mentions") return false;
       // Tag filter — applies on top of everything else. Hidden when null.
       if (tagFilter && !(c.tags ?? []).includes(tagFilter)) return false;
       return true;
     });
+    // effectiveCategory is a stable closure; safe to omit from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversations, archived, filter, extraUnread, readIds, tab, tagFilter]);
 
   // Distinct tag list (sorted by frequency desc, then alpha) across all
@@ -655,21 +689,30 @@ export function Inbox() {
                     <span className="conv-main">
                       <span className="conv-top">
                         <span className="conv-name">
-                          {c.category && (
-                            <span
-                              className={`conv-cat conv-cat-${c.category}`}
-                              aria-label={`Catégorie ${c.category}`}
-                              title={
-                                c.category === "client" ? "Client" :
-                                c.category === "promo" ? "Promo" :
-                                c.category === "notif" ? "Notif" : "Autre"
-                              }
-                            >
-                              {c.category === "client" ? "👤" :
-                               c.category === "promo" ? "🏷" :
-                               c.category === "notif" ? "🔔" : "📂"}
-                            </span>
-                          )}
+                          {(() => {
+                            // Always show a badge — server category if known,
+                            // heuristic fallback otherwise. Faded look when
+                            // it's only a heuristic guess vs solid when
+                            // the server confirmed.
+                            const ec = effectiveCategory(c);
+                            const isPersisted = !!c.category;
+                            return (
+                              <span
+                                className={`conv-cat conv-cat-${ec} ${isPersisted ? "" : "is-guess"}`}
+                                aria-label={`Catégorie ${ec}${isPersisted ? "" : " (heuristique)"}`}
+                                title={
+                                  (ec === "client" ? "Client" :
+                                   ec === "promo" ? "Promo" :
+                                   ec === "notif" ? "Notif" : "Autre") +
+                                  (isPersisted ? "" : " · estimation locale")
+                                }
+                              >
+                                {ec === "client" ? "👤" :
+                                 ec === "promo" ? "🏷" :
+                                 ec === "notif" ? "🔔" : "📂"}
+                              </span>
+                            );
+                          })()}
                           {c.name}
                         </span>
                         <span className="conv-time">{formatLocalTime(c.lastAtIso)}</span>

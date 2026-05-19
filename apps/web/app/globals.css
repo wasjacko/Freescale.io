@@ -4554,6 +4554,18 @@
     [data-theme="dark"] .conv-cat-notif  { background: rgba(59, 130, 246, 0.24); }
     [data-theme="dark"] .conv-cat-other  { background: rgba(148, 163, 184, 0.24); }
 
+    /* Faded variant — heuristic guess (no server-stored category yet).
+       Subtle dashed ring so the user knows "this is the app's best
+       guess, click to confirm/correct" vs a solid badge = persisted. */
+    .conv-cat.is-guess {
+      opacity: 0.55;
+      box-shadow: inset 0 0 0 1px currentColor;
+    }
+    .conv-cat.is-guess.conv-cat-client { color: rgb(34, 197, 94); }
+    .conv-cat.is-guess.conv-cat-promo  { color: rgb(234, 88, 12); }
+    .conv-cat.is-guess.conv-cat-notif  { color: rgb(59, 130, 246); }
+    .conv-cat.is-guess.conv-cat-other  { color: rgb(148, 163, 184); }
+
     /* ====================================================================
        OfflineIndicator — fixed top pill, surfaces network state changes
        ==================================================================== */
