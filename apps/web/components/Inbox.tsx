@@ -21,16 +21,19 @@ import { useRouter as useRouterBulk } from "next/navigation";
 // the bucket directly via quickClassify when c.category is missing.
 
 const GROUP_LABELS: Record<string, string> = {
-  today: "Today",
-  yesterday: "Yesterday",
-  "this-week": "This week",
-  earlier: "Earlier",
+  today: "Aujourd'hui",
+  yesterday: "Hier",
+  "this-week": "Cette semaine",
+  earlier: "Plus ancien",
 };
 
 /**
  * Format the ISO timestamp in the user's BROWSER local time (e.g., Paris
- * CEST) rather than the server UTC. Same-day → HH:MM, yesterday → "Yesterday",
- * within a week → weekday short, otherwise short date.
+ * CEST) rather than the server UTC. Same-day → HH:MM, yesterday → "Hier",
+ * within a week → weekday short (FR), otherwise short date (FR).
+ *
+ * All toLocaleString calls are pinned to "fr-FR" so the format is
+ * consistent regardless of the browser's accept-language header.
  */
 function formatLocalTime(iso: string): string {
   const date = new Date(iso);
@@ -40,7 +43,7 @@ function formatLocalTime(iso: string): string {
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
   if (sameDay) {
-    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return date.toLocaleTimeString("fr-FR", { hour: "numeric", minute: "2-digit" });
   }
   const yest = new Date(now);
   yest.setDate(now.getDate() - 1);
@@ -49,11 +52,11 @@ function formatLocalTime(iso: string): string {
     date.getMonth() === yest.getMonth() &&
     date.getDate() === yest.getDate()
   ) {
-    return "Yesterday";
+    return "Hier";
   }
   const diffDays = (now.getTime() - date.getTime()) / 86400000;
-  if (diffDays < 7) return date.toLocaleDateString([], { weekday: "short" });
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  if (diffDays < 7) return date.toLocaleDateString("fr-FR", { weekday: "short" });
+  return date.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
 }
 
 /**
@@ -555,7 +558,12 @@ export function Inbox() {
         )}
         <div className="panel-title-row" style={bulkActive ? { display: "none" } : undefined}>
           <h2 className="panel-title">Inbox</h2>
-          <span className="panel-count">{tabCounts[tab]} {TAB_LABELS[tab].toLowerCase()}</span>
+          <span className="panel-count">
+            {tabCounts[tab]} conversation{tabCounts[tab] > 1 ? "s" : ""}
+            {tab !== "all" && (
+              <span className="panel-count-tab"> · {TAB_LABELS[tab]}</span>
+            )}
+          </span>
           <button
             className="filter-btn"
             type="button"
@@ -614,11 +622,9 @@ export function Inbox() {
               {tabCounts[t] > 0 && <span className="inbox-tab-count">{tabCounts[t]}</span>}
             </button>
           ))}
-          {tabCounts.unclassified > 0 && (
-            <span className="inbox-tab-pending" title="Non triés par Mue — clique sur l'étoile pour lancer le tri">
-              · {tabCounts.unclassified} à trier
-            </span>
-          )}
+          {/* `unclassified` counter removed — since the client-side
+              heuristic always returns one of the 4 buckets, this was
+              always 0 and the conditional never rendered. Audit item #4. */}
         </div>
 
         {tagOptions.length > 0 && (() => {
@@ -719,13 +725,28 @@ export function Inbox() {
             </div>
           </>
         )}
-        {filteredConvs.length === 0 && !isSyncing && (
-          <div className="empty-state is-visible">
-            <div className="empty-orb" />
-            <div className="empty-title">Inbox zero 🎉</div>
-            <div className="empty-text">Aucune conversation pour ce filtre. Essayez-en un autre, ou prenez une pause.</div>
-          </div>
-        )}
+        {filteredConvs.length === 0 && !isSyncing && (() => {
+          // Differentiate "truly 0 mail in workspace" from "filter narrows
+          // to 0 here". The first deserves the celebratory copy; the second
+          // is just a filter-result and shouldn't celebrate.
+          const trulyEmpty =
+            conversations.filter((c) => !archived.has(c.id)).length === 0;
+          return (
+            <div className="empty-state is-visible">
+              <div className="empty-orb" />
+              <div className="empty-title">
+                {trulyEmpty ? "Inbox zero 🎉" : "Aucun résultat"}
+              </div>
+              <div className="empty-text">
+                {trulyEmpty
+                  ? "Aucune conversation dans votre boîte. Connectez un canal pour commencer, ou prenez une pause."
+                  : `Aucune conversation dans « ${TAB_LABELS[tab]} »${
+                      tagFilter ? ` avec le tag « ${tagFilter} »` : ""
+                    }${filter === "unread" ? ", filtré sur non lus" : ""}. Essayez un autre onglet ou retirez les filtres.`}
+              </div>
+            </div>
+          );
+        })()}
         {Object.entries(groups).map(([group, items]) =>
           items.length === 0 ? null : (
             <div key={group}>
