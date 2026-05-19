@@ -256,10 +256,13 @@
    ============================================================================= */
     :root {
       color-scheme: light;
-      /* Surfaces */
-      --bg: #FAFAFC;
-      --bg-soft: #F6F7FB;
-      --bg-tint: #F8F8FD;
+      /* Surfaces — slightly greyer than before. The previous values
+         (#FAFAFC / #F6F7FB / #F8F8FD) were too near-white and made the
+         app feel washed out against the white inbox/thread cards.
+         Bumped each one a notch warmer-grey for clearer separation. */
+      --bg: #EFF1F5;
+      --bg-soft: #EAEDF2;
+      --bg-tint: #F2F4F8;
       --canvas: #FFFFFF;
       --surface: rgba(255, 255, 255, 0.72);
 
@@ -2051,23 +2054,21 @@
       padding: 8px;
       min-height: 0;
       border-radius: var(--r-xl);
-      border: 2px solid transparent;
-      background:
-        linear-gradient(#EAECF3, #EAECF3) padding-box,
-        linear-gradient(180deg,
-          #F2F3F8 0%,
-          #E4E6EE 8%,
-          #DCDFE9 22%,
-          #E8EAF2 40%,
-          #F0F2F8 55%,
-          #DDE0EA 72%,
-          #E4E7EF 88%,
-          #F2F3F8 100%) border-box;
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.95) inset,
-        0 8px 24px rgba(15, 23, 42, 0.05),
-        0 1px 2px rgba(15, 23, 42, 0.04);
+      /* Flat clean surface — was a multi-stop vertical gradient +
+         gradient border that read as glassmorphism / iridescent metal.
+         Replaced with a single neutral grey-blue fill, a soft 1px
+         border, and a small drop-shadow so the white inbox + thread
+         cards inside still pop. Reads as a calm container, not a
+         shiny frame. */
+      background: #E7EAF0;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       overflow: hidden;
+    }
+    [data-theme="dark"] .conv-shell {
+      background: #18181F;
+      border-color: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.30);
     }
 
     /* ====== AI KNOWLEDGE VIEW ====== */
