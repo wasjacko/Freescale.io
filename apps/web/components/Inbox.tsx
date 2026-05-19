@@ -77,14 +77,23 @@ function clientGroupFor(iso: string): "today" | "yesterday" | "this-week" | "ear
   return "earlier";
 }
 
-type CategoryTab = "client" | "promo" | "notif" | "other";
+// "all" is a meta-tab that disables the per-category filter — every
+// non-archived conv shows up there. Useful as a default for users who
+// haven't refined their tab habit yet, and for a quick "show me
+// everything" reset when something's misclassified.
+type CategoryTab = "all" | "client" | "promo" | "notif" | "other";
+type RealCategory = Exclude<CategoryTab, "all">;
 
 const TAB_LABELS: Record<CategoryTab, string> = {
+  all: "Tout",
   client: "Clients",
   promo: "Promos",
   notif: "Notifs",
   other: "Autres",
 };
+
+const REAL_CATEGORIES: ReadonlyArray<RealCategory> = ["client", "promo", "notif", "other"];
+const ALL_TABS: ReadonlyArray<CategoryTab> = ["all", ...REAL_CATEGORIES];
 
 export function Inbox() {
   const router = useRouter();
@@ -110,7 +119,7 @@ export function Inbox() {
   const filterBtnRef = useRef<HTMLButtonElement>(null);
   const [ctx, setCtx] = useState<{ x: number; y: number; convId: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState<CategoryTab>("client");
+  const [tab, setTab] = useState<CategoryTab>("all");
   const [triaging, setTriaging] = useState(false);
   // Auto-triage state — fires once per inbox mount when unclassified > 0.
   // "idle" → waiting to start, "running" → heuristic in flight,
@@ -311,7 +320,7 @@ export function Inbox() {
   // server-persisted category just refines / overrides the heuristic
   // when available. No more "0 clients / 0 promo" when the user
   // clearly has both.
-  const effectiveCategory = (c: typeof conversations[number]): CategoryTab => {
+  const effectiveCategory = (c: typeof conversations[number]): RealCategory => {
     if (
       c.category === "client" ||
       c.category === "promo" ||
@@ -335,6 +344,7 @@ export function Inbox() {
   // wrong. We keep the field for backwards compat with the header label.
   const tabCounts = useMemo(() => {
     const counts: Record<CategoryTab, number> & { unclassified: number } = {
+      all: 0,
       client: 0,
       promo: 0,
       notif: 0,
@@ -343,6 +353,7 @@ export function Inbox() {
     };
     for (const c of conversations) {
       if (archived.has(c.id)) continue;
+      counts.all += 1;
       counts[effectiveCategory(c)] += 1;
     }
     return counts;
@@ -398,11 +409,10 @@ export function Inbox() {
   const filteredConvs = useMemo(() => {
     return conversations.filter((c) => {
       if (archived.has(c.id)) return false;
-      // Tab filter — use effective category (server-stored OR heuristic
-      // fallback) so the tab content matches what tabCounts displays.
-      // Convs are NEVER "unclassified" anymore — quickClassify always
-      // returns one of the 4 buckets.
-      if (effectiveCategory(c) !== tab) return false;
+      // Tab filter — "all" disables the per-category filter so every
+      // non-archived conv shows up. Other tabs use the effective
+      // category (server-stored OR heuristic fallback).
+      if (tab !== "all" && effectiveCategory(c) !== tab) return false;
       if (filter === "unread" && !isUnread(c.id, c.unread)) return false;
       if (filter === "mentions") return false;
       // Tag filter — applies on top of everything else. Hidden when null.
@@ -566,7 +576,7 @@ export function Inbox() {
           </button>
         </div>
         <div className="inbox-tabs" role="tablist">
-          {(["client", "promo", "notif", "other"] as CategoryTab[]).map((t) => (
+          {ALL_TABS.map((t) => (
             <button
               key={t}
               type="button"
