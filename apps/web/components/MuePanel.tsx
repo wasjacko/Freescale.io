@@ -108,21 +108,6 @@ export function MuePanel(_props: { user?: CurrentUser | null }) {
         </p>
       )}
 
-      {/* Mini chat history with Mue */}
-      <div className="mue-chat">
-        <div className="mue-msg mue-msg-user">
-          Tu penses qu&apos;elle est dispo mardi ?
-        </div>
-        <div className="mue-msg mue-msg-bot">
-          <span className="mue-msg-avatar" aria-hidden>
-            <MueBlob mini />
-          </span>
-          <span className="mue-msg-text">
-            Je crois que oui. Lundi ou mardi semblent bien.
-          </span>
-        </div>
-      </div>
-
       {/* Ask input */}
       <form className="mue-ask-form" onSubmit={handleAsk}>
         <input

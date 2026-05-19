@@ -10143,53 +10143,9 @@
   letter-spacing: -0.005em;
 }
 
-/* Mini chat with Mue — 2 bubbles (user + bot with mini blob avatar) */
-.mue-chat {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 18px;
-  padding: 0 4px;
-}
-.mue-msg {
-  max-width: 86%;
-  padding: 11px 14px;
-  border-radius: 14px;
-  font-size: 13.5px;
-  line-height: 1.4;
-  color: #1B1B25;
-}
-.mue-msg-user {
-  align-self: flex-end;
-  background: #FFFFFF;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-bottom-right-radius: 5px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-}
-.mue-msg-bot {
-  align-self: flex-start;
-  background: #FFD9BC;
-  border-bottom-left-radius: 5px;
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding-left: 38px;
-  position: relative;
-}
-.mue-msg-avatar {
-  position: absolute;
-  left: -10px;
-  bottom: -6px;
-  width: 28px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-}
-.mue-msg-text {
-  display: inline-block;
-  flex: 1;
-}
+/* (Mini chat history bubbles removed — they were a static example
+   showing past Mue exchanges. Real chat history will be re-added when
+   the Ask-Mue input wires to actual server actions.) */
 
 /* Ask Mue input */
 .mue-ask-form {
@@ -10241,15 +10197,6 @@
 }
 [data-theme="dark"] .mue-chip:hover { background: rgba(165, 180, 252, 0.28); }
 [data-theme="dark"] .mue-contact-line { color: #8B8076; }
-[data-theme="dark"] .mue-msg-user {
-  background: #2C2622;
-  border-color: rgba(255, 255, 255, 0.06);
-  color: #F5EBE2;
-}
-[data-theme="dark"] .mue-msg-bot {
-  background: #4A3220;
-  color: #F5EBE2;
-}
 [data-theme="dark"] .mue-ask-form {
   background: #2A231F;
   border-color: rgba(255, 255, 255, 0.06);
