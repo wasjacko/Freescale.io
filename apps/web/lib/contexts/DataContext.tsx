@@ -16,7 +16,24 @@ import {
   setConversationTags as srvSetTags,
   setConversationCategory as srvSetCategory,
 } from "@/lib/actions/conversation-flags";
+import {
+  createCalendarEvent as srvCreateEvent,
+  updateCalendarEvent as srvUpdateEvent,
+  deleteCalendarEvent as srvDeleteEvent,
+} from "@/lib/actions/calendar";
 import type { ConversationCategory } from "@/lib/types";
+
+/**
+ * Returns the local Sunday-at-00:00 ISO for the current week. Used as
+ * the anchor for translating grid coordinates (day 0-6 + minutes-from-
+ * 8AM) into absolute timestamps in calendar server actions.
+ */
+function currentWeekStartIso(): string {
+  const now = new Date();
+  const sun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  sun.setHours(0, 0, 0, 0);
+  return sun.toISOString();
+}
 
 type Ctx = {
   conversations: Conversation[];
@@ -39,6 +56,21 @@ type Ctx = {
   snooze: (convId: string, untilIso: string | null) => Promise<void>;
   setTags: (convId: string, tags: string[]) => Promise<void>;
   setCategory: (convId: string, category: ConversationCategory) => Promise<void>;
+  createEvent: (input: {
+    title: string;
+    day: number;
+    startMinutes: number;
+    durationMinutes: number;
+    color?: CalEvent["color"];
+  }) => Promise<{ ok: boolean; error: string | null }>;
+  updateEvent: (input: {
+    id: string;
+    title?: string;
+    day?: number;
+    startMinutes?: number;
+    durationMinutes?: number;
+  }) => Promise<{ ok: boolean; error: string | null }>;
+  deleteEvent: (id: string) => Promise<{ ok: boolean; error: string | null }>;
 };
 
 const DataCtx = createContext<Ctx | null>(null);
@@ -53,6 +85,7 @@ export function DataProvider({
   const [conversations, setConversations] = useState<Conversation[]>(initial.conversations);
   const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>(initial.messagesByConv);
   const [tasks, setTasks] = useState<Task[]>(initial.tasks);
+  const [events, setEvents] = useState<CalEvent[]>(initial.events);
   const [archived, setArchived] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -64,7 +97,8 @@ export function DataProvider({
     setConversations(initial.conversations);
     setMessagesByConv(initial.messagesByConv);
     setTasks(initial.tasks);
-  }, [initial.conversations, initial.messagesByConv, initial.tasks]);
+    setEvents(initial.events);
+  }, [initial.conversations, initial.messagesByConv, initial.tasks, initial.events]);
 
   const markRead = useCallback(async (id: string) => {
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: false } : c)));
@@ -261,12 +295,102 @@ export function DataProvider({
     }
   }, []);
 
+  // ─── Calendar events — optimistic CRUD ────────────────────────────
+  const createEvent = useCallback(
+    async (input: {
+      title: string;
+      day: number;
+      startMinutes: number;
+      durationMinutes: number;
+      color?: CalEvent["color"];
+    }) => {
+      const tempId = `temp-${crypto.randomUUID()}`;
+      const optimistic: CalEvent = {
+        id: tempId,
+        title: input.title,
+        day: input.day as CalEvent["day"],
+        startMinutes: input.startMinutes,
+        durationMinutes: input.durationMinutes,
+        color: input.color ?? "lav",
+      };
+      setEvents((prev) => [...prev, optimistic]);
+      const res = await srvCreateEvent({
+        ...input,
+        weekStartIso: currentWeekStartIso(),
+      });
+      if (res.ok && res.id) {
+        // Swap the temp id for the real DB one so subsequent updates
+        // target the right row.
+        setEvents((prev) =>
+          prev.map((e) => (e.id === tempId ? { ...e, id: res.id! } : e))
+        );
+        return { ok: true, error: null };
+      }
+      // Rollback on failure.
+      setEvents((prev) => prev.filter((e) => e.id !== tempId));
+      return { ok: false, error: res.error };
+    },
+    []
+  );
+
+  const updateEvent = useCallback(
+    async (input: {
+      id: string;
+      title?: string;
+      day?: number;
+      startMinutes?: number;
+      durationMinutes?: number;
+    }) => {
+      // Snapshot prev so we can rollback on failure.
+      let prevEvent: CalEvent | null = null;
+      setEvents((prev) =>
+        prev.map((e) => {
+          if (e.id !== input.id) return e;
+          prevEvent = e;
+          return {
+            ...e,
+            ...(input.title !== undefined && { title: input.title }),
+            ...(input.day !== undefined && { day: input.day as CalEvent["day"] }),
+            ...(input.startMinutes !== undefined && { startMinutes: input.startMinutes }),
+            ...(input.durationMinutes !== undefined && { durationMinutes: input.durationMinutes }),
+          };
+        })
+      );
+      const res = await srvUpdateEvent({
+        ...input,
+        weekStartIso: currentWeekStartIso(),
+      });
+      if (!res.ok && prevEvent) {
+        setEvents((prev) =>
+          prev.map((e) => (e.id === input.id ? (prevEvent as CalEvent) : e))
+        );
+      }
+      return res;
+    },
+    []
+  );
+
+  const deleteEvent = useCallback(async (id: string) => {
+    let removed: CalEvent | null = null;
+    setEvents((prev) => {
+      removed = prev.find((e) => e.id === id) ?? null;
+      return prev.filter((e) => e.id !== id);
+    });
+    const res = await srvDeleteEvent(id);
+    if (!res.ok && removed) {
+      // Rollback — put it back where it was (order doesn't matter for
+      // calendar rendering, it's grid-positioned by day/startMinutes).
+      setEvents((prev) => [...prev, removed as CalEvent]);
+    }
+    return res;
+  }, []);
+
   const value = useMemo<Ctx>(
     () => ({
       conversations,
       messagesByConv,
       tasks,
-      events: initial.events,
+      events,
       upcoming: initial.upcoming,
       channels: initial.channels,
       archived,
@@ -283,12 +407,15 @@ export function DataProvider({
       snooze,
       setTags,
       setCategory,
+      createEvent,
+      updateEvent,
+      deleteEvent,
     }),
     [
       conversations,
       messagesByConv,
       tasks,
-      initial.events,
+      events,
       initial.upcoming,
       initial.channels,
       isSyncing,
@@ -301,6 +428,9 @@ export function DataProvider({
       retryFailedMessage,
       toggleTask,
       toggleStar,
+      createEvent,
+      updateEvent,
+      deleteEvent,
       snooze,
       setTags,
       setCategory,

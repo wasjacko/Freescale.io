@@ -2511,6 +2511,40 @@
       z-index: 2;
     }
     .cal-event:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10); }
+    /* While the user is dragging an event, dim its origin so the
+       drag motion reads clearly. */
+    .cal-event.is-dragging {
+      opacity: 0.55;
+      cursor: grabbing;
+    }
+    /* Ghost preview while drag-creating — outlined dashed, semi-transparent. */
+    .cal-event.cal-event-ghost {
+      pointer-events: none;
+      opacity: 0.78;
+      border: 1.5px dashed rgba(79, 70, 229, 0.55);
+      animation: ghostPulse 1s ease-in-out infinite;
+    }
+    @keyframes ghostPulse {
+      0%, 100% { opacity: 0.78; }
+      50%      { opacity: 0.55; }
+    }
+    /* Cursor affordances on the grid background */
+    .cal-grid.is-creating { cursor: crosshair; }
+    .cal-grid.is-moving { cursor: grabbing; }
+    /* Friendly empty-state hint when there are no events yet — sits
+       INSIDE the grid, not as a full overlay, so the user can still
+       click/drag to create. */
+    .cal-empty-hint {
+      pointer-events: none;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: #94A3B8;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 16px;
+    }
+    .cal-empty-hint p { margin: 0; }
     .cal-event::before {
       content: "";
       position: absolute;
@@ -10306,3 +10340,187 @@
 [data-theme="dark"] .mue-ask-input::placeholder { color: #6B5F55; }
 
 [data-theme="dark"] .templates-menu-preview { color: #9CA3AF; }
+
+/* =====================================================================
+   CALENDAR EVENT EDIT MODAL
+   ===================================================================== */
+.event-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(15, 23, 42, 0.40);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  animation: eventOverlayIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes eventOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.event-modal {
+  width: 100%;
+  max-width: 440px;
+  background: #FFFFFF;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 18px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  animation: eventModalIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes eventModalIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.event-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+}
+.event-modal-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: #0F172A;
+}
+.event-modal-close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  color: #8B93A4;
+  font-size: 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 140ms, color 140ms;
+}
+.event-modal-close:hover { background: rgba(15, 23, 42, 0.06); color: #0F172A; }
+.event-modal-body {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.event-field { display: flex; flex-direction: column; gap: 6px; }
+.event-field-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #64748B;
+}
+.event-field-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #0F172A;
+  outline: none;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.event-field-input:focus {
+  border-color: rgba(91, 108, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(91, 108, 255, 0.12);
+}
+.event-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.event-color-row {
+  display: flex;
+  gap: 8px;
+}
+.event-color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 80ms, border-color 140ms;
+}
+.event-color-swatch:hover { transform: scale(1.08); }
+.event-color-swatch.is-active {
+  border-color: #4F46E5;
+  transform: scale(1.08);
+}
+.event-color-swatch.lav    { background: #EDE9FE; }
+.event-color-swatch.pink   { background: #FCE7F3; }
+.event-color-swatch.green  { background: #D1FAE5; }
+.event-color-swatch.blue   { background: #DBEAFE; }
+.event-color-swatch.orange { background: #FED7AA; }
+.event-color-swatch.peach  { background: #FDE4D3; }
+.event-color-swatch.cream  { background: #FEF3C7; }
+
+.event-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  border-top: 1px solid rgba(15, 23, 42, 0.05);
+  background: #FAFAFC;
+}
+.event-modal-foot-right { display: flex; gap: 8px; }
+.event-modal-cancel,
+.event-modal-save,
+.event-modal-delete {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, color 140ms;
+}
+.event-modal-cancel {
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #fff;
+  color: #475569;
+}
+.event-modal-cancel:hover { background: #F4F5FA; }
+.event-modal-save {
+  border: none;
+  background: #4F46E5;
+  color: #fff;
+}
+.event-modal-save:hover { background: #4338CA; }
+.event-modal-save:disabled { opacity: 0.55; cursor: wait; }
+.event-modal-delete {
+  border: 1px solid rgba(220, 38, 38, 0.20);
+  background: #fff;
+  color: #B91C1C;
+}
+.event-modal-delete:hover { background: #FEF2F2; }
+.event-modal-delete.is-confirm { background: #DC2626; color: #fff; border-color: #DC2626; }
+
+[data-theme="dark"] .event-modal {
+  background: #1A1A24;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .event-modal-head { border-bottom-color: rgba(255, 255, 255, 0.05); }
+[data-theme="dark"] .event-modal-head h2 { color: #E6E9F2; }
+[data-theme="dark"] .event-modal-close:hover { background: rgba(255, 255, 255, 0.06); color: #E6E9F2; }
+[data-theme="dark"] .event-field-input {
+  background: rgba(255, 255, 255, 0.04);
+  color: #E6E9F2;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+[data-theme="dark"] .event-modal-foot {
+  background: rgba(255, 255, 255, 0.02);
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+[data-theme="dark"] .event-modal-cancel {
+  background: rgba(255, 255, 255, 0.04);
+  color: #CBD5E1;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+[data-theme="dark"] .event-modal-cancel:hover { background: rgba(255, 255, 255, 0.08); }
