@@ -101,7 +101,11 @@ export function ContextMenu({
         aria-expanded={snoozeOpen}
       >
         <Icon name="i-clock" /> Snooze
-        <span className="ctx-item-chevron" aria-hidden>{snoozeOpen ? "▴" : "▸"}</span>
+        <span className="ctx-item-chevron" aria-hidden>
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            {snoozeOpen ? <polyline points="6 15 12 9 18 15" /> : <polyline points="9 18 15 12 9 6" />}
+          </svg>
+        </span>
       </button>
       {snoozeOpen && (
         <div className="ctx-submenu">
@@ -144,7 +148,11 @@ export function ContextMenu({
             {CATEGORY_OPTIONS.find((c) => c.id === currentCategory)?.emoji}
           </span>
         )}
-        <span className="ctx-item-chevron" aria-hidden>{categoryOpen ? "▴" : "▸"}</span>
+        <span className="ctx-item-chevron" aria-hidden>
+          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            {categoryOpen ? <polyline points="6 15 12 9 18 15" /> : <polyline points="9 18 15 12 9 6" />}
+          </svg>
+        </span>
       </button>
       {categoryOpen && (
         <div className="ctx-submenu">

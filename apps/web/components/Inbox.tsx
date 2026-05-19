@@ -573,9 +573,12 @@ export function Inbox() {
             disabled={triaging}
             style={triaging ? { opacity: 0.5 } : undefined}
           >
-            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
-              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
-              <circle cx="12" cy="12" r="3" />
+            {/* Sparkle (Mue's signature mark) — replaces the previous
+                sunburst which read as "sun" not "sort/classify".
+                Audit #10. */}
+            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}>
+              <path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4L12 3z" />
+              <path d="M19 14l.8 2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-1L19 14z" />
             </svg>
           </button>
           <button
@@ -822,9 +825,32 @@ export function Inbox() {
                                   (isPersisted ? "" : " · estimation locale")
                                 }
                               >
-                                {ec === "client" ? "👤" :
-                                 ec === "promo" ? "🏷" :
-                                 ec === "notif" ? "🔔" : "📂"}
+                                {/* SVG icons (not unicode emoji) so the
+                                    badge renders identically across Win /
+                                    Mac / Linux / mobile. Audit #9. */}
+                                {ec === "client" && (
+                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="8" r="4" />
+                                    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+                                  </svg>
+                                )}
+                                {ec === "promo" && (
+                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                                  </svg>
+                                )}
+                                {ec === "notif" && (
+                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                                  </svg>
+                                )}
+                                {ec === "other" && (
+                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                  </svg>
+                                )}
                               </span>
                             );
                           })()}

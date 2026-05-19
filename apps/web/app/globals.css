@@ -4593,14 +4593,18 @@
       line-height: 1;
       vertical-align: -2px;
     }
-    .conv-cat-client { background: rgba(34, 197, 94, 0.14); }
-    .conv-cat-promo  { background: rgba(234, 88, 12, 0.14); }
-    .conv-cat-notif  { background: rgba(59, 130, 246, 0.14); }
-    .conv-cat-other  { background: rgba(148, 163, 184, 0.18); }
-    [data-theme="dark"] .conv-cat-client { background: rgba(34, 197, 94, 0.22); }
-    [data-theme="dark"] .conv-cat-promo  { background: rgba(234, 88, 12, 0.22); }
-    [data-theme="dark"] .conv-cat-notif  { background: rgba(59, 130, 246, 0.24); }
-    [data-theme="dark"] .conv-cat-other  { background: rgba(148, 163, 184, 0.24); }
+    /* Each variant pairs a tinted background with a solid stroke color
+       so the inline SVG (currentColor) reads cleanly without needing
+       per-icon fill rules. Audit #9 — replaced unicode emoji which
+       rendered inconsistently across OSes. */
+    .conv-cat-client { background: rgba(34, 197, 94, 0.14);  color: #15803D; }
+    .conv-cat-promo  { background: rgba(234, 88, 12, 0.14);  color: #C2410C; }
+    .conv-cat-notif  { background: rgba(59, 130, 246, 0.14); color: #1D4ED8; }
+    .conv-cat-other  { background: rgba(148, 163, 184, 0.18); color: #475569; }
+    [data-theme="dark"] .conv-cat-client { background: rgba(34, 197, 94, 0.22);  color: #6EE7B7; }
+    [data-theme="dark"] .conv-cat-promo  { background: rgba(234, 88, 12, 0.22);  color: #FDBA74; }
+    [data-theme="dark"] .conv-cat-notif  { background: rgba(59, 130, 246, 0.24); color: #93C5FD; }
+    [data-theme="dark"] .conv-cat-other  { background: rgba(148, 163, 184, 0.24); color: #CBD5E1; }
 
     /* Faded variant — heuristic guess (no server-stored category yet).
        Subtle dashed ring so the user knows "this is the app's best
