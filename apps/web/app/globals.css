@@ -2060,7 +2060,10 @@
       gap: 16px;
     }
 
-    /* Combined Inbox + Thread shell — nested cards */
+    /* Combined Inbox + Thread shell — nested cards.
+       Solid white wrapper (no grey-blue tint, no gradient). The inner
+       .inbox + .thread cards each have their own 1px border + subtle
+       shadow so they stay visually distinct against the white frame. */
     .conv-shell {
       display: grid;
       grid-template-columns: 320px minmax(0, 1fr);
@@ -2068,19 +2071,13 @@
       padding: 8px;
       min-height: 0;
       border-radius: var(--r-xl);
-      /* Flat clean surface — was a multi-stop vertical gradient +
-         gradient border that read as glassmorphism / iridescent metal.
-         Replaced with a single neutral grey-blue fill, a soft 1px
-         border, and a small drop-shadow so the white inbox + thread
-         cards inside still pop. Reads as a calm container, not a
-         shiny frame. */
-      background: #E7EAF0;
-      border: 1px solid rgba(15, 23, 42, 0.06);
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.05);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
       overflow: hidden;
     }
     [data-theme="dark"] .conv-shell {
-      background: #18181F;
+      background: #1A1A22;
       border-color: rgba(255, 255, 255, 0.05);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.30);
     }
