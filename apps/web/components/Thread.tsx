@@ -76,7 +76,7 @@ function groupMessages(messages: Message[]): MsgGroup[] {
 }
 
 export function Thread() {
-  const { activeConvId, setActiveConv } = useApp();
+  const { activeConvId, setActiveConv, setView } = useApp();
   const {
     conversations,
     messagesByConv,
@@ -244,11 +244,16 @@ export function Thread() {
       <header className="thread-head">
         {/* Back-to-inbox button — visible at all viewports now since
             opening a conv hides the inbox list entirely. Returns the
-            user to the conv list by clearing activeConvId. */}
+            user to the conv list by clearing activeConvId AND forcing
+            view to "inbox" (defensive — in case the user opened a
+            thread via command palette from a non-inbox view). */}
         <button
           type="button"
           className="thread-back"
-          onClick={() => setActiveConv("")}
+          onClick={() => {
+            setView("inbox");
+            setActiveConv("");
+          }}
           aria-label="Retour à l'inbox"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
