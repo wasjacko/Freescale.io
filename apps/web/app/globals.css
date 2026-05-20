@@ -3187,21 +3187,28 @@
       letter-spacing: -0.005em;
     }
 
-    /* Inbox head — one tight row: primary "Trier avec Mue" labeled
-       button + two icon-only utility buttons (Refresh, Filter).
-       The Mue button takes flex:1 so it stretches to fill remaining
-       width, the icon buttons are fixed 34x34 squares — fits on a
-       single line even when the inbox panel is narrow. */
-    .inbox-head-stack {
+    /* Inbox header row — tabs on the left, actions on the right (Trier
+       avec Mue + Refresh + Filter). Single horizontal row with the
+       actions block pushed to the right edge via margin-left:auto. */
+    .inbox-header-row {
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 12px;
+      margin-top: 18px;
+      min-width: 0;
+    }
+    .inbox-header-row .inbox-tabs {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin-top: 0; /* margin lives on the parent row now */
     }
     .inbox-actions {
       display: flex;
       gap: 8px;
       align-items: center;
       flex-wrap: nowrap;
+      margin-left: auto;
+      flex: 0 0 auto;
     }
     .inbox-action {
       display: inline-flex;
@@ -3231,14 +3238,15 @@
     .inbox-action:disabled { opacity: 0.55; cursor: not-allowed; }
     .inbox-action .icon { width: 15px; height: 15px; }
 
-    /* Primary "Trier avec Mue" button — stretches to fill the row */
+    /* Primary "Trier avec Mue" button — compact, sized to content so the
+       inbox tabs row stays uncluttered. Sits at the right of the header
+       row next to the refresh + filter icons. */
     .inbox-action-primary {
       background: #4F46E5;
       border-color: #4F46E5;
       color: #fff;
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22);
-      flex: 1 1 auto;
-      min-width: 0;
+      flex: 0 0 auto;
     }
     .inbox-action-primary:hover {
       background: #4338CA;

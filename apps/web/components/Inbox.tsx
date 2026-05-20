@@ -556,14 +556,43 @@ export function Inbox() {
             </button>
           </div>
         )}
-        {/* Inbox header — single row of 3 compact actions.
-            "Inbox" title removed (redundant — the user knows where they
-            are). Three buttons: primary "Trier" + Mue sparkle, then
-            two icon-only utility buttons (Refresh + Filter) which fit
-            on the same line even on narrow panel widths.
+        {/* Inbox header — tabs on the left (Tout/Clients/Promos/Notifs),
+            actions on the right (Trier avec Mue + Refresh + Filter), all
+            on a single horizontal row. The actions block is pushed to the
+            right via margin-left:auto so it stays anchored to the right
+            edge of the inbox panel regardless of how many tabs there are.
             Hidden when bulk-select is active so the bulk toolbar takes
             over the full header surface. */}
-        <div className="inbox-head-stack" style={bulkActive ? { display: "none" } : undefined}>
+        <div
+          className="inbox-header-row"
+          style={bulkActive ? { display: "none" } : undefined}
+        >
+          <div className="inbox-tabs" role="tablist">
+            {ALL_TABS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                role="tab"
+                aria-selected={tab === t}
+                className={`inbox-tab ${tab === t ? "is-active" : ""}`}
+                onClick={() => setTab(t)}
+              >
+                {TAB_LABELS[t]}
+                {/* Count always rendered (even at 0) so the spacing rhythm
+                    stays consistent across tabs. Muted at 0 so visual
+                    hierarchy still emphasizes non-empty buckets. Audit #19. */}
+                <span
+                  className={`inbox-tab-count ${tabCounts[t] === 0 ? "is-zero" : ""}`}
+                >
+                  {tabCounts[t]}
+                </span>
+              </button>
+            ))}
+            {/* `unclassified` counter removed — since the client-side
+                heuristic always returns one of the 4 buckets, this was
+                always 0 and the conditional never rendered. Audit item #4. */}
+          </div>
+
           <div className="inbox-actions">
             <button
               type="button"
@@ -608,31 +637,6 @@ export function Inbox() {
               </svg>
             </button>
           </div>
-        </div>
-        <div className="inbox-tabs" role="tablist">
-          {ALL_TABS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="tab"
-              aria-selected={tab === t}
-              className={`inbox-tab ${tab === t ? "is-active" : ""}`}
-              onClick={() => setTab(t)}
-            >
-              {TAB_LABELS[t]}
-              {/* Count always rendered (even at 0) so the spacing rhythm
-                  stays consistent across tabs. Muted at 0 so visual
-                  hierarchy still emphasizes non-empty buckets. Audit #19. */}
-              <span
-                className={`inbox-tab-count ${tabCounts[t] === 0 ? "is-zero" : ""}`}
-              >
-                {tabCounts[t]}
-              </span>
-            </button>
-          ))}
-          {/* `unclassified` counter removed — since the client-side
-              heuristic always returns one of the 4 buckets, this was
-              always 0 and the conditional never rendered. Audit item #4. */}
         </div>
 
         {tagOptions.length > 0 && (() => {
