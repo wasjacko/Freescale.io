@@ -18,7 +18,6 @@ import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { AutoSync } from "@/components/AutoSync";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
-import { FirstActionBanner } from "@/components/onboarding/FirstActionBanner";
 import { SyncErrorBanner } from "@/components/SyncErrorBanner";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 
@@ -34,19 +33,10 @@ export function AppShell({
   // = first value already delivered). Audit-aligned.
   const showOnboardingChips =
     !!user && user.onboardedAt === null && channels.length > 0;
-  // First-action card: shown AFTER profiling is done (or skipped), and
-  // only when the user has both channels and conversations — at that
-  // point they've truly seen first value and we can offer guided next
-  // steps. Hidden as soon as the user opens any conversation (the
-  // banner has served its intro purpose; reading a mail shouldn't
-  // happen with a big onboarding card eating half the column).
-  // Per-browser dismiss via localStorage handled inside the card.
-  const showFirstAction =
-    !!user &&
-    user.onboardedAt !== null &&
-    channels.length > 0 &&
-    conversations.length > 0 &&
-    !activeConvId;
+  // (FirstActionBanner condition moved into MuePanel — the welcome card
+  // now lives inside the agent side panel rather than the inbox column,
+  // so the inbox stays focused on the conversation list. MuePanel
+  // recomputes the same gating internally.)
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -184,12 +174,9 @@ export function AppShell({
                 initialUsageMode={user?.profileUsageMode}
               />
             )}
-            {showFirstAction && view === "inbox" && !showOnboardingChips && (
-              <FirstActionBanner
-                firstName={user?.firstName ?? "vous"}
-                conversationCount={conversations.length}
-              />
-            )}
+            {/* FirstActionBanner moved into MuePanel (agent side panel) —
+                it greets the user inside Mue's own surface so the inbox
+                stays focused on the conversation list. */}
             {/* Conditional render (not CSS toggle) — guarantees the
                 Thread DOM is fully unmounted when no conv is selected,
                 so the user can't possibly see thread content after
