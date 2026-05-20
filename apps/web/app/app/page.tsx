@@ -17,7 +17,9 @@ export default async function HomePage() {
   const [authUser, data] = await Promise.all([getCurrentUser(), getInboxData()]);
   return (
     <DataProvider initial={data}>
-      <AppShell user={authUser} initialActiveConvId={data.conversations[0]?.id ?? ""} />
+      {/* AppShell defaults to showing the inbox list — no need to preselect a
+          conversation. The user opens a thread by clicking it. */}
+      <AppShell user={authUser} />
     </DataProvider>
   );
 }

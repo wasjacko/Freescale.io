@@ -23,7 +23,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export function Sidebar({ user }: { user: CurrentUser | null }) {
-  const { view, setView, toggleSidebar } = useApp();
+  const { view, setView, toggleSidebar, setActiveConv } = useApp();
   const data = useData();
   const conversations = data.conversations ?? [];
   const tasks = data.tasks ?? [];
@@ -73,7 +73,14 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
               key={item.id}
               type="button"
               className={`nav-item ${view === item.id ? "active" : ""}`}
-              onClick={() => setView(item.id)}
+              onClick={() => {
+                setView(item.id);
+                // Clicking "Inbox" always returns to the conv-list view —
+                // even if a thread is currently open. Without this the
+                // data-active-conv="1" CSS keeps the thread mounted and
+                // the inbox panel stays hidden.
+                if (item.id === "inbox") setActiveConv("");
+              }}
             >
               <span className="nav-left">
                 <Icon name={item.icon} />
@@ -120,7 +127,12 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
               key={ch.id}
               type="button"
               className="nav-item"
-              onClick={() => setView("inbox")}
+              onClick={() => {
+                setView("inbox");
+                // Same back-to-list semantics as the Inbox nav item — a
+                // channel click means "show me this channel's mails".
+                setActiveConv("");
+              }}
             >
               <span className="nav-left">
                 <ChannelLogo channel={ch.kind} />

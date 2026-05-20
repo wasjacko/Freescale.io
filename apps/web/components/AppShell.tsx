@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useApp } from "@/lib/store";
 import { useData } from "@/lib/contexts/DataContext";
 import type { CurrentUser } from "@/lib/auth";
@@ -24,10 +24,8 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 export function AppShell({
   user,
-  initialActiveConvId,
 }: {
   user: CurrentUser | null;
-  initialActiveConvId: string;
 }) {
   const { view, sidebarCollapsed, setActiveConv, activeConvId, toggleSidebar } = useApp();
   const { conversations, channels } = useData();
@@ -52,13 +50,26 @@ export function AppShell({
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
-  // Bootstrap the active conversation if none is selected (or persisted id is stale)
+  // Bootstrap the active conversation ONLY when the persisted id is stale
+  // (refers to a conv that no longer exists). We deliberately do NOT
+  // auto-select a conv when activeConvId is "" — empty means the user
+  // wants to see the list (back arrow, sidebar Inbox click, fresh start).
+  // Auto-selecting there would create a flicker and undo the back nav.
+  const didStaleCleanupRef = useRef(false);
   useEffect(() => {
-    const exists = conversations.some((c) => c.id === activeConvId);
-    if (!exists && initialActiveConvId) {
-      setActiveConv(initialActiveConvId);
+    if (didStaleCleanupRef.current) return;
+    if (activeConvId === "") {
+      // User wants the list view — respect it, mark as handled.
+      didStaleCleanupRef.current = true;
+      return;
     }
-  }, [activeConvId, conversations, initialActiveConvId, setActiveConv]);
+    const exists = conversations.some((c) => c.id === activeConvId);
+    if (!exists) {
+      // Stale id from a previous session — clear it so the list shows.
+      setActiveConv("");
+    }
+    didStaleCleanupRef.current = true;
+  }, [activeConvId, conversations, setActiveConv]);
 
   // OS class for keyboard hints
   useEffect(() => {
