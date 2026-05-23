@@ -58,9 +58,12 @@ export function MueAvatar({ className = "", ariaLabel = "Mue" }: Props) {
         const r = rects[Math.floor(Math.random() * rects.length)];
         if (!r) continue;
         r.style.opacity = (0.55 + Math.random() * 0.45).toFixed(2);
-        setTimeout(() => {
-          r.style.opacity = "1";
-        }, 500 + Math.random() * 700);
+        setTimeout(
+          () => {
+            r.style.opacity = "1";
+          },
+          500 + Math.random() * 700
+        );
       }
     }, 1400);
 
@@ -135,8 +138,16 @@ export function MueAvatar({ className = "", ariaLabel = "Mue" }: Props) {
       className={className}
     >
       {cells}
-      {sparkles.map((s, i) => (
-        <rect key={`sp-${i}`} x={s.x} y={s.y} width={1.5} height={1.5} fill={s.fill} opacity={s.opacity} />
+      {sparkles.map((s) => (
+        <rect
+          key={`${s.x}-${s.y}-${s.fill}`}
+          x={s.x}
+          y={s.y}
+          width={1.5}
+          height={1.5}
+          fill={s.fill}
+          opacity={s.opacity}
+        />
       ))}
     </svg>
   );

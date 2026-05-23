@@ -1,11 +1,7 @@
 "use server";
 
+import { extractMessageContent, getThread, getValidAccessToken } from "@/lib/gmail";
 import { createClient } from "@/lib/supabase/server";
-import {
-  extractMessageContent,
-  getThread,
-  getValidAccessToken,
-} from "@/lib/gmail";
 import type { Message } from "@/lib/types";
 
 /**
@@ -50,8 +46,7 @@ export async function getConversationMessages(
   // Supabase joins always come back as either an object or array depending
   // on the relationship cardinality — normalise to a single object.
   const rawAccount = conv.channel_accounts as unknown;
-  const account =
-    Array.isArray(rawAccount) ? (rawAccount[0] ?? null) : (rawAccount ?? null);
+  const account = Array.isArray(rawAccount) ? (rawAccount[0] ?? null) : (rawAccount ?? null);
   const tokens = (account as { encrypted_tokens?: string } | null)?.encrypted_tokens;
   const externalId = (account as { external_id?: string } | null)?.external_id ?? "";
   const kind = (account as { kind?: string } | null)?.kind;

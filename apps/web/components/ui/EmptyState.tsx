@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { Icon } from "@/components/icons/Icon";
+import type { ReactNode } from "react";
 
 /**
  * Shared empty-state component used by Tasks / Calendar / Knowledge /
@@ -16,12 +16,7 @@ type EmptyStateProps = {
   cta?: { label: string; onClick: () => void } | ReactNode;
 };
 
-export function EmptyState({
-  icon = "i-spark",
-  title,
-  description,
-  cta,
-}: EmptyStateProps) {
+export function EmptyState({ icon = "i-spark", title, description, cta }: EmptyStateProps) {
   return (
     <div className="empty-state-card" role="status">
       <div className="empty-state-orb" aria-hidden>
@@ -33,11 +28,7 @@ export function EmptyState({
       <h3 className="empty-state-title">{title}</h3>
       {description && <p className="empty-state-desc">{description}</p>}
       {cta && typeof cta === "object" && "label" in cta && "onClick" in cta ? (
-        <button
-          type="button"
-          className="empty-state-cta"
-          onClick={cta.onClick}
-        >
+        <button type="button" className="empty-state-cta" onClick={cta.onClick}>
           {cta.label}
         </button>
       ) : (

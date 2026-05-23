@@ -34,6 +34,10 @@
       "suspicious": {
         "noConsoleLog": "warn"
       },
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "useSemanticElements": "off"
+      },
       "style": {
         "useImportType": "error"
       },

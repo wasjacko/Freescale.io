@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/lib/hooks/useToast";
 import { Icon } from "@/components/icons/Icon";
 import type { ConnectedChannel } from "@/lib/data/queries";
+import { useToast } from "@/lib/hooks/useToast";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 /**
  * Top-of-workspace banner shown when any connected channel is in a
@@ -25,14 +25,13 @@ export function SyncErrorBanner({ channels }: { channels: ConnectedChannel[] }) 
   //      show the actual error so the user knows WHY their inbox is empty
   //      instead of staring at a blank panel and assuming the app is dead.
   const needsReauth = channels.filter((c) => c.status === "needs_reauth");
-  const otherErrors = channels.filter(
-    (c) => c.status !== "needs_reauth" && c.lastSyncError
-  );
+  const otherErrors = channels.filter((c) => c.status !== "needs_reauth" && c.lastSyncError);
   if (needsReauth.length === 0 && otherErrors.length === 0) return null;
 
   // Reauth gets priority since it's actionable; "other errors" fall through.
   const broken = needsReauth.length > 0 ? needsReauth : otherErrors;
-  const ch = broken[0]!;
+  const ch = broken.at(0);
+  if (!ch) return null;
   const isReauth = needsReauth.length > 0;
 
   const handleReconnect = () => {
@@ -96,7 +95,7 @@ export function SyncErrorBanner({ channels }: { channels: ConnectedChannel[] }) 
             ? broken.length > 1
               ? `${broken.length} connexions ont expiré. Reconnectez pour reprendre la synchronisation.`
               : "L'autorisation a expiré. Reconnectez pour reprendre la synchronisation."
-            : ch.lastSyncError ?? "Erreur inconnue — réessayez."}
+            : (ch.lastSyncError ?? "Erreur inconnue — réessayez.")}
         </span>
       </div>
       <button
@@ -105,11 +104,7 @@ export function SyncErrorBanner({ channels }: { channels: ConnectedChannel[] }) 
         onClick={handleReconnect}
         disabled={reconnecting !== null}
       >
-        {reconnecting === ch.id
-          ? "Reconnexion…"
-          : isReauth
-          ? "Reconnecter"
-          : "Réessayer"}
+        {reconnecting === ch.id ? "Reconnexion…" : isReauth ? "Reconnecter" : "Réessayer"}
       </button>
     </div>
   );

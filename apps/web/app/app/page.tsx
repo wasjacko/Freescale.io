@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/AppShell";
-import { DataProvider } from "@/lib/contexts/DataContext";
 import { getCurrentUser } from "@/lib/auth";
+import { DataProvider } from "@/lib/contexts/DataContext";
 import { getInboxData } from "@/lib/data/queries";
 
 /**

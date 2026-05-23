@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Icon, ChannelLogo } from "./Icon";
+import { ChannelLogo, Icon } from "./Icon";
 import { Sprite } from "./Sprite";
 
 const meta: Meta = {
@@ -18,11 +18,36 @@ export default meta;
 type Story = StoryObj;
 
 const ICONS = [
-  "i-inbox", "i-task", "i-cal", "i-folder", "i-grid", "i-search", "i-filter",
-  "i-edit", "i-more", "i-tag", "i-star", "i-clock", "i-heart", "i-spark",
-  "i-list", "i-globe", "i-chevron", "i-chevron-down", "i-smile", "i-clip",
-  "i-send", "i-info", "i-settings", "i-plus", "i-check", "i-lock",
-  "i-arrow-up", "i-user", "i-heart-o", "i-cog",
+  "i-inbox",
+  "i-task",
+  "i-cal",
+  "i-folder",
+  "i-grid",
+  "i-search",
+  "i-filter",
+  "i-edit",
+  "i-more",
+  "i-tag",
+  "i-star",
+  "i-clock",
+  "i-heart",
+  "i-spark",
+  "i-list",
+  "i-globe",
+  "i-chevron",
+  "i-chevron-down",
+  "i-smile",
+  "i-clip",
+  "i-send",
+  "i-info",
+  "i-settings",
+  "i-plus",
+  "i-check",
+  "i-lock",
+  "i-arrow-up",
+  "i-user",
+  "i-heart-o",
+  "i-cog",
 ];
 
 export const AllIcons: Story = {
@@ -38,7 +63,17 @@ export const AllIcons: Story = {
   ),
 };
 
-const CHANNELS = ["gmail", "instagram", "whatsapp", "slack", "discord", "x", "linkedin", "telegram", "messenger"];
+const CHANNELS = [
+  "gmail",
+  "instagram",
+  "whatsapp",
+  "slack",
+  "discord",
+  "x",
+  "linkedin",
+  "telegram",
+  "messenger",
+];
 
 export const AllChannels: Story = {
   render: () => (

@@ -1,14 +1,17 @@
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 
 export type ProfileUpdate = {
   fullName: string;
   timezone: string;
   locale: string;
   signature?: string;
+  muePersona?: string;
+  mueStyleProfile?: string;
+  dailyDigestEnabled?: boolean;
 };
 
 export async function savePersonalProfile(input: ProfileUpdate) {
@@ -21,6 +24,8 @@ export async function savePersonalProfile(input: ProfileUpdate) {
   // Trim the signature but preserve internal newlines — the user often
   // formats their sig with explicit line breaks (name / role / company).
   const sig = input.signature?.replace(/\s+$/g, "") ?? "";
+  const persona = input.muePersona?.trim() ?? "";
+  const styleProfile = input.mueStyleProfile?.trim() ?? "";
 
   await supabase
     .from("profiles")
@@ -29,6 +34,9 @@ export async function savePersonalProfile(input: ProfileUpdate) {
       timezone: input.timezone || "Europe/Paris",
       locale: input.locale || "fr",
       signature: sig.length ? sig : null,
+      mue_persona: persona.length ? persona : null,
+      mue_style_profile: styleProfile.length ? styleProfile : null,
+      daily_digest_enabled: !!input.dailyDigestEnabled,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);
@@ -86,13 +94,11 @@ export async function uploadAvatar(form: FormData): Promise<string | null> {
   })();
 
   const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-  const { error: uploadError } = await supabase.storage
-    .from("avatars")
-    .upload(path, file, {
-      contentType: file.type,
-      cacheControl: "3600",
-      upsert: true,
-    });
+  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+    contentType: file.type,
+    cacheControl: "3600",
+    upsert: true,
+  });
   if (uploadError) throw uploadError;
 
   const {
@@ -117,10 +123,8 @@ export async function removeAvatar() {
 
   // Best-effort: list & delete the user's folder; ignore failures.
   const { data: list } = await supabase.storage.from("avatars").list(user.id);
-  if (list && list.length) {
-    await supabase.storage
-      .from("avatars")
-      .remove(list.map((f) => `${user.id}/${f.name}`));
+  if (list?.length) {
+    await supabase.storage.from("avatars").remove(list.map((f) => `${user.id}/${f.name}`));
   }
 
   await supabase

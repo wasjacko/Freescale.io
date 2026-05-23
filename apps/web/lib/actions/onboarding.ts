@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 /**
  * Soft profiling answers — saved inline in /app via the OnboardingChips
@@ -38,10 +38,7 @@ export async function saveOnboardingAnswers(
   if (answers.objective !== undefined) payload.objective = answers.objective || null;
   if (answers.usageMode !== undefined) payload.usage_mode = answers.usageMode || null;
 
-  const { error } = await supabase
-    .from("profiles")
-    .update(payload)
-    .eq("id", user.id);
+  const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
 
   if (error) return { ok: false, error: error.message };
   revalidatePath("/app", "layout");

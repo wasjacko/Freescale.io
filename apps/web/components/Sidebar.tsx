@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
-import Link from "next/link";
-import { useApp } from "@/lib/store";
-import { useData } from "@/lib/contexts/DataContext";
-import type { CurrentUser } from "@/lib/auth";
-import { Icon, ChannelLogo } from "@/components/icons/Icon";
 import { AddChannelModal } from "@/components/AddChannelModal";
+import { ChannelLogo, Icon } from "@/components/icons/Icon";
+import type { CurrentUser } from "@/lib/auth";
+import { useData } from "@/lib/contexts/DataContext";
+import { useApp } from "@/lib/store";
+import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
 
 type NavItem = {
   id: "inbox" | "tasks" | "calendar" | "ai-knowledge";
@@ -32,10 +32,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
   const [addChannelOpen, setAddChannelOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
 
-  const connectedKinds = useMemo(
-    () => new Set(channels.map((c) => c.kind)),
-    [channels]
-  );
+  const connectedKinds = useMemo(() => new Set(channels.map((c) => c.kind)), [channels]);
 
   // Real counts derived from the live DB
   const counts: Record<NavItem["id"], number | null> = {
@@ -58,7 +55,14 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
           data-tip-side="right"
           onClick={toggleSidebar}
         >
-          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <line x1="9" y1="3" x2="9" y2="21" />
           </svg>
@@ -156,12 +160,12 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
           ) : (
-            user?.name
+            (user?.name
               .split(" ")
               .map((p) => p[0])
               .join("")
               .slice(0, 2)
-              .toUpperCase() ?? "?"
+              .toUpperCase() ?? "?")
           )}
         </span>
         <div className="account-info">

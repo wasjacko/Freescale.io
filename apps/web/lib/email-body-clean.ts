@@ -51,8 +51,7 @@ function isArtefactLine(line: string): boolean {
   // no spaces, no normal sentence punctuation. Catches encoded
   // campaign-id dumps.
   if (trimmed.length > 100 && !/\s/.test(trimmed)) {
-    const alnumRatio =
-      (trimmed.match(/[A-Za-z0-9_+/=%-]/g) ?? []).length / trimmed.length;
+    const alnumRatio = (trimmed.match(/[A-Za-z0-9_+/=%-]/g) ?? []).length / trimmed.length;
     if (alnumRatio > 0.95 && !trimmed.startsWith("http")) return true;
   }
 
@@ -70,5 +69,8 @@ export function cleanEmailBody(raw: string): string {
 
   // 3. Collapse 3+ consecutive blank lines into a single blank line
   // (artefact removal often leaves orphan blank gaps).
-  return cleanedLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return cleanedLines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

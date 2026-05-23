@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { MueAvatar } from "@/components/MueAvatar";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { MueAvatar } from "@/components/MueAvatar";
+import { useEffect, useState } from "react";
 
 export function ResetPasswordScreen() {
   const router = useRouter();
@@ -116,12 +116,12 @@ export function ResetPasswordScreen() {
 
           {msg && <div className={`auth-msg auth-msg-${msg.kind}`}>{msg.text}</div>}
 
-          {!ready && !msg && (
-            <p className="onb-fine onb-fine-center">Vérification du lien…</p>
-          )}
+          {!ready && !msg && <p className="onb-fine onb-fine-center">Vérification du lien…</p>}
 
           <p className="onb-fine onb-fine-center">
-            <Link href="/sign-in" className="onb-link">Retour à la connexion</Link>
+            <Link href="/sign-in" className="onb-link">
+              Retour à la connexion
+            </Link>
           </p>
         </div>
       </main>

@@ -1,33 +1,33 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useApp } from "@/lib/store";
-import { useToast } from "@/lib/hooks/useToast";
-import { useData } from "@/lib/contexts/DataContext";
+import { EmailHtmlBody } from "@/components/EmailHtmlBody";
+import { TagPopover } from "@/components/TagPopover";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
-import { EmailHtmlBody } from "@/components/EmailHtmlBody";
-import { cleanEmailBody } from "@/lib/email-body-clean";
-import { TagPopover } from "@/components/TagPopover";
+import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-templates";
 import { sendEmailReply } from "@/lib/actions/inbox";
-import { getEmailSignature } from "@/lib/actions/profile";
 import {
-  listEmailTemplates,
-  type EmailTemplate,
-} from "@/lib/actions/email-templates";
-import { getConversationMessages } from "@/lib/actions/thread-messages";
-import {
-  suggestReplies,
-  summarizeThread,
-  suggestTasks,
-  translateThread,
   type ReplySuggestion,
-  type ThreadSummary,
   type SuggestedTask,
+  type ThreadSummary,
   type TranslatedMessage,
+  rewriteDraftTone,
+  suggestReplies,
+  suggestTasks,
+  summarizeThread,
+  translateThread,
 } from "@/lib/actions/mue";
+import { getEmailSignature } from "@/lib/actions/profile";
+import { getConversationMessages } from "@/lib/actions/thread-messages";
+import { isEmailLikeChannel } from "@/lib/channels/registry";
+import { useData } from "@/lib/contexts/DataContext";
+import { cleanEmailBody } from "@/lib/email-body-clean";
+import { useToast } from "@/lib/hooks/useToast";
+import type { MueTone } from "@/lib/mue-chat";
+import { useApp } from "@/lib/store";
 import type { Message } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ThreadAiResult =
   | { kind: "summary"; data: ThreadSummary }
@@ -109,16 +109,19 @@ export function Thread() {
   const [liveByConv, setLiveByConv] = useState<Record<string, Message[]>>({});
   const [liveError, setLiveError] = useState<string | null>(null);
   const [loadingConvId, setLoadingConvId] = useState<string | null>(null);
+  const activeLiveMessages = activeConvId ? liveByConv[activeConvId] : undefined;
+  const canLiveFetch = conv?.channel === "gmail";
 
   useEffect(() => {
-    if (!activeConvId) {
+    if (!activeConvId || !canLiveFetch) {
       setLiveError(null);
+      setLoadingConvId(null);
       return;
     }
     // If we already have live messages for THIS conv, skip the re-fetch —
     // user just navigated back to a thread they opened earlier in the
     // session.
-    if (liveByConv[activeConvId]) return;
+    if (activeLiveMessages) return;
 
     let cancelled = false;
     setLoadingConvId(activeConvId);
@@ -139,8 +142,7 @@ export function Thread() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeConvId]);
+  }, [activeConvId, activeLiveMessages, canLiveFetch]);
 
   const isLiveLoading = loadingConvId === activeConvId;
 
@@ -151,12 +153,14 @@ export function Thread() {
     () => liveByConv[activeConvId] ?? messagesByConv[activeConvId] ?? [],
     [liveByConv, messagesByConv, activeConvId]
   );
+  const messageCount = messages.length;
 
-  const isEmail = conv?.channel === "gmail";
+  const isEmail = isEmailLikeChannel(conv?.channel);
   const groups = useMemo(() => groupMessages(messages), [messages]);
 
   // Skeleton flash on conv switch
   useEffect(() => {
+    if (activeConvId === undefined) return;
     setIsLoading(true);
     const t = setTimeout(() => setIsLoading(false), 180);
     return () => clearTimeout(t);
@@ -164,10 +168,11 @@ export function Thread() {
 
   // Auto-scroll to bottom on conv change or send
   useEffect(() => {
+    if (activeConvId === undefined || messageCount < 0) return;
     if (messagesEl.current) {
       messagesEl.current.scrollTop = messagesEl.current.scrollHeight;
     }
-  }, [activeConvId, messages.length]);
+  }, [activeConvId, messageCount]);
 
   if (!conv) {
     return (
@@ -193,10 +198,7 @@ export function Thread() {
     } catch (err) {
       push({
         kind: "error",
-        text:
-          err instanceof Error
-            ? `Envoi échoué : ${err.message}`
-            : "Envoi échoué — réessayez.",
+        text: err instanceof Error ? `Envoi échoué : ${err.message}` : "Envoi échoué — réessayez.",
         duration: 5000,
       });
     }
@@ -256,7 +258,15 @@ export function Thread() {
           }}
           aria-label="Retour à l'inbox"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
             <polyline points="15 18 9 12 15 6" />
           </svg>
           <span>Inbox</span>
@@ -270,7 +280,9 @@ export function Thread() {
             <h1>{conv.subject || conv.name}</h1>
             <div className="contact-sub">
               {conv.name}
-              {conv.contactEmail ? <span style={{ opacity: 0.55 }}> · {conv.contactEmail}</span> : null}
+              {conv.contactEmail ? (
+                <span style={{ opacity: 0.55 }}> · {conv.contactEmail}</span>
+              ) : null}
             </div>
           </div>
         </div>
@@ -325,7 +337,9 @@ export function Thread() {
       {(conv.tags?.length ?? 0) > 0 && (
         <div className="thread-tags-row" aria-label="Tags appliqués">
           {(conv.tags ?? []).map((t) => (
-            <span key={t} className="tag-chip is-readonly">{t}</span>
+            <span key={t} className="tag-chip is-readonly">
+              {t}
+            </span>
           ))}
         </div>
       )}
@@ -362,25 +376,26 @@ export function Thread() {
               fontFamily: "monospace",
             }}
           >
-            Erreur Gmail : {liveError}
+            Erreur email : {liveError}
           </div>
         )}
         {isEmail
           ? messages.length === 0
             ? null
             : messages.map((m) => (
-              <EmailCard
-                key={m.id}
-                message={m}
-                fallbackName={m.dir === "out" ? "Moi" : conv.name}
-                fallbackAvatar={m.dir === "out" ? null : conv.avatar}
-              />
-            ))
-          : groups.map((g, gi) => {
+                <EmailCard
+                  key={m.id}
+                  message={m}
+                  fallbackName={m.dir === "out" ? "Moi" : conv.name}
+                  fallbackAvatar={m.dir === "out" ? null : conv.avatar}
+                />
+              ))
+          : groups.map((g) => {
               const isOut = g.dir === "out";
               const lastTime = g.items[g.items.length - 1]?.time ?? "";
+              const groupKey = `${g.dir}-${g.items[0]?.id ?? "start"}-${g.items.at(-1)?.id ?? "end"}`;
               return (
-                <div key={gi} className={`msg-group ${isOut ? "out" : "in"}`}>
+                <div key={groupKey} className={`msg-group ${isOut ? "out" : "in"}`}>
                   {g.items.map((m, idx) => {
                     const isLast = idx === g.items.length - 1;
                     const hidden = !isLast;
@@ -425,7 +440,9 @@ export function Thread() {
                       </div>
                     );
                   })}
-                  <span className="msg-time" style={isOut ? { textAlign: "right" } : undefined}>{lastTime}</span>
+                  <span className="msg-time" style={isOut ? { textAlign: "right" } : undefined}>
+                    {lastTime}
+                  </span>
                 </div>
               );
             })}
@@ -471,9 +488,30 @@ export function Thread() {
               />
               <div className="composer-bar">
                 <div className="composer-tools">
-                  <button className="icon-btn" type="button" aria-label="Emoji" data-tip="Add emoji"><Icon name="i-smile" /></button>
-                  <button className="icon-btn" type="button" aria-label="Attach" data-tip="Attach file"><Icon name="i-clip" /></button>
-                  <button className="icon-btn" type="button" aria-label="More" data-tip="More tools"><Icon name="i-more" /></button>
+                  <button
+                    className="icon-btn"
+                    type="button"
+                    aria-label="Emoji"
+                    data-tip="Add emoji"
+                  >
+                    <Icon name="i-smile" />
+                  </button>
+                  <button
+                    className="icon-btn"
+                    type="button"
+                    aria-label="Attach"
+                    data-tip="Attach file"
+                  >
+                    <Icon name="i-clip" />
+                  </button>
+                  <button
+                    className="icon-btn"
+                    type="button"
+                    aria-label="More"
+                    data-tip="More tools"
+                  >
+                    <Icon name="i-more" />
+                  </button>
                 </div>
                 <button
                   ref={sendBtnRef}
@@ -509,6 +547,7 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
   // Clear any previous result the moment the user switches threads so a
   // stale summary doesn't briefly hang over the new conversation.
   useEffect(() => {
+    if (!conversationId) return;
     setResult(null);
     setLangPickerOpen(false);
   }, [conversationId]);
@@ -565,7 +604,9 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
           aria-expanded={langPickerOpen}
         >
           <Icon name="i-globe" /> Traduire
-          <span className="thread-ai-chevron" aria-hidden>{langPickerOpen ? "▴" : "▾"}</span>
+          <span className="thread-ai-chevron" aria-hidden>
+            {langPickerOpen ? "▴" : "▾"}
+          </span>
         </button>
         {result && (
           <button
@@ -610,14 +651,19 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
         <div className="thread-ai-result">
           <p className="thread-ai-tldr">{result.data.tldr}</p>
           <ul className="thread-ai-bullets">
-            {result.data.bullets.map((b, i) => <li key={i}>{b}</li>)}
+            {result.data.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
           </ul>
         </div>
       )}
       {result && result.kind === "tasks" && (
         <ul className="thread-ai-result thread-ai-tasks">
-          {result.data.map((t, i) => (
-            <li key={i} className={`mue-task is-${t.priority}`}>
+          {result.data.map((t) => (
+            <li
+              key={`${t.title}-${t.priority}-${t.due ?? "no-due"}`}
+              className={`mue-task is-${t.priority}`}
+            >
               <span className="mue-task-priority" />
               <span className="mue-task-title">{t.title}</span>
               {t.due && <span className="mue-task-due">{t.due}</span>}
@@ -627,11 +673,21 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
       )}
       {result && result.kind === "translation" && (
         <div className="thread-ai-result thread-ai-translation">
-          {result.data.map((m, i) => (
-            <div key={i} className="mue-translated-msg">
+          {result.data.map((m) => (
+            <div
+              key={`${m.sender}-${m.date}-${m.translated.slice(0, 40)}`}
+              className="mue-translated-msg"
+            >
               <div className="mue-translated-meta">
                 <strong>{m.sender}</strong>
-                <span>{new Date(m.date).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
+                <span>
+                  {new Date(m.date).toLocaleString("fr-FR", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
               <p>{m.translated}</p>
             </div>
@@ -657,12 +713,14 @@ function EmailCard({
   const avatarSrc =
     message.senderAvatarUrl ||
     (fallbackAvatar && fallbackAvatar.kind === "img" ? fallbackAvatar.src : null);
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || (email[0]?.toUpperCase() ?? "?");
+  const initials =
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") ||
+    (email[0]?.toUpperCase() ?? "?");
 
   const hasHtml = !!message.bodyHtml && message.bodyHtml.length > 50;
 
@@ -700,12 +758,8 @@ function EmailCard({
             fallback if DOMPurify fails to load client-side. Previously
             the right panel could stay blank forever when the iframe
             never rendered. */}
-        {cleaned && (
-          <pre style={{ marginBottom: hasHtml ? 16 : 0 }}>{cleaned}</pre>
-        )}
-        {hasHtml && (
-          <EmailHtmlBody html={message.bodyHtml as string} />
-        )}
+        {cleaned && <pre style={{ marginBottom: hasHtml ? 16 : 0 }}>{cleaned}</pre>}
+        {hasHtml && <EmailHtmlBody html={message.bodyHtml as string} />}
         {!cleaned && !hasHtml && (
           <p style={{ opacity: 0.5, fontStyle: "italic" }}>(Aucun contenu textuel)</p>
         )}
@@ -743,6 +797,7 @@ function EmailComposer({
   // Mue — AI reply suggestions
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
   const [suggesting, setSuggesting] = useState(false);
+  const [tonePending, setTonePending] = useState<MueTone | null>(null);
 
   // User-saved reply templates. Lazy-loaded the first time the user opens
   // the picker (no network on every conv switch) — then kept in memory
@@ -779,11 +834,11 @@ function EmailComposer({
   // their sig in Settings mid-draft, the draft shouldn't be wiped. The
   // dedicated "signature-updated" listener below handles that case
   // conditionally (only updates body if it was still empty/just-the-sig).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Signature is intentionally omitted so editing settings never wipes an in-progress draft.
   useEffect(() => {
     setSuggestions([]);
-    if (!signatureLoaded) return; // Wait for first fetch; avoids a "" → sig flash.
+    if (!signatureLoaded || !conversationId) return; // Wait for first fetch; avoids a "" → sig flash.
     setBody(signature ? `${SIGNATURE_SEP}${signature}` : "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId, signatureLoaded]);
 
   // Close the templates menu on outside-click or Escape.
@@ -828,8 +883,7 @@ function EmailComposer({
       setSignature(detail);
       setBody((prev) => {
         const isJustSignature =
-          prev.trim() === "" ||
-          (signature && prev === `${SIGNATURE_SEP}${signature}`);
+          prev.trim() === "" || (signature && prev === `${SIGNATURE_SEP}${signature}`);
         if (isJustSignature) return detail ? `${SIGNATURE_SEP}${detail}` : "";
         return prev;
       });
@@ -861,6 +915,45 @@ function EmailComposer({
       });
     } finally {
       setSuggesting(false);
+    }
+  };
+
+  const splitSignatureFromDraft = () => {
+    const suffix = signature ? `${SIGNATURE_SEP}${signature}` : "";
+    if (suffix && body.endsWith(suffix)) {
+      return {
+        draft: body.slice(0, -suffix.length).trimEnd(),
+        suffix,
+      };
+    }
+    return { draft: body, suffix: "" };
+  };
+
+  const handleToneRewrite = async (tone: MueTone) => {
+    const { draft, suffix } = splitSignatureFromDraft();
+    if (!draft.trim()) {
+      push({ text: "Écrivez un brouillon avant de changer le ton.", duration: 3000 });
+      return;
+    }
+    setTonePending(tone);
+    try {
+      const result = await rewriteDraftTone({
+        conversationId,
+        text: draft,
+        tone,
+      });
+      if (result.error || !result.text) {
+        push({ text: result.error ?? "Réécriture impossible.", duration: 5000 });
+        return;
+      }
+      setBody(suffix ? `${result.text}${suffix}` : result.text);
+    } catch (err) {
+      push({
+        text: err instanceof Error ? err.message : "Réécriture impossible.",
+        duration: 5000,
+      });
+    } finally {
+      setTonePending(null);
     }
   };
 
@@ -936,7 +1029,7 @@ function EmailComposer({
       for (const f of files) fd.append("files", f);
 
       await sendEmailReply(fd);
-      push({ text: "Email envoyé via Gmail ✉", duration: 3000 });
+      push({ text: "Email envoyé ✉", duration: 3000 });
       // Reset back to a fresh draft with just the signature, so the
       // next reply opens ready-to-type.
       setBody(signature ? `${SIGNATURE_SEP}${signature}` : "");
@@ -965,14 +1058,12 @@ function EmailComposer({
           <span className="email-composer-label">À</span>
           <span className="email-composer-value">
             {toName}
-            {contactEmail ? <span className="email-composer-email"> &lt;{contactEmail}&gt;</span> : null}
+            {contactEmail ? (
+              <span className="email-composer-email"> &lt;{contactEmail}&gt;</span>
+            ) : null}
           </span>
           {!showCc && (
-            <button
-              type="button"
-              className="email-composer-toggle"
-              onClick={() => setShowCc(true)}
-            >
+            <button type="button" className="email-composer-toggle" onClick={() => setShowCc(true)}>
               Cc
             </button>
           )}
@@ -986,7 +1077,6 @@ function EmailComposer({
               placeholder="email1@…, email2@…"
               value={cc}
               onChange={(e) => setCc(e.target.value)}
-              autoFocus
             />
             <button
               type="button"
@@ -1009,18 +1099,16 @@ function EmailComposer({
             <Icon name="i-spark" />
             Mue suggère
           </span>
-          {suggestions.map((s, idx) => (
+          {suggestions.map((s) => (
             <button
-              key={idx}
+              key={`${s.label}-${s.text}`}
               type="button"
               className="mue-suggestion-chip"
               onClick={() => {
                 // Insert the suggestion above the signature so the user
                 // doesn't lose their auto-appended sig when picking a
                 // Mue-generated reply.
-                setBody(
-                  signature ? `${s.text}${SIGNATURE_SEP}${signature}` : s.text
-                );
+                setBody(signature ? `${s.text}${SIGNATURE_SEP}${signature}` : s.text);
                 setSuggestions([]);
               }}
               title={s.text}
@@ -1050,15 +1138,11 @@ function EmailComposer({
       {files.length > 0 && (
         <div className="email-composer-files">
           {files.map((f, idx) => (
-            <span key={idx} className="email-composer-file">
+            <span key={`${f.name}-${f.size}-${f.lastModified}`} className="email-composer-file">
               <Icon name="i-clip" />
               <span>{f.name}</span>
               <em>{(f.size / 1024).toFixed(0)} Ko</em>
-              <button
-                type="button"
-                aria-label="Retirer"
-                onClick={() => removeFile(idx)}
-              >
+              <button type="button" aria-label="Retirer" onClick={() => removeFile(idx)}>
                 ✕
               </button>
             </span>
@@ -1093,9 +1177,7 @@ function EmailComposer({
           </button>
           {templatesOpen && (
             <div className="templates-menu" role="menu">
-              {templatesLoading && (
-                <div className="templates-menu-empty">Chargement…</div>
-              )}
+              {templatesLoading && <div className="templates-menu-empty">Chargement…</div>}
               {!templatesLoading && templates && templates.length === 0 && (
                 <div className="templates-menu-empty">
                   Aucun modèle. Créez-en dans Paramètres → Modèles.
@@ -1130,6 +1212,22 @@ function EmailComposer({
           <Icon name="i-spark" />
           {suggesting ? "Mue réfléchit…" : "Suggérer (Mue)"}
         </button>
+        <div className="email-composer-tone" aria-label="Changer le ton avec Mue">
+          {[
+            ["formal", "Formal"],
+            ["casual", "Casual"],
+            ["friendly", "Friendly"],
+          ].map(([tone, label]) => (
+            <button
+              key={tone}
+              type="button"
+              onClick={() => handleToneRewrite(tone as MueTone)}
+              disabled={sending || suggesting || tonePending !== null}
+            >
+              {tonePending === tone ? "…" : label}
+            </button>
+          ))}
+        </div>
         <input
           ref={fileRef}
           type="file"
@@ -1148,7 +1246,7 @@ function EmailComposer({
           disabled={sending || (!body.trim() && files.length === 0)}
         >
           <Icon name="i-send" />
-          {sending ? "Envoi…" : "Envoyer sur Gmail"}
+          {sending ? "Envoi…" : "Envoyer l'email"}
         </button>
       </div>
     </div>

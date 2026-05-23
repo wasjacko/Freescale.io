@@ -1,15 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import {
+  type GmailAttachment,
+  getMessageMetadata,
   getValidAccessToken,
   sendGmailMessage,
-  getMessageMetadata,
-  type GmailAttachment,
 } from "@/lib/gmail";
+import { getValidOutlookAccessToken, sendOutlookMessage } from "@/lib/outlook";
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
-const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024; // 20 MB safe (Gmail allows 25 MB total)
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024; // 20 MB safe across Gmail/Outlook simple send
 const MAX_TOTAL_ATTACHMENTS = 25 * 1024 * 1024;
 
 function parseAddressList(raw: string): Array<{ name: string | null; email: string }> {
@@ -29,37 +30,25 @@ function parseAddressList(raw: string): Array<{ name: string | null; email: stri
 
 export async function markConversationRead(conversationId: string) {
   const supabase = await createClient();
-  await supabase
-    .from("conversations")
-    .update({ unread_count: 0 })
-    .eq("id", conversationId);
+  await supabase.from("conversations").update({ unread_count: 0 }).eq("id", conversationId);
   revalidatePath("/");
 }
 
 export async function markConversationUnread(conversationId: string) {
   const supabase = await createClient();
-  await supabase
-    .from("conversations")
-    .update({ unread_count: 1 })
-    .eq("id", conversationId);
+  await supabase.from("conversations").update({ unread_count: 1 }).eq("id", conversationId);
   revalidatePath("/");
 }
 
 export async function archiveConversation(conversationId: string) {
   const supabase = await createClient();
-  await supabase
-    .from("conversations")
-    .update({ archived: true })
-    .eq("id", conversationId);
+  await supabase.from("conversations").update({ archived: true }).eq("id", conversationId);
   revalidatePath("/");
 }
 
 export async function toggleConversationStar(conversationId: string, starred: boolean) {
   const supabase = await createClient();
-  await supabase
-    .from("conversations")
-    .update({ starred })
-    .eq("id", conversationId);
+  await supabase.from("conversations").update({ starred }).eq("id", conversationId);
   revalidatePath("/");
 }
 
@@ -146,7 +135,7 @@ export async function sendMessage(conversationId: string, text: string) {
           );
           if (headers["message-id"]) {
             inReplyTo = headers["message-id"];
-            const refRaw = headers["references"] ?? "";
+            const refRaw = headers.references ?? "";
             references = [
               ...refRaw.split(/\s+/).filter((s) => s.startsWith("<") && s.endsWith(">")),
               headers["message-id"],
@@ -247,7 +236,7 @@ export async function sendEmailReply(formData: FormData): Promise<void> {
     }
     totalSize += entry.size;
     if (totalSize > MAX_TOTAL_ATTACHMENTS) {
-      throw new Error("Total des pièces > 25 Mo (limite Gmail).");
+      throw new Error("Total des pièces > 25 Mo.");
     }
     const bytes = Buffer.from(await entry.arrayBuffer());
     attachments.push({
@@ -278,8 +267,8 @@ export async function sendEmailReply(formData: FormData): Promise<void> {
     .select("kind, external_id, encrypted_tokens, status")
     .eq("id", conv.channel_account_id)
     .single();
-  if (!account || account.kind !== "gmail" || !account.encrypted_tokens) {
-    throw new Error("Cette conversation n'est pas branchée à Gmail.");
+  if (!account || !["gmail", "outlook"].includes(account.kind) || !account.encrypted_tokens) {
+    throw new Error("Cette conversation n'est pas branchée à un canal email prêt.");
   }
 
   const { data: profile } = await supabase
@@ -287,6 +276,65 @@ export async function sendEmailReply(formData: FormData): Promise<void> {
     .select("full_name")
     .eq("id", user.id)
     .maybeSingle();
+
+  const contact = (conv.contacts ?? null) as { email?: string; display_name?: string } | null;
+  if (!contact?.email) throw new Error("Pas de destinataire pour cette conversation.");
+  const subject = conv.subject
+    ? /^re:/i.test(conv.subject as string)
+      ? (conv.subject as string)
+      : `Re: ${conv.subject}`
+    : "Re:";
+
+  if (account.kind === "outlook") {
+    const tokenInfo = await getValidOutlookAccessToken(account.encrypted_tokens as string);
+    if (tokenInfo.updatedBlob) {
+      await supabase
+        .from("channel_accounts")
+        .update({ encrypted_tokens: tokenInfo.updatedBlob })
+        .eq("id", conv.channel_account_id as string);
+    }
+
+    const sent = await sendOutlookMessage(tokenInfo.accessToken, {
+      from: { name: profile?.full_name ?? null, email: account.external_id as string },
+      to: [{ name: contact.display_name ?? null, email: contact.email }],
+      ...(cc.length ? { cc } : {}),
+      subject,
+      body: text,
+      ...(attachments.length ? { attachments } : {}),
+    });
+
+    const now = new Date().toISOString();
+    await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      workspace_id: conv.workspace_id,
+      direction: "out",
+      external_id: sent.id,
+      body_text: text,
+      sent_at: now,
+      metadata: {
+        provider: "outlook",
+        subject,
+        from: { name: profile?.full_name ?? null, email: account.external_id },
+        to: [contact.email],
+        cc: cc.map((c) => c.email),
+        attachments: attachments.map((a) => ({
+          filename: a.filename,
+          mimeType: a.mimeType,
+          size: a.bytes.length,
+        })),
+      },
+    });
+    await supabase
+      .from("conversations")
+      .update({
+        preview: text.slice(0, 140).replace(/\s+/g, " ").trim(),
+        last_message_at: now,
+      })
+      .eq("id", conversationId);
+
+    revalidatePath("/app", "layout");
+    return;
+  }
 
   const tokenInfo = await getValidAccessToken(account.encrypted_tokens as string);
   if (tokenInfo.updatedBlob) {
@@ -321,7 +369,7 @@ export async function sendEmailReply(formData: FormData): Promise<void> {
         );
         if (headers["message-id"]) {
           inReplyTo = headers["message-id"];
-          const refRaw = headers["references"] ?? "";
+          const refRaw = headers.references ?? "";
           references = [
             ...refRaw.split(/\s+/).filter((s) => s.startsWith("<") && s.endsWith(">")),
             headers["message-id"],
@@ -332,14 +380,6 @@ export async function sendEmailReply(formData: FormData): Promise<void> {
       }
     }
   }
-
-  const contact = (conv.contacts ?? null) as { email?: string; display_name?: string } | null;
-  if (!contact?.email) throw new Error("Pas de destinataire pour cette conversation.");
-  const subject = conv.subject
-    ? /^re:/i.test(conv.subject as string)
-      ? (conv.subject as string)
-      : `Re: ${conv.subject}`
-    : "Re:";
 
   const sendOpts: Parameters<typeof sendGmailMessage>[1] = {
     from: { name: profile?.full_name ?? null, email: account.external_id as string },
@@ -422,10 +462,10 @@ export async function updateTask(
     if (!input.due) patch.due_at = null;
     else if (/^\d{4}-\d{2}-\d{2}$/.test(input.due)) {
       const d = new Date(`${input.due}T23:59:00`);
-      patch.due_at = isNaN(d.getTime()) ? null : d.toISOString();
+      patch.due_at = Number.isNaN(d.getTime()) ? null : d.toISOString();
     } else {
       const d = new Date(input.due);
-      patch.due_at = isNaN(d.getTime()) ? null : d.toISOString();
+      patch.due_at = Number.isNaN(d.getTime()) ? null : d.toISOString();
     }
   }
 
@@ -435,9 +475,7 @@ export async function updateTask(
   return { ok: true, error: null };
 }
 
-export async function deleteTask(
-  taskId: string
-): Promise<{ ok: boolean; error: string | null }> {
+export async function deleteTask(taskId: string): Promise<{ ok: boolean; error: string | null }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -552,10 +590,10 @@ export async function createTask(input: {
   if (input.due) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(input.due)) {
       const d = new Date(`${input.due}T23:59:00`);
-      dueAt = isNaN(d.getTime()) ? null : d.toISOString();
+      dueAt = Number.isNaN(d.getTime()) ? null : d.toISOString();
     } else {
       const d = new Date(input.due);
-      dueAt = isNaN(d.getTime()) ? null : d.toISOString();
+      dueAt = Number.isNaN(d.getTime()) ? null : d.toISOString();
     }
   }
 

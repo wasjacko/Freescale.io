@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { dismissOnboarding, saveOnboardingAnswers } from "@/lib/actions/onboarding";
 import { useToast } from "@/lib/hooks/useToast";
-import {
-  saveOnboardingAnswers,
-  dismissOnboarding,
-} from "@/lib/actions/onboarding";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 /**
  * Soft profiling card shown at the top of the inbox for first-time
@@ -106,7 +103,7 @@ export function OnboardingChips({
       </header>
 
       <div className="onb-chips-row">
-        <label className="onb-chips-label">Vous êtes plutôt…?</label>
+        <span className="onb-chips-label">Vous êtes plutôt…?</span>
         <div className="onb-chips-options">
           {ROLE_OPTIONS.map((opt) => (
             <button
@@ -123,7 +120,7 @@ export function OnboardingChips({
       </div>
 
       <div className="onb-chips-row">
-        <label className="onb-chips-label">Votre priorité ?</label>
+        <span className="onb-chips-label">Votre priorité ?</span>
         <div className="onb-chips-options">
           {OBJECTIVE_OPTIONS.map((opt) => (
             <button
@@ -140,7 +137,7 @@ export function OnboardingChips({
       </div>
 
       <div className="onb-chips-row">
-        <label className="onb-chips-label">Votre setup ?</label>
+        <span className="onb-chips-label">Votre setup ?</span>
         <div className="onb-chips-options">
           {USAGE_OPTIONS.map((opt) => (
             <button
@@ -157,12 +154,7 @@ export function OnboardingChips({
       </div>
 
       <div className="onb-chips-actions">
-        <button
-          type="button"
-          className="onb-chips-skip"
-          onClick={handleDismiss}
-          disabled={pending}
-        >
+        <button type="button" className="onb-chips-skip" onClick={handleDismiss} disabled={pending}>
           Plus tard
         </button>
         <button

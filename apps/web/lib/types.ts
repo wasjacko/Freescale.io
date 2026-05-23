@@ -2,6 +2,9 @@
 
 export type ChannelId =
   | "gmail"
+  | "outlook"
+  | "icloud"
+  | "imap"
   | "instagram"
   | "whatsapp"
   | "slack"
@@ -9,11 +12,14 @@ export type ChannelId =
   | "x"
   | "linkedin"
   | "telegram"
-  | "messenger";
+  | "messenger"
+  | "sms";
 
 export type ViewId = "inbox" | "tasks" | "calendar" | "ai-knowledge";
 
-export type AvatarSource = { kind: "img"; src: string } | { kind: "initials"; text: string; bg?: string };
+export type AvatarSource =
+  | { kind: "img"; src: string }
+  | { kind: "initials"; text: string; bg?: string };
 
 export type Avatar = AvatarSource & {
   alt?: string;

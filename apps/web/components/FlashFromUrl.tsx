@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/lib/hooks/useToast";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 /**
  * Reads ?connected=... / ?synced=... query params on first paint, pushes a

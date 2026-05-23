@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { Avatar as AvatarType } from "@/lib/types";
+import { useEffect, useState } from "react";
 
 type Props = {
   avatar: AvatarType;
@@ -37,8 +37,8 @@ export function Avatar({ avatar, className = "avatar", size }: Props) {
 
   // Reset to the new primary src whenever the parent passes a different avatar
   useEffect(() => {
-    setSrc(avatar.kind === "img" ? avatar.src : null);
-  }, [avatar.kind, avatar.kind === "img" ? avatar.src : null]);
+    setSrc(initialSrc);
+  }, [initialSrc]);
 
   const style: React.CSSProperties = {};
   if (size) {

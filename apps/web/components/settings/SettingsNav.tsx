@@ -1,8 +1,8 @@
 "use client";
 
+import { Icon } from "@/components/icons/Icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon } from "@/components/icons/Icon";
 
 /**
  * Settings sidebar nav with active-route highlighting. Lives in a
@@ -18,6 +18,7 @@ const NAV = [
   { href: "/app/settings/profile" as const, label: "Profil", icon: "i-user" },
   { href: "/app/settings/connections" as const, label: "Connexions", icon: "i-globe" },
   { href: "/app/settings/templates" as const, label: "Modèles", icon: "i-edit" },
+  { href: "/app/settings/billing" as const, label: "Abonnement", icon: "i-lock" },
 ];
 
 export function SettingsNav() {
@@ -25,8 +26,7 @@ export function SettingsNav() {
   return (
     <nav className="settings-nav">
       {NAV.map((item) => {
-        const isActive =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
             key={item.href}

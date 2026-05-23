@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import {
-  createEmailTemplate,
-  updateEmailTemplate,
-  deleteEmailTemplate,
   type EmailTemplate,
+  createEmailTemplate,
+  deleteEmailTemplate,
+  updateEmailTemplate,
 } from "@/lib/actions/email-templates";
+import { useState, useTransition } from "react";
 
 /**
  * Settings → Modèles. List of saved templates with inline create/edit/delete.
@@ -130,14 +130,13 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
       <header className="settings-head">
         <h1>Modèles de réponse</h1>
         <p>
-          Snippets prêts à insérer en un clic dans le composer. Le modèle
-          remplace votre brouillon en cours mais conserve votre signature.
+          Snippets prêts à insérer en un clic dans le composer. Le modèle remplace votre brouillon
+          en cours mais conserve votre signature.
         </p>
         <p className="settings-vars-hint">
-          Variables disponibles dans le corps :{" "}
-          <code>{`{{firstName}}`}</code> · <code>{`{{lastName}}`}</code> ·{" "}
-          <code>{`{{fullName}}`}</code> · <code>{`{{date}}`}</code> ·{" "}
-          <code>{`{{time}}`}</code>
+          Variables disponibles dans le corps : <code>{"{{firstName}}"}</code> ·{" "}
+          <code>{"{{lastName}}"}</code> · <code>{"{{fullName}}"}</code> · <code>{"{{date}}"}</code>{" "}
+          · <code>{"{{time}}"}</code>
         </p>
       </header>
 
@@ -227,7 +226,6 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={80}
-                  autoFocus
                 />
                 <textarea
                   className="settings-input settings-textarea"
@@ -267,11 +265,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
           </div>
         )}
         {editingId === null && (
-          <button
-            type="button"
-            className="set-btn set-btn-primary"
-            onClick={openNew}
-          >
+          <button type="button" className="set-btn set-btn-primary" onClick={openNew}>
             + Nouveau modèle
           </button>
         )}

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Icon } from "@/components/icons/Icon";
 import { MueAvatar } from "@/components/MueAvatar";
+import { Icon } from "@/components/icons/Icon";
+import { type MueMemoryRow, listMueMemories, saveMueMemory } from "@/lib/actions/mue";
+import { useToast } from "@/lib/hooks/useToast";
+import { useEffect, useState, useTransition } from "react";
 
 const CONTEXT_CHIPS = [
   { id: "client", icon: "i-user", label: "A client" },
@@ -14,8 +16,29 @@ const CONTEXT_CHIPS = [
 
 export function AIKnowledgeView() {
   const [text, setText] = useState("");
+  const [kind, setKind] = useState<(typeof CONTEXT_CHIPS)[number]["id"]>("anything");
+  const [memories, setMemories] = useState<MueMemoryRow[]>([]);
+  const [pending, startTransition] = useTransition();
+  const push = useToast((s) => s.push);
 
-  const handleChip = (label: string) => {
+  useEffect(() => {
+    let cancelled = false;
+    void listMueMemories().then((res) => {
+      if (cancelled) return;
+      if (res.error) {
+        push({ kind: "error", text: `Mémoire Mue indisponible : ${res.error}` });
+        return;
+      }
+      setMemories(res.memories);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [push]);
+
+  const handleChip = (chip: (typeof CONTEXT_CHIPS)[number]) => {
+    setKind(chip.id);
+    const label = chip.label;
     setText(`About ${label.toLowerCase()}: `);
     // Focus the textarea
     setTimeout(() => {
@@ -26,9 +49,19 @@ export function AIKnowledgeView() {
   };
 
   const handleSave = () => {
-    if (!text.trim()) return;
-    // Future: persist to Supabase
-    setText("");
+    const content = text.trim();
+    if (!content || pending) return;
+    startTransition(async () => {
+      const res = await saveMueMemory({ kind, content });
+      if (!res.ok) {
+        push({ kind: "error", text: res.error ?? "Mémoire Mue non sauvegardée." });
+        return;
+      }
+      setText("");
+      const refreshed = await listMueMemories();
+      setMemories(refreshed.memories);
+      push({ kind: "success", text: "Mue s'en souviendra." });
+    });
   };
 
   return (
@@ -53,7 +86,13 @@ export function AIKnowledgeView() {
               <button className="ai-spark-btn" type="button" aria-label="Suggest">
                 <Icon name="i-spark" />
               </button>
-              <button className="ai-send-btn" type="button" aria-label="Save" onClick={handleSave}>
+              <button
+                className="ai-send-btn"
+                type="button"
+                aria-label="Save"
+                onClick={handleSave}
+                disabled={pending || !text.trim()}
+              >
                 <Icon name="i-arrow-up" />
               </button>
             </div>
@@ -66,9 +105,9 @@ export function AIKnowledgeView() {
             {CONTEXT_CHIPS.map((c) => (
               <button
                 key={c.id}
-                className="ai-chip"
+                className={`ai-chip ${kind === c.id ? "is-active" : ""}`}
                 type="button"
-                onClick={() => handleChip(c.label)}
+                onClick={() => handleChip(c)}
               >
                 <Icon name={c.icon} />
                 {c.label}
@@ -81,6 +120,17 @@ export function AIKnowledgeView() {
           <Icon name="i-lock" />
           This knowledge is private and only visible to you.
         </div>
+
+        {memories.length > 0 && (
+          <div className="ai-memory-list" aria-label="Saved Mue memories">
+            {memories.slice(0, 6).map((memory) => (
+              <div key={memory.id} className="ai-memory-item">
+                <span>{memory.kind}</span>
+                <p>{memory.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

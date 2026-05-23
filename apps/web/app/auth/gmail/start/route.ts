@@ -1,7 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
 import { randomBytes } from "node:crypto";
-import { createClient } from "@/lib/supabase/server";
 import { buildGmailAuthUrl } from "@/lib/gmail";
+import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 /**
  * Kick off the Gmail OAuth flow. Requires an authenticated Supabase user;

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { appUrl } from "@/lib/app-url";
 import { MueAvatar } from "@/components/MueAvatar";
+import { appUrl } from "@/lib/app-url";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 /**
  * /welcome — the single auth surface for both new and returning users.
@@ -32,9 +32,7 @@ export function WelcomeScreen() {
   const isSwitching = searchParams.has("switch");
   const oauthError = searchParams.get("error");
 
-  const [mode, setMode] = useState<"choice" | "google-consent" | "email" | "email-sent">(
-    "choice"
-  );
+  const [mode, setMode] = useState<"choice" | "google-consent" | "email" | "email-sent">("choice");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState<"google" | "email" | null>(null);
   const [error, setError] = useState<string | null>(
@@ -100,7 +98,12 @@ export function WelcomeScreen() {
 
   return (
     <div className="welcome-wrap">
-      <div className="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+      <div
+        className="welcome-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="welcome-title"
+      >
         <div className="welcome-brand">
           <MueAvatar />
           <span>Freescale</span>
@@ -114,7 +117,8 @@ export function WelcomeScreen() {
               Votre inbox, enfin actionnable.
             </h1>
             <p className="welcome-sub">
-              Unifiez vos boîtes mail. Le copilote Mue repère les messages importants et propose des tâches prêtes à traiter.
+              Unifiez vos boîtes mail. Le copilote Mue repère les messages importants et propose des
+              tâches prêtes à traiter.
             </p>
 
             <div className="welcome-ctas">
@@ -152,8 +156,14 @@ export function WelcomeScreen() {
 
             <p className="welcome-fine">
               En continuant, vous acceptez les{" "}
-              <a href="/terms" className="welcome-link">conditions</a> et la{" "}
-              <a href="/privacy" className="welcome-link">politique de confidentialité</a>.
+              <a href="/terms" className="welcome-link">
+                conditions
+              </a>{" "}
+              et la{" "}
+              <a href="/privacy" className="welcome-link">
+                politique de confidentialité
+              </a>
+              .
             </p>
           </>
         )}
@@ -186,7 +196,9 @@ export function WelcomeScreen() {
                 <span className="welcome-check">✓</span>
                 <div>
                   <strong>Lecture des emails</strong>
-                  <span>Pour les afficher dans votre inbox unifiée et détecter les actions importantes.</span>
+                  <span>
+                    Pour les afficher dans votre inbox unifiée et détecter les actions importantes.
+                  </span>
                 </div>
               </li>
               <li>
@@ -200,7 +212,10 @@ export function WelcomeScreen() {
                 <span className="welcome-x">✕</span>
                 <div>
                   <strong>Ce qu'on ne fait PAS</strong>
-                  <span>Pas de suppression de mails, pas de modification sans action utilisateur, pas de partage des données.</span>
+                  <span>
+                    Pas de suppression de mails, pas de modification sans action utilisateur, pas de
+                    partage des données.
+                  </span>
                 </div>
               </li>
             </ul>
@@ -243,7 +258,6 @@ export function WelcomeScreen() {
                 placeholder="vous@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                autoFocus
                 required
                 autoComplete="email"
                 className="welcome-input"
@@ -267,7 +281,8 @@ export function WelcomeScreen() {
             </div>
             <h1 className="welcome-title">Vérifiez votre email</h1>
             <p className="welcome-sub">
-              On vous a envoyé un lien à <strong>{email}</strong>. Cliquez dessus pour vous connecter — pensez à vérifier vos spams.
+              On vous a envoyé un lien à <strong>{email}</strong>. Cliquez dessus pour vous
+              connecter — pensez à vérifier vos spams.
             </p>
             <button
               type="button"
@@ -277,7 +292,9 @@ export function WelcomeScreen() {
               Changer d'email
             </button>
             <p className="welcome-fine">
-              <Link href={"/" as never} className="welcome-link">Retour à l'accueil</Link>
+              <Link href={"/" as never} className="welcome-link">
+                Retour à l'accueil
+              </Link>
             </p>
           </>
         )}
@@ -293,10 +310,22 @@ export function WelcomeScreen() {
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
-      <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" />
-      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.836.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
-      <path fill="#FBBC05" d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.592.102-1.167.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" />
-      <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z" />
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.836.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.592.102-1.167.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"
+      />
     </svg>
   );
 }
@@ -304,14 +333,24 @@ function GoogleIcon() {
 function AppleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="currentColor">
-      <path d="M17.05 13.04c-.03-2.79 2.28-4.13 2.39-4.2-1.31-1.91-3.34-2.17-4.06-2.2-1.73-.17-3.37 1.02-4.25 1.02-.87 0-2.22-.99-3.65-.96-1.88.03-3.61 1.09-4.58 2.77-1.95 3.4-.5 8.42 1.4 11.18.92 1.35 2.02 2.87 3.46 2.82 1.39-.05 1.91-.9 3.59-.9 1.68 0 2.15.9 3.62.87 1.49-.03 2.43-1.38 3.34-2.74 1.05-1.57 1.49-3.1 1.51-3.17-.03-.02-2.9-1.11-2.93-4.41zM14.43 5.06c.76-.92 1.27-2.2 1.13-3.48-1.09.04-2.42.73-3.21 1.65-.71.81-1.33 2.12-1.17 3.37 1.22.09 2.48-.62 3.25-1.54z"/>
+      <path d="M17.05 13.04c-.03-2.79 2.28-4.13 2.39-4.2-1.31-1.91-3.34-2.17-4.06-2.2-1.73-.17-3.37 1.02-4.25 1.02-.87 0-2.22-.99-3.65-.96-1.88.03-3.61 1.09-4.58 2.77-1.95 3.4-.5 8.42 1.4 11.18.92 1.35 2.02 2.87 3.46 2.82 1.39-.05 1.91-.9 3.59-.9 1.68 0 2.15.9 3.62.87 1.49-.03 2.43-1.38 3.34-2.74 1.05-1.57 1.49-3.1 1.51-3.17-.03-.02-2.9-1.11-2.93-4.41zM14.43 5.06c.76-.92 1.27-2.2 1.13-3.48-1.09.04-2.42.73-3.21 1.65-.71.81-1.33 2.12-1.17 3.37 1.22.09 2.48-.62 3.25-1.54z" />
     </svg>
   );
 }
 
 function MailIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <rect x="2" y="4" width="20" height="16" rx="3" />
       <path d="m2 7 10 6 10-6" />
     </svg>
@@ -320,7 +359,17 @@ function MailIcon() {
 
 function MailSentIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width="48"
+      height="48"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
       <polyline points="22 4 12 14.01 9 11.01" />
     </svg>

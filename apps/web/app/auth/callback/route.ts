@@ -1,6 +1,55 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { encryptJSON } from "@/lib/encryption";
+import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+
+type AuthSupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+async function maybeCreateStripeCustomer({
+  supabase,
+  user,
+}: {
+  supabase: AuthSupabaseClient;
+  user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> };
+}) {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey || !user.email) return;
+
+  try {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("stripe_customer_id, full_name, email")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.stripe_customer_id) return;
+      if (profile) {
+        const stripe = new Stripe(secretKey);
+        const customerParams: Stripe.CustomerCreateParams = {
+          email: (profile.email as string | null) ?? user.email,
+          metadata: { user_id: user.id },
+        };
+        const name =
+          (profile.full_name as string | null) ??
+          (user.user_metadata?.full_name as string | undefined) ??
+          (user.user_metadata?.name as string | undefined);
+        if (name) customerParams.name = name;
+
+        const customer = await stripe.customers.create(customerParams);
+        await supabase
+          .from("profiles")
+          .update({ stripe_customer_id: customer.id })
+          .eq("id", user.id);
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  } catch {
+    // Never block auth on Stripe. Checkout can lazily create a customer later.
+  }
+}
 
 /**
  * Supabase OAuth callback. Handles both the basic identity exchange AND
@@ -26,9 +75,7 @@ export async function GET(request: NextRequest) {
   // to /app so the user never lands on the marketing landing post-auth.
   const rawNext = searchParams.get("next") ?? "/app";
   const next =
-    rawNext.startsWith("/") && rawNext !== "/" && !rawNext.startsWith("//")
-      ? rawNext
-      : "/app";
+    rawNext.startsWith("/") && rawNext !== "/" && !rawNext.startsWith("//") ? rawNext : "/app";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/welcome?error=missing_code`);
@@ -47,6 +94,8 @@ export async function GET(request: NextRequest) {
   const providerRefreshToken = session.provider_refresh_token;
   const userEmail = (user.email ?? "").toLowerCase();
 
+  await maybeCreateStripeCustomer({ supabase, user });
+
   // Only proceed with the Gmail bootstrap if (a) provider gave us a
   // refresh token (some re-sign-ins don't, even with prompt=consent) and
   // (b) we know the Google email. Otherwise the user is logged in but
@@ -55,11 +104,7 @@ export async function GET(request: NextRequest) {
   if (!providerRefreshToken) {
     // eslint-disable-next-line no-console
     console.warn(
-      `[auth/callback] no provider_refresh_token for ${userEmail || user.id}` +
-        ` — user signed in but Gmail bootstrap skipped.` +
-        ` Likely Google didn't re-issue a refresh token because the` +
-        ` user previously authorized this app on another account.` +
-        ` Fallback: Settings → Connections → Connect Gmail.`
+      `[auth/callback] no provider_refresh_token for ${userEmail || user.id} — user signed in but Gmail bootstrap skipped. Likely Google didn't re-issue a refresh token because the user previously authorized this app on another account. Fallback: Settings → Connections → Connect Gmail.`
     );
   }
   if (providerToken && providerRefreshToken && userEmail) {
@@ -118,8 +163,7 @@ export async function GET(request: NextRequest) {
             workspace_id: workspaceId,
             kind: "gmail",
             external_id: userEmail,
-            display_name:
-              (user.user_metadata?.full_name as string | undefined) ?? userEmail,
+            display_name: (user.user_metadata?.full_name as string | undefined) ?? userEmail,
             encrypted_tokens: encrypted,
             status: "active",
             connected_at: new Date().toISOString(),

@@ -79,9 +79,7 @@ export async function searchInbox(
   const [bySubjectPreview, byContact, byBody, byTag] = await Promise.all([
     supabase
       .from("conversations")
-      .select(
-        "id, subject, preview, last_message_at, contacts(display_name, email)"
-      )
+      .select("id, subject, preview, last_message_at, contacts(display_name, email)")
       .eq("workspace_id", workspace.id)
       .eq("archived", false)
       .or(`subject.ilike.${pattern},preview.ilike.${pattern}`)
@@ -89,9 +87,7 @@ export async function searchInbox(
       .limit(limit),
     supabase
       .from("conversations")
-      .select(
-        "id, subject, preview, last_message_at, contacts!inner(display_name, email)"
-      )
+      .select("id, subject, preview, last_message_at, contacts!inner(display_name, email)")
       .eq("workspace_id", workspace.id)
       .eq("archived", false)
       .or(`display_name.ilike.${pattern},email.ilike.${pattern}`, {
@@ -111,9 +107,7 @@ export async function searchInbox(
     isPlausibleTag
       ? supabase
           .from("conversations")
-          .select(
-            "id, subject, preview, last_message_at, contacts(display_name, email)"
-          )
+          .select("id, subject, preview, last_message_at, contacts(display_name, email)")
           .eq("workspace_id", workspace.id)
           .eq("archived", false)
           .contains("tags", [tagCandidate])
@@ -123,15 +117,10 @@ export async function searchInbox(
   ]);
 
   const byConvId = new Map<string, SearchHit>();
-  const collect = (
-    rows: unknown[] | null | undefined,
-    matchedIn: SearchHit["matchedIn"]
-  ) => {
+  const collect = (rows: unknown[] | null | undefined, matchedIn: SearchHit["matchedIn"]) => {
     for (const row of (rows ?? []) as Record<string, unknown>[]) {
       const conv =
-        matchedIn === "body"
-          ? ((row.conversations as Record<string, unknown>) ?? null)
-          : row;
+        matchedIn === "body" ? ((row.conversations as Record<string, unknown>) ?? null) : row;
       if (!conv) continue;
       const id = conv.id as string;
       if (!id || byConvId.has(id)) continue;
@@ -139,13 +128,12 @@ export async function searchInbox(
       const c = Array.isArray(contact) ? contact[0] : contact;
       byConvId.set(id, {
         conversationId: id,
-        name: ((c?.display_name as string) || (c?.email as string) || "Sans nom"),
-        contactEmail: ((c?.email as string) ?? null),
+        name: (c?.display_name as string) || (c?.email as string) || "Sans nom",
+        contactEmail: (c?.email as string) ?? null,
         subject: (conv.subject as string) ?? null,
         preview: (conv.preview as string) ?? "",
         matchedIn,
-        lastMessageAt:
-          (conv.last_message_at as string) ?? new Date().toISOString(),
+        lastMessageAt: (conv.last_message_at as string) ?? new Date().toISOString(),
       });
     }
   };
@@ -157,9 +145,7 @@ export async function searchInbox(
   collect(byBody.data ?? [], "body");
 
   const results = Array.from(byConvId.values())
-    .sort(
-      (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-    )
+    .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime())
     .slice(0, limit);
 
   return { results, error: null };

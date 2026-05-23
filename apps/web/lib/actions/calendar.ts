@@ -1,8 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { CalEvent } from "@/lib/types";
+import { revalidatePath } from "next/cache";
 
 /**
  * Convert the week-grid coords (day 0-6 + minutes-from-8AM + duration)
@@ -61,8 +61,7 @@ export async function createCalendarEvent(input: {
   if (!title) return { ok: false, id: null, error: "Le titre est requis." };
 
   const workspaceId = await resolveWorkspaceId(supabase, user.id);
-  if (!workspaceId)
-    return { ok: false, id: null, error: "Pas de workspace." };
+  if (!workspaceId) return { ok: false, id: null, error: "Pas de workspace." };
 
   const { starts_at, ends_at } = gridToTimestamps(
     input.weekStartIso,
@@ -134,29 +133,19 @@ export async function updateCalendarEvent(input: {
     const end = new Date(current.ends_at as string);
     const weekStart = new Date(input.weekStartIso);
     const minutesFrom8 = (start.getHours() - 8) * 60 + start.getMinutes();
-    const dayFromStart = Math.floor(
-      (start.getTime() - weekStart.getTime()) / 86400000
-    );
+    const dayFromStart = Math.floor((start.getTime() - weekStart.getTime()) / 86400000);
     const duration = Math.round((end.getTime() - start.getTime()) / 60000);
 
     const day = input.day ?? dayFromStart;
     const startMin = input.startMinutes ?? minutesFrom8;
     const dur = input.durationMinutes ?? duration;
 
-    const { starts_at, ends_at } = gridToTimestamps(
-      input.weekStartIso,
-      day,
-      startMin,
-      dur
-    );
+    const { starts_at, ends_at } = gridToTimestamps(input.weekStartIso, day, startMin, dur);
     patch.starts_at = starts_at;
     patch.ends_at = ends_at;
   }
 
-  const { error } = await supabase
-    .from("calendar_events")
-    .update(patch)
-    .eq("id", input.id);
+  const { error } = await supabase.from("calendar_events").update(patch).eq("id", input.id);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/app", "layout");
   return { ok: true, error: null };
@@ -171,10 +160,7 @@ export async function deleteCalendarEvent(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "unauthenticated" };
 
-  const { error } = await supabase
-    .from("calendar_events")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("calendar_events").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/app", "layout");
   return { ok: true, error: null };

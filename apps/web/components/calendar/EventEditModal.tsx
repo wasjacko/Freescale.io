@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import type { CalEvent } from "@/lib/types";
+import { useEffect, useRef, useState } from "react";
 
 const DAYS = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"] as const;
 const COLORS: CalEvent["color"][] = ["lav", "pink", "green", "blue", "orange", "peach", "cream"];
@@ -14,12 +14,16 @@ function minutesToHHMM(m: number): string {
 }
 
 function hhmmToMinutes(s: string): number {
-  const [h, m] = s.split(":").map((p) => parseInt(p, 10));
-  if (Number.isNaN(h ?? NaN) || Number.isNaN(m ?? NaN)) return 0;
-  return Math.max(0, (h! - 8) * 60 + m!);
+  const [rawH, rawM] = s.split(":");
+  const h = Number.parseInt(rawH ?? "", 10);
+  const m = Number.parseInt(rawM ?? "", 10);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return 0;
+  return Math.max(0, (h - 8) * 60 + m);
 }
 
-type Patch = Partial<Pick<CalEvent, "title" | "day" | "startMinutes" | "durationMinutes" | "color">>;
+type Patch = Partial<
+  Pick<CalEvent, "title" | "day" | "startMinutes" | "durationMinutes" | "color">
+>;
 
 export function EventEditModal({
   event,
@@ -36,9 +40,7 @@ export function EventEditModal({
   const [title, setTitle] = useState(event.title);
   const [day, setDay] = useState<number>(event.day);
   const [startHHMM, setStartHHMM] = useState(minutesToHHMM(event.startMinutes));
-  const [endHHMM, setEndHHMM] = useState(
-    minutesToHHMM(event.startMinutes + event.durationMinutes)
-  );
+  const [endHHMM, setEndHHMM] = useState(minutesToHHMM(event.startMinutes + event.durationMinutes));
   const [color, setColor] = useState<CalEvent["color"]>(event.color);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -97,6 +99,10 @@ export function EventEditModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      tabIndex={-1}
     >
       <div className="event-modal">
         <header className="event-modal-head">
@@ -128,7 +134,9 @@ export function EventEditModal({
               onChange={(e) => setDay(Number(e.target.value))}
             >
               {DAYS.map((d, i) => (
-                <option key={d} value={i}>{d}</option>
+                <option key={d} value={i}>
+                  {d}
+                </option>
               ))}
             </select>
           </label>
@@ -192,7 +200,12 @@ export function EventEditModal({
             <span />
           )}
           <div className="event-modal-foot-right">
-            <button type="button" className="event-modal-cancel" onClick={onClose} disabled={saving}>
+            <button
+              type="button"
+              className="event-modal-cancel"
+              onClick={onClose}
+              disabled={saving}
+            >
               Annuler
             </button>
             <button

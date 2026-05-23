@@ -1,14 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { syncChannel } from "@/lib/actions/connections";
+import { isSyncableChannel } from "@/lib/channels/registry";
 import { createClient } from "@/lib/supabase/server";
-import { syncGmail } from "@/lib/actions/connections";
+import { revalidatePath } from "next/cache";
 
 /**
  * Trigger background syncs on every channel that hasn't refreshed in a while.
  * Called from the client on /app mount and on visibility-change. Cheap when
  * everything is fresh (a single query), still tens of seconds on a real sync.
- * For now we sync sequentially — we only have one provider live.
+ * Sync sequentially so each provider can refresh tokens and write safely.
  */
 export async function autoSyncStaleChannels(staleAfterMs = 5 * 60_000): Promise<{
   ran: number;
@@ -44,9 +45,9 @@ export async function autoSyncStaleChannels(staleAfterMs = 5 * 60_000): Promise<
 
   let totalNew = 0;
   for (const account of stale) {
-    if (account.kind !== "gmail") continue; // only provider wired so far
+    if (!isSyncableChannel(account.kind as string)) continue;
     try {
-      const report = await syncGmail(account.id as string);
+      const report = await syncChannel(account.id as string);
       totalNew += report.newMessages;
     } catch (err) {
       console.error("auto-sync failed for", account.id, err);

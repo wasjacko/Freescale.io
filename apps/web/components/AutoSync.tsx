@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
-import { useToast } from "@/lib/hooks/useToast";
 import { useData } from "@/lib/contexts/DataContext";
+import { useToast } from "@/lib/hooks/useToast";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 /**
  * Fires a background channel sync on mount and whenever the tab becomes

@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { disconnectChannel } from "@/lib/actions/connections";
+import { CHANNEL_PROVIDER_REGISTRY, channelProviderLabel } from "@/lib/channels/registry";
+import type { ChannelId } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 
 type Account = {
   id: string;
-  kind: "gmail" | "instagram" | "whatsapp" | "slack" | "discord" | string;
+  kind: ChannelId | string;
   external_id: string;
   display_name: string | null;
   status: string;
@@ -15,13 +17,11 @@ type Account = {
   connected_at: string;
 };
 
-const PROVIDERS = [
-  { kind: "gmail" as const, label: "Gmail", ready: true, startPath: "/auth/gmail/start" },
-  { kind: "slack" as const, label: "Slack", ready: false, startPath: null },
-  { kind: "instagram" as const, label: "Instagram DMs", ready: false, startPath: null },
-  { kind: "whatsapp" as const, label: "WhatsApp", ready: false, startPath: null },
-  { kind: "discord" as const, label: "Discord", ready: false, startPath: null },
-];
+const PROVIDERS = CHANNEL_PROVIDER_REGISTRY.filter((provider) =>
+  ["gmail", "outlook", "icloud", "imap", "slack", "instagram", "whatsapp", "discord"].includes(
+    provider.kind
+  )
+);
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "jamais";
@@ -53,17 +53,18 @@ export function ConnectionsList({
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       const data = event.data as
-        | { type: "gmail_connected"; email: string; synced: number }
-        | { type: "gmail_error"; error: string }
+        | { type: "gmail_connected" | "outlook_connected"; email: string; synced: number }
+        | { type: "gmail_error" | "outlook_error"; error: string }
         | null;
       if (!data) return;
-      if (data.type === "gmail_connected") {
+      if (data.type === "gmail_connected" || data.type === "outlook_connected") {
         setConnecting(null);
-        const url = `/app?connected=gmail&email=${encodeURIComponent(
+        const kind = data.type === "outlook_connected" ? "outlook" : "gmail";
+        const url = `/app?connected=${kind}&email=${encodeURIComponent(
           data.email
         )}&synced=${data.synced}`;
         router.push(url as never);
-      } else if (data.type === "gmail_error") {
+      } else if (data.type === "gmail_error" || data.type === "outlook_error") {
         setConnecting(null);
         setToast({ kind: "err", text: `Connexion impossible : ${data.error}` });
       }
@@ -110,19 +111,24 @@ export function ConnectionsList({
     });
   };
 
-  const gmailConnected = accounts.find(
-    (a) => a.kind === "gmail" && a.status === "active"
+  const connectedKinds = new Set(
+    accounts.filter((a) => a.status === "active").map((a) => a.kind as string)
   );
 
   return (
     <div className="settings-section">
       <header className="settings-head">
         <h1>Connexions</h1>
-        <p>Branchez vos canaux pour que Freescale rassemble tous vos messages en un seul endroit.</p>
+        <p>
+          Branchez vos canaux pour que Freescale rassemble tous vos messages en un seul endroit.
+        </p>
       </header>
 
       {toast && (
-        <div className={`settings-toast ${toast.kind === "ok" ? "is-ok" : "is-err"}`} style={{ width: "fit-content" }}>
+        <div
+          className={`settings-toast ${toast.kind === "ok" ? "is-ok" : "is-err"}`}
+          style={{ width: "fit-content" }}
+        >
           {toast.text}
         </div>
       )}
@@ -135,23 +141,40 @@ export function ConnectionsList({
             .map((account, idx, arr) => (
               <div key={account.id}>
                 <div className="settings-row">
-                  <div className="settings-row-label" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ width: 36, height: 36, display: "grid", placeItems: "center", borderRadius: 10, background: "rgba(15, 23, 42, 0.04)" }}>
-                      <ChannelLogo channel={account.kind as never} />
+                  <div
+                    className="settings-row-label"
+                    style={{ display: "flex", alignItems: "center", gap: 12 }}
+                  >
+                    <span
+                      style={{
+                        width: 36,
+                        height: 36,
+                        display: "grid",
+                        placeItems: "center",
+                        borderRadius: 10,
+                        background: "rgba(15, 23, 42, 0.04)",
+                      }}
+                    >
+                      <ChannelLogo channel={account.kind as ChannelId} />
                     </span>
                     <div>
                       <h3>{account.display_name ?? account.external_id}</h3>
                       <p>Sync : {formatWhen(account.last_synced_at)}</p>
                     </div>
                   </div>
-                  <div className="settings-row-control" style={{ justifyContent: "flex-end", width: "100%" }}>
+                  <div
+                    className="settings-row-control"
+                    style={{ justifyContent: "flex-end", width: "100%" }}
+                  >
                     <span className="onb-option-tag is-ready" style={{ alignSelf: "center" }}>
-                      Sync auto
+                      {channelProviderLabel(account.kind)} actif
                     </span>
                     <button
                       type="button"
                       className="set-btn set-btn-quiet"
-                      onClick={() => handleDisconnect(account.id, account.display_name ?? account.external_id)}
+                      onClick={() =>
+                        handleDisconnect(account.id, account.display_name ?? account.external_id)
+                      }
                       disabled={pending}
                     >
                       Déconnecter
@@ -173,20 +196,35 @@ export function ConnectionsList({
 
       <div className="settings-card">
         {PROVIDERS.map((p, idx) => {
-          const isConnected = p.kind === "gmail" && !!gmailConnected;
+          const isConnected = connectedKinds.has(p.kind);
           return (
             <div key={p.kind}>
               <div className="settings-row">
-                <div className="settings-row-label" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ width: 36, height: 36, display: "grid", placeItems: "center", borderRadius: 10, background: "rgba(15, 23, 42, 0.04)" }}>
-                    <ChannelLogo channel={p.kind as never} />
+                <div
+                  className="settings-row-label"
+                  style={{ display: "flex", alignItems: "center", gap: 12 }}
+                >
+                  <span
+                    style={{
+                      width: 36,
+                      height: 36,
+                      display: "grid",
+                      placeItems: "center",
+                      borderRadius: 10,
+                      background: "rgba(15, 23, 42, 0.04)",
+                    }}
+                  >
+                    <ChannelLogo channel={p.kind} />
                   </span>
                   <div>
                     <h3>{p.label}</h3>
                     <p>{p.ready ? "Disponible" : "Bientôt"}</p>
                   </div>
                 </div>
-                <div className="settings-row-control" style={{ justifyContent: "flex-end", width: "100%" }}>
+                <div
+                  className="settings-row-control"
+                  style={{ justifyContent: "flex-end", width: "100%" }}
+                >
                   {p.ready && p.startPath ? (
                     isConnected ? (
                       <span className="onb-option-tag is-ready" style={{ alignSelf: "center" }}>
@@ -196,7 +234,9 @@ export function ConnectionsList({
                       <button
                         type="button"
                         className="set-btn set-btn-primary"
-                        onClick={() => openConnectPopup(p.kind, p.startPath!)}
+                        onClick={() => {
+                          if (p.startPath) openConnectPopup(p.kind, p.startPath);
+                        }}
                         disabled={connecting === p.kind}
                       >
                         {connecting === p.kind ? "Connexion…" : `Connecter ${p.label}`}
@@ -214,7 +254,6 @@ export function ConnectionsList({
           );
         })}
       </div>
-
     </div>
   );
 }

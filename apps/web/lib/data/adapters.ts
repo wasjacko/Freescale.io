@@ -1,10 +1,10 @@
 import type {
   Avatar,
+  CalEvent,
   ChannelId,
   Conversation,
   Message,
   Task,
-  CalEvent,
   UpcomingEvent,
 } from "@/lib/types";
 
@@ -12,6 +12,9 @@ type Row = Record<string, unknown>;
 
 const CHANNEL_KINDS = new Set<ChannelId>([
   "gmail",
+  "outlook",
+  "icloud",
+  "imap",
   "instagram",
   "whatsapp",
   "slack",
@@ -20,6 +23,7 @@ const CHANNEL_KINDS = new Set<ChannelId>([
   "linkedin",
   "telegram",
   "messenger",
+  "sms",
 ]);
 
 function toChannel(kind: unknown): ChannelId {
@@ -27,12 +31,14 @@ function toChannel(kind: unknown): ChannelId {
 }
 
 function initialsOf(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || "?";
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  );
 }
 
 function avatarFor(name: string, url: string | null | undefined): Avatar {
@@ -81,7 +87,7 @@ export function adaptConversation(row: Row): Conversation {
     snoozedUntilIso: (row.snoozed_until as string | null) ?? null,
     tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
     ...((row.subject as string) ? { subject: row.subject as string } : {}),
-    ...((contact?.email as string) ? { contactEmail: contact!.email as string } : {}),
+    ...((contact?.email as string) ? { contactEmail: contact?.email as string } : {}),
   };
 }
 
@@ -131,7 +137,8 @@ function dueLabel(iso: string | null | undefined): { label: string; isToday: boo
   const startOfDayAfter = new Date(startOfToday);
   startOfDayAfter.setDate(startOfToday.getDate() + 2);
   if (date >= startOfToday && date < startOfTom) return { label: "Due today", isToday: true };
-  if (date >= startOfTom && date < startOfDayAfter) return { label: "Due tomorrow", isToday: false };
+  if (date >= startOfTom && date < startOfDayAfter)
+    return { label: "Due tomorrow", isToday: false };
   const diffDays = Math.floor((date.getTime() - startOfToday.getTime()) / 86400000);
   if (diffDays >= 0 && diffDays < 7) {
     return {
@@ -163,8 +170,7 @@ export function adaptTask(row: Row): Task {
     channel: toChannel(channelAccount?.kind),
     status: statusFor(row.status),
     parentTaskId: (row.parent_task_id as string | null | undefined) ?? null,
-    sortableIndex:
-      typeof row.sortable_index === "number" ? (row.sortable_index as number) : 0,
+    sortableIndex: typeof row.sortable_index === "number" ? (row.sortable_index as number) : 0,
   };
 }
 
@@ -173,8 +179,7 @@ export function adaptCalendarEvent(row: Row, weekStart: Date): CalEvent | null {
   const endsAt = new Date(row.ends_at as string);
   const dayDiff = Math.floor((startsAt.getTime() - weekStart.getTime()) / 86400000);
   if (dayDiff < 0 || dayDiff > 6) return null;
-  const startMinutes =
-    startsAt.getHours() * 60 + startsAt.getMinutes() - 8 * 60; // grid starts at 8 AM
+  const startMinutes = startsAt.getHours() * 60 + startsAt.getMinutes() - 8 * 60; // grid starts at 8 AM
   if (startMinutes < 0) return null;
   const duration = Math.max(15, Math.round((endsAt.getTime() - startsAt.getTime()) / 60000));
   const colors: CalEvent["color"][] = ["lav", "pink", "green", "blue", "orange", "peach", "cream"];

@@ -78,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Safety net for first visit / browsers that don't send the hint
             and for legacy localStorage-only state. Runs synchronously before
             any CSS paints. */}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: Static theme bootstrap contains no user input and must run before paint. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>{children}</body>

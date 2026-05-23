@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/lib/hooks/useToast";
+import { type DailyBriefing, dailyBriefing } from "@/lib/actions/mue";
 import { classifyAllUncategorized } from "@/lib/actions/triage";
-import { dailyBriefing, type DailyBriefing } from "@/lib/actions/mue";
+import { useToast } from "@/lib/hooks/useToast";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 
 /**
  * "Voici ce qui mérite votre attention" — the audit-mandated guided
@@ -104,9 +104,7 @@ export function FirstActionBanner({
           <span className="first-action-core" />
         </div>
         <div className="first-action-text">
-          <h3 className="first-action-title">
-            Bienvenue dans Freescale, {firstName}.
-          </h3>
+          <h3 className="first-action-title">Bienvenue dans Freescale, {firstName}.</h3>
           <p className="first-action-sub">
             {conversationCount > 0
               ? `${conversationCount} conversation${conversationCount > 1 ? "s" : ""} chargée${conversationCount > 1 ? "s" : ""}. Voici comment Mue peut aider.`
@@ -170,8 +168,11 @@ export function FirstActionBanner({
           <p className="first-action-brief-headline">{brief.headline}</p>
           {brief.items.length > 0 && (
             <ul className="first-action-brief-list">
-              {brief.items.slice(0, 3).map((it, i) => (
-                <li key={i} className={`first-action-brief-item is-${it.priority}`}>
+              {brief.items.slice(0, 3).map((it) => (
+                <li
+                  key={`${it.title}-${it.contactName}-${it.priority}`}
+                  className={`first-action-brief-item is-${it.priority}`}
+                >
                   <span className="first-action-brief-dot" />
                   <div>
                     <div className="first-action-brief-title">{it.title}</div>
@@ -198,7 +199,17 @@ export function FirstActionBanner({
 
 function SortIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <rect x="3" y="4" width="7" height="7" rx="1.5" />
       <rect x="14" y="4" width="7" height="7" rx="1.5" />
       <rect x="3" y="13" width="7" height="7" rx="1.5" />
@@ -209,7 +220,17 @@ function SortIcon() {
 
 function SparkIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -218,7 +239,17 @@ function SparkIcon() {
 
 function InboxIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
       <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />
       <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
     </svg>

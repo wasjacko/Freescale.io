@@ -1,9 +1,6 @@
 "use server";
 
-import { createHash } from "node:crypto";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { avatarUrlFor } from "@/lib/email-avatar";
 import {
   extractMessageContent,
   getProfile,
@@ -12,59 +9,11 @@ import {
   listHistory,
   listRecentMessages,
 } from "@/lib/gmail";
-
-// Personal email providers — for those we want a Gravatar (real photo if the
-// owner has one, otherwise a colored initial via UI fallback). For any other
-// domain we treat the sender as a business and pull the favicon, which
-// produces a real company logo for things like noreply@mobbin.com.
-const PERSONAL_EMAIL_DOMAINS = new Set([
-  "gmail.com", "googlemail.com", "yahoo.com", "yahoo.fr", "outlook.com",
-  "hotmail.com", "hotmail.fr", "live.com", "icloud.com", "me.com",
-  "mac.com", "aol.com", "proton.me", "protonmail.com", "pm.me",
-  "free.fr", "orange.fr", "wanadoo.fr", "sfr.fr", "laposte.net",
-]);
-
-/**
- * Strip subdomains down to the registrable domain. Handles the common
- * ccTLD+SLD shape (.co.uk, .com.au, .co.jp, .gov.fr, etc.) by keeping the
- * last 3 parts when the 2nd-to-last is 2-3 chars. Not bulletproof against
- * the full Public Suffix List, but covers ~99% of email senders we see.
- *
- *   notifications.partenaire.meilleurtaux.com → meilleurtaux.com
- *   accounts.google.com                       → google.com
- *   news.bbc.co.uk                            → bbc.co.uk
- *   ionos.fr                                  → ionos.fr
- */
-function rootDomain(domain: string): string {
-  const parts = domain.split(".");
-  if (parts.length <= 2) return domain;
-  const lastTld = parts[parts.length - 1] ?? "";
-  const secondLast = parts[parts.length - 2] ?? "";
-  // ccTLD pattern: 2-letter TLD + short SLD ("co", "com", "gov", "ac", "or")
-  if (
-    lastTld.length === 2 &&
-    secondLast.length <= 3 &&
-    /^[a-z]+$/.test(secondLast)
-  ) {
-    return parts.slice(-3).join(".");
-  }
-  return parts.slice(-2).join(".");
-}
-
-function avatarUrlFor(email: string): string {
-  const domain = email.split("@")[1]?.toLowerCase().trim() ?? "";
-  if (!domain) return "";
-  if (PERSONAL_EMAIL_DOMAINS.has(domain)) {
-    const md5 = createHash("md5").update(email.trim().toLowerCase()).digest("hex");
-    // d=404 so the <img> fires onerror when no real Gravatar exists, letting
-    // the UI fall back to colored initials. Better than a generic identicon.
-    return `https://www.gravatar.com/avatar/${md5}?s=200&d=404`;
-  }
-  // Business domain → icon.horse on the ROOT domain. Returns up to 256x256
-  // PNG of the real logo for known sites; subdomains often 504 on icon.horse
-  // so stripping is mandatory ("partenaire.meilleurtaux.com" was failing).
-  return `https://icon.horse/icon/${rootDomain(domain)}`;
-}
+import { getValidOutlookAccessToken, listOutlookMessages } from "@/lib/outlook";
+import { mapOutlookMessage } from "@/lib/outlook-normalize";
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export type SyncReport = {
   fetched: number;
@@ -115,10 +64,7 @@ function isInInbox(labelIds: string[] | undefined): boolean {
  * always want the full conversation in our DB regardless of how many of
  * its messages happened to surface in messages.list.
  */
-async function doFullList(
-  accessToken: string,
-  report: SyncReport
-): Promise<string[]> {
+async function doFullList(accessToken: string, report: SyncReport): Promise<string[]> {
   const messages = await listRecentMessages(accessToken, 1000);
   report.fetched = messages.length;
   const threadIds = new Set<string>();
@@ -169,10 +115,7 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     // doesn't happen because the row patch is rejected wholesale.
     const msg = err instanceof Error ? err.message : "Refresh failed";
     report.errors.push(msg);
-    await supabase
-      .from("channel_accounts")
-      .update({ status: "needs_reauth" })
-      .eq("id", account.id);
+    await supabase.from("channel_accounts").update({ status: "needs_reauth" }).eq("id", account.id);
     return report;
   }
 
@@ -341,9 +284,9 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       const newest = parsed[parsed.length - 1];
       if (!newest) continue;
 
-      const lastInbound = [...parsed].reverse().find(
-        (p) => p.content.from.email.toLowerCase() !== account.external_id.toLowerCase()
-      );
+      const lastInbound = [...parsed]
+        .reverse()
+        .find((p) => p.content.from.email.toLowerCase() !== account.external_id.toLowerCase());
       const contactEmail = lastInbound?.content.from.email ?? newest.content.from.email;
       const contactName =
         lastInbound?.content.from.name ?? newest.content.from.name ?? contactEmail;
@@ -513,7 +456,8 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
     // UPDATE existing conversations (sequential — usually a tiny set
     // during History API delta paths, zero during initial sync).
     for (const t of existingConvsToUpdate) {
-      const convId = existingMap.get(t.threadId)!;
+      const convId = existingMap.get(t.threadId);
+      if (!convId) continue;
       convByThread.set(t.threadId, convId);
       await supabase
         .from("conversations")
@@ -560,12 +504,10 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
       // violates a constraint (one bad row poisons the whole INSERT in
       // Postgres), fall back to inserting one message at a time so a
       // single broken row doesn't drop the other 15.
-      const { error: batchErr } = await supabase
-        .from("messages")
-        .upsert(messagesPayload, {
-          onConflict: "conversation_id,external_id",
-          ignoreDuplicates: true,
-        });
+      const { error: batchErr } = await supabase.from("messages").upsert(messagesPayload, {
+        onConflict: "conversation_id,external_id",
+        ignoreDuplicates: true,
+      });
 
       if (!batchErr) {
         report.newMessages += messagesPayload.length;
@@ -575,16 +517,12 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
         console.error("messages batch upsert failed:", batchErr);
         let okCount = 0;
         for (const m of messagesPayload) {
-          const { error: oneErr } = await supabase
-            .from("messages")
-            .upsert([m], {
-              onConflict: "conversation_id,external_id",
-              ignoreDuplicates: true,
-            });
+          const { error: oneErr } = await supabase.from("messages").upsert([m], {
+            onConflict: "conversation_id,external_id",
+            ignoreDuplicates: true,
+          });
           if (oneErr) {
-            report.errors.push(
-              `msg ${m.external_id}: ${oneErr.message.slice(0, 100)}`
-            );
+            report.errors.push(`msg ${m.external_id}: ${oneErr.message.slice(0, 100)}`);
             // eslint-disable-next-line no-console
             console.error(`messages single insert failed (${m.external_id}):`, oneErr, {
               conv: m.conversation_id,
@@ -617,6 +555,272 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
 
   revalidatePath("/app", "layout");
   return report;
+}
+
+export async function syncOutlook(channelAccountId: string): Promise<SyncReport> {
+  const report: SyncReport = { fetched: 0, newConversations: 0, newMessages: 0, errors: [] };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
+
+  const { data: account, error: accountErr } = await supabase
+    .from("channel_accounts")
+    .select("id, workspace_id, encrypted_tokens, external_id")
+    .eq("id", channelAccountId)
+    .eq("kind", "outlook")
+    .maybeSingle();
+  if (accountErr || !account?.encrypted_tokens) {
+    report.errors.push("Compte Outlook introuvable ou non lié.");
+    return report;
+  }
+
+  let accessToken: string;
+  try {
+    const refreshed = await getValidOutlookAccessToken(account.encrypted_tokens as string);
+    accessToken = refreshed.accessToken;
+    if (refreshed.updatedBlob) {
+      await supabase
+        .from("channel_accounts")
+        .update({ encrypted_tokens: refreshed.updatedBlob })
+        .eq("id", account.id);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Refresh failed";
+    report.errors.push(msg);
+    await supabase.from("channel_accounts").update({ status: "needs_reauth" }).eq("id", account.id);
+    return report;
+  }
+
+  let mapped: ReturnType<typeof mapOutlookMessage>[];
+  try {
+    const rawMessages = await listOutlookMessages(accessToken, 500);
+    report.fetched = rawMessages.length;
+    mapped = rawMessages
+      .map((message) => mapOutlookMessage(message, account.external_id as string))
+      .filter((message) => !!message.contactEmail)
+      .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+  } catch (err) {
+    report.errors.push(err instanceof Error ? err.message : "Outlook sync failed");
+    return report;
+  }
+
+  if (mapped.length === 0) {
+    await supabase
+      .from("channel_accounts")
+      .update({ last_synced_at: new Date().toISOString() })
+      .eq("id", account.id);
+    return report;
+  }
+
+  const byThread = new Map<
+    string,
+    {
+      threadId: string;
+      contactEmail: string;
+      contactName: string;
+      subject: string;
+      preview: string;
+      lastMessageAt: string;
+      unreadCount: number;
+      messages: ReturnType<typeof mapOutlookMessage>[];
+    }
+  >();
+  for (const message of mapped) {
+    const existing = byThread.get(message.threadId);
+    if (!existing) {
+      byThread.set(message.threadId, {
+        threadId: message.threadId,
+        contactEmail: message.contactEmail,
+        contactName: message.contactName || message.contactEmail,
+        subject: message.subject,
+        preview: message.preview,
+        lastMessageAt: message.sentAt,
+        unreadCount: message.unread ? 1 : 0,
+        messages: [message],
+      });
+      continue;
+    }
+    existing.messages.push(message);
+    existing.subject = message.subject || existing.subject;
+    existing.preview = message.preview || existing.preview;
+    existing.lastMessageAt = message.sentAt;
+    existing.unreadCount += message.unread ? 1 : 0;
+    if (message.direction === "in") {
+      existing.contactEmail = message.contactEmail;
+      existing.contactName = message.contactName || message.contactEmail;
+    }
+  }
+
+  const threadPayloads = [...byThread.values()];
+  const threadIds = threadPayloads.map((thread) => thread.threadId);
+  const { data: existingConvs } = await supabase
+    .from("conversations")
+    .select("id, external_thread_id")
+    .eq("workspace_id", account.workspace_id)
+    .eq("channel_account_id", account.id)
+    .in("external_thread_id", threadIds);
+  const existingMap = new Map(
+    (existingConvs ?? []).map((c) => [c.external_thread_id as string, c.id as string])
+  );
+
+  const { data: existingMsgs } = await supabase
+    .from("messages")
+    .select("external_id")
+    .eq("workspace_id", account.workspace_id);
+  const existingMessageIds = new Set(
+    (existingMsgs ?? []).map((m) => m.external_id as string).filter(Boolean)
+  );
+
+  const contactEmails = [...new Set(threadPayloads.map((thread) => thread.contactEmail))];
+  const contactByEmail = new Map<string, string>();
+  if (contactEmails.length > 0) {
+    const { data: existingContacts } = await supabase
+      .from("contacts")
+      .select("id, email")
+      .eq("workspace_id", account.workspace_id)
+      .in("email", contactEmails);
+    for (const contact of existingContacts ?? []) {
+      contactByEmail.set(contact.email as string, contact.id as string);
+    }
+
+    const missing = contactEmails.filter((email) => !contactByEmail.has(email));
+    if (missing.length > 0) {
+      const nameByEmail = new Map<string, string>();
+      for (const thread of threadPayloads) {
+        if (!nameByEmail.has(thread.contactEmail)) {
+          nameByEmail.set(thread.contactEmail, thread.contactName || thread.contactEmail);
+        }
+      }
+      const { data: inserted, error } = await supabase
+        .from("contacts")
+        .insert(
+          missing.map((email) => ({
+            workspace_id: account.workspace_id,
+            display_name: nameByEmail.get(email) ?? email,
+            email,
+            avatar_url: avatarUrlFor(email),
+          }))
+        )
+        .select("id, email");
+      if (error) {
+        report.errors.push(`contacts insert: ${error.message}`);
+      } else {
+        for (const contact of inserted ?? []) {
+          contactByEmail.set(contact.email as string, contact.id as string);
+        }
+      }
+    }
+  }
+
+  const convByThread = new Map<string, string>();
+  for (const thread of threadPayloads) {
+    const existingId = existingMap.get(thread.threadId);
+    if (existingId) {
+      await supabase
+        .from("conversations")
+        .update({
+          contact_id: contactByEmail.get(thread.contactEmail) ?? null,
+          subject: thread.subject || null,
+          preview: thread.preview,
+          last_message_at: thread.lastMessageAt,
+          unread_count: thread.unreadCount,
+        })
+        .eq("id", existingId);
+      convByThread.set(thread.threadId, existingId);
+      continue;
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("conversations")
+      .insert({
+        workspace_id: account.workspace_id,
+        channel_account_id: account.id,
+        contact_id: contactByEmail.get(thread.contactEmail) ?? null,
+        external_thread_id: thread.threadId,
+        subject: thread.subject || null,
+        preview: thread.preview,
+        last_message_at: thread.lastMessageAt,
+        unread_count: thread.unreadCount,
+      })
+      .select("id")
+      .single();
+    if (error || !inserted?.id) {
+      report.errors.push(`conv insert: ${error?.message ?? "missing id"}`);
+      continue;
+    }
+    convByThread.set(thread.threadId, inserted.id as string);
+    existingMap.set(thread.threadId, inserted.id as string);
+    report.newConversations += 1;
+  }
+
+  const messagesPayload: Array<{
+    conversation_id: string;
+    workspace_id: string;
+    direction: "in" | "out";
+    external_id: string;
+    body_text: string | null;
+    body_html: string | null;
+    sent_at: string;
+    metadata: Record<string, unknown>;
+  }> = [];
+  for (const thread of threadPayloads) {
+    const conversationId = convByThread.get(thread.threadId);
+    if (!conversationId) continue;
+    for (const message of thread.messages) {
+      if (existingMessageIds.has(message.externalId)) continue;
+      messagesPayload.push({
+        conversation_id: conversationId,
+        workspace_id: account.workspace_id,
+        direction: message.direction,
+        external_id: message.externalId,
+        body_text: message.bodyText,
+        body_html: message.bodyHtml,
+        sent_at: message.sentAt,
+        metadata: message.metadata,
+      });
+      existingMessageIds.add(message.externalId);
+    }
+  }
+
+  if (messagesPayload.length > 0) {
+    const { error } = await supabase.from("messages").upsert(messagesPayload, {
+      onConflict: "conversation_id,external_id",
+      ignoreDuplicates: true,
+    });
+    if (error) {
+      report.errors.push(`messages upsert: ${error.message}`);
+    } else {
+      report.newMessages += messagesPayload.length;
+    }
+  }
+
+  await supabase
+    .from("channel_accounts")
+    .update({ last_synced_at: new Date().toISOString() })
+    .eq("id", account.id);
+
+  revalidatePath("/app", "layout");
+  return report;
+}
+
+export async function syncChannel(channelAccountId: string): Promise<SyncReport> {
+  const supabase = await createClient();
+  const { data: account } = await supabase
+    .from("channel_accounts")
+    .select("kind")
+    .eq("id", channelAccountId)
+    .maybeSingle();
+
+  if (account?.kind === "gmail") return syncGmail(channelAccountId);
+  if (account?.kind === "outlook") return syncOutlook(channelAccountId);
+  return {
+    fetched: 0,
+    newConversations: 0,
+    newMessages: 0,
+    errors: [`Provider non synchronisable: ${account?.kind ?? "unknown"}`],
+  };
 }
 
 export async function disconnectChannel(channelAccountId: string): Promise<void> {

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { appUrl } from "@/lib/app-url";
 import { MueAvatar } from "@/components/MueAvatar";
+import { appUrl } from "@/lib/app-url";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import { useState } from "react";
 
 export function ForgotPasswordScreen() {
   const supabase = createClient();
@@ -48,8 +48,8 @@ export function ForgotPasswordScreen() {
             <>
               <h1 className="onb-title">Vérifiez vos emails.</h1>
               <p className="onb-sub">
-                Si un compte existe pour <strong>{email}</strong>, vous allez recevoir un
-                lien pour choisir un nouveau mot de passe. Le lien expire dans 60 minutes.
+                Si un compte existe pour <strong>{email}</strong>, vous allez recevoir un lien pour
+                choisir un nouveau mot de passe. Le lien expire dans 60 minutes.
               </p>
 
               <div className="onb-actions onb-actions-between">
@@ -72,8 +72,8 @@ export function ForgotPasswordScreen() {
             <>
               <h1 className="onb-title">Mot de passe oublié.</h1>
               <p className="onb-sub">
-                Entrez l&apos;email de votre compte. On vous envoie un lien pour choisir
-                un nouveau mot de passe.
+                Entrez l&apos;email de votre compte. On vous envoie un lien pour choisir un nouveau
+                mot de passe.
               </p>
 
               <form className="onb-form" onSubmit={handleSubmit}>
@@ -83,7 +83,6 @@ export function ForgotPasswordScreen() {
                     type="email"
                     autoComplete="email"
                     required
-                    autoFocus
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="vous@example.com"
@@ -101,7 +100,9 @@ export function ForgotPasswordScreen() {
               {msg && <div className={`auth-msg auth-msg-${msg.kind}`}>{msg.text}</div>}
 
               <p className="onb-fine onb-fine-center">
-                <Link href="/sign-in" className="onb-link">Retour à la connexion</Link>
+                <Link href="/sign-in" className="onb-link">
+                  Retour à la connexion
+                </Link>
               </p>
             </>
           )}

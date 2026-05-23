@@ -45,3 +45,4 @@ supabase/.branches/
 # Vercel (futur)
 .vercel
 apps/web/tsconfig.tsbuildinfo
+apps/api/tsconfig.tsbuildinfo

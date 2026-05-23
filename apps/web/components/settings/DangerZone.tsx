@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useToast } from "@/lib/hooks/useToast";
 import { deleteMyAccount } from "@/lib/actions/delete-account";
+import { useToast } from "@/lib/hooks/useToast";
+import { useState } from "react";
 
 /**
  * GDPR right-to-be-forgotten flow.
@@ -56,15 +56,11 @@ export function DangerZone({ email }: { email: string }) {
           Zone dangereuse
         </h2>
         <p className="danger-zone-text">
-          Supprime définitivement ton compte Freescale et toutes les données
-          associées (conversations, messages, contacts, comptes Gmail
-          connectés, tâches). Cette action est irréversible.
+          Supprime définitivement ton compte Freescale et toutes les données associées
+          (conversations, messages, contacts, comptes Gmail connectés, tâches). Cette action est
+          irréversible.
         </p>
-        <button
-          type="button"
-          className="danger-zone-btn"
-          onClick={() => setOpen(true)}
-        >
+        <button type="button" className="danger-zone-btn" onClick={() => setOpen(true)}>
           Supprimer mon compte
         </button>
       </section>
@@ -78,14 +74,18 @@ export function DangerZone({ email }: { email: string }) {
           onClick={(e) => {
             if (e.target === e.currentTarget && !deleting) setOpen(false);
           }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && !deleting) setOpen(false);
+          }}
+          tabIndex={-1}
         >
           <div className="danger-modal">
             <h3 id="danger-modal-title" className="danger-modal-title">
               Supprimer votre compte ?
             </h3>
             <p className="danger-modal-sub">
-              Le compte <strong>{email}</strong> et toutes ses données vont
-              être supprimées définitivement. Cela inclut :
+              Le compte <strong>{email}</strong> et toutes ses données vont être supprimées
+              définitivement. Cela inclut :
             </p>
             <ul className="danger-modal-list">
               <li>Tous vos workspaces et conversations</li>
@@ -95,8 +95,8 @@ export function DangerZone({ email }: { email: string }) {
               <li>Votre profil et préférences</li>
             </ul>
             <p className="danger-modal-warn">
-              Cette action est <strong>immédiate et irréversible</strong>.
-              Aucun backup n'est conservé.
+              Cette action est <strong>immédiate et irréversible</strong>. Aucun backup n'est
+              conservé.
             </p>
 
             <label className="danger-modal-confirm">
@@ -108,7 +108,6 @@ export function DangerZone({ email }: { email: string }) {
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="DELETE"
-                autoFocus
                 disabled={deleting}
                 spellCheck={false}
                 autoComplete="off"

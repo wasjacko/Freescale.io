@@ -37,12 +37,23 @@ export function ShortcutsModal({ open, onClose }: Props) {
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      tabIndex={-1}
     >
       <div className="shortcuts-panel">
         <div className="shortcuts-head">
           <h3>Keyboard shortcuts</h3>
           <button className="icon-btn" type="button" aria-label="Close" onClick={onClose}>
-            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+            <svg
+              className="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>

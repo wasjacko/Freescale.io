@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 /**
  * Top-of-page flash banner shown on the landing after a sign-out or

@@ -1,8 +1,8 @@
 "use client";
 
+import type { ViewId } from "@/lib/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ViewId } from "@/lib/types";
 
 type State = {
   view: ViewId;

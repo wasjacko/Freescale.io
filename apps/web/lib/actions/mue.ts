@@ -1,12 +1,22 @@
 "use server";
 
-import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@/lib/supabase/server";
+import { consumeMueAction } from "@/lib/actions/billing";
+import { extractMessageContent, getThread, getValidAccessToken } from "@/lib/gmail";
 import {
-  extractMessageContent,
-  getThread,
-  getValidAccessToken,
-} from "@/lib/gmail";
+  type MueChatHistoryItem,
+  type MueMemory,
+  type MueProfileContext,
+  type MueTone,
+  buildAskMueMessages,
+  buildLocalAskMueFallback,
+  buildLocalToneRewriteFallback,
+  buildToneRewriteMessages,
+  normalizeMueQuestion,
+  parseMueAnswer,
+  parseToneRewrite,
+} from "@/lib/mue-chat";
+import { createClient } from "@/lib/supabase/server";
+import Anthropic from "@anthropic-ai/sdk";
 
 /**
  * Mue — the Freescale AI copilot. First feature wired: contextual reply
@@ -42,6 +52,30 @@ Output strict JSON only, no prose, no markdown fences:
 The "label" is what we show on the button (e.g. "Confirmer le rendez-vous", "Demander plus d'infos", "Décliner poliment"). The "text" is what we paste in the composer when clicked.`;
 
 export type ReplySuggestion = { label: string; text: string };
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function getPrimaryWorkspaceId(
+  supabase: SupabaseServerClient
+): Promise<{ workspaceId: string | null; error: string | null }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { workspaceId: null, error: "unauthenticated" };
+
+  const { data: workspace, error } = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !workspace?.id) {
+    return { workspaceId: null, error: error?.message ?? "no workspace" };
+  }
+
+  return { workspaceId: workspace.id as string, error: null };
+}
 
 export async function suggestReplies(
   conversationId: string
@@ -52,8 +86,7 @@ export async function suggestReplies(
   if (!authToken && !apiKey) {
     return {
       suggestions: [],
-      error:
-        "Aucun credential Claude configuré (ANTHROPIC_AUTH_TOKEN ou ANTHROPIC_API_KEY).",
+      error: "Aucun credential Claude configuré (ANTHROPIC_AUTH_TOKEN ou ANTHROPIC_API_KEY).",
     };
   }
 
@@ -62,6 +95,11 @@ export async function suggestReplies(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { suggestions: [], error: "unauthenticated" };
+
+  const usage = await consumeMueAction();
+  if (!usage.allowed) {
+    return { suggestions: [], error: usage.error ?? "Limite Mue atteinte." };
+  }
 
   const { data: conv, error: convErr } = await supabase
     .from("conversations")
@@ -163,9 +201,7 @@ export async function suggestReplies(
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   const jsonSlice =
-    firstBrace >= 0 && lastBrace > firstBrace
-      ? cleaned.slice(firstBrace, lastBrace + 1)
-      : cleaned;
+    firstBrace >= 0 && lastBrace > firstBrace ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
 
   try {
     const parsedJson = JSON.parse(jsonSlice) as { suggestions?: ReplySuggestion[] };
@@ -257,6 +293,379 @@ async function fetchThreadTranscript(
   return { transcript, error: null };
 }
 
+function contactNameFromJoin(rawContact: unknown): string {
+  const contact = Array.isArray(rawContact) ? rawContact[0] : rawContact;
+  if (!contact || typeof contact !== "object") return "Contact";
+  const record = contact as Record<string, unknown>;
+  const displayName = typeof record.display_name === "string" ? record.display_name : null;
+  const email = typeof record.email === "string" ? record.email : null;
+  return displayName || email || "Contact";
+}
+
+async function fetchCachedConversationTranscript(
+  supabase: SupabaseServerClient,
+  conversationId: string,
+  workspaceId: string
+): Promise<{ transcript: string | null; error: string | null }> {
+  const { data: conversation, error: convError } = await supabase
+    .from("conversations")
+    .select("id, subject, preview, contacts(display_name, email)")
+    .eq("id", conversationId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
+
+  if (convError || !conversation) {
+    return { transcript: null, error: convError?.message ?? "conversation not found" };
+  }
+
+  const { data: rows, error: messageError } = await supabase
+    .from("messages")
+    .select("direction, body_text, sent_at")
+    .eq("conversation_id", conversationId)
+    .eq("workspace_id", workspaceId)
+    .order("sent_at", { ascending: true })
+    .limit(40);
+
+  if (messageError) {
+    return { transcript: null, error: messageError.message };
+  }
+
+  const messages = (rows ?? []) as Array<Record<string, unknown>>;
+  const contactName = contactNameFromJoin((conversation as Record<string, unknown>).contacts);
+  const subject =
+    typeof conversation.subject === "string" && conversation.subject.trim()
+      ? conversation.subject.trim()
+      : "(no subject)";
+
+  if (messages.length === 0) {
+    const preview =
+      typeof conversation.preview === "string" && conversation.preview.trim()
+        ? conversation.preview.trim()
+        : "";
+    return {
+      transcript: `--- ${contactName}\nSubject: ${subject}\n${preview}`,
+      error: null,
+    };
+  }
+
+  const transcript = messages
+    .map((message) => {
+      const direction = message.direction === "out" ? "Me" : contactName;
+      const sentAt = typeof message.sent_at === "string" ? message.sent_at : "";
+      const body = typeof message.body_text === "string" ? message.body_text : "";
+      return `--- ${direction} (${sentAt})\nSubject: ${subject}\n${body.slice(0, 2500).trim()}`;
+    })
+    .join("\n\n");
+
+  return { transcript, error: null };
+}
+
+async function fetchMueMemories(
+  supabase: SupabaseServerClient,
+  workspaceId: string
+): Promise<MueMemory[]> {
+  const { data } = await supabase
+    .from("mue_memories")
+    .select("kind, content")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  return ((data ?? []) as Array<Record<string, unknown>>)
+    .map((row) => ({
+      kind: typeof row.kind === "string" ? row.kind : "fact",
+      content: typeof row.content === "string" ? row.content.trim() : "",
+    }))
+    .filter((memory) => memory.content.length > 0);
+}
+
+async function fetchMueProfileContext(
+  supabase: SupabaseServerClient,
+  userId: string
+): Promise<MueProfileContext> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("mue_persona, mue_style_profile")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return {
+    persona: (data?.mue_persona as string | null) ?? null,
+    styleProfile: (data?.mue_style_profile as string | null) ?? null,
+  };
+}
+
+async function fetchMueChatHistory(
+  supabase: SupabaseServerClient,
+  workspaceId: string,
+  conversationId?: string | null,
+  limit = 10
+): Promise<MueChatHistoryItem[]> {
+  let query = supabase
+    .from("mue_chat_messages")
+    .select("role, content")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  query = conversationId
+    ? query.eq("conversation_id", conversationId)
+    : query.is("conversation_id", null);
+
+  const { data } = await query;
+  return ((data ?? []) as Array<Record<string, unknown>>)
+    .reverse()
+    .map((row) => ({
+      role: row.role === "user" ? ("user" as const) : ("mue" as const),
+      content: typeof row.content === "string" ? row.content : "",
+    }))
+    .filter((message) => message.content.trim().length > 0);
+}
+
+async function persistMueChatMessage(
+  supabase: SupabaseServerClient,
+  input: {
+    workspaceId: string;
+    conversationId?: string | null;
+    role: "user" | "mue";
+    content: string;
+    metadata?: Record<string, unknown>;
+  }
+) {
+  const content = input.content.trim();
+  if (!content) return;
+  await supabase.from("mue_chat_messages").insert({
+    workspace_id: input.workspaceId,
+    conversation_id: input.conversationId ?? null,
+    role: input.role,
+    content: content.slice(0, 12_000),
+    metadata: input.metadata ?? {},
+  });
+}
+
+export type MueChatMessageRow = {
+  id: string;
+  role: "user" | "mue";
+  content: string;
+  createdAt: string;
+};
+
+export async function listMueChatMessages(input?: {
+  conversationId?: string | null;
+}): Promise<{ messages: MueChatMessageRow[]; error: string | null }> {
+  const supabase = await createClient();
+  const { workspaceId, error } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { messages: [], error: error ?? "no workspace" };
+
+  let query = supabase
+    .from("mue_chat_messages")
+    .select("id, role, content, created_at")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: true })
+    .limit(60);
+
+  query = input?.conversationId
+    ? query.eq("conversation_id", input.conversationId)
+    : query.is("conversation_id", null);
+
+  const { data, error: queryError } = await query;
+  if (queryError) return { messages: [], error: queryError.message };
+
+  const messages = ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    role: row.role === "user" ? ("user" as const) : ("mue" as const),
+    content: typeof row.content === "string" ? row.content : "",
+    createdAt: typeof row.created_at === "string" ? row.created_at : "",
+  }));
+
+  return { messages, error: null };
+}
+
+export async function clearMueChat(input?: {
+  conversationId?: string | null;
+}): Promise<{ ok: boolean; error: string | null }> {
+  const supabase = await createClient();
+  const { workspaceId, error } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { ok: false, error: error ?? "no workspace" };
+
+  let query = supabase.from("mue_chat_messages").delete().eq("workspace_id", workspaceId);
+  query = input?.conversationId
+    ? query.eq("conversation_id", input.conversationId)
+    : query.is("conversation_id", null);
+  const { error: deleteError } = await query;
+  return { ok: !deleteError, error: deleteError?.message ?? null };
+}
+
+function normalizeMemoryKind(kind: string): string {
+  const normalized = kind.trim().toLowerCase();
+  if (normalized === "preferences") return "preference";
+  if (normalized === "processes") return "process";
+  if (normalized === "anything") return "fact";
+  if (["client", "project", "preference", "process", "fact"].includes(normalized)) {
+    return normalized;
+  }
+  return "fact";
+}
+
+export type AskMueResult = { answer: string | null; error: string | null };
+
+export async function askMue(input: {
+  conversationId?: string | null;
+  question: string;
+}): Promise<AskMueResult> {
+  const question = normalizeMueQuestion(input.question);
+  if (!question) return { answer: null, error: "Question vide." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { answer: null, error: "unauthenticated" };
+
+  const { workspaceId, error: workspaceError } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { answer: null, error: workspaceError ?? "no workspace" };
+
+  const usage = await consumeMueAction();
+  if (!usage.allowed) return { answer: null, error: usage.error ?? "Limite Mue atteinte." };
+
+  const memories = await fetchMueMemories(supabase, workspaceId);
+  const profile = await fetchMueProfileContext(supabase, user.id);
+  const history = await fetchMueChatHistory(supabase, workspaceId, input.conversationId, 10);
+  let transcript: string | null = null;
+
+  if (input.conversationId) {
+    const liveThread = await fetchThreadTranscript(input.conversationId);
+    if (liveThread.transcript) {
+      transcript = liveThread.transcript;
+    } else {
+      const cachedThread = await fetchCachedConversationTranscript(
+        supabase,
+        input.conversationId,
+        workspaceId
+      );
+      transcript = cachedThread.transcript;
+    }
+  }
+
+  await persistMueChatMessage(supabase, {
+    workspaceId,
+    conversationId: input.conversationId ?? null,
+    role: "user",
+    content: question,
+  });
+
+  const messages = buildAskMueMessages({ question, transcript, memories, history, profile });
+  const fallback = (reason: string) =>
+    buildLocalAskMueFallback({
+      question,
+      transcript,
+      memories,
+      reason,
+    });
+
+  const client = buildAnthropicClient();
+  if (!client) {
+    const answer = fallback("clé IA absente");
+    await persistMueChatMessage(supabase, {
+      workspaceId,
+      conversationId: input.conversationId ?? null,
+      role: "mue",
+      content: answer,
+      metadata: { fallback: true, reason: "clé IA absente" },
+    });
+    return {
+      answer,
+      error: null,
+    };
+  }
+
+  try {
+    const raw = await callClaude(client, messages.system, messages.user, 900);
+    const answer = parseMueAnswer(raw);
+    if (answer) {
+      await persistMueChatMessage(supabase, {
+        workspaceId,
+        conversationId: input.conversationId ?? null,
+        role: "mue",
+        content: answer,
+      });
+    }
+    return {
+      answer: answer || null,
+      error: answer ? null : "Réponse Mue vide.",
+    };
+  } catch (err) {
+    const rawError = err instanceof Error ? err.message : String(err);
+    const reason = /quota|429|rate/i.test(rawError) ? "quota IA épuisé" : "modèle IA indisponible";
+    const answer = fallback(reason);
+    await persistMueChatMessage(supabase, {
+      workspaceId,
+      conversationId: input.conversationId ?? null,
+      role: "mue",
+      content: answer,
+      metadata: { fallback: true, reason },
+    });
+    return { answer, error: null };
+  }
+}
+
+export type MueMemoryRow = {
+  id: string;
+  kind: string;
+  content: string;
+  createdAt: string;
+};
+
+export async function listMueMemories(): Promise<{
+  memories: MueMemoryRow[];
+  error: string | null;
+}> {
+  const supabase = await createClient();
+  const { workspaceId, error } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { memories: [], error: error ?? "no workspace" };
+
+  const { data, error: queryError } = await supabase
+    .from("mue_memories")
+    .select("id, kind, content, created_at")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (queryError) return { memories: [], error: queryError.message };
+
+  const memories = ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    kind: typeof row.kind === "string" ? row.kind : "fact",
+    content: typeof row.content === "string" ? row.content : "",
+    createdAt: typeof row.created_at === "string" ? row.created_at : "",
+  }));
+
+  return { memories, error: null };
+}
+
+export async function saveMueMemory(input: {
+  kind: string;
+  content: string;
+}): Promise<{ ok: boolean; error: string | null }> {
+  const content = input.content.replace(/\s+/g, " ").trim().slice(0, 4000);
+  if (!content) return { ok: false, error: "Mémoire vide." };
+
+  const supabase = await createClient();
+  const { workspaceId, error } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { ok: false, error: error ?? "no workspace" };
+
+  const { error: insertError } = await supabase.from("mue_memories").insert({
+    workspace_id: workspaceId,
+    kind: normalizeMemoryKind(input.kind),
+    content,
+    source_conversation_id: null,
+    embedding: null,
+  });
+
+  if (insertError) return { ok: false, error: insertError.message };
+  return { ok: true, error: null };
+}
+
 async function callClaude(
   client: Anthropic,
   systemPrompt: string,
@@ -272,6 +681,164 @@ async function callClaude(
   });
   const block = resp.content.find((b) => b.type === "text");
   return block && "text" in block ? block.text : "";
+}
+
+async function fetchBestConversationTranscript(
+  supabase: SupabaseServerClient,
+  conversationId: string | null | undefined,
+  workspaceId: string
+): Promise<string | null> {
+  if (!conversationId) return null;
+  const liveThread = await fetchThreadTranscript(conversationId);
+  if (liveThread.transcript) return liveThread.transcript;
+  const cachedThread = await fetchCachedConversationTranscript(
+    supabase,
+    conversationId,
+    workspaceId
+  );
+  return cachedThread.transcript;
+}
+
+export async function rewriteDraftTone(input: {
+  conversationId?: string | null;
+  text: string;
+  tone: MueTone;
+}): Promise<{ text: string | null; error: string | null }> {
+  const draft = input.text.trim().slice(0, 8000);
+  if (!draft) return { text: null, error: "Draft vide." };
+  const tone: MueTone = ["formal", "casual", "friendly"].includes(input.tone)
+    ? input.tone
+    : "friendly";
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { text: null, error: "unauthenticated" };
+
+  const { workspaceId, error: workspaceError } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { text: null, error: workspaceError ?? "no workspace" };
+
+  const usage = await consumeMueAction();
+  if (!usage.allowed) return { text: null, error: usage.error ?? "Limite Mue atteinte." };
+
+  const [memories, profile, transcript] = await Promise.all([
+    fetchMueMemories(supabase, workspaceId),
+    fetchMueProfileContext(supabase, user.id),
+    fetchBestConversationTranscript(supabase, input.conversationId, workspaceId),
+  ]);
+  const messages = buildToneRewriteMessages({ draft, tone, transcript, memories, profile });
+  const client = buildAnthropicClient();
+  if (!client) {
+    return {
+      text: buildLocalToneRewriteFallback({ draft, tone, reason: "clé IA absente" }),
+      error: null,
+    };
+  }
+
+  try {
+    const raw = await callClaude(client, messages.system, messages.user, 700);
+    const rewritten = parseToneRewrite(raw);
+    return { text: rewritten || draft, error: null };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : "modèle IA indisponible";
+    return {
+      text: buildLocalToneRewriteFallback({ draft, tone, reason }),
+      error: null,
+    };
+  }
+}
+
+function buildLocalStyleProfile(sentMessages: string[]): string {
+  const joined = sentMessages.join("\n").toLowerCase();
+  const avgLength =
+    sentMessages.reduce((sum, message) => sum + message.length, 0) /
+    Math.max(sentMessages.length, 1);
+  const usesFrench = /bonjour|merci|cordialement|bien à vous|salut|ça|je vous/.test(joined);
+  const signoff = /cordialement|bien à vous|bonne journée/.test(joined)
+    ? "avec formules de politesse"
+    : "sans formule finale lourde";
+  const density =
+    avgLength > 900
+      ? "réponses détaillées"
+      : avgLength > 350
+        ? "réponses structurées"
+        : "réponses courtes";
+  const language = usesFrench ? "français prioritaire" : "langue du contact";
+  return `Style observé: ${density}, ${language}, ${signoff}. Préférer des phrases claires, une prochaine étape explicite, et éviter les formulations vagues.`;
+}
+
+export async function learnMueStyleFromSentMail(): Promise<{
+  styleProfile: string | null;
+  error: string | null;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { styleProfile: null, error: "unauthenticated" };
+
+  const { workspaceId, error: workspaceError } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { styleProfile: null, error: workspaceError ?? "no workspace" };
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("body_text")
+    .eq("workspace_id", workspaceId)
+    .eq("direction", "out")
+    .not("body_text", "is", null)
+    .order("sent_at", { ascending: false })
+    .limit(20);
+
+  if (error) return { styleProfile: null, error: error.message };
+  const sentMessages = ((data ?? []) as Array<Record<string, unknown>>)
+    .map((row) => (typeof row.body_text === "string" ? row.body_text.trim() : ""))
+    .filter((body) => body.length > 20);
+  if (sentMessages.length === 0) {
+    return { styleProfile: null, error: "Aucun email envoyé exploitable pour apprendre le style." };
+  }
+
+  let styleProfile = buildLocalStyleProfile(sentMessages);
+  const client = buildAnthropicClient();
+  if (client) {
+    const usage = await consumeMueAction();
+    if (!usage.allowed) return { styleProfile: null, error: usage.error ?? "Limite Mue atteinte." };
+
+    const prompt = `Analyze these sent email snippets and produce a compact writing style profile in French.
+
+Rules:
+- Max 7 bullets.
+- Describe tone, sentence length, greeting/signoff habits, directness, and preferred structure.
+- Do not quote private content.
+- Make it useful for rewriting future replies in the user's voice.
+
+Sent snippets:
+${sentMessages.map((message, index) => `${index + 1}. ${message.slice(0, 1200)}`).join("\n\n")}`;
+
+    try {
+      const raw = await callClaude(
+        client,
+        "You create concise private writing-style profiles for an email copilot.",
+        prompt,
+        700
+      );
+      const parsed = parseMueAnswer(raw);
+      if (parsed) styleProfile = parsed.slice(0, 4000);
+    } catch {
+      // Keep deterministic local profile.
+    }
+  }
+
+  await supabase
+    .from("profiles")
+    .update({
+      mue_style_profile: styleProfile,
+      mue_style_updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id);
+
+  return { styleProfile, error: null };
 }
 
 // ─── 1. Résumer la conversation ────────────────────────────────────────
@@ -297,6 +864,9 @@ export async function summarizeThread(
   const { transcript, error } = await fetchThreadTranscript(conversationId);
   if (!transcript) return { summary: null, error: error ?? "no transcript" };
 
+  const usage = await consumeMueAction();
+  if (!usage.allowed) return { summary: null, error: usage.error ?? "Limite Mue atteinte." };
+
   let raw: string;
   try {
     raw = await callClaude(
@@ -309,13 +879,14 @@ export async function summarizeThread(
     return { summary: null, error: err instanceof Error ? err.message : String(err) };
   }
 
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   const slice =
-    firstBrace >= 0 && lastBrace > firstBrace
-      ? cleaned.slice(firstBrace, lastBrace + 1)
-      : cleaned;
+    firstBrace >= 0 && lastBrace > firstBrace ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
   try {
     const parsed = JSON.parse(slice) as { tldr?: string; bullets?: string[] };
     if (!parsed.tldr || !Array.isArray(parsed.bullets)) {
@@ -365,6 +936,9 @@ export async function suggestTasks(
   const { transcript, error } = await fetchThreadTranscript(conversationId);
   if (!transcript) return { tasks: [], error: error ?? "no transcript" };
 
+  const usage = await consumeMueAction();
+  if (!usage.allowed) return { tasks: [], error: usage.error ?? "Limite Mue atteinte." };
+
   let raw: string;
   try {
     raw = await callClaude(
@@ -377,13 +951,14 @@ export async function suggestTasks(
     return { tasks: [], error: err instanceof Error ? err.message : String(err) };
   }
 
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   const slice =
-    firstBrace >= 0 && lastBrace > firstBrace
-      ? cleaned.slice(firstBrace, lastBrace + 1)
-      : cleaned;
+    firstBrace >= 0 && lastBrace > firstBrace ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
   try {
     const parsed = JSON.parse(slice) as { tasks?: SuggestedTask[] };
     const tasks = (parsed.tasks ?? [])
@@ -391,8 +966,7 @@ export async function suggestTasks(
       .slice(0, 5)
       .map((t) => ({
         title: t.title,
-        priority:
-          t.priority === "high" || t.priority === "low" ? t.priority : ("medium" as const),
+        priority: t.priority === "high" || t.priority === "low" ? t.priority : ("medium" as const),
         due: typeof t.due === "string" ? t.due : null,
       }));
     return { tasks, error: null };
@@ -491,9 +1065,7 @@ export async function dailyBriefing(): Promise<{
   // hasn't classified anything yet.
   const { data: classified } = await supabase
     .from("conversations")
-    .select(
-      "id, subject, preview, last_message_at, category, contacts(display_name, email)"
-    )
+    .select("id, subject, preview, last_message_at, category, contacts(display_name, email)")
     .eq("workspace_id", workspace.id)
     .eq("archived", false)
     .eq("category", "client")
@@ -504,9 +1076,7 @@ export async function dailyBriefing(): Promise<{
   if (convs.length === 0) {
     const { data: fallback } = await supabase
       .from("conversations")
-      .select(
-        "id, subject, preview, last_message_at, category, contacts(display_name, email)"
-      )
+      .select("id, subject, preview, last_message_at, category, contacts(display_name, email)")
       .eq("workspace_id", workspace.id)
       .eq("archived", false)
       .order("last_message_at", { ascending: false })
@@ -524,13 +1094,13 @@ export async function dailyBriefing(): Promise<{
     };
   }
 
+  const usage = await consumeMueAction();
+  if (!usage.allowed) return { briefing: null, error: usage.error ?? "Limite Mue atteinte." };
+
   // Build a numbered list Claude can reference back by index, and a parallel
   // lookup of (index → conv id + contact name) so we can hydrate the AI's
   // conv_index pointers back to real IDs for the task-creation buttons.
-  const convByIndex = new Map<
-    number,
-    { id: string; contactName: string }
-  >();
+  const convByIndex = new Map<number, { id: string; contactName: string }>();
   const transcript = convs
     .map((c, i) => {
       const contact = Array.isArray(c.contacts) ? c.contacts[0] : c.contacts;
@@ -554,13 +1124,14 @@ export async function dailyBriefing(): Promise<{
     return { briefing: null, error: err instanceof Error ? err.message : String(err) };
   }
 
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   const slice =
-    firstBrace >= 0 && lastBrace > firstBrace
-      ? cleaned.slice(firstBrace, lastBrace + 1)
-      : cleaned;
+    firstBrace >= 0 && lastBrace > firstBrace ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
   try {
     const parsed = JSON.parse(slice) as {
       headline?: string;
@@ -581,9 +1152,7 @@ export async function dailyBriefing(): Promise<{
         const convRef = convByIndex.get(it.conv_index);
         if (!convRef) return null;
         const priority =
-          it.priority === "high" || it.priority === "low"
-            ? it.priority
-            : ("medium" as const);
+          it.priority === "high" || it.priority === "low" ? it.priority : ("medium" as const);
         return {
           conversationId: convRef.id,
           contactName: convRef.contactName,
@@ -656,6 +1225,9 @@ export async function translateThread(
   const { transcript, error } = await fetchThreadTranscript(conversationId);
   if (!transcript) return { messages: [], error: error ?? "no transcript" };
 
+  const usage = await consumeMueAction();
+  if (!usage.allowed) return { messages: [], error: usage.error ?? "Limite Mue atteinte." };
+
   let raw: string;
   try {
     raw = await callClaude(
@@ -668,13 +1240,14 @@ export async function translateThread(
     return { messages: [], error: err instanceof Error ? err.message : String(err) };
   }
 
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  const cleaned = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
   const firstBrace = cleaned.indexOf("{");
   const lastBrace = cleaned.lastIndexOf("}");
   const slice =
-    firstBrace >= 0 && lastBrace > firstBrace
-      ? cleaned.slice(firstBrace, lastBrace + 1)
-      : cleaned;
+    firstBrace >= 0 && lastBrace > firstBrace ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
   try {
     const parsed = JSON.parse(slice) as { messages?: TranslatedMessage[] };
     const messages = (parsed.messages ?? []).filter(

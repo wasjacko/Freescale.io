@@ -15,9 +15,7 @@ import { useEffect, useState } from "react";
 export function OfflineIndicator() {
   // Default to "online" on first render to avoid SSR/CSR mismatch.
   // Then sync with the actual state on mount.
-  const [state, setState] = useState<"online" | "offline" | "reconnected">(
-    "online"
-  );
+  const [state, setState] = useState<"online" | "offline" | "reconnected">("online");
 
   useEffect(() => {
     // Sync initial state from the browser (might already be offline

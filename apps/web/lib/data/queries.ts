@@ -1,13 +1,13 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import type { CalEvent, ChannelId, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 import {
+  adaptCalendarEvent,
   adaptConversation,
   adaptMessage,
   adaptTask,
-  adaptCalendarEvent,
   adaptUpcoming,
 } from "./adapters";
-import type { CalEvent, ChannelId, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 
 export type ConnectedChannel = {
   id: string;
@@ -174,7 +174,7 @@ export async function getInboxData(): Promise<InboxData> {
       .eq("workspace_id", workspaceId)
       .order("sent_at", { ascending: true });
     // Build a lookup of contact email → avatar_url so we can stamp each
-     // inbound email with its sender's avatar (gravatar / favicon).
+    // inbound email with its sender's avatar (gravatar / favicon).
     const contactByEmail = new Map<string, string>();
     for (const c of convs) {
       const contact = (c.contacts ?? null) as Record<string, unknown> | null;
@@ -193,8 +193,9 @@ export async function getInboxData(): Promise<InboxData> {
           const avatar = contactByEmail.get(msg.senderEmail.toLowerCase());
           if (avatar) msg.senderAvatarUrl = avatar;
         }
-        const list = acc[cid] ?? (acc[cid] = []);
+        const list = acc[cid] ?? [];
         list.push(msg);
+        acc[cid] = list;
         return acc;
       },
       {}
@@ -226,8 +227,7 @@ export async function getInboxData(): Promise<InboxData> {
     return {
       id: acc.id as string,
       kind,
-      displayName:
-        (acc.display_name as string) || (acc.external_id as string) || kind,
+      displayName: (acc.display_name as string) || (acc.external_id as string) || kind,
       conversationCount: convsForKind.length,
       unreadCount: convsForKind.filter((c) => c.unread).length,
       status: (acc.status as string) ?? "active",

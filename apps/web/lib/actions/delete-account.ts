@@ -1,8 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { getRequiredSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 /**
  * GDPR-compliant account deletion (right to be forgotten).
@@ -63,8 +64,9 @@ export async function deleteMyAccount(): Promise<{
  */
 export async function verifyAccountGone(): Promise<boolean> {
   const cookieStore = await cookies();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabaseUrl = getRequiredSupabaseEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const supabaseAnonKey = getRequiredSupabaseEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  type CookieSetOptions = NonNullable<Parameters<typeof cookieStore.set>[2]>;
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
@@ -72,10 +74,9 @@ export async function verifyAccountGone(): Promise<boolean> {
       },
       setAll(toSet: Array<{ name: string; value: string; options?: CookieOptions }>) {
         try {
-          toSet.forEach(({ name, value, options }) =>
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            cookieStore.set(name, value, options as any)
-          );
+          for (const { name, value, options } of toSet) {
+            cookieStore.set(name, value, options as CookieSetOptions);
+          }
         } catch {
           /* noop */
         }

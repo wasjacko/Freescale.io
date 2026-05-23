@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import { useApp } from "@/lib/store";
-import { useData } from "@/lib/contexts/DataContext";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
-import { searchInbox, type SearchHit } from "@/lib/actions/search";
+import { type SearchHit, searchInbox } from "@/lib/actions/search";
+import { useData } from "@/lib/contexts/DataContext";
+import { useApp } from "@/lib/store";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type CmdkProps = {
   open: boolean;
@@ -140,6 +140,10 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      tabIndex={-1}
     >
       <div className="cmdk">
         <div className="cmdk-search">
@@ -204,9 +208,7 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
             );
           })}
 
-          {matchedActions.length > 0 && (
-            <div className="cmdk-group-label">Actions</div>
-          )}
+          {matchedActions.length > 0 && <div className="cmdk-group-label">Actions</div>}
           {matchedActions.map((a, i) => {
             const idx = localMatches.length + serverAdditions.length + i;
             return (

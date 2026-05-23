@@ -1,25 +1,26 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useApp } from "@/lib/store";
-import { useData } from "@/lib/contexts/DataContext";
-import type { CurrentUser } from "@/lib/auth";
-import { Sprite } from "@/components/icons/Sprite";
-import { Sidebar } from "@/components/Sidebar";
-import { Inbox } from "@/components/Inbox";
-import { Thread } from "@/components/Thread";
-import { MuePanel } from "@/components/MuePanel";
-import { TasksView } from "@/components/TasksView";
-import { CalendarView } from "@/components/CalendarView";
 import { AIKnowledgeView } from "@/components/AIKnowledgeView";
-import { Toaster } from "@/components/ui/Toaster";
-import { CommandPalette } from "@/components/CommandPalette";
-import { ShortcutsModal } from "@/components/ShortcutsModal";
-import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { AutoSync } from "@/components/AutoSync";
-import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
-import { SyncErrorBanner } from "@/components/SyncErrorBanner";
+import { CalendarView } from "@/components/CalendarView";
+import { CommandPalette } from "@/components/CommandPalette";
+import { FlashFromUrl } from "@/components/FlashFromUrl";
+import { Inbox } from "@/components/Inbox";
+import { MuePanel } from "@/components/MuePanel";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
+import { Sidebar } from "@/components/Sidebar";
+import { SyncErrorBanner } from "@/components/SyncErrorBanner";
+import { TasksView } from "@/components/TasksView";
+import { Thread } from "@/components/Thread";
+import { TrialBanner } from "@/components/billing/TrialBanner";
+import { Sprite } from "@/components/icons/Sprite";
+import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
+import { Toaster } from "@/components/ui/Toaster";
+import type { CurrentUser } from "@/lib/auth";
+import { useData } from "@/lib/contexts/DataContext";
+import { useApp } from "@/lib/store";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 export function AppShell({
   user,
@@ -31,8 +32,7 @@ export function AppShell({
   // Soft profiling: show only when user hasn't been profiled AND has at
   // least one channel connected (so they've actually seen their inbox
   // = first value already delivered). Audit-aligned.
-  const showOnboardingChips =
-    !!user && user.onboardedAt === null && channels.length > 0;
+  const showOnboardingChips = !!user && user.onboardedAt === null && channels.length > 0;
   // (FirstActionBanner condition moved into MuePanel — the welcome card
   // now lives inside the agent side panel rather than the inbox column,
   // so the inbox stays focused on the conversation list. MuePanel
@@ -159,13 +159,11 @@ export function AppShell({
       </a>
       <Sprite />
       <OfflineIndicator />
-      <div
-        className={appClasses}
-        data-active-conv={activeConvId ? "1" : "0"}
-      >
+      <div className={appClasses} data-active-conv={activeConvId ? "1" : "0"}>
         <Sidebar user={user} />
         <div className="workspace">
           <SyncErrorBanner channels={channels} />
+          <TrialBanner />
           <div className="conv-shell">
             {showOnboardingChips && view === "inbox" && (
               <OnboardingChips
@@ -199,7 +197,10 @@ export function AppShell({
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
       {/* Token smoke test — invisible probe to verify @theme → Tailwind utilities */}
-      <div className="fixed inset-x-0 bottom-0 h-0 opacity-0 pointer-events-none bg-accent text-canvas rounded-xl shadow-soft font-sans" aria-hidden />
+      <div
+        className="fixed inset-x-0 bottom-0 h-0 opacity-0 pointer-events-none bg-accent text-canvas rounded-xl shadow-soft font-sans"
+        aria-hidden
+      />
     </>
   );
 }

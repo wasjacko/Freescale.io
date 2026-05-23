@@ -1,8 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { syncGmail } from "@/lib/actions/connections";
 import { encryptJSON } from "@/lib/encryption";
 import { exchangeGmailCode } from "@/lib/gmail";
-import { syncGmail } from "@/lib/actions/connections";
+import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -24,17 +24,23 @@ export async function GET(request: NextRequest) {
     );
   }
   if (!code || !state) {
-    return NextResponse.redirect(new URL("/app/settings/connections?error=missing_code", request.url));
+    return NextResponse.redirect(
+      new URL("/app/settings/connections?error=missing_code", request.url)
+    );
   }
 
   // CSRF check via cookie
   const stored = request.cookies.get("fs_gmail_oauth")?.value;
   if (!stored) {
-    return NextResponse.redirect(new URL("/app/settings/connections?error=state_lost", request.url));
+    return NextResponse.redirect(
+      new URL("/app/settings/connections?error=state_lost", request.url)
+    );
   }
   const [storedUserId, storedState, popupFlag] = stored.split(".");
   if (storedUserId !== user.id || storedState !== state) {
-    return NextResponse.redirect(new URL("/app/settings/connections?error=state_mismatch", request.url));
+    return NextResponse.redirect(
+      new URL("/app/settings/connections?error=state_mismatch", request.url)
+    );
   }
   const isPopup = popupFlag === "1";
 
@@ -86,8 +92,7 @@ export async function GET(request: NextRequest) {
 
     if (upsertErr || !account?.id) {
       console.error("[gmail-callback] channel_accounts upsert failed:", upsertErr);
-      const reason =
-        upsertErr?.message ?? "Le row channel_accounts n'a pas été créé.";
+      const reason = upsertErr?.message ?? "Le row channel_accounts n'a pas été créé.";
       if (isPopup) {
         const html = renderPopupClose({ type: "gmail_error", error: reason });
         const r = new NextResponse(html, {

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { deleteTask, updateTask } from "@/lib/actions/inbox";
 import { useToast } from "@/lib/hooks/useToast";
-import { updateTask, deleteTask } from "@/lib/actions/inbox";
 import type { Task } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 
 /**
  * Edit-task modal — opened from the task list "expand" chevron. Lets
@@ -25,9 +25,7 @@ export function EditTaskModal({
   const router = useRouter();
   const push = useToast((s) => s.push);
   const [title, setTitle] = useState(task.title);
-  const [priority, setPriority] = useState<"high" | "medium" | "low">(
-    task.priority
-  );
+  const [priority, setPriority] = useState<"high" | "medium" | "low">(task.priority);
   // Convert "Due tomorrow" / "Due Sat" labels back to nothing — we don't
   // have the raw timestamp in the Task shape (adapter only kept the
   // label). For now require the user to re-pick a date if they want one.
@@ -42,7 +40,7 @@ export function EditTaskModal({
       setDue("");
       setConfirmDelete(false);
     }
-  }, [open, task.id, task.title, task.priority]);
+  }, [open, task.title, task.priority]);
 
   if (!open) return null;
 
@@ -93,6 +91,10 @@ export function EditTaskModal({
       onClick={(e) => {
         if (e.target === e.currentTarget && !pending) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !pending) onClose();
+      }}
+      tabIndex={-1}
     >
       <form className="new-task-modal" onSubmit={handleSave}>
         <header className="new-task-head">
@@ -117,7 +119,6 @@ export function EditTaskModal({
             required
             maxLength={200}
             disabled={pending}
-            autoFocus
           />
         </label>
 
@@ -162,19 +163,10 @@ export function EditTaskModal({
             {confirmDelete ? "Confirmer la suppression" : "Supprimer"}
           </button>
           <span style={{ flex: 1 }} />
-          <button
-            type="button"
-            className="new-task-cancel"
-            onClick={onClose}
-            disabled={pending}
-          >
+          <button type="button" className="new-task-cancel" onClick={onClose} disabled={pending}>
             Annuler
           </button>
-          <button
-            type="submit"
-            className="new-task-submit"
-            disabled={pending || !title.trim()}
-          >
+          <button type="submit" className="new-task-submit" disabled={pending || !title.trim()}>
             {pending ? "Enregistrement…" : "Enregistrer"}
           </button>
         </footer>

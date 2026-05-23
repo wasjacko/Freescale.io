@@ -1,5 +1,5 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import { type NextRequest, NextResponse } from "next/server";
 
 type CookieTuple = { name: string; value: string; options?: CookieOptions };
 
@@ -24,25 +24,25 @@ export async function updateSession(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: CookieTuple[]) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            supabaseResponse.cookies.set(name, value, options as any)
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet: CookieTuple[]) {
+        for (const { name, value } of cookiesToSet) {
+          request.cookies.set(name, value);
+        }
+        supabaseResponse = NextResponse.next({ request });
+        type ResponseCookieOptions = NonNullable<
+          Parameters<typeof supabaseResponse.cookies.set>[2]
+        >;
+        for (const { name, value, options } of cookiesToSet) {
+          supabaseResponse.cookies.set(name, value, options as ResponseCookieOptions);
+        }
+      },
+    },
+  });
 
   const {
     data: { user },
@@ -57,7 +57,9 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/auth/");
   const isPublic =
     pathname === "/" ||
+    pathname === "/pricing" ||
     isAuthRoute ||
+    pathname.startsWith("/api/cron/") ||
     pathname.startsWith("/preview/");
 
   // Authed users on /welcome → straight to /app, UNLESS they explicitly
@@ -77,8 +79,7 @@ export async function updateSession(request: NextRequest) {
   // with the redirect). Letting these users see the landing once is
   // fine — they explicitly chose to leave.
   const hasLandingFlash =
-    request.nextUrl.searchParams.has("signedout") ||
-    request.nextUrl.searchParams.has("deleted");
+    request.nextUrl.searchParams.has("signedout") || request.nextUrl.searchParams.has("deleted");
   if (user && pathname === "/" && !hasLandingFlash) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";

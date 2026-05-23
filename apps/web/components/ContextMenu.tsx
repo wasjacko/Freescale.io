@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/icons/Icon";
 import { snoozeTargets } from "@/lib/snooze-targets";
+import { useEffect, useRef, useState } from "react";
 
 export type ContextAction =
   | "open"
@@ -77,20 +77,33 @@ export function ContextMenu({
 
   return (
     <div ref={ref} className="ctx-menu">
-      <button className="ctx-item" type="button" onClick={() => { onAction("open"); onClose(); }}>
+      <button
+        className="ctx-item"
+        type="button"
+        onClick={() => {
+          onAction("open");
+          onClose();
+        }}
+      >
         <Icon name="i-inbox" /> Ouvrir
       </button>
       <button
         className="ctx-item"
         type="button"
-        onClick={() => { onAction(isUnread ? "mark-read" : "mark-unread"); onClose(); }}
+        onClick={() => {
+          onAction(isUnread ? "mark-read" : "mark-unread");
+          onClose();
+        }}
       >
         <Icon name="i-check" /> {isUnread ? "Marquer comme lu" : "Marquer comme non lu"}
       </button>
       <button
         className="ctx-item"
         type="button"
-        onClick={() => { onAction(isStarred ? "unstar" : "star"); onClose(); }}
+        onClick={() => {
+          onAction(isStarred ? "unstar" : "star");
+          onClose();
+        }}
       >
         <Icon name="i-star" /> {isStarred ? "Retirer l'étoile" : "Étoile"}
       </button>
@@ -102,8 +115,21 @@ export function ContextMenu({
       >
         <Icon name="i-clock" /> Snooze
         <span className="ctx-item-chevron" aria-hidden>
-          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            {snoozeOpen ? <polyline points="6 15 12 9 18 15" /> : <polyline points="9 18 15 12 9 6" />}
+          <svg
+            viewBox="0 0 24 24"
+            width="10"
+            height="10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {snoozeOpen ? (
+              <polyline points="6 15 12 9 18 15" />
+            ) : (
+              <polyline points="9 18 15 12 9 6" />
+            )}
           </svg>
         </span>
       </button>
@@ -149,8 +175,21 @@ export function ContextMenu({
           </span>
         )}
         <span className="ctx-item-chevron" aria-hidden>
-          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            {categoryOpen ? <polyline points="6 15 12 9 18 15" /> : <polyline points="9 18 15 12 9 6" />}
+          <svg
+            viewBox="0 0 24 24"
+            width="10"
+            height="10"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {categoryOpen ? (
+              <polyline points="6 15 12 9 18 15" />
+            ) : (
+              <polyline points="9 18 15 12 9 6" />
+            )}
           </svg>
         </span>
       </button>
@@ -166,7 +205,9 @@ export function ContextMenu({
                 onClose();
               }}
             >
-              <span aria-hidden style={{ marginRight: 8 }}>{c.emoji}</span>
+              <span aria-hidden style={{ marginRight: 8 }}>
+                {c.emoji}
+              </span>
               {c.label}
               {currentCategory === c.id && <span style={{ marginLeft: "auto" }}>✓</span>}
             </button>
@@ -186,7 +227,14 @@ export function ContextMenu({
         </div>
       )}
       <div className="ctx-divider" />
-      <button className="ctx-item is-danger" type="button" onClick={() => { onAction("archive"); onClose(); }}>
+      <button
+        className="ctx-item is-danger"
+        type="button"
+        onClick={() => {
+          onAction("archive");
+          onClose();
+        }}
+      >
         <Icon name="i-folder" /> Archiver
       </button>
     </div>

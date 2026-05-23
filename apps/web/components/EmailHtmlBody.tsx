@@ -24,11 +24,30 @@ export function EmailHtmlBody({ html }: { html: string }) {
       try {
         const mod = await import("dompurify");
         if (cancelled) return;
-        const DOMPurify = mod.default ?? (mod as unknown as { sanitize: (s: string, o?: object) => string });
+        const DOMPurify =
+          mod.default ?? (mod as unknown as { sanitize: (s: string, o?: object) => string });
         const sanitized = DOMPurify.sanitize(html, {
           USE_PROFILES: { html: true },
-          FORBID_TAGS: ["script", "iframe", "form", "input", "button", "select", "textarea", "object", "embed"],
-          FORBID_ATTR: ["onerror", "onclick", "onload", "onmouseover", "onsubmit", "onfocus", "onblur"],
+          FORBID_TAGS: [
+            "script",
+            "iframe",
+            "form",
+            "input",
+            "button",
+            "select",
+            "textarea",
+            "object",
+            "embed",
+          ],
+          FORBID_ATTR: [
+            "onerror",
+            "onclick",
+            "onload",
+            "onmouseover",
+            "onsubmit",
+            "onfocus",
+            "onblur",
+          ],
         });
         const built = `<!doctype html>
 <html>
@@ -93,10 +112,7 @@ export function EmailHtmlBody({ html }: { html: string }) {
       try {
         const cdoc = iframe.contentDocument;
         if (!cdoc) return;
-        const h = Math.max(
-          cdoc.documentElement.scrollHeight,
-          cdoc.body?.scrollHeight ?? 0
-        );
+        const h = Math.max(cdoc.documentElement.scrollHeight, cdoc.body?.scrollHeight ?? 0);
         if (h && Math.abs(h - height) > 4) setHeight(h);
       } catch {
         // ignore
@@ -104,11 +120,7 @@ export function EmailHtmlBody({ html }: { html: string }) {
     };
 
     iframe.addEventListener("load", resize);
-    const timers = [
-      setTimeout(resize, 200),
-      setTimeout(resize, 600),
-      setTimeout(resize, 1500),
-    ];
+    const timers = [setTimeout(resize, 200), setTimeout(resize, 600), setTimeout(resize, 1500)];
 
     const onMessage = (e: MessageEvent) => {
       const data = e.data as { type?: string; deltaY?: number; deltaX?: number } | null;

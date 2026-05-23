@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { ConnectionsList } from "@/components/settings/ConnectionsList";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export const metadata = { title: "Connexions · Freescale" };
 
@@ -42,13 +42,8 @@ export default async function ConnectionsPage({
     typeof sp.connected === "string"
       ? { kind: "ok" as const, text: `Connecté à ${sp.connected}.` }
       : typeof sp.error === "string"
-      ? { kind: "err" as const, text: decodeURIComponent(sp.error) }
-      : null;
+        ? { kind: "err" as const, text: decodeURIComponent(sp.error) }
+        : null;
 
-  return (
-    <ConnectionsList
-      accounts={(accounts ?? []) as never}
-      flash={flash}
-    />
-  );
+  return <ConnectionsList accounts={(accounts ?? []) as never} flash={flash} />;
 }

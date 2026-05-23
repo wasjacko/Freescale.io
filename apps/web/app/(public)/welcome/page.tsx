@@ -1,7 +1,7 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export const metadata = { title: "Bienvenue · Freescale" };
 
@@ -18,9 +18,7 @@ export default async function WelcomePage({
 }) {
   const params = await searchParams;
   const hasIntentParam =
-    params.switch !== undefined ||
-    params.signedout !== undefined ||
-    params.deleted !== undefined;
+    params.switch !== undefined || params.signedout !== undefined || params.deleted !== undefined;
 
   // Already signed in and not explicitly trying to switch / re-auth?
   // Send them straight to the app — no point re-running the welcome.

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/lib/hooks/useToast";
 import { createTask } from "@/lib/actions/inbox";
+import { useToast } from "@/lib/hooks/useToast";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 /**
  * Quick-create modal triggered by the "+ New task" button in TasksView.
@@ -64,6 +64,10 @@ export function NewTaskModal({
       onClick={(e) => {
         if (e.target === e.currentTarget && !pending) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !pending) onClose();
+      }}
+      tabIndex={-1}
     >
       <form className="new-task-modal" onSubmit={handleSubmit}>
         <header className="new-task-head">
@@ -86,7 +90,6 @@ export function NewTaskModal({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Envoyer le devis à…"
-            autoFocus
             required
             maxLength={200}
             disabled={pending}
@@ -124,19 +127,10 @@ export function NewTaskModal({
         </div>
 
         <footer className="new-task-actions">
-          <button
-            type="button"
-            className="new-task-cancel"
-            onClick={onClose}
-            disabled={pending}
-          >
+          <button type="button" className="new-task-cancel" onClick={onClose} disabled={pending}>
             Annuler
           </button>
-          <button
-            type="submit"
-            className="new-task-submit"
-            disabled={pending || !title.trim()}
-          >
+          <button type="submit" className="new-task-submit" disabled={pending || !title.trim()}>
             {pending ? "Création…" : "Créer la tâche"}
           </button>
         </footer>

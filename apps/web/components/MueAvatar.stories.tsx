@@ -43,8 +43,7 @@ export const WithGlow: Story = {
           position: "absolute",
           inset: -10,
           borderRadius: "50%",
-          background:
-            "radial-gradient(closest-side, rgba(139, 92, 246, 0.35), transparent 70%)",
+          background: "radial-gradient(closest-side, rgba(139, 92, 246, 0.35), transparent 70%)",
           filter: "blur(14px)",
           zIndex: -1,
         }}

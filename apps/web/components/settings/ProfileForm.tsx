@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import { savePersonalProfile, uploadAvatar, removeAvatar } from "@/lib/actions/profile";
-import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
+import { learnMueStyleFromSentMail } from "@/lib/actions/mue";
+import { removeAvatar, savePersonalProfile, uploadAvatar } from "@/lib/actions/profile";
+import { createClient } from "@/lib/supabase/client";
+import { useRef, useState, useTransition } from "react";
 
 type Initial = {
   fullName: string;
@@ -12,6 +13,10 @@ type Initial = {
   locale: string;
   email: string;
   signature: string;
+  muePersona: string;
+  mueStyleProfile: string;
+  mueStyleUpdatedAt: string | null;
+  dailyDigestEnabled: boolean;
 };
 
 const LANGS = [
@@ -56,7 +61,10 @@ const TIMEZONES = [
 function initialsOf(name: string, fallback: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return fallback[0]?.toUpperCase() ?? "?";
-  return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 export function ProfileForm({ initial }: { initial: Initial }) {
@@ -65,6 +73,10 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [timezone, setTimezone] = useState(initial.timezone);
   const [locale, setLocale] = useState(initial.locale);
   const [signature, setSignature] = useState(initial.signature);
+  const [muePersona, setMuePersona] = useState(initial.muePersona);
+  const [mueStyleProfile, setMueStyleProfile] = useState(initial.mueStyleProfile);
+  const [mueStyleUpdatedAt, setMueStyleUpdatedAt] = useState(initial.mueStyleUpdatedAt);
+  const [dailyDigestEnabled, setDailyDigestEnabled] = useState(initial.dailyDigestEnabled);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -74,6 +86,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   // avatar flow self-saves (no "Save" click needed), and that confused
   // users who saw the bottom Save button stay disabled. Audit #12.
   const [avatarSaved, setAvatarSaved] = useState(false);
+  const [styleLearning, setStyleLearning] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Password change state
@@ -127,12 +140,23 @@ export function ProfileForm({ initial }: { initial: Initial }) {
     fullName !== initial.fullName ||
     timezone !== initial.timezone ||
     locale !== initial.locale ||
-    signature !== initial.signature;
+    signature !== initial.signature ||
+    muePersona !== initial.muePersona ||
+    mueStyleProfile !== initial.mueStyleProfile ||
+    dailyDigestEnabled !== initial.dailyDigestEnabled;
 
   const handleSave = () => {
     startTransition(async () => {
       try {
-        await savePersonalProfile({ fullName, timezone, locale, signature });
+        await savePersonalProfile({
+          fullName,
+          timezone,
+          locale,
+          signature,
+          muePersona,
+          mueStyleProfile,
+          dailyDigestEnabled,
+        });
         // Bust the EmailComposer's module-level signature cache so the
         // next reply uses the fresh value without a page reload.
         if (typeof window !== "undefined") {
@@ -148,6 +172,28 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         });
       }
     });
+  };
+
+  const handleLearnStyle = async () => {
+    setStyleLearning(true);
+    setToast(null);
+    try {
+      const result = await learnMueStyleFromSentMail();
+      if (result.error || !result.styleProfile) {
+        setToast({ kind: "err", text: result.error ?? "Analyse impossible." });
+        return;
+      }
+      setMueStyleProfile(result.styleProfile);
+      setMueStyleUpdatedAt(new Date().toISOString());
+      setToast({ kind: "ok", text: "Mue a appris votre style." });
+    } catch (err) {
+      setToast({
+        kind: "err",
+        text: err instanceof Error ? err.message : "Analyse impossible.",
+      });
+    } finally {
+      setStyleLearning(false);
+    }
   };
 
   const flashAvatarSaved = () => {
@@ -237,7 +283,16 @@ export function ProfileForm({ initial }: { initial: Initial }) {
               )}
               {avatarSaved && (
                 <span className="avatar-saved-badge" aria-live="polite">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                   Enregistré
@@ -308,7 +363,9 @@ export function ProfileForm({ initial }: { initial: Initial }) {
               onChange={(e) => setTimezone(e.target.value)}
             >
               {TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>{tz.replace("_", " ")}</option>
+                <option key={tz} value={tz}>
+                  {tz.replace("_", " ")}
+                </option>
               ))}
             </select>
           </div>
@@ -328,7 +385,9 @@ export function ProfileForm({ initial }: { initial: Initial }) {
               onChange={(e) => setLocale(e.target.value)}
             >
               {LANGS.map((l) => (
-                <option key={l.id} value={l.id}>{l.label}</option>
+                <option key={l.id} value={l.id}>
+                  {l.label}
+                </option>
               ))}
             </select>
           </div>
@@ -352,8 +411,8 @@ export function ProfileForm({ initial }: { initial: Initial }) {
           <div className="settings-row-label">
             <h3>Signature email</h3>
             <p>
-              Ajoutée automatiquement à la fin de chaque réponse envoyée
-              depuis Freescale, séparée du corps par une ligne « -- ».
+              Ajoutée automatiquement à la fin de chaque réponse envoyée depuis Freescale, séparée
+              du corps par une ligne « -- ».
             </p>
           </div>
           <div className="settings-row-control">
@@ -365,6 +424,87 @@ export function ProfileForm({ initial }: { initial: Initial }) {
               placeholder={"Wacil Ait\nFondateur — Freescale\nfreescale.site"}
               maxLength={1000}
             />
+          </div>
+        </div>
+
+        <div className="settings-divider" />
+
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Persona Mue</h3>
+            <p>
+              Instructions privées que Mue applique dans le chat, les suggestions et les
+              réécritures.
+            </p>
+          </div>
+          <div className="settings-row-control">
+            <textarea
+              className="settings-input settings-textarea"
+              value={muePersona}
+              onChange={(e) => setMuePersona(e.target.value)}
+              rows={5}
+              placeholder="Réponds comme un copilote B2B: direct, premium, jamais trop familier. Propose toujours une prochaine étape claire."
+              maxLength={2000}
+            />
+          </div>
+        </div>
+
+        <div className="settings-divider" />
+
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Style appris</h3>
+            <p>
+              Mue analyse vos derniers emails envoyés pour réécrire les brouillons dans votre voix.
+            </p>
+          </div>
+          <div className="settings-row-control">
+            <textarea
+              className="settings-input settings-textarea"
+              value={mueStyleProfile}
+              onChange={(e) => setMueStyleProfile(e.target.value)}
+              rows={6}
+              placeholder="Aucun style appris pour l'instant."
+              maxLength={4000}
+            />
+            <div className="settings-inline-actions">
+              <button
+                type="button"
+                className="set-btn"
+                onClick={handleLearnStyle}
+                disabled={styleLearning || pending}
+              >
+                {styleLearning ? "Analyse…" : "Analyser mes emails envoyés"}
+              </button>
+              {mueStyleUpdatedAt && (
+                <span className="settings-muted">
+                  Mis à jour{" "}
+                  {new Date(mueStyleUpdatedAt).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="settings-divider" />
+
+        <div className="settings-row">
+          <div className="settings-row-label">
+            <h3>Digest quotidien</h3>
+            <p>Recevoir un brief Mue par email le matin quand le cron est activé.</p>
+          </div>
+          <div className="settings-row-control">
+            <label className="settings-check">
+              <input
+                type="checkbox"
+                checked={dailyDigestEnabled}
+                onChange={(e) => setDailyDigestEnabled(e.target.checked)}
+              />
+              <span>Activer le digest Mue</span>
+            </label>
           </div>
         </div>
       </div>
@@ -386,10 +526,11 @@ export function ProfileForm({ initial }: { initial: Initial }) {
       </div>
 
       <header className="settings-head">
-        <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em" }}>
-          Mot de passe
-        </h2>
-        <p>Changez votre mot de passe. Vous resterez connecté ici, mais déconnecté sur les autres appareils.</p>
+        <h2 style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em" }}>Mot de passe</h2>
+        <p>
+          Changez votre mot de passe. Vous resterez connecté ici, mais déconnecté sur les autres
+          appareils.
+        </p>
       </header>
 
       <form className="settings-card" onSubmit={handlePasswordChange}>
@@ -447,7 +588,10 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         </div>
         <div className="settings-row" style={{ paddingTop: 0 }}>
           <div />
-          <div className="settings-row-control" style={{ justifyContent: "flex-end", width: "100%" }}>
+          <div
+            className="settings-row-control"
+            style={{ justifyContent: "flex-end", width: "100%" }}
+          >
             {pwdToast && (
               <div className={`settings-toast ${pwdToast.kind === "ok" ? "is-ok" : "is-err"}`}>
                 {pwdToast.text}

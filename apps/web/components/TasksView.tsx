@@ -1,22 +1,19 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { EditTaskModal } from "@/components/EditTaskModal";
+import { NewTaskModal } from "@/components/NewTaskModal";
+import { ChannelLogo, Icon } from "@/components/icons/Icon";
+import { Avatar } from "@/components/ui/Avatar";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { createTask, reorderTasks } from "@/lib/actions/inbox";
+import { dailyBriefing } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
-import { Icon, ChannelLogo } from "@/components/icons/Icon";
-import { Avatar } from "@/components/ui/Avatar";
-import { NewTaskModal } from "@/components/NewTaskModal";
-import { EditTaskModal } from "@/components/EditTaskModal";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { dailyBriefing } from "@/lib/actions/mue";
-import { createTask, reorderTasks } from "@/lib/actions/inbox";
 import type { Task } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import { useMemo, useRef, useState, useTransition } from "react";
 
-const EMPTY_COPY: Record<
-  string,
-  { title: string; description: string; cta: string }
-> = {
+const EMPTY_COPY: Record<string, { title: string; description: string; cta: string }> = {
   todo: {
     title: "Aucune tâche à faire",
     description: "Tu peux en créer une manuellement ou laisser Mue scanner tes mails.",
@@ -171,9 +168,7 @@ export function TasksView() {
 
     return sorted.map((parent) => {
       const childrenOfParent = inTab.filter((t) => t.parentTaskId === parent.id);
-      childrenOfParent.sort(
-        (a, b) => (a.sortableIndex ?? 0) - (b.sortableIndex ?? 0)
-      );
+      childrenOfParent.sort((a, b) => (a.sortableIndex ?? 0) - (b.sortableIndex ?? 0));
       // A parent is "context-only" when its own status doesn't match
       // the active tab — we only included it to host its in-tab subtask.
       const isContextOnly = parent.status !== activeTab;
@@ -232,7 +227,9 @@ export function TasksView() {
     if (insertAt === -1) return;
     const next = [...without.slice(0, insertAt), sourceId, ...without.slice(insertAt)];
     const override: Record<string, number> = {};
-    next.forEach((id, idx) => (override[id] = idx));
+    next.forEach((id, idx) => {
+      override[id] = idx;
+    });
     setOrderOverride(override);
     const res = await reorderTasks(next);
     if (!res.ok) {
@@ -335,29 +332,22 @@ export function TasksView() {
     <section className="tasks-view" aria-label="Tasks">
       <header className="tasks-head">
         <h1>Tasks</h1>
-        <button
-          className="btn-new-task"
-          type="button"
-          onClick={() => setNewTaskOpen(true)}
-        >
+        <button className="btn-new-task" type="button" onClick={() => setNewTaskOpen(true)}>
           <Icon name="i-plus" />
           Nouvelle tâche
         </button>
       </header>
 
       <div className="scan-banner">
-        <span className="scan-icon"><Icon name="i-spark" /></span>
+        <span className="scan-icon">
+          <Icon name="i-spark" />
+        </span>
         <span className="scan-text">
           {analyzing
             ? "Mue analyse vos conversations…"
             : "Laissez Mue détecter les actions dans vos mails"}
         </span>
-        <button
-          className="btn-analyze"
-          type="button"
-          onClick={handleAnalyze}
-          disabled={analyzing}
-        >
+        <button className="btn-analyze" type="button" onClick={handleAnalyze} disabled={analyzing}>
           <Icon name="i-spark" className="scan-spark icon" />
           {analyzing ? "Analyse…" : "Analyser avec Mue"}
         </button>
@@ -429,7 +419,11 @@ export function TasksView() {
               >
                 <span
                   className="task-drag-handle"
-                  title={isContextOnly ? "Contexte (parent dans un autre onglet)" : "Glisser pour réorganiser"}
+                  title={
+                    isContextOnly
+                      ? "Contexte (parent dans un autre onglet)"
+                      : "Glisser pour réorganiser"
+                  }
                   aria-label="Glisser pour réorganiser"
                   role={isContextOnly ? "img" : "button"}
                   {...(!isContextOnly && {
@@ -462,7 +456,9 @@ export function TasksView() {
                 />
                 <span className="task-avatar">
                   <Avatar avatar={parent.avatar} />
-                  <span className="conv-badge"><ChannelLogo channel={parent.channel} className="" /></span>
+                  <span className="conv-badge">
+                    <ChannelLogo channel={parent.channel} className="" />
+                  </span>
                 </span>
                 <span className="task-title">
                   {parent.title}
@@ -478,7 +474,8 @@ export function TasksView() {
                   )}
                 </span>
                 <span className={`priority ${parent.priority}`}>
-                  {parent.priority[0]?.toUpperCase()}{parent.priority.slice(1)}
+                  {parent.priority[0]?.toUpperCase()}
+                  {parent.priority.slice(1)}
                 </span>
                 <span className={`task-due ${parent.isToday ? "is-today" : ""}`}>
                   {parent.dueLabel}
@@ -523,7 +520,8 @@ export function TasksView() {
                     />
                     <span className="task-title task-subtask-title">{child.title}</span>
                     <span className={`priority ${child.priority}`}>
-                      {child.priority[0]?.toUpperCase()}{child.priority.slice(1)}
+                      {child.priority[0]?.toUpperCase()}
+                      {child.priority.slice(1)}
                     </span>
                     <span className={`task-due ${child.isToday ? "is-today" : ""}`}>
                       {child.dueLabel}
@@ -568,7 +566,6 @@ export function TasksView() {
                         }
                       }, 100);
                     }}
-                    autoFocus
                     disabled={creatingSubtask}
                   />
                 </div>

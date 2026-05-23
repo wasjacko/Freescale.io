@@ -1,13 +1,25 @@
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { EventEditModal } from "@/components/calendar/EventEditModal";
+import { ChannelLogo, Icon } from "@/components/icons/Icon";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
-import { Icon, ChannelLogo } from "@/components/icons/Icon";
-import { EventEditModal } from "@/components/calendar/EventEditModal";
 import type { CalEvent } from "@/lib/types";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const HOURS = ["8 AM", "9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM", "5 PM", "6 PM"];
+const HOURS = [
+  "8 AM",
+  "9 AM",
+  "10 AM",
+  "11 AM",
+  "12 PM",
+  "1 PM",
+  "2 PM",
+  "3 PM",
+  "4 PM",
+  "5 PM",
+  "6 PM",
+];
 
 function buildWeekLabels() {
   const now = new Date();
@@ -32,13 +44,12 @@ function weekRangeLabel() {
   const sun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
   const sat = new Date(sun);
   sat.setDate(sun.getDate() + 6);
-  const fmt = (d: Date) =>
-    d.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
+  const fmt = (d: Date) => d.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
   return `${fmt(sun)} – ${fmt(sat)}, ${sat.getFullYear()}`;
 }
 
 const ROW_HEIGHT = 32; // px per 30-min slot
-const GRID_ROWS = 22;   // 11 hours × 2 (8 AM → 7 PM)
+const GRID_ROWS = 22; // 11 hours × 2 (8 AM → 7 PM)
 
 /**
  * Snap a Y-pixel offset (within the grid body) to a startMinutes value
@@ -154,8 +165,7 @@ export function CalendarView() {
       const endMinutes = pxToStartMinutes(yB);
       // Minimum 30 minutes — if the user just clicked without dragging,
       // create a default 1-hour block.
-      const durationMinutes =
-        endMinutes - startMinutes < 30 ? 60 : endMinutes - startMinutes;
+      const durationMinutes = endMinutes - startMinutes < 30 ? 60 : endMinutes - startMinutes;
       setDrag({ kind: "idle" });
 
       // Default title "Nouvel évènement" — the edit modal pops open
@@ -301,7 +311,9 @@ export function CalendarView() {
       <header className="cal-head">
         <h1>Calendar</h1>
         <div className="cal-controls">
-          <button className="cal-btn" type="button">Aujourd&apos;hui</button>
+          <button className="cal-btn" type="button">
+            Aujourd&apos;hui
+          </button>
           <button className="cal-range" type="button">
             {weekRange}
           </button>
@@ -312,7 +324,7 @@ export function CalendarView() {
               setEditingEvent({
                 id: "__new__",
                 title: "",
-                day: (new Date().getDay()) as CalEvent["day"],
+                day: new Date().getDay() as CalEvent["day"],
                 startMinutes: 60,
                 durationMinutes: 60,
                 color: "lav",
@@ -351,10 +363,7 @@ export function CalendarView() {
           ))}
 
           {events.length === 0 && drag.kind === "idle" && (
-            <div
-              className="cal-empty-hint"
-              style={{ gridColumn: "2 / -1", gridRow: "3 / 6" }}
-            >
+            <div className="cal-empty-hint" style={{ gridColumn: "2 / -1", gridRow: "3 / 6" }}>
               <p>
                 Clique ou glisse sur un créneau pour créer un évènement.
                 <br />
@@ -366,8 +375,7 @@ export function CalendarView() {
           {visibleEvents.map((ev) => {
             const rowStart = ev.startMinutes / 30 + 1;
             const rowSpan = ev.durationMinutes / 30;
-            const isBeingDragged =
-              drag.kind === "moving" && drag.eventId === ev.id;
+            const isBeingDragged = drag.kind === "moving" && drag.eventId === ev.id;
             return (
               <div
                 key={ev.id}

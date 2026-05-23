@@ -1,6 +1,7 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
+import { getRequiredSupabaseEnv } from "./env";
 
 /**
  * Browser-side Supabase client.
@@ -8,7 +9,7 @@ import { createBrowserClient } from "@supabase/ssr";
  */
 export function createClient() {
   return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    getRequiredSupabaseEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    getRequiredSupabaseEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
   );
 }

@@ -1,9 +1,9 @@
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
+import { type Category as RuleCategory, quickClassify } from "@/lib/triage-rules";
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-import { quickClassify, type Category as RuleCategory } from "@/lib/triage-rules";
 
 /**
  * Mue Triage — classify each conversation into one of four buckets so the

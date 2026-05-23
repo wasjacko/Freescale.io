@@ -1,11 +1,11 @@
-import { Suspense } from "react";
+import { LandingFlash } from "@/components/LandingFlash";
+import { MueAvatar } from "@/components/MueAvatar";
+import { ChannelLogo, Icon } from "@/components/icons/Icon";
+import { Sprite } from "@/components/icons/Sprite";
+import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { MueAvatar } from "@/components/MueAvatar";
-import { Icon, ChannelLogo } from "@/components/icons/Icon";
-import { Sprite } from "@/components/icons/Sprite";
-import { LandingFlash } from "@/components/LandingFlash";
+import { Suspense } from "react";
 
 export default async function LandingPage({
   searchParams,
@@ -18,8 +18,7 @@ export default async function LandingPage({
   // session cookie isn't really there anymore and we want them to see
   // the confirmation banner first. Middleware handles the bounce too,
   // belt-and-suspenders here.
-  const hasFlashIntent =
-    params.signedout !== undefined || params.deleted !== undefined;
+  const hasFlashIntent = params.signedout !== undefined || params.deleted !== undefined;
   if (!hasFlashIntent) {
     const supabase = await createClient();
     const {
@@ -46,11 +45,13 @@ export default async function LandingPage({
           <nav className="land-links" aria-label="Primary">
             <a href="#features">Features</a>
             <a href="#mue">Mue</a>
-            <a href="#pricing">Pricing</a>
+            <Link href="/pricing">Pricing</Link>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="land-cta">
-            <Link href={"/welcome" as never} className="land-btn land-btn-pill">Se connecter</Link>
+            <Link href={"/welcome" as never} className="land-btn land-btn-pill">
+              Se connecter
+            </Link>
             <Link href={"/welcome" as never} className="land-btn land-btn-pill-dark">
               Démarrer
               <svg
@@ -83,14 +84,16 @@ export default async function LandingPage({
             </span>
 
             <h1 className="land-h1">
-              Une demande par message,<br />
-              une autre par mail,<br />
+              Une demande par message,
+              <br />
+              une autre par mail,
+              <br />
               <span className="land-h1-accent">vous arrivez à suivre ?</span>
             </h1>
 
             <p className="land-sub">
-              Freescale réunit tous vos canaux dans une seule inbox calme.
-              Mue, votre copilote IA, écoute et transforme le bruit en actions ciblées.
+              Freescale réunit tous vos canaux dans une seule inbox calme. Mue, votre copilote IA,
+              écoute et transforme le bruit en actions ciblées.
             </p>
 
             <div className="land-hero-cta">
@@ -115,15 +118,22 @@ export default async function LandingPage({
           <div className="land-preview" aria-hidden>
             <div className="land-preview-frame">
               <div className="land-preview-bar">
-                <span /><span /><span />
+                <span />
+                <span />
+                <span />
               </div>
               <div className="land-preview-body">
                 <aside className="lp-side">
                   <div className="lp-side-mue">
-                    <span className="lp-mue"><MueAvatar /></span>
+                    <span className="lp-mue">
+                      <MueAvatar />
+                    </span>
                     <div>
                       <div className="lp-mue-name">Mue</div>
-                      <div className="lp-mue-status"><span className="lp-dot" />Listening</div>
+                      <div className="lp-mue-status">
+                        <span className="lp-dot" />
+                        Listening
+                      </div>
                     </div>
                   </div>
                   <div className="lp-side-section">Inbox</div>
@@ -163,7 +173,9 @@ export default async function LandingPage({
                   </div>
 
                   <div className="lp-suggest">
-                    <span className="lp-suggest-icon"><Icon name="i-spark" /></span>
+                    <span className="lp-suggest-icon">
+                      <Icon name="i-spark" />
+                    </span>
                     <div className="lp-suggest-body">
                       <div className="lp-suggest-title">Mue suggests</div>
                       <div className="lp-suggest-text">
@@ -201,24 +213,34 @@ export default async function LandingPage({
 
           <div className="land-grid">
             <article className="land-card">
-              <span className="land-card-icon icon-blue"><Icon name="i-inbox" /></span>
+              <span className="land-card-icon icon-blue">
+                <Icon name="i-inbox" />
+              </span>
               <h3>Unified inbox</h3>
               <p>Gmail, Slack, Instagram, WhatsApp, Discord — threaded behind a single timeline.</p>
             </article>
             <article className="land-card">
-              <span className="land-card-icon icon-rose"><Icon name="i-spark" /></span>
+              <span className="land-card-icon icon-rose">
+                <Icon name="i-spark" />
+              </span>
               <h3>Mue, your copilot</h3>
               <p>Summarizes long threads, drafts replies in your voice, turns ideas into tasks.</p>
             </article>
             <article className="land-card">
-              <span className="land-card-icon icon-mint"><Icon name="i-list" /></span>
+              <span className="land-card-icon icon-mint">
+                <Icon name="i-list" />
+              </span>
               <h3>Tasks that write themselves</h3>
               <p>Every action item surfaces automatically. Due dates, priorities, owners.</p>
             </article>
             <article className="land-card">
-              <span className="land-card-icon icon-peach"><Icon name="i-globe" /></span>
+              <span className="land-card-icon icon-peach">
+                <Icon name="i-globe" />
+              </span>
               <h3>Knowledge that compounds</h3>
-              <p>Mue remembers your clients, your projects, your decisions — only you can query it.</p>
+              <p>
+                Mue remembers your clients, your projects, your decisions — only you can query it.
+              </p>
             </article>
           </div>
         </section>
@@ -234,13 +256,16 @@ export default async function LandingPage({
               <span className="land-kicker">Meet Mue</span>
               <h2 className="land-h2">A copilot, not a chatbot.</h2>
               <p className="land-mue-sub">
-                Mue lives quietly beside your inbox. It listens to every conversation,
-                drafts in your tone, and turns intent into action — without ever sounding
-                like a machine.
+                Mue lives quietly beside your inbox. It listens to every conversation, drafts in
+                your tone, and turns intent into action — without ever sounding like a machine.
               </p>
               <div className="land-mue-cta">
-                <Link href="/sign-up" className="land-btn land-btn-primary">Essayer Mue</Link>
-                <a href="#features" className="land-btn land-btn-ghost">Voir les fonctionnalités</a>
+                <Link href="/sign-up" className="land-btn land-btn-primary">
+                  Essayer Mue
+                </Link>
+                <a href="#features" className="land-btn land-btn-ghost">
+                  Voir les fonctionnalités
+                </a>
               </div>
             </div>
           </div>
@@ -260,7 +285,9 @@ export default async function LandingPage({
       <footer className="land-foot">
         <div className="land-foot-inner">
           <span className="land-foot-logo">
-            <span className="land-logo-mark sm"><MueAvatar /></span>
+            <span className="land-logo-mark sm">
+              <MueAvatar />
+            </span>
             Freescale
           </span>
           <div className="land-foot-links">

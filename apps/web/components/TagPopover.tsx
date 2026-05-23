@@ -123,9 +123,7 @@ export function TagPopover({
         }}
         maxLength={24}
       />
-      <p className="tag-popover-hint">
-        Entrée pour ajouter · Retour arrière pour retirer
-      </p>
+      <p className="tag-popover-hint">Entrée pour ajouter · Retour arrière pour retirer</p>
     </div>
   );
 }

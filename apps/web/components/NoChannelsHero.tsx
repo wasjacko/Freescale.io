@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Icon } from "@/components/icons/Icon";
 import { AddChannelModal } from "@/components/AddChannelModal";
+import { Icon } from "@/components/icons/Icon";
+import { useState } from "react";
 
 /**
  * Quiet empty state shown when the workspace has zero connected channels.
@@ -20,23 +20,15 @@ export function NoChannelsHero() {
         </span>
         <h2 className="no-channels-title">Connectons votre boîte mail</h2>
         <p className="no-channels-sub">
-          Freescale unifie vos messages en un seul endroit. Commencez par votre
-          Gmail — c'est instantané.
+          Freescale unifie vos messages en un seul endroit. Commencez par votre Gmail — c'est
+          instantané.
         </p>
-        <button
-          type="button"
-          className="no-channels-cta"
-          onClick={() => setOpen(true)}
-        >
+        <button type="button" className="no-channels-cta" onClick={() => setOpen(true)}>
           Connecter Gmail
         </button>
       </div>
 
-      <AddChannelModal
-        open={open}
-        onClose={() => setOpen(false)}
-        connectedKinds={new Set()}
-      />
+      <AddChannelModal open={open} onClose={() => setOpen(false)} connectedKinds={new Set()} />
     </div>
   );
 }

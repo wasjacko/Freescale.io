@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export type EmailTemplate = {
   id: string;
@@ -66,12 +66,10 @@ export async function createEmailTemplate(input: {
 
   const name = input.name.trim();
   if (!name) return { ok: false, template: null, error: "Le nom est requis." };
-  if (name.length > 80)
-    return { ok: false, template: null, error: "Nom trop long (80 max)." };
+  if (name.length > 80) return { ok: false, template: null, error: "Nom trop long (80 max)." };
 
   const workspaceId = await resolveWorkspaceId(supabase, user.id);
-  if (!workspaceId)
-    return { ok: false, template: null, error: "Pas de workspace." };
+  if (!workspaceId) return { ok: false, template: null, error: "Pas de workspace." };
 
   const { data, error } = await supabase
     .from("email_templates")

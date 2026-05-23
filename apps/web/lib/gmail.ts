@@ -130,11 +130,19 @@ export async function getValidAccessToken(
   const tokens = await decryptJSON<GmailTokens>(encryptedBlob);
   // Refresh 60s before actual expiry to avoid races.
   if (tokens.expires_at - Date.now() > 60_000) {
-    return { accessToken: tokens.access_token, updatedBlob: null, refreshToken: tokens.refresh_token };
+    return {
+      accessToken: tokens.access_token,
+      updatedBlob: null,
+      refreshToken: tokens.refresh_token,
+    };
   }
   const refreshed = await refreshGmailAccessToken(tokens.refresh_token);
   const updatedBlob = await encryptJSON(refreshed);
-  return { accessToken: refreshed.access_token, updatedBlob, refreshToken: refreshed.refresh_token };
+  return {
+    accessToken: refreshed.access_token,
+    updatedBlob,
+    refreshToken: refreshed.refresh_token,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -190,10 +198,9 @@ export async function listRecentMessages(
     });
     if (pageToken) params.set("pageToken", pageToken);
 
-    const res = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?${params}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`Gmail messages.list failed: ${res.status} ${text}`);
@@ -213,13 +220,15 @@ export async function listRecentMessages(
  * Fetch the user's profile — used to grab the current historyId that we
  * persist as a cursor after the initial full sync.
  */
-export async function getProfile(
-  accessToken: string
-): Promise<{ emailAddress: string; messagesTotal: number; threadsTotal: number; historyId: string }> {
-  const res = await fetch(
-    "https://gmail.googleapis.com/gmail/v1/users/me/profile",
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
+export async function getProfile(accessToken: string): Promise<{
+  emailAddress: string;
+  messagesTotal: number;
+  threadsTotal: number;
+  historyId: string;
+}> {
+  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Gmail getProfile failed: ${res.status} ${text}`);
@@ -272,10 +281,9 @@ export async function listHistory(
     });
     if (pageToken) params.set("pageToken", pageToken);
 
-    const res = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/history?${params}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
+    const res = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/history?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     if (res.status === 404) {
       return { ...collected, newHistoryId: startHistoryId, expired: true };
     }
@@ -404,9 +412,15 @@ export async function getMessageMetadata(
 
 /** Encode a string with RFC 2047 "encoded-word" only if it has non-ASCII. */
 function encodeMimeWord(s: string): string {
-  // eslint-disable-next-line no-control-regex
-  if (/^[\x00-\x7f]*$/.test(s)) return s;
-  return "=?UTF-8?B?" + Buffer.from(s, "utf-8").toString("base64") + "?=";
+  let asciiOnly = true;
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) > 0x7f) {
+      asciiOnly = false;
+      break;
+    }
+  }
+  if (asciiOnly) return s;
+  return `=?UTF-8?B?${Buffer.from(s, "utf-8").toString("base64")}?=`;
 }
 
 function base64Url(buf: Buffer | string): string {
@@ -419,7 +433,12 @@ function formatAddress(addr: { name?: string | null; email: string }): string {
 }
 
 function b64Wrap(bytes: Buffer): string {
-  return bytes.toString("base64").match(/.{1,76}/g)?.join("\r\n") ?? "";
+  return (
+    bytes
+      .toString("base64")
+      .match(/.{1,76}/g)
+      ?.join("\r\n") ?? ""
+  );
 }
 
 export type GmailAttachment = {
@@ -448,13 +467,13 @@ function buildRawMessage(opts: {
     `From: ${formatAddress(opts.from)}`,
     `To: ${opts.to.map(formatAddress).join(", ")}`,
   ];
-  if (opts.cc && opts.cc.length) headers.push(`Cc: ${opts.cc.map(formatAddress).join(", ")}`);
-  if (opts.bcc && opts.bcc.length) headers.push(`Bcc: ${opts.bcc.map(formatAddress).join(", ")}`);
+  if (opts.cc?.length) headers.push(`Cc: ${opts.cc.map(formatAddress).join(", ")}`);
+  if (opts.bcc?.length) headers.push(`Bcc: ${opts.bcc.map(formatAddress).join(", ")}`);
   headers.push(`Subject: ${encodeMimeWord(opts.subject || "(no subject)")}`);
   headers.push(`Date: ${new Date().toUTCString()}`);
-  headers.push(`MIME-Version: 1.0`);
+  headers.push("MIME-Version: 1.0");
   if (opts.inReplyTo) headers.push(`In-Reply-To: ${opts.inReplyTo}`);
-  if (opts.references && opts.references.length) {
+  if (opts.references?.length) {
     headers.push(`References: ${opts.references.join(" ")}`);
   }
 
@@ -462,8 +481,8 @@ function buildRawMessage(opts: {
 
   if (!hasAttachments) {
     // Simple text/plain body
-    headers.push(`Content-Type: text/plain; charset=UTF-8`);
-    headers.push(`Content-Transfer-Encoding: base64`);
+    headers.push("Content-Type: text/plain; charset=UTF-8");
+    headers.push("Content-Transfer-Encoding: base64");
     const bodyB64 = b64Wrap(Buffer.from(opts.body, "utf-8"));
     return `${headers.join("\r\n")}\r\n\r\n${bodyB64}`;
   }
@@ -477,9 +496,9 @@ function buildRawMessage(opts: {
   parts.push(
     [
       `--${boundary}`,
-      `Content-Type: text/plain; charset=UTF-8`,
-      `Content-Transfer-Encoding: base64`,
-      ``,
+      "Content-Type: text/plain; charset=UTF-8",
+      "Content-Transfer-Encoding: base64",
+      "",
       b64Wrap(Buffer.from(opts.body, "utf-8")),
     ].join("\r\n")
   );
@@ -491,8 +510,8 @@ function buildRawMessage(opts: {
         `--${boundary}`,
         `Content-Type: ${att.mimeType}; name="${encodeMimeWord(att.filename)}"`,
         `Content-Disposition: attachment; filename="${encodeMimeWord(att.filename)}"`,
-        `Content-Transfer-Encoding: base64`,
-        ``,
+        "Content-Transfer-Encoding: base64",
+        "",
         b64Wrap(att.bytes),
       ].join("\r\n")
     );
@@ -521,17 +540,14 @@ export async function sendGmailMessage(
   const payload: Record<string, unknown> = { raw: base64Url(raw) };
   if (opts.threadId) payload.threadId = opts.threadId;
 
-  const res = await fetch(
-    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    }
-  );
+  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Gmail send failed: ${res.status} ${text}`);
@@ -569,7 +585,7 @@ function decodeQuotedPrintableBytes(input: string): Buffer {
     if (cleaned[i] === "=" && i + 2 < cleaned.length) {
       const hex = cleaned.slice(i + 1, i + 3);
       if (/^[0-9A-Fa-f]{2}$/.test(hex)) {
-        bytes.push(parseInt(hex, 16));
+        bytes.push(Number.parseInt(hex, 16));
         i += 2;
         continue;
       }
@@ -660,12 +676,9 @@ function decodePart(part: GmailMessagePart): string {
 
   const declared = getCharset(part);
   // Candidate cascade — first non-suspect decode wins
-  const candidates = [
-    declared,
-    "windows-1252",
-    "iso-8859-15",
-    "utf-8",
-  ].filter((c, i, arr) => arr.indexOf(c) === i);
+  const candidates = [declared, "windows-1252", "iso-8859-15", "utf-8"].filter(
+    (c, i, arr) => arr.indexOf(c) === i
+  );
 
   let decoded: string | null = null;
   for (const cs of candidates) {
@@ -718,10 +731,7 @@ function decodeMimeHeader(raw: string): string {
   if (!raw) return "";
   // Replace each encoded-word block. Adjacent ones with only whitespace
   // between are joined per RFC 2047 §6.2.
-  const compacted = raw.replace(
-    /=\?([^?]+)\?([QqBb])\?([^?]*)\?=\s+(?==\?)/g,
-    "=?$1?$2?$3?="
-  );
+  const compacted = raw.replace(/=\?([^?]+)\?([QqBb])\?([^?]*)\?=\s+(?==\?)/g, "=?$1?$2?$3?=");
   return compacted.replace(
     /=\?([^?]+)\?([QqBb])\?([^?]*)\?=/g,
     (_, charsetRaw: string, mode: string, payload: string) => {
@@ -740,8 +750,12 @@ function decodeMimeHeader(raw: string): string {
           const qp = payload.replace(/_/g, " ");
           const out: number[] = [];
           for (let i = 0; i < qp.length; i++) {
-            if (qp[i] === "=" && i + 2 < qp.length && /^[0-9A-Fa-f]{2}$/.test(qp.slice(i + 1, i + 3))) {
-              out.push(parseInt(qp.slice(i + 1, i + 3), 16));
+            if (
+              qp[i] === "=" &&
+              i + 2 < qp.length &&
+              /^[0-9A-Fa-f]{2}$/.test(qp.slice(i + 1, i + 3))
+            ) {
+              out.push(Number.parseInt(qp.slice(i + 1, i + 3), 16));
               i += 2;
             } else {
               out.push(qp.charCodeAt(i) & 0xff);
@@ -836,6 +850,6 @@ function looksLikeGarbage(s: string): boolean {
   if (replacement / total > 0.02) return true;
   if (c0 / total > 0.05) return true;
   if (c1 / total > 0.05) return true;
-  if ((replacement + c0 + c1) / total > 0.10) return true;
+  if ((replacement + c0 + c1) / total > 0.1) return true;
   return false;
 }

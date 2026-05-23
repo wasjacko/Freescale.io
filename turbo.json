@@ -13,6 +13,10 @@
         "RESEND_API_KEY"
       ]
     },
+    "@freescale/api#build": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -26,7 +30,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": []
     }
   }
 }

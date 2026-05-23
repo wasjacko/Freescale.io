@@ -1,27 +1,35 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from "react";
-import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
-import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
 import {
+  createCalendarEvent as srvCreateEvent,
+  deleteCalendarEvent as srvDeleteEvent,
+  updateCalendarEvent as srvUpdateEvent,
+} from "@/lib/actions/calendar";
+import {
+  setConversationCategory as srvSetCategory,
+  setConversationTags as srvSetTags,
+  snoozeConversation as srvSnooze,
+  toggleConversationStar as srvToggleStar,
+} from "@/lib/actions/conversation-flags";
+import {
+  archiveConversation as srvArchive,
   markConversationRead as srvMarkRead,
   markConversationUnread as srvMarkUnread,
-  archiveConversation as srvArchive,
   sendMessage as srvSend,
   toggleTaskDone as srvToggleTask,
 } from "@/lib/actions/inbox";
-import {
-  toggleConversationStar as srvToggleStar,
-  snoozeConversation as srvSnooze,
-  setConversationTags as srvSetTags,
-  setConversationCategory as srvSetCategory,
-} from "@/lib/actions/conversation-flags";
-import {
-  createCalendarEvent as srvCreateEvent,
-  updateCalendarEvent as srvUpdateEvent,
-  deleteCalendarEvent as srvDeleteEvent,
-} from "@/lib/actions/calendar";
+import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
+import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 import type { ConversationCategory } from "@/lib/types";
+import {
+  type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 /**
  * Returns the local Sunday-at-00:00 ISO for the current week. Used as
@@ -83,7 +91,9 @@ export function DataProvider({
   children: ReactNode;
 }) {
   const [conversations, setConversations] = useState<Conversation[]>(initial.conversations);
-  const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>(initial.messagesByConv);
+  const [messagesByConv, setMessagesByConv] = useState<Record<string, Message[]>>(
+    initial.messagesByConv
+  );
   const [tasks, setTasks] = useState<Task[]>(initial.tasks);
   const [events, setEvents] = useState<CalEvent[]>(initial.events);
   const [archived, setArchived] = useState<Set<string>>(new Set());
@@ -172,9 +182,7 @@ export function DataProvider({
         const list = prev[convId] ?? [];
         return {
           ...prev,
-          [convId]: list.map((m) =>
-            m.id === tempId ? { ...m, status: "failed" } : m
-          ),
+          [convId]: list.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m)),
         };
       });
       if (prevPreview !== undefined) {
@@ -224,9 +232,7 @@ export function DataProvider({
         const list = prev[convId] ?? [];
         return {
           ...prev,
-          [convId]: list.map((m) =>
-            m.id === msgId ? { ...m, status: "failed" } : m
-          ),
+          [convId]: list.map((m) => (m.id === msgId ? { ...m, status: "failed" } : m)),
         };
       });
       throw err;
@@ -255,9 +261,7 @@ export function DataProvider({
 
   const toggleStar = useCallback(async (convId: string, starred: boolean) => {
     // Optimistic flip — UI updates instantly, server catches up.
-    setConversations((prev) =>
-      prev.map((c) => (c.id === convId ? { ...c, starred } : c))
-    );
+    setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, starred } : c)));
     await srvToggleStar(convId, starred);
   }, []);
 
@@ -275,23 +279,17 @@ export function DataProvider({
   const setCategory = useCallback(async (convId: string, category: ConversationCategory) => {
     // Optimistic flip — UI snaps to the new tab/badge instantly. If the
     // server write fails, the next router.refresh() re-syncs.
-    setConversations((prev) =>
-      prev.map((c) => (c.id === convId ? { ...c, category } : c))
-    );
+    setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, category } : c)));
     await srvSetCategory(convId, category);
   }, []);
 
   const setTags = useCallback(async (convId: string, tags: string[]) => {
     // Optimistic write. The server normalizes (lower-case + dedup +
     // clamp to 12) and returns the canonical list, which we re-apply.
-    setConversations((prev) =>
-      prev.map((c) => (c.id === convId ? { ...c, tags } : c))
-    );
+    setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, tags } : c)));
     const res = await srvSetTags(convId, tags);
     if (res.ok) {
-      setConversations((prev) =>
-        prev.map((c) => (c.id === convId ? { ...c, tags: res.tags } : c))
-      );
+      setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, tags: res.tags } : c)));
     }
   }, []);
 
@@ -318,12 +316,11 @@ export function DataProvider({
         ...input,
         weekStartIso: currentWeekStartIso(),
       });
-      if (res.ok && res.id) {
+      const createdId = res.id;
+      if (res.ok && createdId) {
         // Swap the temp id for the real DB one so subsequent updates
         // target the right row.
-        setEvents((prev) =>
-          prev.map((e) => (e.id === tempId ? { ...e, id: res.id! } : e))
-        );
+        setEvents((prev) => prev.map((e) => (e.id === tempId ? { ...e, id: createdId } : e)));
         return { ok: true, error: null };
       }
       // Rollback on failure.
@@ -361,9 +358,7 @@ export function DataProvider({
         weekStartIso: currentWeekStartIso(),
       });
       if (!res.ok && prevEvent) {
-        setEvents((prev) =>
-          prev.map((e) => (e.id === input.id ? (prevEvent as CalEvent) : e))
-        );
+        setEvents((prev) => prev.map((e) => (e.id === input.id ? (prevEvent as CalEvent) : e)));
       }
       return res;
     },

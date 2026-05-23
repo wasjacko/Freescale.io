@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint · Typecheck · Test
+    name: Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -48,14 +48,15 @@ jobs:
       - name: Lint
         if: steps.lockfile.outputs.exists == 'true'
         run: pnpm lint
-        continue-on-error: true
 
       - name: Typecheck
         if: steps.lockfile.outputs.exists == 'true'
         run: pnpm typecheck
-        continue-on-error: true
 
       - name: Test
         if: steps.lockfile.outputs.exists == 'true'
         run: pnpm test
-        continue-on-error: true
+
+      - name: Build
+        if: steps.lockfile.outputs.exists == 'true'
+        run: pnpm build

@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast, type ToastKind } from "@/lib/hooks/useToast";
+import { type ToastKind, useToast } from "@/lib/hooks/useToast";
 
 const KIND_ICON: Record<ToastKind, string> = {
   info: "•",

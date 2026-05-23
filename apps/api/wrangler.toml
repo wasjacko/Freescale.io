@@ -6,6 +6,11 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "development"
 
+# Secrets to configure with `wrangler secret put`:
+# SUPABASE_URL
+# SUPABASE_SERVICE_ROLE_KEY
+# STRIPE_WEBHOOK_SECRET
+
 # Add R2 bucket binding once created
 # [[r2_buckets]]
 # binding = "ATTACHMENTS"

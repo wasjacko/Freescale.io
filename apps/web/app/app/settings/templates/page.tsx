@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { listEmailTemplates } from "@/lib/actions/email-templates";
 import { TemplatesManager } from "@/components/settings/TemplatesManager";
+import { listEmailTemplates } from "@/lib/actions/email-templates";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
 export const metadata = { title: "Modèles · Freescale" };
 

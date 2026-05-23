@@ -1,5 +1,6 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getRequiredSupabaseEnv } from "./env";
 
 type CookieTuple = { name: string; value: string; options?: CookieOptions };
 
@@ -9,10 +10,11 @@ type CookieTuple = { name: string; value: string; options?: CookieOptions };
  */
 export async function createClient() {
   const cookieStore = await cookies();
+  type CookieSetOptions = NonNullable<Parameters<typeof cookieStore.set>[2]>;
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getRequiredSupabaseEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    getRequiredSupabaseEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     {
       cookies: {
         getAll() {
@@ -20,10 +22,9 @@ export async function createClient() {
         },
         setAll(cookiesToSet: CookieTuple[]) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              cookieStore.set(name, value, options as any)
-            );
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set(name, value, options as CookieSetOptions);
+            }
           } catch {
             // setAll called from a Server Component — safe to ignore if
             // a middleware refreshes sessions.

@@ -7,12 +7,7 @@
  * Pure function — works in both client and server contexts.
  */
 export function muePresentError(raw: string | Error | unknown): string {
-  const msg =
-    raw instanceof Error
-      ? raw.message
-      : typeof raw === "string"
-        ? raw
-        : String(raw);
+  const msg = raw instanceof Error ? raw.message : typeof raw === "string" ? raw : String(raw);
   const lower = msg.toLowerCase();
 
   if (lower.includes("rate_limit") || lower.includes("429") || lower.includes("too many")) {
@@ -21,11 +16,7 @@ export function muePresentError(raw: string | Error | unknown): string {
   if (lower.includes("overloaded") || lower.includes("503")) {
     return "Mue est saturée pour le moment. Réessayez d'ici une minute.";
   }
-  if (
-    lower.includes("invalid_request") ||
-    lower.includes("400") ||
-    lower.includes("malformed")
-  ) {
+  if (lower.includes("invalid_request") || lower.includes("400") || lower.includes("malformed")) {
     return "Mue n'a pas compris la requête. Si ça persiste, contactez le support.";
   }
   if (

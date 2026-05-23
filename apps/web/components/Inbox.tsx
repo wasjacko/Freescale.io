@@ -1,22 +1,22 @@
 "use client";
 
-import { useState, useRef, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useApp } from "@/lib/store";
-import { useToast } from "@/lib/hooks/useToast";
-import { useData } from "@/lib/contexts/DataContext";
-import { ChannelLogo } from "@/components/icons/Icon";
-import { NoChannelsHero } from "@/components/NoChannelsHero";
-import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
-import { classifyAllUncategorized, triageHeuristic } from "@/lib/actions/triage";
-import { quickClassify } from "@/lib/triage-rules";
-import { bulkConversationAction } from "@/lib/actions/conversation-flags";
-import { Avatar } from "@/components/ui/Avatar";
+import { type ContextAction, ContextMenu } from "@/components/ContextMenu";
 import { FilterMenu, type FilterMode } from "@/components/FilterMenu";
-import { ContextMenu, type ContextAction } from "@/components/ContextMenu";
-import { snoozeTargets } from "@/lib/snooze-targets";
+import { NoChannelsHero } from "@/components/NoChannelsHero";
+import { ChannelLogo } from "@/components/icons/Icon";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
+import { Avatar } from "@/components/ui/Avatar";
+import { autoSyncStaleChannels } from "@/lib/actions/auto-sync";
+import { bulkConversationAction } from "@/lib/actions/conversation-flags";
+import { classifyAllUncategorized, triageHeuristic } from "@/lib/actions/triage";
+import { useData } from "@/lib/contexts/DataContext";
+import { useToast } from "@/lib/hooks/useToast";
+import { snoozeTargets } from "@/lib/snooze-targets";
+import { useApp } from "@/lib/store";
+import { quickClassify } from "@/lib/triage-rules";
+import { useRouter } from "next/navigation";
 import { useRouter as useRouterBulk } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // ConversationCategory import removed — effectiveCategory now derives
 // the bucket directly via quickClassify when c.category is missing.
 
@@ -95,6 +95,16 @@ const TAB_LABELS: Record<CategoryTab, string> = {
   other: "Autres",
 };
 
+const INITIAL_SYNC_SKELETONS = [
+  "sync-skeleton-1",
+  "sync-skeleton-2",
+  "sync-skeleton-3",
+  "sync-skeleton-4",
+  "sync-skeleton-5",
+  "sync-skeleton-6",
+  "sync-skeleton-7",
+];
+
 const REAL_CATEGORIES: ReadonlyArray<RealCategory> = ["client", "promo", "notif", "other"];
 const ALL_TABS: ReadonlyArray<CategoryTab> = ["all", ...REAL_CATEGORIES];
 
@@ -127,9 +137,9 @@ export function Inbox() {
   // Auto-triage state — fires once per inbox mount when unclassified > 0.
   // "idle" → waiting to start, "running" → heuristic in flight,
   // "done" → already ran this session, "skipped" → migration missing.
-  const [autoTriageState, setAutoTriageState] = useState<
-    "idle" | "running" | "done" | "skipped"
-  >("idle");
+  const [autoTriageState, setAutoTriageState] = useState<"idle" | "running" | "done" | "skipped">(
+    "idle"
+  );
   // null = no tag filter. When set, only conversations whose .tags array
   // contains this exact tag are shown.
   const [tagFilter, setTagFilter] = useState<string | null>(null);
@@ -225,7 +235,9 @@ export function Inbox() {
       const report = await classifyAllUncategorized();
       router.refresh();
       if (report.classified > 0) {
-        push({ text: `Mue a trié ${report.classified} conversation${report.classified > 1 ? "s" : ""}` });
+        push({
+          text: `Mue a trié ${report.classified} conversation${report.classified > 1 ? "s" : ""}`,
+        });
       } else if (report.errors.length > 0) {
         push({ text: `Erreur Mue : ${report.errors[0]?.slice(0, 80)}` });
       } else {
@@ -246,7 +258,10 @@ export function Inbox() {
       const report = await autoSyncStaleChannels(0);
       router.refresh();
       if (report.newMessages > 0) {
-        push({ text: `${report.newMessages} nouveau message${report.newMessages > 1 ? "s" : ""}`, duration: 2400 });
+        push({
+          text: `${report.newMessages} nouveau message${report.newMessages > 1 ? "s" : ""}`,
+          duration: 2400,
+        });
       } else {
         push({ text: "Inbox à jour", duration: 1800 });
       }
@@ -257,11 +272,14 @@ export function Inbox() {
     }
   };
 
-  const isUnread = (id: string, baseUnread?: boolean) => {
-    if (extraUnread.has(id)) return true;
-    if (readIds.has(id)) return false;
-    return !!baseUnread;
-  };
+  const isUnread = useCallback(
+    (id: string, baseUnread?: boolean) => {
+      if (extraUnread.has(id)) return true;
+      if (readIds.has(id)) return false;
+      return !!baseUnread;
+    },
+    [extraUnread, readIds]
+  );
 
   const handleSelect = (id: string) => {
     setActiveConv(id);
@@ -285,11 +303,15 @@ export function Inbox() {
     if (typeof action === "object" && action.kind === "set-category") {
       void setCategory(convId, action.category);
       const label =
-        action.category === "client" ? "Client" :
-        action.category === "promo" ? "Promo" :
-        action.category === "notif" ? "Notif" :
-        action.category === "other" ? "Autre" :
-        "à trier";
+        action.category === "client"
+          ? "Client"
+          : action.category === "promo"
+            ? "Promo"
+            : action.category === "notif"
+              ? "Notif"
+              : action.category === "other"
+                ? "Autre"
+                : "à trier";
       push({ kind: "info", text: `Catégorie : ${label}` });
       return;
     }
@@ -348,7 +370,7 @@ export function Inbox() {
   // server-persisted category just refines / overrides the heuristic
   // when available. No more "0 clients / 0 promo" when the user
   // clearly has both.
-  const effectiveCategory = (c: typeof conversations[number]): RealCategory => {
+  const effectiveCategory = useCallback((c: (typeof conversations)[number]): RealCategory => {
     if (
       c.category === "client" ||
       c.category === "promo" ||
@@ -362,7 +384,7 @@ export function Inbox() {
       subject: c.subject ?? "",
       preview: c.preview ?? "",
     });
-  };
+  }, []);
 
   // Per-tab counts (computed across all non-archived convs, ignoring the
   // active read/mentions filter — tabs always show their full bucket).
@@ -385,9 +407,7 @@ export function Inbox() {
       counts[effectiveCategory(c)] += 1;
     }
     return counts;
-    // effectiveCategory is a stable closure over quickClassify; safe to omit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversations, archived]);
+  }, [conversations, archived, effectiveCategory]);
 
   // Auto-triage: when the inbox first loads with ≥1 unclassified conv,
   // fire the heuristic classifier in the background. No LLM cost, no
@@ -431,8 +451,7 @@ export function Inbox() {
         });
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabCounts.unclassified, autoTriageState]);
+  }, [tabCounts.unclassified, autoTriageState, push, router]);
 
   const filteredConvs = useMemo(() => {
     return conversations.filter((c) => {
@@ -447,9 +466,7 @@ export function Inbox() {
       if (tagFilter && !(c.tags ?? []).includes(tagFilter)) return false;
       return true;
     });
-    // effectiveCategory is a stable closure; safe to omit from deps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversations, archived, filter, extraUnread, readIds, tab, tagFilter]);
+  }, [conversations, archived, filter, isUnread, tab, tagFilter, effectiveCategory]);
 
   // Distinct tag list (sorted by frequency desc, then alpha) across all
   // non-archived convs. Used to populate the tag filter row in the panel
@@ -509,13 +526,37 @@ export function Inbox() {
             >
               ✕
             </button>
-            <span className="bulk-count">{selected.size} sélectionnée{selected.size > 1 ? "s" : ""}</span>
+            <span className="bulk-count">
+              {selected.size} sélectionnée{selected.size > 1 ? "s" : ""}
+            </span>
             <span className="bulk-spacer" />
-            <button type="button" className="bulk-btn" onClick={() => runBulk("mark-read")} data-tip="Marquer lu">
-              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            <button
+              type="button"
+              className="bulk-btn"
+              onClick={() => runBulk("mark-read")}
+              data-tip="Marquer lu"
+            >
+              <svg
+                className="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </button>
-            <button type="button" className="bulk-btn" onClick={() => runBulk("star")} data-tip="Étoiler">
-              <svg className="icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+            <button
+              type="button"
+              className="bulk-btn"
+              onClick={() => runBulk("star")}
+              data-tip="Étoiler"
+            >
+              <svg className="icon" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
             </button>
             <div className="bulk-snooze-wrap">
               <button
@@ -527,7 +568,15 @@ export function Inbox() {
                 aria-expanded={bulkSnoozeOpen}
                 aria-haspopup="menu"
               >
-                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  className="icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
@@ -551,8 +600,25 @@ export function Inbox() {
                 </div>
               )}
             </div>
-            <button type="button" className="bulk-btn bulk-btn-danger" onClick={() => runBulk("archive")} data-tip="Archiver">
-              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>
+            <button
+              type="button"
+              className="bulk-btn bulk-btn-danger"
+              onClick={() => runBulk("archive")}
+              data-tip="Archiver"
+            >
+              <svg
+                className="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="21 8 21 21 3 21 3 8" />
+                <rect x="1" y="3" width="22" height="5" />
+                <line x1="10" y1="12" x2="14" y2="12" />
+              </svg>
             </button>
           </div>
         )}
@@ -563,10 +629,7 @@ export function Inbox() {
             edge of the inbox panel regardless of how many tabs there are.
             Hidden when bulk-select is active so the bulk toolbar takes
             over the full header surface. */}
-        <div
-          className="inbox-header-row"
-          style={bulkActive ? { display: "none" } : undefined}
-        >
+        <div className="inbox-header-row" style={bulkActive ? { display: "none" } : undefined}>
           <div className="inbox-tabs" role="tablist">
             {ALL_TABS.map((t) => (
               <button
@@ -581,9 +644,7 @@ export function Inbox() {
                 {/* Count always rendered (even at 0) so the spacing rhythm
                     stays consistent across tabs. Muted at 0 so visual
                     hierarchy still emphasizes non-empty buckets. Audit #19. */}
-                <span
-                  className={`inbox-tab-count ${tabCounts[t] === 0 ? "is-zero" : ""}`}
-                >
+                <span className={`inbox-tab-count ${tabCounts[t] === 0 ? "is-zero" : ""}`}>
                   {tabCounts[t]}
                 </span>
               </button>
@@ -602,7 +663,15 @@ export function Inbox() {
               onClick={handleTriage}
               disabled={triaging}
             >
-              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
               <span>{triaging ? "Mue trie…" : "Trier avec Mue"}</span>
@@ -618,7 +687,15 @@ export function Inbox() {
               onClick={handleRefresh}
               disabled={refreshing}
             >
-              <svg className={`icon ${refreshing ? "is-spinning" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
+              <svg
+                className={`icon ${refreshing ? "is-spinning" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.8}
+              >
                 <polyline points="23 4 23 10 17 10" />
                 <polyline points="1 20 1 14 7 14" />
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -632,88 +709,96 @@ export function Inbox() {
               data-tip="Filtrer"
               onClick={() => setFilterAnchor(filterBtnRef.current)}
             >
-              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}>
+              <svg
+                className="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.8}
+              >
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
             </button>
           </div>
         </div>
 
-        {tagOptions.length > 0 && (() => {
-          // Visible vs overflow split. Top N (most-used) tags stay
-          // inline; the rest go behind a "+X" button that opens a
-          // scrollable dropdown. The currently-selected filter tag,
-          // if it's in the overflow, gets pulled into the visible
-          // strip so the user always sees what's active.
-          const VISIBLE_CAP = 7;
-          let visible = tagOptions.slice(0, VISIBLE_CAP);
-          let overflow = tagOptions.slice(VISIBLE_CAP);
-          if (tagFilter && !visible.some((t) => t.tag === tagFilter)) {
-            const found = overflow.find((t) => t.tag === tagFilter);
-            if (found) {
-              visible = [...visible.slice(0, VISIBLE_CAP - 1), found];
-              overflow = tagOptions
-                .filter((t) => !visible.includes(t));
+        {tagOptions.length > 0 &&
+          (() => {
+            // Visible vs overflow split. Top N (most-used) tags stay
+            // inline; the rest go behind a "+X" button that opens a
+            // scrollable dropdown. The currently-selected filter tag,
+            // if it's in the overflow, gets pulled into the visible
+            // strip so the user always sees what's active.
+            const VISIBLE_CAP = 7;
+            let visible = tagOptions.slice(0, VISIBLE_CAP);
+            let overflow = tagOptions.slice(VISIBLE_CAP);
+            if (tagFilter && !visible.some((t) => t.tag === tagFilter)) {
+              const found = overflow.find((t) => t.tag === tagFilter);
+              if (found) {
+                visible = [...visible.slice(0, VISIBLE_CAP - 1), found];
+                overflow = tagOptions.filter((t) => !visible.includes(t));
+              }
             }
-          }
-          return (
-            <div className="tag-filter-row" role="group" aria-label="Filtrer par tag">
-              <button
-                type="button"
-                className={`tag-filter-chip ${tagFilter === null ? "is-active" : ""}`}
-                onClick={() => setTagFilter(null)}
-              >
-                Tous
-              </button>
-              {visible.map(({ tag, count }) => (
+            return (
+              <div className="tag-filter-row" role="group" aria-label="Filtrer par tag">
                 <button
-                  key={tag}
                   type="button"
-                  className={`tag-filter-chip ${tagFilter === tag ? "is-active" : ""}`}
-                  onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-                  title={`${count} conversation${count > 1 ? "s" : ""}`}
+                  className={`tag-filter-chip ${tagFilter === null ? "is-active" : ""}`}
+                  onClick={() => setTagFilter(null)}
                 >
-                  {tag}
-                  <span className="tag-filter-count">{count}</span>
+                  Tous
                 </button>
-              ))}
-              {overflow.length > 0 && (
-                <div className="tag-filter-overflow-wrap">
+                {visible.map(({ tag, count }) => (
                   <button
-                    ref={tagOverflowBtnRef}
+                    key={tag}
                     type="button"
-                    className="tag-filter-chip tag-filter-overflow"
-                    onClick={() => setTagOverflowOpen((v) => !v)}
-                    aria-expanded={tagOverflowOpen}
-                    aria-haspopup="menu"
-                    title={`${overflow.length} autres tags`}
+                    className={`tag-filter-chip ${tagFilter === tag ? "is-active" : ""}`}
+                    onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+                    title={`${count} conversation${count > 1 ? "s" : ""}`}
                   >
-                    +{overflow.length}
+                    {tag}
+                    <span className="tag-filter-count">{count}</span>
                   </button>
-                  {tagOverflowOpen && (
-                    <div className="tag-filter-overflow-menu" role="menu">
-                      {overflow.map(({ tag, count }) => (
-                        <button
-                          key={tag}
-                          type="button"
-                          role="menuitem"
-                          className={`tag-filter-overflow-item ${tagFilter === tag ? "is-active" : ""}`}
-                          onClick={() => {
-                            setTagFilter(tagFilter === tag ? null : tag);
-                            setTagOverflowOpen(false);
-                          }}
-                        >
-                          <span className="tag-filter-overflow-name">{tag}</span>
-                          <span className="tag-filter-overflow-count">{count}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })()}
+                ))}
+                {overflow.length > 0 && (
+                  <div className="tag-filter-overflow-wrap">
+                    <button
+                      ref={tagOverflowBtnRef}
+                      type="button"
+                      className="tag-filter-chip tag-filter-overflow"
+                      onClick={() => setTagOverflowOpen((v) => !v)}
+                      aria-expanded={tagOverflowOpen}
+                      aria-haspopup="menu"
+                      title={`${overflow.length} autres tags`}
+                    >
+                      +{overflow.length}
+                    </button>
+                    {tagOverflowOpen && (
+                      <div className="tag-filter-overflow-menu" role="menu">
+                        {overflow.map(({ tag, count }) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            role="menuitem"
+                            className={`tag-filter-overflow-item ${tagFilter === tag ? "is-active" : ""}`}
+                            onClick={() => {
+                              setTagFilter(tagFilter === tag ? null : tag);
+                              setTagOverflowOpen(false);
+                            }}
+                          >
+                            <span className="tag-filter-overflow-name">{tag}</span>
+                            <span className="tag-filter-overflow-count">{count}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
       </header>
 
       <div className="conv-list" id="conv-list">
@@ -724,9 +809,13 @@ export function Inbox() {
                 sync is in flight). On subsequent refreshes the existing
                 spinning refresh button in the header is enough. */}
             <InitialSyncIndicator />
-            <div className="conv-skel-list" aria-busy="true" aria-label="Chargement des conversations">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="conv-skel">
+            <div
+              className="conv-skel-list"
+              aria-busy="true"
+              aria-label="Chargement des conversations"
+            >
+              {INITIAL_SYNC_SKELETONS.map((key) => (
+                <div key={key} className="conv-skel">
                   <span className="conv-skel-av" />
                   <span className="conv-skel-main">
                     <span className="conv-skel-line conv-skel-name" />
@@ -737,28 +826,27 @@ export function Inbox() {
             </div>
           </>
         )}
-        {filteredConvs.length === 0 && !isSyncing && (() => {
-          // Differentiate "truly 0 mail in workspace" from "filter narrows
-          // to 0 here". The first deserves the celebratory copy; the second
-          // is just a filter-result and shouldn't celebrate.
-          const trulyEmpty =
-            conversations.filter((c) => !archived.has(c.id)).length === 0;
-          return (
-            <div className="empty-state is-visible">
-              <div className="empty-orb" />
-              <div className="empty-title">
-                {trulyEmpty ? "Inbox zero 🎉" : "Aucun résultat"}
+        {filteredConvs.length === 0 &&
+          !isSyncing &&
+          (() => {
+            // Differentiate "truly 0 mail in workspace" from "filter narrows
+            // to 0 here". The first deserves the celebratory copy; the second
+            // is just a filter-result and shouldn't celebrate.
+            const trulyEmpty = conversations.filter((c) => !archived.has(c.id)).length === 0;
+            return (
+              <div className="empty-state is-visible">
+                <div className="empty-orb" />
+                <div className="empty-title">{trulyEmpty ? "Inbox zero 🎉" : "Aucun résultat"}</div>
+                <div className="empty-text">
+                  {trulyEmpty
+                    ? "Aucune conversation dans votre boîte. Connectez un canal pour commencer, ou prenez une pause."
+                    : `Aucune conversation dans « ${TAB_LABELS[tab]} »${
+                        tagFilter ? ` avec le tag « ${tagFilter} »` : ""
+                      }${filter === "unread" ? ", filtré sur non lus" : ""}. Essayez un autre onglet ou retirez les filtres.`}
+                </div>
               </div>
-              <div className="empty-text">
-                {trulyEmpty
-                  ? "Aucune conversation dans votre boîte. Connectez un canal pour commencer, ou prenez une pause."
-                  : `Aucune conversation dans « ${TAB_LABELS[tab]} »${
-                      tagFilter ? ` avec le tag « ${tagFilter} »` : ""
-                    }${filter === "unread" ? ", filtré sur non lus" : ""}. Essayez un autre onglet ou retirez les filtres.`}
-              </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
         {Object.entries(groups).map(([group, items]) =>
           items.length === 0 ? null : (
             <div key={group}>
@@ -794,11 +882,20 @@ export function Inbox() {
                         e.stopPropagation();
                         toggleBulk(c.id);
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleBulk(c.id);
+                      }}
                       role="checkbox"
                       aria-checked={isSel}
+                      tabIndex={0}
                     >
                       {isSel ? (
-                        <span className="conv-check" aria-hidden>✓</span>
+                        <span className="conv-check" aria-hidden>
+                          ✓
+                        </span>
                       ) : (
                         <Avatar avatar={c.avatar} />
                       )}
@@ -821,35 +918,74 @@ export function Inbox() {
                                 className={`conv-cat conv-cat-${ec} ${isPersisted ? "" : "is-guess"}`}
                                 aria-label={`Catégorie ${ec}${isPersisted ? "" : " (heuristique)"}`}
                                 title={
-                                  (ec === "client" ? "Client" :
-                                   ec === "promo" ? "Promo" :
-                                   ec === "notif" ? "Notif" : "Autre") +
-                                  (isPersisted ? "" : " · estimation locale")
+                                  (ec === "client"
+                                    ? "Client"
+                                    : ec === "promo"
+                                      ? "Promo"
+                                      : ec === "notif"
+                                        ? "Notif"
+                                        : "Autre") + (isPersisted ? "" : " · estimation locale")
                                 }
                               >
                                 {/* SVG icons (not unicode emoji) so the
                                     badge renders identically across Win /
                                     Mac / Linux / mobile. Audit #9. */}
                                 {ec === "client" && (
-                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    width="11"
+                                    height="11"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
                                     <circle cx="12" cy="8" r="4" />
                                     <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
                                   </svg>
                                 )}
                                 {ec === "promo" && (
-                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    width="11"
+                                    height="11"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
                                     <path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
                                     <line x1="7" y1="7" x2="7.01" y2="7" />
                                   </svg>
                                 )}
                                 {ec === "notif" && (
-                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    width="11"
+                                    height="11"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
                                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                                   </svg>
                                 )}
                                 {ec === "other" && (
-                                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    width="11"
+                                    height="11"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                                   </svg>
                                 )}
@@ -862,7 +998,11 @@ export function Inbox() {
                       </span>
                       <span className="conv-bottom">
                         <span className="conv-preview">
-                          {c.starred && <span className="conv-star" aria-label="Étoile">★</span>}
+                          {c.starred && (
+                            <span className="conv-star" aria-label="Étoile">
+                              ★
+                            </span>
+                          )}
                           {c.preview}
                         </span>
                         {unread && <span className="unread" />}
@@ -870,7 +1010,9 @@ export function Inbox() {
                       {(c.tags?.length ?? 0) > 0 && (
                         <span className="conv-tags" aria-hidden>
                           {(c.tags ?? []).slice(0, 3).map((t) => (
-                            <span key={t} className="conv-tag-pill">{t}</span>
+                            <span key={t} className="conv-tag-pill">
+                              {t}
+                            </span>
                           ))}
                           {(c.tags?.length ?? 0) > 3 && (
                             <span className="conv-tag-pill conv-tag-more">
@@ -898,21 +1040,22 @@ export function Inbox() {
         />
       )}
 
-      {ctx && (() => {
-        const ctxConv = conversations.find((c) => c.id === ctx.convId);
-        return (
-          <ContextMenu
-            x={ctx.x}
-            y={ctx.y}
-            isUnread={isUnread(ctx.convId, ctxConv?.unread)}
-            isStarred={!!ctxConv?.starred}
-            isSnoozed={!!ctxConv?.snoozedUntilIso}
-            currentCategory={ctxConv?.category ?? null}
-            onClose={() => setCtx(null)}
-            onAction={(action) => onContextAction(ctx.convId, action)}
-          />
-        );
-      })()}
+      {ctx &&
+        (() => {
+          const ctxConv = conversations.find((c) => c.id === ctx.convId);
+          return (
+            <ContextMenu
+              x={ctx.x}
+              y={ctx.y}
+              isUnread={isUnread(ctx.convId, ctxConv?.unread)}
+              isStarred={!!ctxConv?.starred}
+              isSnoozed={!!ctxConv?.snoozedUntilIso}
+              currentCategory={ctxConv?.category ?? null}
+              onClose={() => setCtx(null)}
+              onAction={(action) => onContextAction(ctx.convId, action)}
+            />
+          );
+        })()}
     </section>
   );
 }

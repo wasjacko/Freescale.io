@@ -1,6 +1,6 @@
-import { Suspense } from "react";
 import { Sprite } from "@/components/icons/Sprite";
 import { ResetPasswordScreen } from "@/components/signup/ResetPasswordScreen";
+import { Suspense } from "react";
 
 export const metadata = { title: "Nouveau mot de passe · Freescale" };
 

@@ -1,25 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ChannelLogo } from "@/components/icons/Icon";
+import { CHANNEL_PROVIDER_REGISTRY, channelProviderLabel } from "@/lib/channels/registry";
 import { useToast } from "@/lib/hooks/useToast";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-type Provider = {
-  kind: "gmail" | "outlook" | "instagram" | "whatsapp" | "slack" | "discord" | "x" | "linkedin";
-  label: string;
-  startPath: string | null;
-  ready: boolean;
-};
-
-const PROVIDERS: Provider[] = [
-  { kind: "gmail", label: "Gmail", startPath: "/auth/gmail/start", ready: true },
-  { kind: "outlook", label: "Outlook", startPath: null, ready: false },
-  { kind: "slack", label: "Slack", startPath: null, ready: false },
-  { kind: "instagram", label: "Instagram DMs", startPath: null, ready: false },
-  { kind: "whatsapp", label: "WhatsApp", startPath: null, ready: false },
-  { kind: "discord", label: "Discord", startPath: null, ready: false },
-];
+const PROVIDERS = CHANNEL_PROVIDER_REGISTRY.filter((provider) =>
+  ["gmail", "outlook", "slack", "instagram", "whatsapp", "discord"].includes(provider.kind)
+);
 
 export function AddChannelModal({
   open,
@@ -54,21 +43,23 @@ export function AddChannelModal({
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       const data = event.data as
-        | { type: "gmail_connected"; email: string; synced: number }
-        | { type: "gmail_error"; error: string }
+        | { type: "gmail_connected" | "outlook_connected"; email: string; synced: number }
+        | { type: "gmail_error" | "outlook_error"; error: string }
         | null;
       if (!data) return;
       setConnecting(null);
-      if (data.type === "gmail_connected") {
+      if (data.type === "gmail_connected" || data.type === "outlook_connected") {
+        const kind = data.type === "outlook_connected" ? "outlook" : "gmail";
+        const label = channelProviderLabel(kind);
         push({
-          text: `Gmail connecté (${data.email})${
+          text: `${label} connecté (${data.email})${
             data.synced > 0 ? ` · ${data.synced} message${data.synced > 1 ? "s" : ""}` : ""
           }`,
           duration: 4000,
         });
         onClose();
         router.refresh();
-      } else if (data.type === "gmail_error") {
+      } else if (data.type === "gmail_error" || data.type === "outlook_error") {
         push({ text: `Connexion impossible : ${data.error}`, duration: 5000 });
       }
     };
@@ -114,6 +105,10 @@ export function AddChannelModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      tabIndex={-1}
     >
       <div className="add-channel-sheet">
         <header className="add-channel-head">
@@ -121,13 +116,17 @@ export function AddChannelModal({
             <h2>Connecter un canal</h2>
             <p>Branchez une plateforme pour la centraliser dans votre inbox.</p>
           </div>
-          <button
-            type="button"
-            className="add-channel-close"
-            aria-label="Fermer"
-            onClick={onClose}
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <button type="button" className="add-channel-close" aria-label="Fermer" onClick={onClose}>
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -140,7 +139,7 @@ export function AddChannelModal({
             return (
               <li key={p.kind} className="add-channel-row">
                 <span className="add-channel-logo">
-                  <ChannelLogo channel={p.kind as never} />
+                  <ChannelLogo channel={p.kind} />
                 </span>
                 <span className="add-channel-name">{p.label}</span>
                 {isConnected ? (
@@ -149,7 +148,9 @@ export function AddChannelModal({
                   <button
                     type="button"
                     className="add-channel-cta"
-                    onClick={() => openOAuthPopup(p.kind, p.startPath!)}
+                    onClick={() => {
+                      if (p.startPath) openOAuthPopup(p.kind, p.startPath);
+                    }}
                     disabled={connecting === p.kind}
                   >
                     {connecting === p.kind ? "Connexion…" : "Connecter"}

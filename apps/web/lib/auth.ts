@@ -34,9 +34,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     (user.email?.split("@")[0] ?? "User");
   const firstName = fullName.split(/\s+/)[0] ?? fullName;
   const avatarUrl =
-    (meta.avatar_url as string | undefined) ||
-    (meta.picture as string | undefined) ||
-    null;
+    (meta.avatar_url as string | undefined) || (meta.picture as string | undefined) || null;
 
   // Pull the soft-profiling state in the same round-trip — the inline
   // OnboardingChips component needs it to decide whether to show.

@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 /**
  * Toggle a conversation's starred state. Star is purely user-facing
@@ -104,11 +104,7 @@ export async function setConversationTags(
   if (!user) return { ok: false, tags: [], error: "unauthenticated" };
 
   const normalized = Array.from(
-    new Set(
-      tags
-        .map((t) => t.trim().toLowerCase())
-        .filter((t) => t.length > 0 && t.length <= 24)
-    )
+    new Set(tags.map((t) => t.trim().toLowerCase()).filter((t) => t.length > 0 && t.length <= 24))
   ).slice(0, 12);
 
   const { error } = await supabase
@@ -160,10 +156,7 @@ export async function bulkConversationAction(
       break;
   }
 
-  const { error } = await supabase
-    .from("conversations")
-    .update(patch)
-    .in("id", conversationIds);
+  const { error } = await supabase.from("conversations").update(patch).in("id", conversationIds);
   if (error) return { ok: false, count: 0, error: error.message };
   revalidatePath("/app", "layout");
   return { ok: true, count: conversationIds.length, error: null };
