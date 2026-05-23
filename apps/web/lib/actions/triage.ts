@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { type Category as RuleCategory, quickClassify } from "@/lib/triage-rules";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 
@@ -54,14 +55,8 @@ export async function triageHeuristic(): Promise<{
     };
   }
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!workspace?.id) {
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) {
     return {
       classified: 0,
       byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
@@ -75,7 +70,7 @@ export async function triageHeuristic(): Promise<{
   const { data: convs, error: convErr } = await supabase
     .from("conversations")
     .select("id, subject, preview, contacts(display_name, email)")
-    .eq("workspace_id", workspace.id)
+    .eq("workspace_id", workspaceId)
     .is("category", null)
     .limit(500);
   if (convErr) {
@@ -252,14 +247,8 @@ export async function classifyAllUncategorized(): Promise<{
   } = await supabase.auth.getUser();
   if (!user) return { classified: 0, total: 0, errors: ["unauthenticated"] };
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!workspace?.id) {
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) {
     return { classified: 0, total: 0, errors: ["no workspace"] };
   }
 
@@ -267,7 +256,7 @@ export async function classifyAllUncategorized(): Promise<{
   const { data: convs, error: convErr } = await supabase
     .from("conversations")
     .select("id, subject, preview, contacts(display_name, email)")
-    .eq("workspace_id", workspace.id)
+    .eq("workspace_id", workspaceId)
     .is("category", null)
     .limit(500);
 

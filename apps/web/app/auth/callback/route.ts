@@ -1,5 +1,6 @@
 import { encryptJSON } from "@/lib/encryption";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import { type NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -114,14 +115,7 @@ export async function GET(request: NextRequest) {
       // the very first round-trip — retry a couple of times if missing.
       let workspaceId: string | null = null;
       for (let attempt = 0; attempt < 3 && !workspaceId; attempt++) {
-        const { data: ws } = await supabase
-          .from("workspaces")
-          .select("id")
-          .eq("owner_id", user.id)
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        workspaceId = (ws?.id as string | undefined) ?? null;
+        workspaceId = await getActiveWorkspaceId(supabase, user.id);
         if (!workspaceId && attempt < 2) {
           await new Promise((r) => setTimeout(r, 200));
         }

@@ -2,10 +2,12 @@
 
 import { AddChannelModal } from "@/components/AddChannelModal";
 import { ChannelLogo, Icon } from "@/components/icons/Icon";
+import { switchWorkspace } from "@/lib/actions/collaboration";
 import type { CurrentUser } from "@/lib/auth";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
 type NavItem = {
@@ -25,14 +27,29 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar({ user }: { user: CurrentUser | null }) {
   const { view, setView, toggleSidebar, setActiveConv } = useApp();
   const data = useData();
+  const router = useRouter();
   const conversations = data.conversations ?? [];
   const tasks = data.tasks ?? [];
   const channels = data.channels ?? [];
+  const workspaces = data.workspaces ?? [];
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [addChannelOpen, setAddChannelOpen] = useState(false);
+  const [switchingWorkspace, setSwitchingWorkspace] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
 
   const connectedKinds = useMemo(() => new Set(channels.map((c) => c.kind)), [channels]);
+  const canConnect = data.canConnectChannels;
+
+  const handleWorkspaceSwitch = async (workspaceId: string) => {
+    if (!workspaceId || workspaceId === data.activeWorkspaceId || switchingWorkspace) return;
+    setSwitchingWorkspace(true);
+    const result = await switchWorkspace({ workspaceId });
+    if (result.ok) {
+      setActiveConv("");
+      router.refresh();
+    }
+    setSwitchingWorkspace(false);
+  };
 
   // Real counts derived from the live DB
   const counts: Record<NavItem["id"], number | null> = {
@@ -67,6 +84,28 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             <line x1="9" y1="3" x2="9" y2="21" />
           </svg>
         </button>
+      </div>
+
+      <div className="workspace-switcher">
+        <select
+          value={data.activeWorkspaceId ?? ""}
+          onChange={(event) => void handleWorkspaceSwitch(event.target.value)}
+          disabled={switchingWorkspace || workspaces.length <= 1}
+          aria-label="Changer de workspace"
+        >
+          {workspaces.length === 0 ? (
+            <option value="">Personal</option>
+          ) : (
+            workspaces.map((workspace) => (
+              <option key={workspace.id} value={workspace.id}>
+                {workspace.name}
+              </option>
+            ))
+          )}
+        </select>
+        <Link href="/app/settings/team" aria-label="Gérer l'équipe">
+          <Icon name="i-user" />
+        </Link>
       </div>
 
       <nav className="nav-section">
@@ -108,7 +147,10 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             aria-label="Connecter un canal"
             data-tip="Connecter un canal"
             data-tip-side="right"
-            onClick={() => setAddChannelOpen(true)}
+            onClick={() => {
+              if (canConnect) setAddChannelOpen(true);
+            }}
+            disabled={!canConnect}
           >
             <Icon name="i-plus" />
           </button>
@@ -118,7 +160,10 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             type="button"
             className="nav-item"
             style={{ opacity: 0.78 }}
-            onClick={() => setAddChannelOpen(true)}
+            onClick={() => {
+              if (canConnect) setAddChannelOpen(true);
+            }}
+            disabled={!canConnect}
           >
             <span className="nav-left">
               <Icon name="i-plus" />
@@ -201,6 +246,13 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
               onClick={() => setAccountMenuOpen(false)}
             >
               <Icon name="i-globe" /> Connexions
+            </Link>
+            <Link
+              href="/app/settings/team"
+              className="ctx-item"
+              onClick={() => setAccountMenuOpen(false)}
+            >
+              <Icon name="i-user" /> Équipe
             </Link>
             <div className="ctx-divider" />
             <Link href={"/sign-in?switch=1" as never} className="ctx-item">

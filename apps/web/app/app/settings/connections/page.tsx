@@ -1,5 +1,7 @@
 import { ConnectionsList } from "@/components/settings/ConnectionsList";
+import { currentUserCanConnectChannels } from "@/lib/actions/collaboration";
 import { createClient } from "@/lib/supabase/server";
+import { resolveActiveWorkspace } from "@/lib/workspace";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "Connexions · Freescale" };
@@ -17,13 +19,7 @@ export default async function ConnectionsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id, name")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const { workspace } = await resolveActiveWorkspace(supabase, user.id);
 
   // Only surface accounts that actually carry credentials. Anything else is a
   // placeholder row (seed data, pending OAuth that never completed, etc.) and
@@ -38,6 +34,7 @@ export default async function ConnectionsPage({
     : { data: [] };
 
   const sp = await searchParams;
+  const canConnect = await currentUserCanConnectChannels();
   const flash =
     typeof sp.connected === "string"
       ? { kind: "ok" as const, text: `Connecté à ${sp.connected}.` }
@@ -45,5 +42,7 @@ export default async function ConnectionsPage({
         ? { kind: "err" as const, text: decodeURIComponent(sp.error) }
         : null;
 
-  return <ConnectionsList accounts={(accounts ?? []) as never} flash={flash} />;
+  return (
+    <ConnectionsList accounts={(accounts ?? []) as never} flash={flash} canConnect={canConnect} />
+  );
 }

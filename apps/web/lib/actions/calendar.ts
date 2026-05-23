@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { CalEvent } from "@/lib/types";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -33,14 +34,7 @@ async function resolveWorkspaceId(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string
 ): Promise<string | null> {
-  const { data } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+  return getActiveWorkspaceId(supabase, userId);
 }
 
 export async function createCalendarEvent(input: {

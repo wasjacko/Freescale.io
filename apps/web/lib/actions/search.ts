@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 
 export type SearchHit = {
   conversationId: string;
@@ -52,14 +53,8 @@ export async function searchInbox(
   const q = query.trim();
   if (q.length < 2) return { results: [], error: null };
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!workspace?.id) return { results: [], error: "no workspace" };
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) return { results: [], error: "no workspace" };
 
   // Postgres ILIKE pattern — escape % and _ in user input so they're
   // treated as literals. Wrap in % for substring match.
@@ -80,7 +75,7 @@ export async function searchInbox(
     supabase
       .from("conversations")
       .select("id, subject, preview, last_message_at, contacts(display_name, email)")
-      .eq("workspace_id", workspace.id)
+      .eq("workspace_id", workspaceId)
       .eq("archived", false)
       .or(`subject.ilike.${pattern},preview.ilike.${pattern}`)
       .order("last_message_at", { ascending: false })
@@ -88,7 +83,7 @@ export async function searchInbox(
     supabase
       .from("conversations")
       .select("id, subject, preview, last_message_at, contacts!inner(display_name, email)")
-      .eq("workspace_id", workspace.id)
+      .eq("workspace_id", workspaceId)
       .eq("archived", false)
       .or(`display_name.ilike.${pattern},email.ilike.${pattern}`, {
         referencedTable: "contacts",
@@ -100,7 +95,7 @@ export async function searchInbox(
       .select(
         "conversation_id, conversations!inner(id, subject, preview, last_message_at, contacts(display_name, email))"
       )
-      .eq("workspace_id", workspace.id)
+      .eq("workspace_id", workspaceId)
       .ilike("body_text", pattern)
       .order("sent_at", { ascending: false })
       .limit(limit * 2),
@@ -108,7 +103,7 @@ export async function searchInbox(
       ? supabase
           .from("conversations")
           .select("id, subject, preview, last_message_at, contacts(display_name, email)")
-          .eq("workspace_id", workspace.id)
+          .eq("workspace_id", workspaceId)
           .eq("archived", false)
           .contains("tags", [tagCandidate])
           .order("last_message_at", { ascending: false })

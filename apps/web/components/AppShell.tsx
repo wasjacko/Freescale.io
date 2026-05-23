@@ -179,7 +179,7 @@ export function AppShell({
                 Thread DOM is fully unmounted when no conv is selected,
                 so the user can't possibly see thread content after
                 clicking the back arrow or sidebar Inbox. */}
-            {activeConvId ? <Thread /> : <Inbox />}
+            {activeConvId ? <Thread /> : <Inbox currentUserId={user?.id ?? null} />}
           </div>
           <TasksView />
           <CalendarView />

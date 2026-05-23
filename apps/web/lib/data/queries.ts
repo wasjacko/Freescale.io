@@ -1,6 +1,9 @@
 import "server-only";
+import { currentUserCanConnectChannels } from "@/lib/actions/collaboration";
+import type { MemberRole } from "@/lib/collaboration";
 import { createClient } from "@/lib/supabase/server";
 import type { CalEvent, ChannelId, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
+import { getActiveWorkspaceId, resolveActiveWorkspace } from "@/lib/workspace";
 import {
   adaptCalendarEvent,
   adaptConversation,
@@ -21,6 +24,10 @@ export type ConnectedChannel = {
 
 export type InboxData = {
   workspaceId: string | null;
+  activeWorkspaceId: string | null;
+  currentWorkspaceRole: MemberRole | null;
+  workspaces: Array<{ id: string; name: string; role: MemberRole }>;
+  canConnectChannels: boolean;
   conversations: Conversation[];
   messagesByConv: Record<string, Message[]>;
   tasks: Task[];
@@ -35,22 +42,30 @@ export async function getCurrentWorkspaceId(): Promise<string | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  return (data?.id as string | null) ?? null;
+  return getActiveWorkspaceId(supabase, user.id);
 }
 
 export async function getInboxData(): Promise<InboxData> {
   const supabase = await createClient();
-  const workspaceId = await getCurrentWorkspaceId();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const active = user ? await resolveActiveWorkspace(supabase, user.id) : null;
+  const workspaceId = active?.workspace?.id ?? null;
+  const workspaces =
+    active?.workspaces.map((workspace) => ({
+      id: workspace.id,
+      name: workspace.name,
+      role: workspace.role,
+    })) ?? [];
+  const canConnectChannels = user ? await currentUserCanConnectChannels() : false;
   if (!workspaceId) {
     return {
       workspaceId: null,
+      activeWorkspaceId: null,
+      currentWorkspaceRole: null,
+      workspaces,
+      canConnectChannels,
       conversations: [],
       messagesByConv: {},
       tasks: [],
@@ -128,7 +143,7 @@ export async function getInboxData(): Promise<InboxData> {
     const ids = convs.map((c) => c.id as string);
     const { data: extras, error: extrasErr } = await supabase
       .from("conversations")
-      .select("id, category, snoozed_until, tags")
+      .select("id, category, snoozed_until, tags, assigned_to")
       .in("id", ids);
     if (!extrasErr && extras) {
       const extrasById = new Map<string, Record<string, unknown>>();
@@ -142,6 +157,7 @@ export async function getInboxData(): Promise<InboxData> {
           c.category = ex.category;
           c.snoozed_until = ex.snoozed_until;
           c.tags = ex.tags;
+          c.assigned_to = ex.assigned_to;
         }
       }
       // Client-side snooze filter — only applied when the column was
@@ -240,6 +256,10 @@ export async function getInboxData(): Promise<InboxData> {
 
   return {
     workspaceId,
+    activeWorkspaceId: workspaceId,
+    currentWorkspaceRole: active?.workspace?.role ?? null,
+    workspaces,
+    canConnectChannels,
     conversations,
     messagesByConv,
     tasks,

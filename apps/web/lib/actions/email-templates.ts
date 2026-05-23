@@ -1,12 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 
 export type EmailTemplate = {
   id: string;
   name: string;
   body: string;
+  visibility: "personal" | "team";
   updatedAt: string;
 };
 
@@ -19,14 +21,7 @@ async function resolveWorkspaceId(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string
 ): Promise<string | null> {
-  const { data } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+  return getActiveWorkspaceId(supabase, userId);
 }
 
 export async function listEmailTemplates(): Promise<EmailTemplate[]> {
@@ -41,7 +36,7 @@ export async function listEmailTemplates(): Promise<EmailTemplate[]> {
 
   const { data, error } = await supabase
     .from("email_templates")
-    .select("id, name, body, updated_at")
+    .select("id, name, body, visibility, updated_at")
     .eq("workspace_id", workspaceId)
     .order("updated_at", { ascending: false });
 
@@ -50,6 +45,7 @@ export async function listEmailTemplates(): Promise<EmailTemplate[]> {
     id: row.id as string,
     name: (row.name as string) ?? "",
     body: (row.body as string) ?? "",
+    visibility: row.visibility === "personal" ? "personal" : "team",
     updatedAt: (row.updated_at as string) ?? "",
   }));
 }
@@ -57,6 +53,7 @@ export async function listEmailTemplates(): Promise<EmailTemplate[]> {
 export async function createEmailTemplate(input: {
   name: string;
   body: string;
+  visibility?: "personal" | "team";
 }): Promise<{ ok: boolean; template: EmailTemplate | null; error: string | null }> {
   const supabase = await createClient();
   const {
@@ -78,8 +75,9 @@ export async function createEmailTemplate(input: {
       created_by: user.id,
       name,
       body: input.body ?? "",
+      visibility: input.visibility === "personal" ? "personal" : "team",
     })
-    .select("id, name, body, updated_at")
+    .select("id, name, body, visibility, updated_at")
     .single();
 
   if (error || !data) return { ok: false, template: null, error: error?.message ?? "fail" };
@@ -90,6 +88,7 @@ export async function createEmailTemplate(input: {
       id: data.id as string,
       name: data.name as string,
       body: (data.body as string) ?? "",
+      visibility: data.visibility === "personal" ? "personal" : "team",
       updatedAt: (data.updated_at as string) ?? "",
     },
     error: null,
@@ -100,6 +99,7 @@ export async function updateEmailTemplate(input: {
   id: string;
   name: string;
   body: string;
+  visibility?: "personal" | "team";
 }): Promise<{ ok: boolean; error: string | null }> {
   const supabase = await createClient();
   const {
@@ -116,6 +116,7 @@ export async function updateEmailTemplate(input: {
     .update({
       name,
       body: input.body ?? "",
+      visibility: input.visibility === "personal" ? "personal" : "team",
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.id);

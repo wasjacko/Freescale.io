@@ -4,6 +4,12 @@ import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import { TagPopover } from "@/components/TagPopover";
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
+import {
+  type ConversationCollaboration,
+  assignConversation,
+  createInternalNote,
+  listConversationCollaboration,
+} from "@/lib/actions/collaboration";
 import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-templates";
 import { sendEmailReply } from "@/lib/actions/inbox";
 import {
@@ -20,6 +26,7 @@ import {
 import { getEmailSignature } from "@/lib/actions/profile";
 import { getConversationMessages } from "@/lib/actions/thread-messages";
 import { isEmailLikeChannel } from "@/lib/channels/registry";
+import { formatActivityEvent } from "@/lib/collaboration";
 import { useData } from "@/lib/contexts/DataContext";
 import { cleanEmailBody } from "@/lib/email-body-clean";
 import { useToast } from "@/lib/hooks/useToast";
@@ -109,6 +116,10 @@ export function Thread() {
   const [liveByConv, setLiveByConv] = useState<Record<string, Message[]>>({});
   const [liveError, setLiveError] = useState<string | null>(null);
   const [loadingConvId, setLoadingConvId] = useState<string | null>(null);
+  const [collab, setCollab] = useState<ConversationCollaboration | null>(null);
+  const [collabLoading, setCollabLoading] = useState(false);
+  const [collabPending, setCollabPending] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const activeLiveMessages = activeConvId ? liveByConv[activeConvId] : undefined;
   const canLiveFetch = conv?.channel === "gmail";
 
@@ -143,6 +154,25 @@ export function Thread() {
       cancelled = true;
     };
   }, [activeConvId, activeLiveMessages, canLiveFetch]);
+
+  useEffect(() => {
+    if (!activeConvId) {
+      setCollab(null);
+      return;
+    }
+    let cancelled = false;
+    setCollabLoading(true);
+    listConversationCollaboration(activeConvId)
+      .then((data) => {
+        if (!cancelled) setCollab(data);
+      })
+      .finally(() => {
+        if (!cancelled) setCollabLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConvId]);
 
   const isLiveLoading = loadingConvId === activeConvId;
 
@@ -237,6 +267,40 @@ export function Thread() {
       setTimeout(() => burst.remove(), 600);
       push({ kind: "info", text: `★ ${conv.name}`, duration: 1800 });
     }
+  };
+
+  const refreshCollab = async () => {
+    if (!activeConvId) return;
+    setCollab(await listConversationCollaboration(activeConvId));
+  };
+
+  const handleAssign = async (assigneeId: string) => {
+    setCollabPending("assign");
+    const result = await assignConversation({
+      conversationId: activeConvId,
+      assigneeId: assigneeId || null,
+    });
+    setCollabPending(null);
+    if (!result.ok) {
+      push({ kind: "error", text: result.error ?? "Assignation impossible." });
+      return;
+    }
+    await refreshCollab();
+  };
+
+  const handleCreateNote = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const body = noteDraft.trim();
+    if (!body) return;
+    setCollabPending("note");
+    const result = await createInternalNote({ conversationId: activeConvId, body });
+    setCollabPending(null);
+    if (!result.ok) {
+      push({ kind: "error", text: result.error ?? "Note impossible." });
+      return;
+    }
+    setNoteDraft("");
+    await refreshCollab();
   };
 
   const firstName = conv.name.split(/[ –-]/)[0]?.trim() ?? "";
@@ -343,6 +407,66 @@ export function Thread() {
           ))}
         </div>
       )}
+
+      <section className="thread-collab" aria-label="Collaboration équipe">
+        <div className="thread-collab-top">
+          <label>
+            Assigné à
+            <select
+              value={collab?.assignedTo ?? conv.assignedTo ?? ""}
+              onChange={(event) => void handleAssign(event.target.value)}
+              disabled={
+                collabLoading ||
+                collabPending === "assign" ||
+                !collab?.permissions.canAssignConversation
+              }
+            >
+              <option value="">Personne</option>
+              {(collab?.members ?? []).map((member) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.fullName || member.email}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span>
+            {collabLoading ? "Chargement équipe..." : `${collab?.members.length ?? 0} membre(s)`}
+          </span>
+        </div>
+
+        <form className="thread-note-form" onSubmit={handleCreateNote}>
+          <input
+            value={noteDraft}
+            onChange={(event) => setNoteDraft(event.target.value)}
+            placeholder="Note interne... utilisez @prenom pour mentionner"
+            maxLength={4000}
+          />
+          <button type="submit" disabled={!noteDraft.trim() || collabPending === "note"}>
+            Ajouter
+          </button>
+        </form>
+
+        {(collab?.notes.length ?? 0) > 0 && (
+          <div className="thread-notes">
+            {collab?.notes.slice(0, 3).map((note) => (
+              <article key={note.id} className="thread-note">
+                <strong>{note.authorName}</strong>
+                <p>{note.body}</p>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {(collab?.activity.length ?? 0) > 0 && (
+          <div className="thread-activity">
+            {collab?.activity.slice(0, 4).map((event) => (
+              <span key={event.id}>
+                {formatActivityEvent(event.eventType, event.actorName, event.metadata)}
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
 
       {isEmail && <ThreadAiBar conversationId={activeConvId} />}
 

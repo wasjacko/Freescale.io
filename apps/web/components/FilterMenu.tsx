@@ -2,14 +2,14 @@
 
 import { useEffect, useRef } from "react";
 
-export type FilterMode = "all" | "unread" | "mentions";
+export type FilterMode = "all" | "unread" | "mentions" | "assigned";
 
 type Props = {
   anchor: HTMLElement | null;
   onClose: () => void;
   current: FilterMode;
   onSelect: (mode: FilterMode) => void;
-  counts: { all: number; unread: number; mentions: number };
+  counts: { all: number; unread: number; mentions: number; assigned: number };
 };
 
 export function FilterMenu({ anchor, onClose, current, onSelect, counts }: Props) {
@@ -65,6 +65,16 @@ export function FilterMenu({ anchor, onClose, current, onSelect, counts }: Props
         Unread <span className="filter-num">{counts.unread}</span>
       </button>
       <div className="filter-divider" />
+      <button
+        className={`filter-item ${current === "assigned" ? "is-on" : ""}`}
+        type="button"
+        onClick={() => {
+          onSelect("assigned");
+          onClose();
+        }}
+      >
+        Mes assignations <span className="filter-num">{counts.assigned}</span>
+      </button>
       <button
         className={`filter-item ${current === "mentions" ? "is-on" : ""}`}
         type="button"

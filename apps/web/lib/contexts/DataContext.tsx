@@ -18,6 +18,7 @@ import {
   sendMessage as srvSend,
   toggleTaskDone as srvToggleTask,
 } from "@/lib/actions/inbox";
+import type { MemberRole } from "@/lib/collaboration";
 import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
 import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 import type { ConversationCategory } from "@/lib/types";
@@ -45,6 +46,10 @@ function currentWeekStartIso(): string {
 
 type Ctx = {
   conversations: Conversation[];
+  activeWorkspaceId: string | null;
+  currentWorkspaceRole: MemberRole | null;
+  workspaces: Array<{ id: string; name: string; role: MemberRole }>;
+  canConnectChannels: boolean;
   messagesByConv: Record<string, Message[]>;
   tasks: Task[];
   events: CalEvent[];
@@ -383,6 +388,10 @@ export function DataProvider({
   const value = useMemo<Ctx>(
     () => ({
       conversations,
+      activeWorkspaceId: initial.activeWorkspaceId,
+      currentWorkspaceRole: initial.currentWorkspaceRole,
+      workspaces: initial.workspaces,
+      canConnectChannels: initial.canConnectChannels,
       messagesByConv,
       tasks,
       events,
@@ -408,6 +417,10 @@ export function DataProvider({
     }),
     [
       conversations,
+      initial.activeWorkspaceId,
+      initial.currentWorkspaceRole,
+      initial.workspaces,
+      initial.canConnectChannels,
       messagesByConv,
       tasks,
       events,

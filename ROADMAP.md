@@ -82,18 +82,18 @@ Légende : `[ ]` = à faire · `[x]` = fait · ⚡ = quick win (≤1j) · 🔥 =
 ## 👥 Phase 5 — Collaboration (56-67)
 *Sortir du solo pour ouvrir aux équipes (≥2 personnes).*
 
-- [ ] **56.** Workspaces multiples (créer nouveau workspace, switcher)
-- [ ] **57.** Invite teammate par email (token unique)
-- [ ] **58.** Roles : owner / admin / member (avec permissions différentes)
-- [ ] **59.** Assign conversation à un teammate (avatar + filtre "Mes assignations")
-- [ ] **60.** Internal notes par conv (visibles équipe, non envoyées au client)
-- [ ] **61.** @mentions dans les notes (notification au mentionné)
-- [ ] **62.** Activity log par conv (qui a lu, qui a répondu, quand)
-- [ ] **63.** Shared tags équipe
-- [ ] **64.** Shared templates équipe (vs perso)
-- [ ] **65.** Team-wide search (chercher dans toutes les convs de l'équipe)
-- [ ] **66.** Notifications équipe (Slack webhook / email digest)
-- [ ] **67.** Permissions granulaires (qui peut connecter un canal, qui peut inviter, etc.)
+- [x] **56.** Workspaces multiples (créer nouveau workspace, switcher)
+- [x] **57.** Invite teammate par email (token unique)
+- [x] **58.** Roles : owner / admin / member (avec permissions différentes)
+- [x] **59.** Assign conversation à un teammate (avatar + filtre "Mes assignations")
+- [x] **60.** Internal notes par conv (visibles équipe, non envoyées au client)
+- [x] **61.** @mentions dans les notes (notification au mentionné)
+- [x] **62.** Activity log par conv (qui a lu, qui a répondu, quand)
+- [x] **63.** Shared tags équipe
+- [x] **64.** Shared templates équipe (vs perso)
+- [x] **65.** Team-wide search (chercher dans toutes les convs de l'équipe)
+- [x] **66.** Notifications équipe (Slack webhook / email digest)
+- [x] **67.** Permissions granulaires (qui peut connecter un canal, qui peut inviter, etc.)
 
 ## 🔒 Phase 6 — Qualité / Sécurité / Compliance (68-79)
 *Faire que le produit tienne en audit + en charge.*

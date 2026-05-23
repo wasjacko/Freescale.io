@@ -46,6 +46,8 @@ export type Conversation = {
   snoozedUntilIso?: string | null;
   /** Lowercased freeform labels applied by the user. */
   tags?: string[];
+  /** Team member currently responsible for this conversation. */
+  assignedTo?: string | null;
 };
 
 export type MessageDirection = "in" | "out";

@@ -108,7 +108,7 @@ const INITIAL_SYNC_SKELETONS = [
 const REAL_CATEGORIES: ReadonlyArray<RealCategory> = ["client", "promo", "notif", "other"];
 const ALL_TABS: ReadonlyArray<CategoryTab> = ["all", ...REAL_CATEGORIES];
 
-export function Inbox() {
+export function Inbox({ currentUserId }: { currentUserId?: string | null }) {
   const router = useRouter();
   const { activeConvId, setActiveConv } = useApp();
   const {
@@ -461,12 +461,15 @@ export function Inbox() {
       // category (server-stored OR heuristic fallback).
       if (tab !== "all" && effectiveCategory(c) !== tab) return false;
       if (filter === "unread" && !isUnread(c.id, c.unread)) return false;
+      if (filter === "assigned" && (!currentUserId || c.assignedTo !== currentUserId)) {
+        return false;
+      }
       if (filter === "mentions") return false;
       // Tag filter — applies on top of everything else. Hidden when null.
       if (tagFilter && !(c.tags ?? []).includes(tagFilter)) return false;
       return true;
     });
-  }, [conversations, archived, filter, isUnread, tab, tagFilter, effectiveCategory]);
+  }, [conversations, archived, filter, isUnread, tab, tagFilter, effectiveCategory, currentUserId]);
 
   // Distinct tag list (sorted by frequency desc, then alpha) across all
   // non-archived convs. Used to populate the tag filter row in the panel
@@ -498,6 +501,9 @@ export function Inbox() {
   const counts = {
     all: conversations.filter((c) => !archived.has(c.id)).length,
     unread: conversations.filter((c) => !archived.has(c.id) && isUnread(c.id, c.unread)).length,
+    assigned: conversations.filter(
+      (c) => !archived.has(c.id) && currentUserId && c.assignedTo === currentUserId
+    ).length,
     mentions: 0,
   };
 
@@ -842,7 +848,9 @@ export function Inbox() {
                     ? "Aucune conversation dans votre boîte. Connectez un canal pour commencer, ou prenez une pause."
                     : `Aucune conversation dans « ${TAB_LABELS[tab]} »${
                         tagFilter ? ` avec le tag « ${tagFilter} »` : ""
-                      }${filter === "unread" ? ", filtré sur non lus" : ""}. Essayez un autre onglet ou retirez les filtres.`}
+                      }${filter === "unread" ? ", filtré sur non lus" : ""}${
+                        filter === "assigned" ? ", filtré sur vos assignations" : ""
+                      }. Essayez un autre onglet ou retirez les filtres.`}
                 </div>
               </div>
             );

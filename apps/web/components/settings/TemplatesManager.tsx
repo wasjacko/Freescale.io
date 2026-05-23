@@ -28,6 +28,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
   const [editingId, setEditingId] = useState<string | "new" | null>(null);
   const [name, setName] = useState("");
   const [body, setBody] = useState("");
+  const [visibility, setVisibility] = useState<"personal" | "team">("team");
   const [pending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
@@ -36,6 +37,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
     setEditingId("new");
     setName("");
     setBody("");
+    setVisibility("team");
     setToast(null);
   };
 
@@ -43,6 +45,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
     setEditingId(t.id);
     setName(t.name);
     setBody(t.body);
+    setVisibility(t.visibility);
     setToast(null);
   };
 
@@ -50,6 +53,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
     setEditingId(null);
     setName("");
     setBody("");
+    setVisibility("team");
     setToast(null);
   };
 
@@ -70,7 +74,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
     }
     startTransition(async () => {
       if (editingId === "new") {
-        const res = await createEmailTemplate({ name: trimmed, body });
+        const res = await createEmailTemplate({ name: trimmed, body, visibility });
         if (res.ok && res.template) {
           // Push the new template to the top of the list (matches the
           // server's updated_at DESC ordering).
@@ -80,16 +84,19 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
           setEditingId(null);
           setName("");
           setBody("");
+          setVisibility("team");
         } else {
           setToast({ kind: "err", text: res.error ?? "Création impossible." });
         }
       } else if (editingId) {
         const id = editingId;
-        const res = await updateEmailTemplate({ id, name: trimmed, body });
+        const res = await updateEmailTemplate({ id, name: trimmed, body, visibility });
         if (res.ok) {
           setTemplates((prev) =>
             prev.map((t) =>
-              t.id === id ? { ...t, name: trimmed, body, updatedAt: new Date().toISOString() } : t
+              t.id === id
+                ? { ...t, name: trimmed, body, visibility, updatedAt: new Date().toISOString() }
+                : t
             )
           );
           broadcastChange();
@@ -97,6 +104,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
           setEditingId(null);
           setName("");
           setBody("");
+          setVisibility("team");
         } else {
           setToast({ kind: "err", text: res.error ?? "Mise à jour impossible." });
         }
@@ -166,6 +174,19 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                   />
+                  <label className="template-visibility">
+                    <span>Visibilité</span>
+                    <select
+                      className="settings-input"
+                      value={visibility}
+                      onChange={(event) =>
+                        setVisibility(event.target.value === "personal" ? "personal" : "team")
+                      }
+                    >
+                      <option value="team">Équipe</option>
+                      <option value="personal">Personnel</option>
+                    </select>
+                  </label>
                   <div className="template-actions">
                     <button
                       type="button"
@@ -188,7 +209,12 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
               ) : (
                 <div className="template-display">
                   <div className="template-meta">
-                    <span className="template-name">{t.name}</span>
+                    <span className="template-name">
+                      {t.name}
+                      <small className="template-scope">
+                        {t.visibility === "personal" ? "Personnel" : "Équipe"}
+                      </small>
+                    </span>
                     <span className="template-preview">
                       {t.body.replace(/\s+/g, " ").slice(0, 90) || "Modèle vide"}
                     </span>
@@ -234,6 +260,19 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                 />
+                <label className="template-visibility">
+                  <span>Visibilité</span>
+                  <select
+                    className="settings-input"
+                    value={visibility}
+                    onChange={(event) =>
+                      setVisibility(event.target.value === "personal" ? "personal" : "team")
+                    }
+                  >
+                    <option value="team">Équipe</option>
+                    <option value="personal">Personnel</option>
+                  </select>
+                </label>
                 <div className="template-actions">
                   <button
                     type="button"

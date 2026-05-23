@@ -3,6 +3,7 @@
 import { syncChannel } from "@/lib/actions/connections";
 import { isSyncableChannel } from "@/lib/channels/registry";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -21,19 +22,13 @@ export async function autoSyncStaleChannels(staleAfterMs = 5 * 60_000): Promise<
   } = await supabase.auth.getUser();
   if (!user) return { ran: 0, newMessages: 0 };
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!workspace?.id) return { ran: 0, newMessages: 0 };
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) return { ran: 0, newMessages: 0 };
 
   const { data: accounts } = await supabase
     .from("channel_accounts")
     .select("id, kind, last_synced_at, status")
-    .eq("workspace_id", workspace.id)
+    .eq("workspace_id", workspaceId)
     .eq("status", "active")
     .not("encrypted_tokens", "is", null);
 

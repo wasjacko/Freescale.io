@@ -189,6 +189,7 @@ export type Database = {
       conversations: {
         Row: {
           archived: boolean;
+          assigned_to: string | null;
           channel_account_id: string | null;
           contact_id: string | null;
           created_at: string;
@@ -203,6 +204,7 @@ export type Database = {
         };
         Insert: {
           archived?: boolean;
+          assigned_to?: string | null;
           channel_account_id?: string | null;
           contact_id?: string | null;
           created_at?: string;
@@ -217,6 +219,7 @@ export type Database = {
         };
         Update: {
           archived?: boolean;
+          assigned_to?: string | null;
           channel_account_id?: string | null;
           contact_id?: string | null;
           created_at?: string;
@@ -230,6 +233,13 @@ export type Database = {
           workspace_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "conversations_assigned_to_fkey";
+            columns: ["assigned_to"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "conversations_channel_account_id_fkey";
             columns: ["channel_account_id"];
@@ -246,6 +256,116 @@ export type Database = {
           },
           {
             foreignKeyName: "conversations_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      conversation_activity_events: {
+        Row: {
+          actor_id: string | null;
+          body: string | null;
+          conversation_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          workspace_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          body?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          workspace_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          body?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversation_activity_events_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_activity_events_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_activity_events_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      conversation_internal_notes: {
+        Row: {
+          author_id: string;
+          body: string;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          mention_handles: string[];
+          mentioned_user_ids: string[];
+          workspace_id: string;
+        };
+        Insert: {
+          author_id: string;
+          body: string;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          mention_handles?: string[];
+          mentioned_user_ids?: string[];
+          workspace_id: string;
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          mention_handles?: string[];
+          mentioned_user_ids?: string[];
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "conversation_internal_notes_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_internal_notes_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "conversation_internal_notes_workspace_id_fkey";
             columns: ["workspace_id"];
             isOneToOne: false;
             referencedRelation: "workspaces";
@@ -453,6 +573,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          active_workspace_id: string | null;
           avatar_url: string | null;
           billing_period_end: string | null;
           billing_status: string;
@@ -476,6 +597,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          active_workspace_id?: string | null;
           avatar_url?: string | null;
           billing_period_end?: string | null;
           billing_status?: string;
@@ -499,6 +621,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          active_workspace_id?: string | null;
           avatar_url?: string | null;
           billing_period_end?: string | null;
           billing_status?: string;
@@ -521,7 +644,15 @@ export type Database = {
           trial_reminder_sent_at?: string | null;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_workspace_id_fkey";
+            columns: ["active_workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       tasks: {
         Row: {
@@ -631,6 +762,174 @@ export type Database = {
           },
         ];
       };
+      team_notification_settings: {
+        Row: {
+          email_digest_enabled: boolean;
+          slack_webhook_url: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          email_digest_enabled?: boolean;
+          slack_webhook_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          email_digest_enabled?: boolean;
+          slack_webhook_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_notification_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_notification_settings_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: true;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      team_notifications: {
+        Row: {
+          actor_id: string | null;
+          body: string;
+          conversation_id: string | null;
+          created_at: string;
+          digest_sent_at: string | null;
+          id: string;
+          kind: string;
+          read_at: string | null;
+          recipient_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          body: string;
+          conversation_id?: string | null;
+          created_at?: string;
+          digest_sent_at?: string | null;
+          id?: string;
+          kind: string;
+          read_at?: string | null;
+          recipient_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          body?: string;
+          conversation_id?: string | null;
+          created_at?: string;
+          digest_sent_at?: string | null;
+          id?: string;
+          kind?: string;
+          read_at?: string | null;
+          recipient_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_notifications_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_notifications_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "conversations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_notifications_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      workspace_invites: {
+        Row: {
+          accepted_at: string | null;
+          accepted_by: string | null;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string;
+          role: Database["public"]["Enums"]["member_role"];
+          token_hash: string;
+          workspace_id: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          invited_by: string;
+          role?: Database["public"]["Enums"]["member_role"];
+          token_hash: string;
+          workspace_id: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string;
+          role?: Database["public"]["Enums"]["member_role"];
+          token_hash?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invites_accepted_by_fkey";
+            columns: ["accepted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_invites_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_invites_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       workspace_members: {
         Row: {
           added_at: string;
@@ -662,6 +961,48 @@ export type Database = {
             foreignKeyName: "workspace_members_workspace_id_fkey";
             columns: ["workspace_id"];
             isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      workspace_permission_settings: {
+        Row: {
+          assign_roles: Database["public"]["Enums"]["member_role"][];
+          connect_channel_roles: Database["public"]["Enums"]["member_role"][];
+          invite_roles: Database["public"]["Enums"]["member_role"][];
+          updated_at: string;
+          updated_by: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          assign_roles?: Database["public"]["Enums"]["member_role"][];
+          connect_channel_roles?: Database["public"]["Enums"]["member_role"][];
+          invite_roles?: Database["public"]["Enums"]["member_role"][];
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          assign_roles?: Database["public"]["Enums"]["member_role"][];
+          connect_channel_roles?: Database["public"]["Enums"]["member_role"][];
+          invite_roles?: Database["public"]["Enums"]["member_role"][];
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_permission_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_permission_settings_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: true;
             referencedRelation: "workspaces";
             referencedColumns: ["id"];
           },

@@ -17,6 +17,11 @@ type DigestConversation = {
   contacts?: { display_name?: string | null; email?: string | null } | null;
 };
 
+type TeamDigestNotification = Pick<
+  Database["public"]["Tables"]["team_notifications"]["Row"],
+  "body" | "created_at" | "id" | "kind" | "recipient_id"
+>;
+
 function startOfToday(now = new Date()): Date {
   const start = new Date(now);
   start.setUTCHours(0, 0, 0, 0);
@@ -61,6 +66,29 @@ function digestHtml(profile: DigestProfile, conversations: DigestConversation[])
   `;
 }
 
+function teamDigestHtml(profile: DigestProfile, notifications: TeamDigestNotification[]): string {
+  const name = profile.full_name?.split(/\s+/)[0] || "there";
+  const app = process.env.NEXT_PUBLIC_APP_URL ?? "https://freescale.site";
+  const items = notifications
+    .map(
+      (notification) => `<li style="margin:0 0 12px">
+        <strong>${notification.kind === "mention" ? "Mention" : "Assignation"}</strong>
+        <div style="color:#334155">${escapeHtml(notification.body)}</div>
+      </li>`
+    )
+    .join("");
+
+  return `
+    <div style="font-family:Inter,Arial,sans-serif;line-height:1.55;color:#0f172a">
+      <h1 style="font-size:24px;line-height:1.2">Activité de votre équipe</h1>
+      <p>Bonjour ${escapeHtml(name)},</p>
+      <p>Voici vos notifications Freescale non lues.</p>
+      <ol style="padding-left:20px">${items}</ol>
+      <p><a href="${app}/app/settings/team" style="display:inline-block;background:#0f172a;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700">Voir l'activité équipe</a></p>
+    </div>
+  `;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -97,6 +125,33 @@ async function sendDigest(
   return { ok: true, error: null };
 }
 
+async function sendTeamDigest(
+  profile: DigestProfile,
+  notifications: TeamDigestNotification[]
+): Promise<{ ok: boolean; error: string | null }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { ok: false, error: "RESEND_API_KEY missing" };
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM_EMAIL ?? "Freescale <hello@freescale.app>",
+      html: teamDigestHtml(profile, notifications),
+      subject: "Votre activité équipe Freescale",
+      to: [profile.email],
+    }),
+  });
+
+  if (!response.ok) {
+    return { ok: false, error: (await response.text()) || `Resend ${response.status}` };
+  }
+  return { ok: true, error: null };
+}
+
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
@@ -126,6 +181,7 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   let sent = 0;
+  let teamSent = 0;
   const failures: Array<{ email: string; error: string }> = [];
   const checked = profiles?.length ?? 0;
 
@@ -163,5 +219,59 @@ export async function GET(request: NextRequest) {
     sent += 1;
   }
 
-  return NextResponse.json({ checked, failures, sent });
+  const { data: teamSettings, error: teamSettingsError } = await supabase
+    .from("team_notification_settings")
+    .select("workspace_id")
+    .eq("email_digest_enabled", true)
+    .limit(100);
+  if (teamSettingsError) {
+    return NextResponse.json({ error: teamSettingsError.message, failures, sent }, { status: 500 });
+  }
+
+  for (const setting of teamSettings ?? []) {
+    const { data: notices, error: noticesError } = await supabase
+      .from("team_notifications")
+      .select("id, recipient_id, kind, body, created_at")
+      .eq("workspace_id", setting.workspace_id)
+      .is("read_at", null)
+      .is("digest_sent_at", null)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (noticesError) {
+      failures.push({ email: "team-digest", error: noticesError.message });
+      continue;
+    }
+
+    const byRecipient = new Map<string, TeamDigestNotification[]>();
+    for (const notice of notices ?? []) {
+      const current = byRecipient.get(notice.recipient_id) ?? [];
+      current.push(notice);
+      byRecipient.set(notice.recipient_id, current);
+    }
+
+    for (const [recipientId, recipientNotices] of byRecipient) {
+      const { data: recipient } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, daily_digest_last_sent_at")
+        .eq("id", recipientId)
+        .maybeSingle();
+      if (!recipient) continue;
+
+      const result = await sendTeamDigest(recipient, recipientNotices);
+      if (!result.ok) {
+        failures.push({ email: recipient.email, error: result.error ?? "unknown" });
+        continue;
+      }
+      await supabase
+        .from("team_notifications")
+        .update({ digest_sent_at: new Date().toISOString() })
+        .in(
+          "id",
+          recipientNotices.map((notice) => notice.id)
+        );
+      teamSent += 1;
+    }
+  }
+
+  return NextResponse.json({ checked, failures, sent, teamSent });
 }

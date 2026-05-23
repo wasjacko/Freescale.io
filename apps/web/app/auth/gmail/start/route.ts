@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { currentUserCanConnectChannels } from "@/lib/actions/collaboration";
 import { buildGmailAuthUrl } from "@/lib/gmail";
 import { createClient } from "@/lib/supabase/server";
 import { type NextRequest, NextResponse } from "next/server";
@@ -18,6 +19,11 @@ export async function GET(request: NextRequest) {
     url.pathname = "/sign-in";
     url.searchParams.set("next", "/app/settings/connections");
     return NextResponse.redirect(url);
+  }
+  if (!(await currentUserCanConnectChannels())) {
+    return NextResponse.redirect(
+      new URL("/app/settings/connections?error=permission_denied", request.url)
+    );
   }
 
   const state = randomBytes(24).toString("hex");

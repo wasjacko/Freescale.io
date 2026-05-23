@@ -16,6 +16,7 @@ import {
   parseToneRewrite,
 } from "@/lib/mue-chat";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import Anthropic from "@anthropic-ai/sdk";
 
 /**
@@ -62,19 +63,8 @@ async function getPrimaryWorkspaceId(
   } = await supabase.auth.getUser();
   if (!user) return { workspaceId: null, error: "unauthenticated" };
 
-  const { data: workspace, error } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !workspace?.id) {
-    return { workspaceId: null, error: error?.message ?? "no workspace" };
-  }
-
-  return { workspaceId: workspace.id as string, error: null };
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  return { workspaceId, error: workspaceId ? null : "no workspace" };
 }
 
 export async function suggestReplies(
@@ -1051,14 +1041,8 @@ export async function dailyBriefing(): Promise<{
   } = await supabase.auth.getUser();
   if (!user) return { briefing: null, error: "unauthenticated" };
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!workspace?.id) return { briefing: null, error: "no workspace" };
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) return { briefing: null, error: "no workspace" };
 
   // Recent client conversations — the brief focuses on what matters,
   // not the newsletter flood. Fall back to top-20 last-active if Mue
@@ -1066,7 +1050,7 @@ export async function dailyBriefing(): Promise<{
   const { data: classified } = await supabase
     .from("conversations")
     .select("id, subject, preview, last_message_at, category, contacts(display_name, email)")
-    .eq("workspace_id", workspace.id)
+    .eq("workspace_id", workspaceId)
     .eq("archived", false)
     .eq("category", "client")
     .order("last_message_at", { ascending: false })
@@ -1077,7 +1061,7 @@ export async function dailyBriefing(): Promise<{
     const { data: fallback } = await supabase
       .from("conversations")
       .select("id, subject, preview, last_message_at, category, contacts(display_name, email)")
-      .eq("workspace_id", workspace.id)
+      .eq("workspace_id", workspaceId)
       .eq("archived", false)
       .order("last_message_at", { ascending: false })
       .limit(20);
@@ -1192,17 +1176,11 @@ export async function createTaskFromBrief(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "unauthenticated" };
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!workspace?.id) return { ok: false, error: "no workspace" };
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) return { ok: false, error: "no workspace" };
 
   const { error } = await supabase.from("tasks").insert({
-    workspace_id: workspace.id,
+    workspace_id: workspaceId,
     conversation_id: input.conversationId,
     title: input.title,
     description: input.description ?? null,

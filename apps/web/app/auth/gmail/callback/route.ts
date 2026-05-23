@@ -2,6 +2,7 @@ import { syncGmail } from "@/lib/actions/connections";
 import { encryptJSON } from "@/lib/encryption";
 import { exchangeGmailCode } from "@/lib/gmail";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -54,15 +55,8 @@ export async function GET(request: NextRequest) {
       token_type: tokens.token_type,
     });
 
-    // Find the user's workspace (first one they own — single-workspace MVP)
-    const { data: workspace } = await supabase
-      .from("workspaces")
-      .select("id")
-      .eq("owner_id", user.id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    if (!workspace?.id) {
+    const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+    if (!workspaceId) {
       return NextResponse.redirect(
         new URL("/app/settings/connections?error=no_workspace", request.url)
       );
@@ -77,7 +71,7 @@ export async function GET(request: NextRequest) {
       .from("channel_accounts")
       .upsert(
         {
-          workspace_id: workspace.id,
+          workspace_id: workspaceId,
           kind: "gmail",
           external_id: tokens.email,
           display_name: tokens.email,

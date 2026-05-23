@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/app/settings/profile" as const, label: "Profil", icon: "i-user" },
   { href: "/app/settings/connections" as const, label: "Connexions", icon: "i-globe" },
+  { href: "/app/settings/team" as const, label: "Équipe", icon: "i-user" },
   { href: "/app/settings/templates" as const, label: "Modèles", icon: "i-edit" },
   { href: "/app/settings/billing" as const, label: "Abonnement", icon: "i-lock" },
 ];

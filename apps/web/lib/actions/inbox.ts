@@ -1,5 +1,6 @@
 "use server";
 
+import { logConversationActivity } from "@/lib/actions/collaboration";
 import {
   type GmailAttachment,
   getMessageMetadata,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/gmail";
 import { getValidOutlookAccessToken, sendOutlookMessage } from "@/lib/outlook";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveWorkspaceId } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024; // 20 MB safe across Gmail/Outlook simple send
@@ -30,7 +32,25 @@ function parseAddressList(raw: string): Array<{ name: string | null; email: stri
 
 export async function markConversationRead(conversationId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: conv } = await supabase
+    .from("conversations")
+    .select("workspace_id")
+    .eq("id", conversationId)
+    .maybeSingle();
   await supabase.from("conversations").update({ unread_count: 0 }).eq("id", conversationId);
+  if (user && conv?.workspace_id) {
+    await logConversationActivity({
+      workspaceId: conv.workspace_id as string,
+      conversationId,
+      actorId: user.id,
+      eventType: "read",
+      body: null,
+      metadata: {},
+    });
+  }
   revalidatePath("/");
 }
 
@@ -189,6 +209,14 @@ export async function sendMessage(conversationId: string, text: string) {
           : {}),
       })
       .eq("id", conversationId);
+    await logConversationActivity({
+      workspaceId: conv.workspace_id as string,
+      conversationId,
+      actorId: user.id,
+      eventType: "reply_sent",
+      body: trimmed.slice(0, 280),
+      metadata: { channel: "gmail" },
+    });
 
     revalidatePath("/app", "layout");
     return;
@@ -209,6 +237,14 @@ export async function sendMessage(conversationId: string, text: string) {
       last_message_at: now,
     })
     .eq("id", conversationId);
+  await logConversationActivity({
+    workspaceId: conv.workspace_id as string,
+    conversationId,
+    actorId: user.id,
+    eventType: "reply_sent",
+    body: trimmed.slice(0, 280),
+    metadata: { channel: channelKind ?? "local" },
+  });
 
   revalidatePath("/app", "layout");
 }
@@ -552,7 +588,7 @@ export async function reorderTasks(
  * Create a task manually from the TasksView "New task" button (or
  * anywhere else that needs a one-off task without Mue context).
  *
- * Resolves the user's workspace via owner_id so we don't need the
+ * Resolves the user's active workspace so we don't need the
  * client to pass it. Returns the new task id on success so callers
  * can do optimistic UI rather than a full refresh if they prefer.
  */
@@ -573,14 +609,8 @@ export async function createTask(input: {
   const title = input.title.trim();
   if (!title) return { ok: false, taskId: null, error: "Title is required." };
 
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!workspace?.id) {
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  if (!workspaceId) {
     return { ok: false, taskId: null, error: "no workspace" };
   }
 
@@ -604,7 +634,7 @@ export async function createTask(input: {
   const { data: inserted, error } = await supabase
     .from("tasks")
     .insert({
-      workspace_id: workspace.id,
+      workspace_id: workspaceId,
       conversation_id: input.conversationId ?? null,
       title,
       description: input.description ?? null,

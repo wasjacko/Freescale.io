@@ -37,9 +37,11 @@ function formatWhen(iso: string | null): string {
 export function ConnectionsList({
   accounts,
   flash,
+  canConnect,
 }: {
   accounts: Account[];
   flash: { kind: "ok" | "err"; text: string } | null;
+  canConnect: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -123,6 +125,12 @@ export function ConnectionsList({
           Branchez vos canaux pour que Freescale rassemble tous vos messages en un seul endroit.
         </p>
       </header>
+
+      {!canConnect && (
+        <div className="settings-toast is-err" style={{ width: "fit-content" }}>
+          Seuls les owners et admins peuvent connecter de nouveaux canaux.
+        </div>
+      )}
 
       {toast && (
         <div
@@ -237,7 +245,7 @@ export function ConnectionsList({
                         onClick={() => {
                           if (p.startPath) openConnectPopup(p.kind, p.startPath);
                         }}
-                        disabled={connecting === p.kind}
+                        disabled={connecting === p.kind || !canConnect}
                       >
                         {connecting === p.kind ? "Connexion…" : `Connecter ${p.label}`}
                       </button>
