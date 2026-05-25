@@ -1,13 +1,15 @@
 "use client";
 
+import { toast } from "@/lib/hooks/useToast";
+import { getLandingFlashPresentation } from "@/lib/landing-flash";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
- * Top-of-page flash banner shown on the landing after a sign-out or
- * account deletion. Reads URL search params, displays the right
- * message, and clears the param from the URL once dismissed so a
- * reload doesn't re-show the banner.
+ * Shows a quiet floating toast after sign-out and retains a prominent
+ * banner for permanent account deletion. Both states are sourced from
+ * URL params and removed after acknowledgement so refreshes do not
+ * repeat the notice.
  *
  * Why on the landing and not on /welcome: signing out is "I'm done
  * for now", not "I want to log in again right this second". The
@@ -20,53 +22,46 @@ export function LandingFlash() {
   const [visible, setVisible] = useState(false);
   const signedOut = params.has("signedout");
   const deleted = params.has("deleted");
+  const presentation = getLandingFlashPresentation({ signedOut, deleted });
+  const fired = useRef(false);
+
+  const clearIntent = useCallback(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("signedout");
+    url.searchParams.delete("deleted");
+    router.replace(`${url.pathname}${url.search}${url.hash}` as never);
+  }, [router]);
 
   useEffect(() => {
-    setVisible(signedOut || deleted);
-    // Auto-dismiss after 7s for "you signed out" (low information),
-    // but keep the deletion banner sticky — it's a one-shot
-    // confirmation of an irreversible action and the user might
-    // want to read it twice.
-    if (signedOut && !deleted) {
-      const t = setTimeout(() => handleDismiss(), 7000);
-      return () => clearTimeout(t);
+    if (!presentation || fired.current) return;
+    fired.current = true;
+
+    if (presentation === "signedout-toast") {
+      toast.success("Vous êtes bien déconnecté. À bientôt sur Freescale.", { duration: 4200 });
+      clearIntent();
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signedOut, deleted]);
 
-  if (!visible) return null;
+    setVisible(true);
+  }, [clearIntent, presentation]);
 
-  const handleDismiss = () => {
-    setVisible(false);
-    // Strip the param from the URL so a reload doesn't reflash.
-    // router.replace keeps the scroll position vs window.location.href.
-    router.replace("/" as never);
-  };
+  if (!visible || presentation !== "deleted-banner") return null;
 
   return (
-    <div
-      className={`landing-flash ${deleted ? "is-deleted" : "is-signedout"}`}
-      role="status"
-      aria-live="polite"
-    >
+    <div className="landing-flash is-deleted" role="status" aria-live="polite">
       <span className="landing-flash-icon" aria-hidden>
-        {deleted ? "✓" : "👋"}
+        ✓
       </span>
       <div className="landing-flash-text">
-        {deleted ? (
-          <>
-            <strong>Compte supprimé.</strong> Toutes vos données ont été effacées définitivement.
-          </>
-        ) : (
-          <>
-            <strong>Vous êtes bien déconnecté.</strong> À bientôt sur Freescale.
-          </>
-        )}
+        <strong>Compte supprimé.</strong> Toutes vos données ont été effacées définitivement.
       </div>
       <button
         type="button"
         className="landing-flash-close"
-        onClick={handleDismiss}
+        onClick={() => {
+          setVisible(false);
+          clearIntent();
+        }}
         aria-label="Fermer"
       >
         ✕

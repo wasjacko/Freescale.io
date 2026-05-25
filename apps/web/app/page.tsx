@@ -2,6 +2,7 @@ import { LandingFlash } from "@/components/LandingFlash";
 import { MueAvatar } from "@/components/MueAvatar";
 import { ChannelLogo, Icon } from "@/components/icons/Icon";
 import { Sprite } from "@/components/icons/Sprite";
+import { Toaster } from "@/components/ui/Toaster";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -30,6 +31,7 @@ export default async function LandingPage({
   return (
     <div className="land">
       <Sprite />
+      <Toaster />
       <Suspense>
         <LandingFlash />
       </Suspense>
