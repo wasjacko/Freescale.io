@@ -5,10 +5,16 @@ const REQUIRED_SUPABASE_ENV = [
 
 type RequiredSupabaseEnv = (typeof REQUIRED_SUPABASE_ENV)[number];
 
-export function getRequiredSupabaseEnv(name: RequiredSupabaseEnv): string {
-  const value = process.env[name];
+export function requireSupabaseEnvValue(
+  name: RequiredSupabaseEnv,
+  value: string | undefined
+): string {
   if (!value || value.includes("placeholder")) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
+}
+
+export function getRequiredSupabaseEnv(name: RequiredSupabaseEnv): string {
+  return requireSupabaseEnvValue(name, process.env[name]);
 }
