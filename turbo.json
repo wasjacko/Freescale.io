@@ -8,9 +8,13 @@
       "env": [
         "NEXT_PUBLIC_*",
         "SUPABASE_*",
-        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_*",
+        "GOOGLE_OAUTH_*",
+        "MICROSOFT_*",
+        "ENCRYPTION_KEY",
+        "CRON_SECRET",
         "STRIPE_*",
-        "RESEND_API_KEY"
+        "RESEND_*"
       ]
     },
     "@freescale/api#build": {
