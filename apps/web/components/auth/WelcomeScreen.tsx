@@ -20,10 +20,8 @@ import { useState } from "react";
  *   2. Email       → magic link via Supabase signInWithOtp
  *   3. Apple       → "bientôt" — requires Apple Developer setup, deferred
  *
- * Pre-consent modal shown before redirecting to Google so the user
- * understands what we'll read BEFORE the Google consent screen lands —
- * the audit flagged this as critical for trust + conversion on sensitive
- * Gmail scopes.
+ * Google already owns the permissions-consent step in OAuth, so returning
+ * users leave this screen in one click instead of crossing an app interstitial.
  */
 export function WelcomeScreen() {
   const searchParams = useSearchParams();
@@ -32,7 +30,7 @@ export function WelcomeScreen() {
   const isSwitching = searchParams.has("switch");
   const oauthError = searchParams.get("error");
 
-  const [mode, setMode] = useState<"choice" | "google-consent" | "email" | "email-sent">("choice");
+  const [mode, setMode] = useState<"choice" | "email" | "email-sent">("choice");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState<"google" | "email" | null>(null);
   const [error, setError] = useState<string | null>(
@@ -48,7 +46,7 @@ export function WelcomeScreen() {
   // don't pass through /welcome anymore.
   const banner = isSwitching ? "Connectez-vous avec un autre compte." : null;
 
-  const handleGoogleConfirm = async () => {
+  const handleGoogleSignIn = async () => {
     setError(null);
     setLoading("google");
     try {
@@ -125,11 +123,11 @@ export function WelcomeScreen() {
               <button
                 type="button"
                 className="welcome-cta welcome-cta-primary"
-                onClick={() => setMode("google-consent")}
+                onClick={handleGoogleSignIn}
                 disabled={loading !== null}
               >
                 <GoogleIcon />
-                Continuer avec Google
+                {loading === "google" ? "Redirection…" : "Continuer avec Google"}
               </button>
 
               <button
@@ -164,74 +162,6 @@ export function WelcomeScreen() {
                 politique de confidentialité
               </a>
               .
-            </p>
-          </>
-        )}
-
-        {mode === "google-consent" && (
-          <>
-            <button
-              type="button"
-              className="welcome-back"
-              onClick={() => setMode("choice")}
-              aria-label="Retour"
-            >
-              ← Retour
-            </button>
-
-            <h1 className="welcome-title">Connecter Google + Gmail</h1>
-            <p className="welcome-sub">
-              On vous explique exactement ce qu'on va faire avant de vous rediriger vers Google.
-            </p>
-
-            <ul className="welcome-consent-list">
-              <li>
-                <span className="welcome-check">✓</span>
-                <div>
-                  <strong>Identité</strong>
-                  <span>Votre nom, email et photo pour créer votre compte.</span>
-                </div>
-              </li>
-              <li>
-                <span className="welcome-check">✓</span>
-                <div>
-                  <strong>Lecture des emails</strong>
-                  <span>
-                    Pour les afficher dans votre inbox unifiée et détecter les actions importantes.
-                  </span>
-                </div>
-              </li>
-              <li>
-                <span className="welcome-check">✓</span>
-                <div>
-                  <strong>Envoi d'emails</strong>
-                  <span>Pour répondre directement depuis Freescale (jamais sans votre clic).</span>
-                </div>
-              </li>
-              <li className="welcome-consent-no">
-                <span className="welcome-x">✕</span>
-                <div>
-                  <strong>Ce qu'on ne fait PAS</strong>
-                  <span>
-                    Pas de suppression de mails, pas de modification sans action utilisateur, pas de
-                    partage des données.
-                  </span>
-                </div>
-              </li>
-            </ul>
-
-            <button
-              type="button"
-              className="welcome-cta welcome-cta-primary"
-              onClick={handleGoogleConfirm}
-              disabled={loading !== null}
-            >
-              <GoogleIcon />
-              {loading === "google" ? "Redirection…" : "Continuer avec Google"}
-            </button>
-
-            <p className="welcome-fine">
-              Vous pouvez révoquer l'accès à tout moment depuis votre compte Google.
             </p>
           </>
         )}
