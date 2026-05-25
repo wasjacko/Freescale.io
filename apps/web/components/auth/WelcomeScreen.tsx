@@ -61,8 +61,9 @@ export function WelcomeScreen() {
             "https://www.googleapis.com/auth/userinfo.profile",
           ].join(" "),
           queryParams: {
+            // Google returns offline access on first authorization; omitting
+            // prompt=consent lets returning users sign in without re-approving Gmail.
             access_type: "offline",
-            prompt: "consent",
           },
         },
       });

@@ -59,9 +59,9 @@ async function maybeCreateStripeCustomer({
  *
  * The Supabase session, after exchangeCodeForSession, carries:
  *  - provider_token         : the Google OAuth access token (1h TTL)
- *  - provider_refresh_token : the long-lived refresh token (only present
- *                             if access_type=offline + prompt=consent
- *                             were passed at sign-in time)
+ *  - provider_refresh_token : the long-lived refresh token (returned on
+ *                             initial offline authorization, or when the
+ *                             user explicitly reconnects Gmail)
  *
  * We capture those, encrypt them with libsodium, and upsert a row in
  * channel_accounts. From there the existing syncGmail / live-fetch
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
   await maybeCreateStripeCustomer({ supabase, user });
 
   // Only proceed with the Gmail bootstrap if (a) provider gave us a
-  // refresh token (some re-sign-ins don't, even with prompt=consent) and
+  // refresh token (routine re-sign-ins normally do not issue a new one) and
   // (b) we know the Google email. Otherwise the user is logged in but
   // the channel isn't created — they can still hit Settings → Connect
   // Gmail manually as a fallback (NoChannelsHero on /app surfaces it).
