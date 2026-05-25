@@ -1,3 +1,4 @@
+import { getCronAuthorizationStatus } from "@/lib/cron-auth";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
@@ -153,8 +154,14 @@ async function sendTeamDigest(
 }
 
 export async function GET(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+  const authorization = getCronAuthorizationStatus(
+    process.env.CRON_SECRET,
+    request.headers.get("authorization")
+  );
+  if (authorization === "misconfigured") {
+    return NextResponse.json({ error: "CRON_SECRET missing" }, { status: 500 });
+  }
+  if (authorization === "unauthorized") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
