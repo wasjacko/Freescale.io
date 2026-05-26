@@ -58,6 +58,10 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     pathname === "/" ||
     pathname === "/pricing" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/support" ||
+    pathname === "/account-deletion" ||
     isAuthRoute ||
     pathname.startsWith("/api/cron/") ||
     pathname.startsWith("/preview/");
