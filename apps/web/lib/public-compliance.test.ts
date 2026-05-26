@@ -40,4 +40,12 @@ describe("public App Store compliance surfaces", () => {
       expect(pricing).toContain(path);
     }
   });
+
+  it("keeps every compliance page accessible without authentication", async () => {
+    const middleware = await source("./supabase/middleware.ts");
+
+    for (const path of ["/support", "/privacy", "/terms", "/account-deletion"]) {
+      expect(middleware).toContain(`pathname === "${path}"`);
+    }
+  });
 });
