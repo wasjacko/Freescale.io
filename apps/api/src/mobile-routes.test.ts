@@ -252,4 +252,18 @@ describe("mobile v1 routes", () => {
     expect(url).toContain("id=eq.task_1");
     expect(url).toContain("workspace_id=eq.ws_1");
   });
+
+  it("deletes only the authenticated account through the user-scoped RPC", async () => {
+    queueAuthUser();
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    const res = await authorisedRequest("/v1/account", { method: "DELETE" });
+    const [url, options] = fetchMock.mock.calls.at(-1) ?? [];
+
+    expect(res.status).toBe(204);
+    expect(String(url)).toContain("/rest/v1/rpc/delete_user");
+    expect((options as RequestInit).headers).toMatchObject({
+      Authorization: "Bearer token_1",
+    });
+  });
 });

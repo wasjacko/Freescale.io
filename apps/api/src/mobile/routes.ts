@@ -101,5 +101,26 @@ export function createMobileRoutes<B extends MobileAuthBindings>() {
     }
   });
 
+  routes.delete("/account", async (c) => {
+    try {
+      const client = createUserSupabaseClient(c.env, c.get("mobileAccessToken"));
+      const response = await client.request("/rest/v1/rpc/delete_user", {
+        method: "POST",
+        body: "{}",
+      });
+      if (!response.ok) {
+        throw new MobileRouteError(
+          "account_deletion_failed",
+          502,
+          "Impossible de supprimer le compte."
+        );
+      }
+      return c.body(null, 204);
+    } catch (error) {
+      const failure = handleError(error);
+      return c.json(failure.payload, failure.status);
+    }
+  });
+
   return routes;
 }

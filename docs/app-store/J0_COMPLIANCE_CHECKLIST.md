@@ -24,8 +24,8 @@
 | Apple Developer Program membership | Owner action required | Team ID and enrollment confirmation |
 | App Store Connect app record | Owner action required | App record URL |
 | Sign in with Apple capability | Owner action required | Service/App ID and key configured securely |
-| Privacy policy URL | Implemented locally; deployment pending | Live `/privacy` URL |
-| Support URL | Implemented locally; deployment pending | Live `/support` URL |
+| Privacy policy URL | Live in production on 26 May 2026 | `https://www.freescale.site/privacy` |
+| Support URL | Live in production on 26 May 2026 | `https://www.freescale.site/support` |
 | Account deletion initiation | Web public guidance and settings action implemented; native required in J2/J3 | TestFlight screen recording |
 | No native purchase CTA | Design locked; verify per build | Review checklist result |
 
@@ -60,9 +60,16 @@ final legal wording, the owner must confirm:
 
 - Branch: `codex/j0-app-store-foundation`.
 - Public pages implemented: `/privacy`, `/terms`, `/support`, `/account-deletion`.
-- Access verified anonymously through production build locally on 26 May 2026.
+- Access verified anonymously on `https://www.freescale.site` on 26 May 2026.
 - Footer discovery checked at iPhone-width viewport; all four public destinations remain reachable.
 - Technical verification: `pnpm --filter @freescale/web lint`, `typecheck`, `test`, `build`, and root `pnpm test` passed locally.
+
+## J1 API Implementation Record
+
+- Authenticated mobile endpoints implemented on `codex/j1-mobile-api`: profile/workspace, today, task list/create/complete, and account deletion initiation.
+- `DELETE /v1/account` calls `delete_user` using only the authenticated user session and is intended for the native `Plus > Compte` screen in J2.
+- Production enablement requires applying `20260526211500_tasks_updated_at.sql` and configuring `SUPABASE_ANON_KEY` in the API Worker environment before deployment.
+- Native screens, Sign in with Apple, TestFlight evidence, and owner confirmations remain required before App Store submission.
 
 ## Official References
 
