@@ -82,4 +82,26 @@ describe("mobile API authentication", () => {
     );
     expect(JSON.stringify(fetchMock.mock.calls)).not.toContain(env.SUPABASE_SERVICE_ROLE_KEY);
   });
+
+  it("does not allow route options to replace the authenticated Supabase credentials", async () => {
+    fetchMock.mockResolvedValueOnce(json([]));
+    const client = createUserSupabaseClient(env, "token_1");
+
+    await client.request("/rest/v1/tasks?select=id", {
+      headers: {
+        apikey: "untrusted_key",
+        Authorization: "Bearer untrusted_token",
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://supabase.example/rest/v1/tasks?select=id",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          apikey: "anon_test",
+          Authorization: "Bearer token_1",
+        }),
+      })
+    );
+  });
 });

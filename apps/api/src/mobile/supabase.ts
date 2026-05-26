@@ -11,10 +11,10 @@ export function createUserSupabaseClient(
   return {
     request(path, init = {}) {
       const headers = {
-        apikey: env.SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
         ...(init.headers as Record<string, string> | undefined),
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
       };
 
       return fetch(new URL(path, env.SUPABASE_URL).toString(), {
