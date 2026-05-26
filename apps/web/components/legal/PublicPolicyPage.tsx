@@ -60,6 +60,8 @@ export function PublicPolicyPage({ policy }: { policy: PublicPolicy }) {
       <footer className="policy-footer">
         <span>Freescale</span>
         <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`}>{PUBLIC_CONTACT_EMAIL}</a>
+        <Link href="/support">Support</Link>
+        <Link href="/privacy">Confidentialité</Link>
         <Link href="/terms">Conditions</Link>
         <Link href="/account-deletion">Suppression du compte</Link>
       </footer>
