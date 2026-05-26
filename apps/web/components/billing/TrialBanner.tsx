@@ -23,6 +23,7 @@ export function TrialBanner() {
   const expired = overview.trial.status === "expired";
   const days = overview.trial.daysRemaining ?? 0;
   const urgent = !expired && days <= 3;
+  if (!expired && !urgent) return null;
 
   return (
     <div className={`trial-banner ${expired ? "is-expired" : urgent ? "is-urgent" : ""}`}>

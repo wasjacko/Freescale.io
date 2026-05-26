@@ -23,9 +23,9 @@ export type Category = "client" | "promo" | "notif" | "other";
 const NOTIF_SENDER_LOCAL =
   /^(no[-_.]?reply|noreply|notification|notifications|alerts?|alert|automated|automated[-_.]?reply|mailer|mailer[-_.]?daemon|postmaster|do[-_.]?not[-_.]?reply|donotreply|system|admin|root|bounce|bounces|robot|bot|webmaster)$/i;
 const NOTIF_SUBJECT =
-  /\b(receipt|invoice|order|shipped|delivered|tracking|payment|payment.confirmed|verify|verification|2fa|otp|password.reset|reset.your.password|security.alert|sign.?in|signed.in|new.login|connexion|expir(es|ed|ation)|renewal|confirm|confirmed your|your.code|code.de.v[ée]rification|facture|re[cç]u|votre commande|livraison|alerte|notif|notification|backup|sync|invitation|meeting|calendar|événement)\b/i;
+  /\b(receipt|invoice|order|shipped|delivered|tracking|payment|payment.confirmed|verify|verification|2fa|otp|password.reset|reset.your.password|security.alert|sign.?in|signed.in|new.login|connexion|expir(es|ed|ation)|renewal|confirm|confirmed your|your.code|code.de.v[ée]rification|facture|re[cç]u|votre commande|livraison|alerte|notif|notification|backup|sync|invitation|meeting|calendar|événement|job.?alert|nouvelles? offres?|offres? d['’ ]?(emploi|alternance))\b/i;
 const PROMO_SUBJECT =
-  /(unsubscribe|opt.out|view.in.browser|se.d[ée]sinscrire|newsletter|black.friday|cyber.monday|sale|soldes?|promo|promotion|% off|-\d+\s*%|free.shipping|livraison.gratuite|exclusive|exclusif|webinar|register.now|inscrivez-vous|new.collection|nouvelle.collection|gift.card|carte cadeau|early.access|acc[èe]s.anticip[ée]|join.us.for|inscrivez.vous.au)/i;
+  /(unsubscribe|opt.out|view.in.browser|se.d[ée]sinscrire|newsletter|black.friday|cyber.monday|sale|soldes?|promo|promotion|% off|-\d+\s*%|(?:jusqu['’]?\s*[aà]\s*)?\d+\s*%\s*(?:de\s*)?(?:remise|r[ée]duction)|free.shipping|livraison.gratuite|exclusive|exclusif|webinar|register.now|inscrivez-vous|new.collection|nouvelle.collection|gift.card|carte cadeau|early.access|acc[èe]s.anticip[ée]|join.us.for|inscrivez.vous.au)/i;
 const PROMO_SENDER_LOCAL =
   /^(marketing|newsletter|news|team|crew|club|deals?|offers?|promotions?|sales?|membership|community|brand|store|shop|notify)$/i;
 const PROMO_DOMAIN =

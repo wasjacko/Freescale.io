@@ -1,6 +1,5 @@
 "use client";
 
-import { FirstActionBanner } from "@/components/onboarding/FirstActionBanner";
 import { createTask } from "@/lib/actions/inbox";
 import {
   type SuggestedTask,
@@ -11,7 +10,6 @@ import {
   suggestTasks,
   summarizeThread,
 } from "@/lib/actions/mue";
-import type { CurrentUser } from "@/lib/auth";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { useApp } from "@/lib/store";
@@ -53,19 +51,9 @@ type AskMessage = {
  * possible). Wiring to real Mue logic (summary/actions/follow-ups) is
  * a follow-up — this pass nails the visual character.
  */
-export function MuePanel({ user }: { user?: CurrentUser | null }) {
+export function MuePanel() {
   const { activeConvId } = useApp();
-  const { conversations, channels } = useData();
-  // Onboarding welcome banner: shows at the top of the Mue panel only when
-  // the user has finished profiling AND has at least one channel AND no
-  // thread is open (i.e. they're on the list view). Self-dismissing via
-  // localStorage inside FirstActionBanner.
-  const showWelcomeBanner =
-    !!user &&
-    user.onboardedAt !== null &&
-    channels.length > 0 &&
-    conversations.length > 0 &&
-    !activeConvId;
+  const { conversations } = useData();
   const push = useToast((s) => s.push);
   const router = useRouter();
   const [askInput, setAskInput] = useState("");
@@ -273,17 +261,6 @@ export function MuePanel({ user }: { user?: CurrentUser | null }) {
       {/* (Mue blob mascot removed — was stealing visual attention from
           the actual content. The panel now reads as a quiet text+chip
           surface: headline → actions → result cards → ask input.) */}
-
-      {/* Onboarding welcome banner — relocated from the inbox column into
-          the Mue panel so the agent introduces itself + offers its first
-          actions in its own surface, instead of eating the inbox header.
-          Self-hides once the user dismisses it or picks any CTA. */}
-      {showWelcomeBanner && (
-        <FirstActionBanner
-          firstName={user?.firstName ?? "vous"}
-          conversationCount={conversations.length}
-        />
-      )}
 
       {/* Headline — neutral idle state. No fake "X veut une démo
           lundi" anymore — Mue never proposes a task before having

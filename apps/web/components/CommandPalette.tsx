@@ -31,6 +31,7 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
 
   const actions = useMemo(
     () => [
+      { id: "go-today", icon: "✦", name: "Aller à Aujourd'hui", fn: () => setView("today") },
       { id: "go-inbox", icon: "📥", name: "Aller à l'inbox", fn: () => setView("inbox") },
       { id: "go-tasks", icon: "✓", name: "Aller aux tâches", fn: () => setView("tasks") },
       { id: "go-cal", icon: "📅", name: "Aller au calendrier", fn: () => setView("calendar") },

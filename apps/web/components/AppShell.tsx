@@ -13,6 +13,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { SyncErrorBanner } from "@/components/SyncErrorBanner";
 import { TasksView } from "@/components/TasksView";
 import { Thread } from "@/components/Thread";
+import { TodayView } from "@/components/TodayView";
 import { TrialBanner } from "@/components/billing/TrialBanner";
 import { Sprite } from "@/components/icons/Sprite";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
@@ -33,10 +34,6 @@ export function AppShell({
   // least one channel connected (so they've actually seen their inbox
   // = first value already delivered). Audit-aligned.
   const showOnboardingChips = !!user && user.onboardedAt === null && channels.length > 0;
-  // (FirstActionBanner condition moved into MuePanel — the welcome card
-  // now lives inside the agent side panel rather than the inbox column,
-  // so the inbox stays focused on the conversation list. MuePanel
-  // recomputes the same gating internally.)
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -164,6 +161,7 @@ export function AppShell({
         <div className="workspace">
           <SyncErrorBanner channels={channels} />
           <TrialBanner />
+          <TodayView user={user} />
           <div className="conv-shell">
             {showOnboardingChips && view === "inbox" && (
               <OnboardingChips
@@ -172,9 +170,6 @@ export function AppShell({
                 initialUsageMode={user?.profileUsageMode}
               />
             )}
-            {/* FirstActionBanner moved into MuePanel (agent side panel) —
-                it greets the user inside Mue's own surface so the inbox
-                stays focused on the conversation list. */}
             {/* Conditional render (not CSS toggle) — guarantees the
                 Thread DOM is fully unmounted when no conv is selected,
                 so the user can't possibly see thread content after
@@ -184,7 +179,7 @@ export function AppShell({
           <TasksView />
           <CalendarView />
           <AIKnowledgeView />
-          <MuePanel user={user} />
+          <MuePanel />
         </div>
       </div>
 

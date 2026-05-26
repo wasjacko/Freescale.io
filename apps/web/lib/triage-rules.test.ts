@@ -41,4 +41,32 @@ describe("quickClassify", () => {
       })
     ).toBe("client");
   });
+
+  it("keeps recurring job alerts out of client conversations", () => {
+    expect(
+      quickClassify({
+        fromEmail: "alerte@meteojob.com",
+        subject: "20+ nouvelles offres reperees pour vous",
+        preview: "Alternance Webdesigner selon vos criteres.",
+      })
+    ).toBe("notif");
+
+    expect(
+      quickClassify({
+        fromEmail: "hello@emplois-trabajo.org",
+        subject: "10 nouvelles offres d'Alternance",
+        preview: "Des entreprises recrutent aujourd'hui.",
+      })
+    ).toBe("notif");
+  });
+
+  it("routes clear French retail discounts to promotions", () => {
+    expect(
+      quickClassify({
+        fromEmail: "prive@zalando.fr",
+        subject: "Jusqu'a 75% de remise",
+        preview: "Mode, chaussures et maison.",
+      })
+    ).toBe("promo");
+  });
 });

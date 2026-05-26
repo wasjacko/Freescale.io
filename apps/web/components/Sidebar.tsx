@@ -11,13 +11,14 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
 type NavItem = {
-  id: "inbox" | "tasks" | "calendar" | "ai-knowledge";
+  id: "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge";
   label: string;
   icon: string;
   beta?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
+  { id: "today", label: "Aujourd'hui", icon: "i-spark" },
   { id: "inbox", label: "Inbox", icon: "i-inbox" },
   { id: "tasks", label: "Tasks", icon: "i-task" },
   { id: "calendar", label: "Calendar", icon: "i-cal" },
@@ -53,6 +54,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
 
   // Real counts derived from the live DB
   const counts: Record<NavItem["id"], number | null> = {
+    today: null,
     inbox: conversations.filter((c) => c.unread).length,
     tasks: tasks.filter((t) => t.status !== "done").length,
     calendar: null,

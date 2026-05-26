@@ -16,7 +16,7 @@ type State = {
 export const useApp = create<State>()(
   persist(
     (set) => ({
-      view: "inbox",
+      view: "today",
       activeConvId: "",
       sidebarCollapsed: false,
       setView: (view) => set({ view }),
@@ -25,6 +25,14 @@ export const useApp = create<State>()(
     }),
     {
       name: "fs:app",
+      version: 1,
+      migrate: (persistedState, version) => {
+        const stored = persistedState as Partial<State>;
+        if (version < 1) {
+          return { ...stored, view: "today", activeConvId: "" } as State;
+        }
+        return stored as State;
+      },
       partialize: (s) => ({
         view: s.view,
         activeConvId: s.activeConvId,
