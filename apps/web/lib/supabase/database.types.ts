@@ -666,6 +666,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["task_priority"];
           status: Database["public"]["Enums"]["task_status"];
           title: string;
+          updated_at: string;
           workspace_id: string;
         };
         Insert: {
@@ -679,6 +680,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"];
           status?: Database["public"]["Enums"]["task_status"];
           title: string;
+          updated_at?: string;
           workspace_id: string;
         };
         Update: {
@@ -692,6 +694,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["task_priority"];
           status?: Database["public"]["Enums"]["task_status"];
           title?: string;
+          updated_at?: string;
           workspace_id?: string;
         };
         Relationships: [
