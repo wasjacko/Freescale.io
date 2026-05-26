@@ -8,6 +8,7 @@ ENVIRONMENT = "development"
 
 # Secrets to configure with `wrangler secret put`:
 # SUPABASE_URL
+# SUPABASE_ANON_KEY
 # SUPABASE_SERVICE_ROLE_KEY
 # STRIPE_WEBHOOK_SECRET
 
