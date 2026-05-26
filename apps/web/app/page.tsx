@@ -294,6 +294,10 @@ export default async function LandingPage({
           </span>
           <div className="land-foot-links">
             <a href="mailto:hello@freescale.app">hello@freescale.app</a>
+            <Link href="/support">Support</Link>
+            <Link href="/privacy">Confidentialité</Link>
+            <Link href="/terms">Conditions</Link>
+            <Link href="/account-deletion">Supprimer mon compte</Link>
             <Link href="/sign-in">Se connecter</Link>
             <span className="land-foot-meta">© 2026</span>
           </div>

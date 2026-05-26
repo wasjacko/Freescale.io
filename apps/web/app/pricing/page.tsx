@@ -91,6 +91,18 @@ export default function PricingPage() {
           </article>
         </section>
       </main>
+      <footer className="land-foot">
+        <div className="land-foot-inner">
+          <span className="land-foot-logo">Freescale</span>
+          <div className="land-foot-links">
+            <a href="mailto:hello@freescale.app">hello@freescale.app</a>
+            <Link href="/support">Support</Link>
+            <Link href="/privacy">Confidentialité</Link>
+            <Link href="/terms">Conditions</Link>
+            <Link href="/account-deletion">Supprimer mon compte</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
