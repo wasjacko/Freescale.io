@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import type { MobileApiVariables } from "./mobile/auth";
+import { createMobileRoutes } from "./mobile/routes";
 import {
   type ProfileUpdate,
   type StripeWebhookEvent,
@@ -12,17 +14,19 @@ type Env = {
   ENVIRONMENT: string;
   ANTHROPIC_API_KEY: string;
   SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
 };
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: MobileApiVariables }>();
 
 app.use("*", logger());
 app.use("*", cors({ origin: ["https://app.freescale.app", "http://localhost:3000"] }));
 
 app.get("/", (c) => c.json({ name: "freescale-api", status: "ok" }));
 app.get("/health", (c) => c.json({ ok: true, env: c.env.ENVIRONMENT }));
+app.route("/v1", createMobileRoutes<Env>());
 
 async function patchProfileFromWebhook(
   env: Env,
