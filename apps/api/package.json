@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@freescale/types": "workspace:*",
     "hono": "^4.6.0"
   },
   "devDependencies": {

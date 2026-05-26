@@ -20,6 +20,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@freescale/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       hono:
         specifier: ^4.6.0
         version: 4.12.18
