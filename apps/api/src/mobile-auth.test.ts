@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  createMobileAuthMiddleware,
   type MobileApiEnvironment,
   type MobileAuthBindings,
+  createMobileAuthMiddleware,
 } from "./mobile/auth";
 import { createUserSupabaseClient } from "./mobile/supabase";
 
@@ -51,11 +51,7 @@ describe("mobile API authentication", () => {
   it("validates the bearer token with Supabase Auth", async () => {
     fetchMock.mockResolvedValueOnce(json({ id: "user_1", email: "wacil@example.com" }));
 
-    const res = await app.request(
-      "/v1/me",
-      { headers: { Authorization: "Bearer token_1" } },
-      env
-    );
+    const res = await app.request("/v1/me", { headers: { Authorization: "Bearer token_1" } }, env);
 
     expect(res.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledWith(

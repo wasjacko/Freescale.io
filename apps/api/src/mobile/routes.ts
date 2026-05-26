@@ -1,10 +1,18 @@
 import { Hono } from "hono";
 import {
-  createMobileAuthMiddleware,
   type MobileApiEnvironment,
   type MobileAuthBindings,
+  createMobileAuthMiddleware,
 } from "./auth";
 import { createUserSupabaseClient } from "./supabase";
+import {
+  buildToday,
+  completeMobileTask,
+  createMobileTask,
+  listMobileTasks,
+  todayDate,
+  validateCreateTask,
+} from "./tasks";
 import { MobileRouteError, resolveMobileWorkspaceContext } from "./workspace";
 
 export function createMobileRoutes<B extends MobileAuthBindings>() {
@@ -12,19 +20,84 @@ export function createMobileRoutes<B extends MobileAuthBindings>() {
 
   routes.use("*", createMobileAuthMiddleware<B>());
 
+  const handleError = (error: unknown) => {
+    if (error instanceof MobileRouteError) {
+      return {
+        status: error.status,
+        payload: { error: { code: error.code, message: error.message } },
+      };
+    }
+    return {
+      status: 502 as const,
+      payload: { error: { code: "upstream_error", message: "Impossible de charger les données." } },
+    };
+  };
+
   routes.get("/me", async (c) => {
     try {
       const client = createUserSupabaseClient(c.env, c.get("mobileAccessToken"));
       const result = await resolveMobileWorkspaceContext(client, c.get("mobileUser"));
       return c.json(result);
     } catch (error) {
-      if (error instanceof MobileRouteError) {
-        return c.json({ error: { code: error.code, message: error.message } }, error.status);
-      }
-      return c.json(
-        { error: { code: "upstream_error", message: "Impossible de charger les données." } },
-        502
-      );
+      const failure = handleError(error);
+      return c.json(failure.payload, failure.status);
+    }
+  });
+
+  routes.get("/tasks", async (c) => {
+    try {
+      const client = createUserSupabaseClient(c.env, c.get("mobileAccessToken"));
+      const context = await resolveMobileWorkspaceContext(client, c.get("mobileUser"));
+      const tasks = await listMobileTasks(client, context.activeWorkspace.id);
+      return c.json({ tasks });
+    } catch (error) {
+      const failure = handleError(error);
+      return c.json(failure.payload, failure.status);
+    }
+  });
+
+  routes.get("/today", async (c) => {
+    const date = todayDate(c.req.query("date"));
+    if (!date.ok) {
+      return c.json({ error: { code: "invalid_request", message: date.message } }, 400);
+    }
+    try {
+      const client = createUserSupabaseClient(c.env, c.get("mobileAccessToken"));
+      const context = await resolveMobileWorkspaceContext(client, c.get("mobileUser"));
+      const tasks = await listMobileTasks(client, context.activeWorkspace.id, true);
+      return c.json(buildToday(tasks, date.value));
+    } catch (error) {
+      const failure = handleError(error);
+      return c.json(failure.payload, failure.status);
+    }
+  });
+
+  routes.post("/tasks", async (c) => {
+    const payload = await c.req.json().catch(() => null);
+    const input = validateCreateTask(payload);
+    if (!input.ok) {
+      return c.json({ error: { code: "invalid_request", message: input.message } }, 400);
+    }
+    try {
+      const client = createUserSupabaseClient(c.env, c.get("mobileAccessToken"));
+      const context = await resolveMobileWorkspaceContext(client, c.get("mobileUser"));
+      const task = await createMobileTask(client, context.activeWorkspace.id, input.value);
+      return c.json({ task }, 201);
+    } catch (error) {
+      const failure = handleError(error);
+      return c.json(failure.payload, failure.status);
+    }
+  });
+
+  routes.patch("/tasks/:id/complete", async (c) => {
+    try {
+      const client = createUserSupabaseClient(c.env, c.get("mobileAccessToken"));
+      const context = await resolveMobileWorkspaceContext(client, c.get("mobileUser"));
+      const task = await completeMobileTask(client, context.activeWorkspace.id, c.req.param("id"));
+      return c.json({ task });
+    } catch (error) {
+      const failure = handleError(error);
+      return c.json(failure.payload, failure.status);
     }
   });
 

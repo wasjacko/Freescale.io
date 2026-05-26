@@ -25,16 +25,13 @@ function bearerToken(header: string | undefined): string | null {
   return match?.[1] ?? null;
 }
 
-export function createMobileAuthMiddleware<
-  B extends MobileAuthBindings,
->(): MiddlewareHandler<MobileApiEnvironment<B>> {
+export function createMobileAuthMiddleware<B extends MobileAuthBindings>(): MiddlewareHandler<
+  MobileApiEnvironment<B>
+> {
   return async (c, next) => {
     const token = bearerToken(c.req.header("Authorization"));
     if (!token) {
-      return c.json(
-        { error: { code: "unauthorized", message: "Authentification requise." } },
-        401
-      );
+      return c.json({ error: { code: "unauthorized", message: "Authentification requise." } }, 401);
     }
     if (!c.env.SUPABASE_URL || !c.env.SUPABASE_ANON_KEY) {
       return c.json(
@@ -60,18 +57,12 @@ export function createMobileAuthMiddleware<
     }
 
     if (!response.ok) {
-      return c.json(
-        { error: { code: "unauthorized", message: "Authentification requise." } },
-        401
-      );
+      return c.json({ error: { code: "unauthorized", message: "Authentification requise." } }, 401);
     }
 
     const payload = (await response.json()) as { id?: unknown; email?: unknown };
     if (typeof payload.id !== "string") {
-      return c.json(
-        { error: { code: "unauthorized", message: "Authentification requise." } },
-        401
-      );
+      return c.json({ error: { code: "unauthorized", message: "Authentification requise." } }, 401);
     }
 
     c.set("mobileAccessToken", token);
