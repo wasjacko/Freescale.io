@@ -24,9 +24,9 @@
 | Apple Developer Program membership | Owner action required | Team ID and enrollment confirmation |
 | App Store Connect app record | Owner action required | App record URL |
 | Sign in with Apple capability | Owner action required | Service/App ID and key configured securely |
-| Privacy policy URL | Repo work in J0 | Live `/privacy` URL |
-| Support URL | Repo work in J0 | Live `/support` URL |
-| Account deletion initiation | Web already exists; native required in J2/J3 | TestFlight screen recording |
+| Privacy policy URL | Implemented locally; deployment pending | Live `/privacy` URL |
+| Support URL | Implemented locally; deployment pending | Live `/support` URL |
+| Account deletion initiation | Web public guidance and settings action implemented; native required in J2/J3 | TestFlight screen recording |
 | No native purchase CTA | Design locked; verify per build | Review checklist result |
 
 ## Google Gmail Gate
@@ -55,6 +55,14 @@ final legal wording, the owner must confirm:
 - the legal name and postal address of the data controller;
 - the countries offered at launch;
 - the final list of subprocessors for infrastructure, email, payment and Mue.
+
+## J0 Implementation Record
+
+- Branch: `codex/j0-app-store-foundation`.
+- Public pages implemented: `/privacy`, `/terms`, `/support`, `/account-deletion`.
+- Access verified anonymously through production build locally on 26 May 2026.
+- Footer discovery checked at iPhone-width viewport; all four public destinations remain reachable.
+- Technical verification: `pnpm --filter @freescale/web lint`, `typecheck`, `test`, `build`, and root `pnpm test` passed locally.
 
 ## Official References
 
