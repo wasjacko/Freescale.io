@@ -41,6 +41,15 @@ describe("public App Store compliance surfaces", () => {
     }
   });
 
+  it("keeps support and legal destinations reachable in the policy page footer", async () => {
+    const shell = await source("../components/legal/PublicPolicyPage.tsx");
+    const footer = shell.slice(shell.indexOf('<footer className="policy-footer">'));
+
+    for (const path of ["/support", "/privacy", "/terms", "/account-deletion"]) {
+      expect(footer).toContain(`href="${path}"`);
+    }
+  });
+
   it("keeps every compliance page accessible without authentication", async () => {
     const middleware = await source("./supabase/middleware.ts");
 
