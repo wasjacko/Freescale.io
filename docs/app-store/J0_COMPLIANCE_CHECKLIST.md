@@ -66,9 +66,11 @@ final legal wording, the owner must confirm:
 
 ## J1 API Implementation Record
 
-- Authenticated mobile endpoints implemented on `codex/j1-mobile-api`: profile/workspace, today, task list/create/complete, and account deletion initiation.
+- Authenticated mobile endpoints deployed on 27 May 2026 at `https://freescale-api.freescale.workers.dev`: profile/workspace, today, task list/create/complete, and account deletion initiation.
 - `DELETE /v1/account` calls `delete_user` using only the authenticated user session and is intended for the native `Plus > Compte` screen in J2.
-- Production enablement requires applying `20260526211500_tasks_updated_at.sql` and configuring `SUPABASE_ANON_KEY` in the API Worker environment before deployment.
+- Production Supabase migration `20260526211500_tasks_updated_at.sql` was applied on 27 May 2026.
+- Cloudflare Worker configuration includes `SUPABASE_URL` and `SUPABASE_ANON_KEY` as provider-managed secrets; their values are not versioned.
+- Live verification on 27 May 2026: `/health` responded with the production environment and unauthenticated `/v1/me` returned `401`.
 - Native screens, Sign in with Apple, TestFlight evidence, and owner confirmations remain required before App Store submission.
 
 ## Official References
