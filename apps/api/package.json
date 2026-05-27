@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --var ENVIRONMENT:development",
     "build": "echo 'No build step for Workers'",
     "deploy": "wrangler deploy",
     "lint": "biome check ./src",
