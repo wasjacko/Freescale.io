@@ -39,6 +39,30 @@ describe("getTodayTaskSections", () => {
     expect(sections.doneToday.map((task) => task.id)).toEqual(["done"]);
   });
 
+  it("only counts and sections top-level tasks", () => {
+    const sections = getTodayTaskSections([
+      baseTask({ id: "parent", title: "Parent", isToday: true }),
+      baseTask({
+        id: "open-child",
+        title: "Open child",
+        isToday: true,
+        parentTaskId: "parent",
+      }),
+      baseTask({
+        id: "done-child",
+        title: "Done child",
+        isDone: true,
+        status: "done",
+        parentTaskId: "parent",
+      }),
+    ]);
+
+    expect(sections.now.map((task) => task.id)).toEqual(["parent"]);
+    expect(sections.later.map((task) => task.id)).toEqual([]);
+    expect(sections.doneToday.map((task) => task.id)).toEqual([]);
+    expect(sections.openCount).toBe(1);
+  });
+
   it("limits now tasks without losing later tasks", () => {
     const sections = getTodayTaskSections(
       [
