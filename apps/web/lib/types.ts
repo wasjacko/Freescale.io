@@ -15,7 +15,7 @@ export type ChannelId =
   | "messenger"
   | "sms";
 
-export type ViewId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge";
+export type ViewId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge" | "more";
 
 export type AvatarSource =
   | { kind: "img"; src: string }

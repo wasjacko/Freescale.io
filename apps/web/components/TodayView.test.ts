@@ -16,18 +16,23 @@ describe("Today operational home", () => {
     expect(content).toContain('setView("inbox")');
   });
 
-  it("is wired as the application's default destination", async () => {
-    const [types, store, shell, sidebar] = await Promise.all([
+  it("is wired as the application's default mobile destination", async () => {
+    const [types, store, shell, sidebar, bottomNav] = await Promise.all([
       source("../lib/types.ts"),
       source("../lib/store.ts"),
       source("./AppShell.tsx"),
       source("./Sidebar.tsx"),
+      source("./mobile/MobileBottomNav.tsx"),
     ]);
 
     expect(types).toContain('"today"');
+    expect(types).toContain('"more"');
     expect(store).toContain('view: "today"');
     expect(shell).toContain("<TodayView");
+    expect(shell).toContain("<MobileBottomNav");
     expect(sidebar).toContain('label: "Aujourd\'hui"');
+    expect(bottomNav).toContain('label: "Plus"');
+    expect(bottomNav).toContain('setView("more")');
   });
 
   it("does not interrupt returning users with old acquisition prompts", async () => {

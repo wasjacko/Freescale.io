@@ -4,6 +4,19 @@ import type { ViewId } from "@/lib/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+const VALID_VIEWS = new Set<ViewId>([
+  "today",
+  "inbox",
+  "tasks",
+  "calendar",
+  "ai-knowledge",
+  "more",
+]);
+
+function normalizeView(view: unknown): ViewId {
+  return typeof view === "string" && VALID_VIEWS.has(view as ViewId) ? (view as ViewId) : "today";
+}
+
 type State = {
   view: ViewId;
   activeConvId: string;
@@ -31,7 +44,11 @@ export const useApp = create<State>()(
         if (version < 1) {
           return { ...stored, view: "today", activeConvId: "" } as State;
         }
-        return stored as State;
+        return {
+          ...stored,
+          view: normalizeView(stored.view),
+          activeConvId: stored.activeConvId ?? "",
+        } as State;
       },
       partialize: (s) => ({
         view: s.view,

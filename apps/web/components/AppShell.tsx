@@ -16,6 +16,7 @@ import { Thread } from "@/components/Thread";
 import { TodayView } from "@/components/TodayView";
 import { TrialBanner } from "@/components/billing/TrialBanner";
 import { Sprite } from "@/components/icons/Sprite";
+import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
 import { Toaster } from "@/components/ui/Toaster";
 import type { CurrentUser } from "@/lib/auth";
@@ -181,6 +182,7 @@ export function AppShell({
           <AIKnowledgeView />
           <MuePanel />
         </div>
+        <MobileBottomNav />
       </div>
 
       <Toaster />
