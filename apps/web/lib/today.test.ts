@@ -21,7 +21,13 @@ describe("getTodayTaskSections", () => {
   it("puts high priority and today tasks into now", () => {
     const sections = getTodayTaskSections([
       baseTask({ id: "high", title: "High", priority: "high", dueLabel: "Next week" }),
-      baseTask({ id: "today", title: "Today", priority: "medium", dueLabel: "Today", isToday: true }),
+      baseTask({
+        id: "today",
+        title: "Today",
+        priority: "medium",
+        dueLabel: "Today",
+        isToday: true,
+      }),
       baseTask({ id: "later", title: "Later", priority: "low", dueLabel: "Friday" }),
     ]);
 
@@ -101,10 +107,6 @@ describe("getTodayTaskSections", () => {
       }),
     ]);
 
-    expect(sections.now.map((task) => task.id)).toEqual([
-      "earlier-due",
-      "later-due",
-      "undated",
-    ]);
+    expect(sections.now.map((task) => task.id)).toEqual(["earlier-due", "later-due", "undated"]);
   });
 });

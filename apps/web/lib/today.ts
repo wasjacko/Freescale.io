@@ -49,9 +49,7 @@ export function getTodayTaskSections(tasks: Task[], options: Options = {}): Toda
     .filter((task) => task.priority === "high" || task.isToday)
     .sort(byUsefulOrder);
   const urgentIds = new Set(urgent.map((task) => task.id));
-  const remaining = open
-    .filter((task) => !urgentIds.has(task.id))
-    .sort(byUsefulOrder);
+  const remaining = open.filter((task) => !urgentIds.has(task.id)).sort(byUsefulOrder);
   const now = urgent.slice(0, nowLimit);
   const overflowNow = urgent.slice(nowLimit);
   const later = [...overflowNow, ...remaining].slice(0, laterLimit);
