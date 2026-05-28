@@ -165,6 +165,7 @@ export function adaptTask(row: Row): Task {
     title: row.title as string,
     priority: priorityFor(row.priority),
     dueLabel: label,
+    dueAtIso: (row.due_at as string | null | undefined) ?? null,
     isToday,
     isDone: row.status === "done",
     avatar: avatarFor(name, contact?.avatar_url as string | null | undefined),

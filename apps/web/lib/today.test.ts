@@ -7,6 +7,7 @@ const baseTask = (overrides: Partial<Task>): Task => ({
   title: overrides.title ?? "Task",
   priority: overrides.priority ?? "medium",
   dueLabel: overrides.dueLabel ?? "No due date",
+  dueAtIso: overrides.dueAtIso ?? null,
   isToday: overrides.isToday ?? false,
   isDone: overrides.isDone ?? false,
   avatar: overrides.avatar ?? { kind: "initials", text: "FS" },
@@ -52,5 +53,34 @@ describe("getTodayTaskSections", () => {
 
     expect(sections.now.map((task) => task.id)).toEqual(["1", "2", "3"]);
     expect(sections.later.map((task) => task.id)).toEqual(["4", "5"]);
+  });
+
+  it("orders same-priority tasks by due date before sortable index", () => {
+    const sections = getTodayTaskSections([
+      baseTask({
+        id: "undated",
+        priority: "high",
+        dueAtIso: null,
+        sortableIndex: 0,
+      }),
+      baseTask({
+        id: "later-due",
+        priority: "high",
+        dueAtIso: "2026-06-05T10:00:00.000Z",
+        sortableIndex: 1,
+      }),
+      baseTask({
+        id: "earlier-due",
+        priority: "high",
+        dueAtIso: "2026-05-30T10:00:00.000Z",
+        sortableIndex: 2,
+      }),
+    ]);
+
+    expect(sections.now.map((task) => task.id)).toEqual([
+      "earlier-due",
+      "later-due",
+      "undated",
+    ]);
   });
 });

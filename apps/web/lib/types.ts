@@ -82,6 +82,7 @@ export type Task = {
   title: string;
   priority: Priority;
   dueLabel: string;
+  dueAtIso?: string | null;
   isToday?: boolean;
   isDone?: boolean;
   avatar: Avatar;
