@@ -524,29 +524,42 @@ export async function deleteTask(taskId: string): Promise<{ ok: boolean; error: 
   return { ok: true, error: null };
 }
 
-export async function toggleTaskDone(taskId: string, done: boolean) {
+export async function toggleTaskDone(
+  taskId: string,
+  done: boolean
+): Promise<{ ok: boolean; error: string | null }> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "unauthenticated" };
+
   // Cascade the done state to children. Marking a parent done implies all
   // its subtasks are done too (no half-completed parents). Un-checking a
   // parent leaves children alone — the user explicitly re-opens what they
   // want; some subtasks might genuinely be done while the parent isn't.
-  await supabase
+  const completedAt = done ? new Date().toISOString() : null;
+  const { error } = await supabase
     .from("tasks")
     .update({
       status: done ? "done" : "todo",
-      completed_at: done ? new Date().toISOString() : null,
+      completed_at: completedAt,
     })
     .eq("id", taskId);
+  if (error) return { ok: false, error: error.message };
+
   if (done) {
-    await supabase
+    const { error: childError } = await supabase
       .from("tasks")
       .update({
         status: "done",
-        completed_at: new Date().toISOString(),
+        completed_at: completedAt,
       })
       .eq("parent_task_id", taskId);
+    if (childError) return { ok: false, error: childError.message };
   }
-  revalidatePath("/");
+  revalidatePath("/app", "layout");
+  return { ok: true, error: null };
 }
 
 /**

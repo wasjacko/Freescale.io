@@ -57,6 +57,7 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
   const [brief, setBrief] = useState<BriefState>({ kind: "idle" });
   const [creatingId, setCreatingId] = useState<string | null>(null);
   const [createdIds, setCreatedIds] = useState<Set<string>>(new Set());
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
 
   const cacheKey = useMemo(
     () => `fs:today-brief:${activeWorkspaceId ?? "personal"}:${dateKey()}`,
@@ -123,6 +124,16 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
     }
   };
 
+  const completeTask = async (taskId: string) => {
+    if (completingTaskId) return;
+    setCompletingTaskId(taskId);
+    const result = await toggleTask(taskId, true);
+    setCompletingTaskId(null);
+    if (!result.ok) {
+      push({ kind: "error", text: result.error ?? "Mise à jour impossible." });
+    }
+  };
+
   const sections = getTodayTaskSections(tasks, { nowLimit: 4, laterLimit: 3 });
   const hasChannels = channels.length > 0;
   const items = brief.kind === "result" ? brief.data.items : [];
@@ -162,143 +173,151 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
         onConnectChannel={() => setView("inbox")}
       />
 
-      <QuickTaskCapture />
+      <div className="today-grid">
+        <div className="today-main-stack">
+          <QuickTaskCapture />
 
-      <main className="today-priorities" aria-live="polite">
-        <div className="today-section-head">
-          <h2>À faire maintenant</h2>
-          <span>{sections.now.length}</span>
+          <main className="today-priorities" aria-live="polite">
+            <div className="today-section-head">
+              <h2>À faire maintenant</h2>
+              <span>{sections.now.length}</span>
+            </div>
+            {sections.now.length === 0 ? (
+              <div className="today-empty">
+                <strong>Votre journée est dégagée.</strong>
+                <p>Ajoutez une tâche ou collectez des actions depuis vos conversations avec Mue.</p>
+                <button type="button" onClick={() => setView("tasks")}>
+                  Ouvrir mes tâches
+                </button>
+              </div>
+            ) : (
+              <div className="today-task-list">
+                {sections.now.map((task) => (
+                  <article key={task.id} className={`today-task-row is-${task.priority}`}>
+                    <button
+                      type="button"
+                      className={`task-check ${task.isDone ? "is-done" : ""}`}
+                      aria-label="Marquer la tâche terminée"
+                      onClick={() => void completeTask(task.id)}
+                      disabled={completingTaskId === task.id}
+                    />
+                    <div>
+                      <h3>{task.title}</h3>
+                      <p>{taskStatusLabel(task)}</p>
+                    </div>
+                    {task.priority === "high" && (
+                      <span className="today-task-priority">Urgent</span>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+          </main>
+
+          <section className="today-later" aria-label="À traiter ensuite">
+            <div className="today-section-head">
+              <h2>Ensuite</h2>
+              <span>{sections.later.length}</span>
+            </div>
+            {sections.later.length > 0 ? (
+              <div className="today-task-list is-compact">
+                {sections.later.map((task) => (
+                  <article key={task.id} className={`today-task-row is-${task.priority}`}>
+                    <button
+                      type="button"
+                      className="task-check"
+                      aria-label="Marquer la tâche terminée"
+                      onClick={() => void completeTask(task.id)}
+                      disabled={completingTaskId === task.id}
+                    />
+                    <div>
+                      <h3>{task.title}</h3>
+                      <p>{task.dueLabel}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="today-muted">Aucune autre tâche ouverte.</p>
+            )}
+          </section>
+
+          {brief.kind === "result" && items.length > 0 && (
+            <section className="today-mue-suggestions" aria-label="Suggestions Mue">
+              <div className="today-section-head">
+                <h2>Suggestions Mue</h2>
+                <span>{items.length}</span>
+              </div>
+              {items.map((item) => {
+                const due = formatDue(item.due);
+                const created = createdIds.has(item.conversationId);
+                return (
+                  <article key={item.conversationId} className={`today-item is-${item.priority}`}>
+                    <div className="today-item-main">
+                      <div className="today-item-meta">
+                        <span className="today-priority">{priorityLabel(item.priority)}</span>
+                        <span>{item.contactName}</span>
+                        {due && <time>Échéance {due}</time>}
+                      </div>
+                      <h3>{item.title}</h3>
+                      {item.why && <p>{item.why}</p>}
+                    </div>
+                    <div className="today-item-actions">
+                      <button
+                        type="button"
+                        className="today-open"
+                        onClick={() => openConversation(item.conversationId)}
+                      >
+                        Ouvrir
+                      </button>
+                      <button
+                        type="button"
+                        className={`today-create ${created ? "is-done" : ""}`}
+                        onClick={() => void handleCreateTask(item)}
+                        disabled={creatingId === item.conversationId || created}
+                      >
+                        {created
+                          ? "Tâche créée"
+                          : creatingId === item.conversationId
+                            ? "Création..."
+                            : "Créer tâche"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+          )}
         </div>
-        {sections.now.length === 0 ? (
-          <div className="today-empty">
-            <strong>Votre journée est dégagée.</strong>
-            <p>Ajoutez une tâche ou collectez des actions depuis vos conversations avec Mue.</p>
+
+        <aside className="today-summary" aria-label="Repères du jour">
+          <h2>Repères du jour</h2>
+          <dl>
+            <div>
+              <dt>Messages non lus</dt>
+              <dd>{unreadCount}</dd>
+            </div>
+            <div>
+              <dt>Tâches ouvertes</dt>
+              <dd>{sections.openCount}</dd>
+            </div>
+            <div>
+              <dt>Conversations</dt>
+              <dd>{conversations.length}</dd>
+            </div>
+          </dl>
+          <div className="today-links">
+            <button type="button" onClick={() => setView("inbox")}>
+              <Icon name="i-inbox" />
+              Voir toute l'inbox
+            </button>
             <button type="button" onClick={() => setView("tasks")}>
+              <Icon name="i-task" />
               Ouvrir mes tâches
             </button>
           </div>
-        ) : (
-          <div className="today-task-list">
-            {sections.now.map((task) => (
-              <article key={task.id} className={`today-task-row is-${task.priority}`}>
-                <button
-                  type="button"
-                  className={`task-check ${task.isDone ? "is-done" : ""}`}
-                  aria-label="Marquer la tâche terminée"
-                  onClick={() => void toggleTask(task.id, true)}
-                />
-                <div>
-                  <h3>{task.title}</h3>
-                  <p>{taskStatusLabel(task)}</p>
-                </div>
-                {task.priority === "high" && <span className="today-task-priority">Urgent</span>}
-              </article>
-            ))}
-          </div>
-        )}
-      </main>
-
-      <section className="today-later" aria-label="À traiter ensuite">
-        <div className="today-section-head">
-          <h2>Ensuite</h2>
-          <span>{sections.later.length}</span>
-        </div>
-        {sections.later.length > 0 ? (
-          <div className="today-task-list is-compact">
-            {sections.later.map((task) => (
-              <article key={task.id} className={`today-task-row is-${task.priority}`}>
-                <button
-                  type="button"
-                  className="task-check"
-                  aria-label="Marquer la tâche terminée"
-                  onClick={() => void toggleTask(task.id, true)}
-                />
-                <div>
-                  <h3>{task.title}</h3>
-                  <p>{task.dueLabel}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="today-muted">Aucune autre tâche ouverte.</p>
-        )}
-      </section>
-
-      {brief.kind === "result" && items.length > 0 && (
-        <section className="today-mue-suggestions" aria-label="Suggestions Mue">
-          <div className="today-section-head">
-            <h2>Suggestions Mue</h2>
-            <span>{items.length}</span>
-          </div>
-          {items.map((item) => {
-            const due = formatDue(item.due);
-            const created = createdIds.has(item.conversationId);
-            return (
-              <article key={item.conversationId} className={`today-item is-${item.priority}`}>
-                <div className="today-item-main">
-                  <div className="today-item-meta">
-                    <span className="today-priority">{priorityLabel(item.priority)}</span>
-                    <span>{item.contactName}</span>
-                    {due && <time>Échéance {due}</time>}
-                  </div>
-                  <h3>{item.title}</h3>
-                  {item.why && <p>{item.why}</p>}
-                </div>
-                <div className="today-item-actions">
-                  <button
-                    type="button"
-                    className="today-open"
-                    onClick={() => openConversation(item.conversationId)}
-                  >
-                    Ouvrir
-                  </button>
-                  <button
-                    type="button"
-                    className={`today-create ${created ? "is-done" : ""}`}
-                    onClick={() => void handleCreateTask(item)}
-                    disabled={creatingId === item.conversationId || created}
-                  >
-                    {created
-                      ? "Tâche créée"
-                      : creatingId === item.conversationId
-                        ? "Création..."
-                        : "Créer tâche"}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </section>
-      )}
-
-      <aside className="today-summary" aria-label="Repères du jour">
-        <h2>Repères du jour</h2>
-        <dl>
-          <div>
-            <dt>Messages non lus</dt>
-            <dd>{unreadCount}</dd>
-          </div>
-          <div>
-            <dt>Tâches ouvertes</dt>
-            <dd>{sections.openCount}</dd>
-          </div>
-          <div>
-            <dt>Conversations</dt>
-            <dd>{conversations.length}</dd>
-          </div>
-        </dl>
-        <div className="today-links">
-          <button type="button" onClick={() => setView("inbox")}>
-            <Icon name="i-inbox" />
-            Voir toute l'inbox
-          </button>
-          <button type="button" onClick={() => setView("tasks")}>
-            <Icon name="i-task" />
-            Ouvrir mes tâches
-          </button>
-        </div>
-      </aside>
+        </aside>
+      </div>
     </section>
   );
 }

@@ -64,7 +64,7 @@ type Ctx = {
   unarchive: (id: string) => void;
   appendOutgoingMessage: (convId: string, text: string) => Promise<void>;
   retryFailedMessage: (convId: string, msgId: string) => Promise<void>;
-  toggleTask: (taskId: string, done: boolean) => Promise<void>;
+  toggleTask: (taskId: string, done: boolean) => Promise<{ ok: boolean; error: string | null }>;
   toggleStar: (convId: string, starred: boolean) => Promise<void>;
   snooze: (convId: string, untilIso: string | null) => Promise<void>;
   setTags: (convId: string, tags: string[]) => Promise<void>;
@@ -250,8 +250,10 @@ export function DataProvider({
     // parents on screen). Un-checking is non-cascading on both sides —
     // some subtasks might legitimately be done while the parent isn't,
     // so we don't second-guess the user.
-    setTasks((prev) =>
-      prev.map((t) => {
+    let previousTasks: Task[] = [];
+    setTasks((prev) => {
+      previousTasks = prev;
+      return prev.map((t) => {
         if (t.id === taskId) {
           return { ...t, isDone: done, status: done ? "done" : "todo" };
         }
@@ -259,9 +261,19 @@ export function DataProvider({
           return { ...t, isDone: true, status: "done" };
         }
         return t;
-      })
-    );
-    await srvToggleTask(taskId, done);
+      });
+    });
+    try {
+      const result = await srvToggleTask(taskId, done);
+      if (!result.ok) {
+        setTasks(previousTasks);
+        return result;
+      }
+      return result;
+    } catch (err) {
+      setTasks(previousTasks);
+      return { ok: false, error: err instanceof Error ? err.message : "Mise à jour impossible." };
+    }
   }, []);
 
   const toggleStar = useCallback(async (convId: string, starred: boolean) => {
