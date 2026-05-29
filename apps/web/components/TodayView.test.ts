@@ -17,12 +17,13 @@ describe("Today operational home", () => {
   });
 
   it("is wired as the application's default mobile destination", async () => {
-    const [types, store, shell, sidebar, bottomNav] = await Promise.all([
+    const [types, store, shell, sidebar, bottomNav, moreView] = await Promise.all([
       source("../lib/types.ts"),
       source("../lib/store.ts"),
       source("./AppShell.tsx"),
       source("./Sidebar.tsx"),
       source("./mobile/MobileBottomNav.tsx"),
+      source("./mobile/MobileMoreView.tsx"),
     ]);
 
     expect(types).toContain('"today"');
@@ -30,9 +31,11 @@ describe("Today operational home", () => {
     expect(store).toContain('view: "today"');
     expect(shell).toContain("<TodayView");
     expect(shell).toContain("<MobileBottomNav");
+    expect(shell).toContain("<MobileMoreView");
     expect(sidebar).toContain('label: "Aujourd\'hui"');
     expect(bottomNav).toContain('label: "Plus"');
     expect(bottomNav).toContain('setView("more")');
+    expect(moreView).toContain("MobileMoreView");
   });
 
   it("does not interrupt returning users with old acquisition prompts", async () => {

@@ -17,6 +17,16 @@ function normalizeView(view: unknown): ViewId {
   return typeof view === "string" && VALID_VIEWS.has(view as ViewId) ? (view as ViewId) : "today";
 }
 
+function normalizePersistedState(persistedState: unknown, currentState: State): State {
+  const stored = persistedState as Partial<State> | undefined;
+  return {
+    ...currentState,
+    ...stored,
+    view: normalizeView(stored?.view),
+    activeConvId: stored?.activeConvId ?? "",
+  };
+}
+
 type State = {
   view: ViewId;
   activeConvId: string;
@@ -49,6 +59,9 @@ export const useApp = create<State>()(
           view: normalizeView(stored.view),
           activeConvId: stored.activeConvId ?? "",
         } as State;
+      },
+      merge: (persistedState, currentState) => {
+        return normalizePersistedState(persistedState, currentState);
       },
       partialize: (s) => ({
         view: s.view,

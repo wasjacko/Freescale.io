@@ -8693,6 +8693,142 @@ button:active:not(:disabled):not(.no-press) {
   color: #f4f4f7;
 }
 
+.mobile-bottom-nav,
+.mobile-more-view {
+  display: none;
+}
+
+.mobile-more-view[hidden] {
+  display: none !important;
+}
+
+.app.view-more .workspace {
+  grid-template-columns: 1fr;
+}
+
+.app.view-more .conv-shell,
+.app.view-more .today-view,
+.app.view-more .tasks-view,
+.app.view-more .calendar-view,
+.app.view-more .ai-view,
+.app.view-more .copilot {
+  display: none;
+}
+
+.app.view-more .mobile-more-view {
+  display: flex;
+}
+
+.mobile-more-view {
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 24px;
+  background: #fff;
+  color: #0f172a;
+  overflow: auto;
+}
+
+.mobile-more-head p {
+  margin: 0 0 4px;
+  color: #7b8496;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mobile-more-head h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.mobile-more-mue,
+.mobile-more-row,
+.mobile-more-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 16px;
+  background: #fff;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.mobile-more-mue {
+  justify-content: space-between;
+  min-height: 72px;
+  padding: 14px 16px;
+  text-align: left;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.mobile-more-mue-icon,
+.mobile-more-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+}
+
+.mobile-more-mue span:nth-child(2),
+.mobile-more-account span:nth-child(2) {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-more-mue strong,
+.mobile-more-row span,
+.mobile-more-account strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mobile-more-mue small,
+.mobile-more-row small,
+.mobile-more-account small {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mobile-more-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mobile-more-row {
+  min-height: 52px;
+  padding: 0 14px;
+}
+
+.mobile-more-row .icon {
+  color: #4f46e5;
+}
+
+.mobile-more-row span {
+  flex: 1;
+}
+
+.mobile-more-account {
+  margin-top: auto;
+  padding: 12px;
+}
+
 /* ─── Responsive ────────────────────────────────────────────────────
        Three breakpoints: desktop (>1280) · narrow desktop (1100-1280) ·
        tablet (768-1100) · mobile (<768).
@@ -8745,6 +8881,86 @@ button:active:not(:disabled):not(.no-press) {
 
   .workspace {
     grid-template-columns: 1fr;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 45;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 46px rgba(15, 23, 42, 0.14);
+    backdrop-filter: blur(18px);
+  }
+
+  .app[data-active-conv="1"] .mobile-bottom-nav {
+    display: none;
+  }
+
+  .mobile-bottom-nav-item {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 58px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    border: 0;
+    border-radius: 18px;
+    background: transparent;
+    color: #6b7280;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .mobile-bottom-nav-item.is-active {
+    background: #0f172a;
+    color: #fff;
+  }
+
+  .mobile-bottom-nav-icon {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .mobile-bottom-nav-icon .icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-bottom-nav-count {
+    position: absolute;
+    top: -9px;
+    right: -13px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #6d5dfc;
+    color: #fff;
+    font-size: 10px;
+    line-height: 14px;
+  }
+
+  .mobile-more-view {
+    min-height: calc(100vh - 32px - 88px);
+    margin: 0;
+    padding: 22px 18px;
+    border-radius: 0;
+    border: 0;
+    background: #f7f8fb;
   }
   /* The inbox⇄thread swap + .thread-back visibility now live in
          the global rules above .conv-shell — no need to redefine here. */
