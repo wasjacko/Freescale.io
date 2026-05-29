@@ -49,4 +49,13 @@ describe("Today operational home", () => {
     expect(muePanel).not.toContain("FirstActionBanner");
     expect(trialBanner).toContain("if (!expired && !urgent) return null;");
   });
+
+  it("does not bulk-create tasks from Mue without confirmation", async () => {
+    const tasksView = await source("./TasksView.tsx");
+
+    expect(tasksView).not.toContain("for (const item of res.briefing.items)");
+    expect(tasksView).not.toContain("Mue a créé");
+    expect(tasksView).toContain("suggestedTasks");
+    expect(tasksView).toContain("Créer cette tâche");
+  });
 });

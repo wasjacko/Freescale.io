@@ -43,6 +43,14 @@ const TAB_STATUSES = [
   { id: "done", label: "Done" },
 ] as const;
 
+type SuggestedTask = {
+  conversationId: string;
+  title: string;
+  why: string;
+  priority: "high" | "medium" | "low";
+  due: string | null;
+};
+
 export function TasksView() {
   const router = useRouter();
   const push = useToast((s) => s.push);
@@ -51,6 +59,8 @@ export function TasksView() {
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [analyzing, startAnalyzing] = useTransition();
+  const [suggestedTasks, setSuggestedTasks] = useState<SuggestedTask[]>([]);
+  const [creatingSuggestionId, setCreatingSuggestionId] = useState<string | null>(null);
 
   // Inline subtask creation — when subtaskFor === parentId, a small input
   // appears under that parent row. Closes on blur or Enter (creates) /
@@ -74,36 +84,51 @@ export function TasksView() {
       try {
         const res = await dailyBriefing();
         if (res.error || !res.briefing) {
-          push({ text: `Mue : ${res.error ?? "impossible"}`, duration: 4000 });
+          push({ kind: "error", text: `Mue : ${res.error ?? "impossible"}`, duration: 4000 });
           return;
         }
         if (res.briefing.items.length === 0) {
+          setSuggestedTasks([]);
           push({ text: res.briefing.headline ?? "Rien d'actionnable détecté." });
           return;
         }
-        let created = 0;
-        for (const item of res.briefing.items) {
-          const r = await createTask({
-            title: item.title,
-            description: item.why,
-            priority: item.priority,
-            conversationId: item.conversationId,
-            due: item.due,
-          });
-          if (r.ok) created += 1;
-        }
+        setSuggestedTasks(res.briefing.items);
         push({
-          text: `Mue a créé ${created} tâche${created > 1 ? "s" : ""}.`,
+          text: `${res.briefing.items.length} suggestion${
+            res.briefing.items.length > 1 ? "s" : ""
+          } à confirmer.`,
           duration: 2800,
         });
-        router.refresh();
       } catch (err) {
         push({
+          kind: "error",
           text: err instanceof Error ? err.message : "Analyse impossible.",
           duration: 4000,
         });
       }
     });
+  };
+
+  const createSuggestedTask = async (item: SuggestedTask) => {
+    if (creatingSuggestionId) return;
+    setCreatingSuggestionId(item.conversationId);
+    const result = await createTask({
+      title: item.title,
+      description: item.why,
+      priority: item.priority,
+      conversationId: item.conversationId,
+      due: item.due,
+    });
+    setCreatingSuggestionId(null);
+    if (!result.ok) {
+      push({ kind: "error", text: result.error ?? "Création impossible." });
+      return;
+    }
+    setSuggestedTasks((current) =>
+      current.filter((suggestion) => suggestion.conversationId !== item.conversationId)
+    );
+    push({ kind: "info", text: "Tâche créée.", duration: 2200 });
+    router.refresh();
   };
 
   const counts = {
@@ -176,8 +201,11 @@ export function TasksView() {
     });
   }, [tasks, activeTab, orderOverride]);
 
-  const toggleCheck = (id: string, currentlyDone: boolean) => {
-    void toggleTask(id, !currentlyDone);
+  const toggleCheck = async (id: string, currentlyDone: boolean) => {
+    const result = await toggleTask(id, !currentlyDone);
+    if (!result.ok) {
+      push({ kind: "error", text: result.error ?? "Mise à jour impossible." });
+    }
   };
 
   const openSubtask = (parentId: string) => {
@@ -353,6 +381,26 @@ export function TasksView() {
         </button>
       </div>
 
+      {suggestedTasks.length > 0 && (
+        <div className="task-mue-suggestions" aria-label="Suggestions Mue">
+          {suggestedTasks.map((item) => (
+            <article key={item.conversationId} className="task-mue-suggestion">
+              <div>
+                <strong>{item.title}</strong>
+                <p>{item.why}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void createSuggestedTask(item)}
+                disabled={creatingSuggestionId === item.conversationId}
+              >
+                {creatingSuggestionId === item.conversationId ? "Création" : "Créer cette tâche"}
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+
       <div className="task-tabs">
         {TAB_STATUSES.map((tab) => (
           <button
@@ -451,7 +499,7 @@ export function TasksView() {
                   // which is not what the user expects.
                   disabled={isContextOnly}
                   onClick={() => {
-                    if (!isContextOnly) toggleCheck(parent.id, isDone);
+                    if (!isContextOnly) void toggleCheck(parent.id, isDone);
                   }}
                 />
                 <span className="task-avatar">
@@ -516,7 +564,7 @@ export function TasksView() {
                       className={`task-check ${childDone ? "is-done" : ""}`}
                       type="button"
                       aria-label="Mark done"
-                      onClick={() => toggleCheck(child.id, childDone)}
+                      onClick={() => void toggleCheck(child.id, childDone)}
                     />
                     <span className="task-title task-subtask-title">{child.title}</span>
                     <span className={`priority ${child.priority}`}>
