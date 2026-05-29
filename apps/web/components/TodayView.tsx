@@ -1,6 +1,7 @@
 "use client";
 
-import { NoChannelsHero } from "@/components/NoChannelsHero";
+import { QuickTaskCapture } from "@/components/QuickTaskCapture";
+import { TodayBriefCard } from "@/components/TodayBriefCard";
 import { Icon } from "@/components/icons/Icon";
 import {
   type DailyBriefing,
@@ -12,10 +13,16 @@ import type { CurrentUser } from "@/lib/auth";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { useApp } from "@/lib/store";
+import { getTodayTaskSections } from "@/lib/today";
+import type { Task } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-type BriefState = { kind: "loading" } | { kind: "result"; data: DailyBriefing } | { kind: "error" };
+type BriefState =
+  | { kind: "idle" }
+  | { kind: "loading" }
+  | { kind: "result"; data: DailyBriefing }
+  | { kind: "error" };
 
 function dateKey() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -36,13 +43,18 @@ function formatDue(due: string | null) {
   return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(date);
 }
 
+function taskStatusLabel(task: Task) {
+  if (task.priority === "high") return "Urgent";
+  if (task.isToday) return "Aujourd'hui";
+  return task.dueLabel;
+}
+
 export function TodayView({ user }: { user: CurrentUser | null }) {
   const router = useRouter();
   const push = useToast((state) => state.push);
-  const { conversations, tasks, channels, activeWorkspaceId } = useData();
-  const { view, setActiveConv, setView } = useApp();
-  const [brief, setBrief] = useState<BriefState>({ kind: "loading" });
-  const [refreshing, setRefreshing] = useState(false);
+  const { conversations, tasks, channels, activeWorkspaceId, toggleTask } = useData();
+  const { setActiveConv, setView } = useApp();
+  const [brief, setBrief] = useState<BriefState>({ kind: "idle" });
   const [creatingId, setCreatingId] = useState<string | null>(null);
   const [createdIds, setCreatedIds] = useState<Set<string>>(new Set());
 
@@ -63,7 +75,6 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
         } catch {}
       }
 
-      if (fresh) setRefreshing(true);
       setBrief({ kind: "loading" });
       try {
         const result = await dailyBriefing();
@@ -77,16 +88,10 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
         } catch {}
       } catch {
         setBrief({ kind: "error" });
-      } finally {
-        setRefreshing(false);
       }
     },
     [cacheKey]
   );
-
-  useEffect(() => {
-    if (view === "today" && channels.length > 0) void loadBrief();
-  }, [channels.length, loadBrief, view]);
 
   const openConversation = (conversationId: string) => {
     setActiveConv(conversationId);
@@ -118,39 +123,28 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
     }
   };
 
-  if (channels.length === 0) {
-    return (
-      <section className="today-view" aria-label="Aujourd'hui">
-        <NoChannelsHero />
-      </section>
-    );
-  }
-
+  const sections = getTodayTaskSections(tasks, { nowLimit: 4, laterLimit: 3 });
+  const hasChannels = channels.length > 0;
   const items = brief.kind === "result" ? brief.data.items : [];
   const unreadCount = conversations.filter((conversation) => conversation.unread).length;
-  const taskCount = tasks.filter((task) => task.status !== "done").length;
   const dateLabel = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
   }).format(new Date());
-  const heading =
-    brief.kind === "loading"
-      ? "Mue prépare vos priorités."
-      : brief.kind === "error"
-        ? "Votre journée commence dans l'inbox."
-        : items.length === 0
-          ? "Rien d'urgent détecté aujourd'hui."
-          : `${items.length} action${items.length > 1 ? "s" : ""} à traiter maintenant.`;
-  const supportingCopy =
-    brief.kind === "result"
-      ? brief.data.headline
-      : brief.kind === "error"
-        ? "Le brief est indisponible pour le moment. Vos conversations restent accessibles."
-        : "Je lis les conversations récentes pour faire ressortir les prochaines actions.";
+  const briefState =
+    !hasChannels && brief.kind === "idle"
+      ? "no-channel"
+      : brief.kind === "loading"
+        ? "loading"
+        : brief.kind === "error"
+          ? "error"
+          : brief.kind === "result"
+            ? "result"
+            : "idle";
 
   return (
-    <section className="today-view" aria-label="Aujourd'hui">
+    <section className="today-view today-view-direction-c" aria-label="Aujourd'hui">
       <header className="today-hero">
         <div className="today-date">
           <Icon name="i-spark" />
@@ -158,58 +152,85 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
           <span aria-hidden="true">·</span>
           <time>{dateLabel}</time>
         </div>
-        <div className="today-hero-row">
-          <div>
-            <h1>{heading}</h1>
-            <p>{supportingCopy}</p>
-          </div>
-          <button
-            type="button"
-            className="today-refresh"
-            onClick={() => void loadBrief(true)}
-            disabled={refreshing || brief.kind === "loading"}
-          >
-            <Icon name="i-spark" />
-            {refreshing ? "Analyse en cours" : "Actualiser avec Mue"}
-          </button>
-        </div>
       </header>
 
-      <div className="today-grid">
-        <main className="today-priorities" aria-live="polite">
-          <div className="today-section-head">
-            <h2>À traiter maintenant</h2>
-            {brief.kind === "result" && <span>{items.length}</span>}
+      <TodayBriefCard
+        state={briefState}
+        data={brief.kind === "result" ? brief.data : null}
+        hasChannels={hasChannels}
+        onRequest={() => void loadBrief(true)}
+        onConnectChannel={() => setView("inbox")}
+      />
+
+      <QuickTaskCapture />
+
+      <main className="today-priorities" aria-live="polite">
+        <div className="today-section-head">
+          <h2>À faire maintenant</h2>
+          <span>{sections.now.length}</span>
+        </div>
+        {sections.now.length === 0 ? (
+          <div className="today-empty">
+            <strong>Votre journée est dégagée.</strong>
+            <p>Ajoutez une tâche ou collectez des actions depuis vos conversations avec Mue.</p>
+            <button type="button" onClick={() => setView("tasks")}>
+              Ouvrir mes tâches
+            </button>
           </div>
+        ) : (
+          <div className="today-task-list">
+            {sections.now.map((task) => (
+              <article key={task.id} className={`today-task-row is-${task.priority}`}>
+                <button
+                  type="button"
+                  className={`task-check ${task.isDone ? "is-done" : ""}`}
+                  aria-label="Marquer la tâche terminée"
+                  onClick={() => void toggleTask(task.id, true)}
+                />
+                <div>
+                  <h3>{task.title}</h3>
+                  <p>{taskStatusLabel(task)}</p>
+                </div>
+                {task.priority === "high" && <span className="today-task-priority">Urgent</span>}
+              </article>
+            ))}
+          </div>
+        )}
+      </main>
 
-          {brief.kind === "loading" && (
-            <div className="today-loading" aria-label="Chargement des priorités">
-              <span />
-              <span />
-              <span />
-            </div>
-          )}
+      <section className="today-later" aria-label="À traiter ensuite">
+        <div className="today-section-head">
+          <h2>Ensuite</h2>
+          <span>{sections.later.length}</span>
+        </div>
+        {sections.later.length > 0 ? (
+          <div className="today-task-list is-compact">
+            {sections.later.map((task) => (
+              <article key={task.id} className={`today-task-row is-${task.priority}`}>
+                <button
+                  type="button"
+                  className="task-check"
+                  aria-label="Marquer la tâche terminée"
+                  onClick={() => void toggleTask(task.id, true)}
+                />
+                <div>
+                  <h3>{task.title}</h3>
+                  <p>{task.dueLabel}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="today-muted">Aucune autre tâche ouverte.</p>
+        )}
+      </section>
 
-          {brief.kind === "error" && (
-            <div className="today-empty">
-              <strong>Le brief Mue n'est pas disponible.</strong>
-              <p>Ouvrez l'inbox pour traiter vos derniers messages ou relancez l'analyse.</p>
-              <button type="button" onClick={() => setView("inbox")}>
-                Ouvrir l'inbox
-              </button>
-            </div>
-          )}
-
-          {brief.kind === "result" && items.length === 0 && (
-            <div className="today-empty">
-              <strong>Aucune action prioritaire détectée.</strong>
-              <p>Votre inbox reste accessible pour consulter les nouveaux échanges.</p>
-              <button type="button" onClick={() => setView("inbox")}>
-                Voir l'inbox
-              </button>
-            </div>
-          )}
-
+      {brief.kind === "result" && items.length > 0 && (
+        <section className="today-mue-suggestions" aria-label="Suggestions Mue">
+          <div className="today-section-head">
+            <h2>Suggestions Mue</h2>
+            <span>{items.length}</span>
+          </div>
           {items.map((item) => {
             const due = formatDue(item.due);
             const created = createdIds.has(item.conversationId);
@@ -248,36 +269,36 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
               </article>
             );
           })}
-        </main>
+        </section>
+      )}
 
-        <aside className="today-summary" aria-label="Repères du jour">
-          <h2>Repères du jour</h2>
-          <dl>
-            <div>
-              <dt>Messages non lus</dt>
-              <dd>{unreadCount}</dd>
-            </div>
-            <div>
-              <dt>Tâches ouvertes</dt>
-              <dd>{taskCount}</dd>
-            </div>
-            <div>
-              <dt>Conversations</dt>
-              <dd>{conversations.length}</dd>
-            </div>
-          </dl>
-          <div className="today-links">
-            <button type="button" onClick={() => setView("inbox")}>
-              <Icon name="i-inbox" />
-              Voir toute l'inbox
-            </button>
-            <button type="button" onClick={() => setView("tasks")}>
-              <Icon name="i-task" />
-              Ouvrir mes tâches
-            </button>
+      <aside className="today-summary" aria-label="Repères du jour">
+        <h2>Repères du jour</h2>
+        <dl>
+          <div>
+            <dt>Messages non lus</dt>
+            <dd>{unreadCount}</dd>
           </div>
-        </aside>
-      </div>
+          <div>
+            <dt>Tâches ouvertes</dt>
+            <dd>{sections.openCount}</dd>
+          </div>
+          <div>
+            <dt>Conversations</dt>
+            <dd>{conversations.length}</dd>
+          </div>
+        </dl>
+        <div className="today-links">
+          <button type="button" onClick={() => setView("inbox")}>
+            <Icon name="i-inbox" />
+            Voir toute l'inbox
+          </button>
+          <button type="button" onClick={() => setView("tasks")}>
+            <Icon name="i-task" />
+            Ouvrir mes tâches
+          </button>
+        </div>
+      </aside>
     </section>
   );
 }

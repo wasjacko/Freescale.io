@@ -6,14 +6,16 @@ async function source(path: string) {
 }
 
 describe("Today operational home", () => {
-  it("renders a Mue brief with concrete next actions", async () => {
+  it("renders Direction C without making Mue a startup blocker", async () => {
     const content = await source("./TodayView.tsx");
 
-    expect(content).toContain("dailyBriefing");
-    expect(content).toContain("À traiter maintenant");
-    expect(content).toContain("createTaskFromBrief");
-    expect(content).toContain('view === "today"');
-    expect(content).toContain('setView("inbox")');
+    expect(content).toContain("<TodayBriefCard");
+    expect(content).toContain("<QuickTaskCapture");
+    expect(content).toContain("getTodayTaskSections");
+    expect(content).toContain("À faire maintenant");
+    expect(content).not.toContain("channels.length === 0");
+    expect(content).not.toContain("void loadBrief();");
+    expect(content).not.toContain("<NoChannelsHero");
   });
 
   it("is wired as the application's default mobile destination", async () => {
