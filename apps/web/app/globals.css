@@ -8702,23 +8702,6 @@ button:active:not(:disabled):not(.no-press) {
   display: none !important;
 }
 
-.app.view-more .workspace {
-  grid-template-columns: 1fr;
-}
-
-.app.view-more .conv-shell,
-.app.view-more .today-view,
-.app.view-more .tasks-view,
-.app.view-more .calendar-view,
-.app.view-more .ai-view,
-.app.view-more .copilot {
-  display: none;
-}
-
-.app.view-more .mobile-more-view {
-  display: flex;
-}
-
 .mobile-more-view {
   min-height: 0;
   flex-direction: column;
@@ -8884,6 +8867,23 @@ button:active:not(:disabled):not(.no-press) {
     padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
   }
 
+  .app.view-more .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .app.view-more .conv-shell,
+  .app.view-more .today-view,
+  .app.view-more .tasks-view,
+  .app.view-more .calendar-view,
+  .app.view-more .ai-view,
+  .app.view-more .copilot {
+    display: none;
+  }
+
+  .app.view-more .mobile-more-view {
+    display: flex;
+  }
+
   .mobile-bottom-nav {
     position: fixed;
     right: 12px;
@@ -8901,7 +8901,7 @@ button:active:not(:disabled):not(.no-press) {
     backdrop-filter: blur(18px);
   }
 
-  .app[data-active-conv="1"] .mobile-bottom-nav {
+  .app.view-inbox[data-active-conv="1"] .mobile-bottom-nav {
     display: none;
   }
 

@@ -21,9 +21,12 @@ function normalizePersistedState(persistedState: unknown, currentState: State): 
   const stored = persistedState as Partial<State> | undefined;
   return {
     ...currentState,
-    ...stored,
     view: normalizeView(stored?.view),
-    activeConvId: stored?.activeConvId ?? "",
+    activeConvId: typeof stored?.activeConvId === "string" ? stored.activeConvId : "",
+    sidebarCollapsed:
+      typeof stored?.sidebarCollapsed === "boolean"
+        ? stored.sidebarCollapsed
+        : currentState.sidebarCollapsed,
   };
 }
 
