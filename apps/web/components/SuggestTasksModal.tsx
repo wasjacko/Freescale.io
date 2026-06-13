@@ -20,12 +20,6 @@ const THINKING_STEPS = [
   "Prépare tes suggestions de tâches…",
 ];
 
-function priorityLabel(p: DailyBriefingItem["priority"]) {
-  if (p === "high") return "Prioritaire";
-  if (p === "low") return "À surveiller";
-  return "À traiter";
-}
-
 function buildTaskFromItem(item: DailyBriefingItem): Task {
   const initials =
     item.contactName
