@@ -2338,12 +2338,11 @@ img { display: block; max-width: 100%; }
 }
 .gtile--top > img { object-position: top; }
 .gtile--mid > img { object-position: 50% 28%; }
-/* Test : photos de personnes (équipe / membres) en noir et blanc.
-   On exclut les tuiles canaux (.gtile--chan) pour garder les logos
-   Gmail / Instagram / WhatsApp en couleur. */
-.gtile:not(.gtile--chan) > img,
-.hero__woman,
-.faq__contact-photo img {
+/* Avatars « membres » de la galerie en noir et blanc.
+   La dame du hero (.hero__woman) et la photo de la section contact
+   (.faq__contact-photo) restent EN COULEUR. Les logos canaux
+   (.gtile--chan) restent en couleur eux aussi. */
+.gtile:not(.gtile--chan) > img {
   filter: grayscale(1);
 }
 /* floating dark chip on photo tiles (reference detail) */
