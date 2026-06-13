@@ -49,10 +49,8 @@ async function handleSignOut(request: NextRequest) {
     // Network blip — fall through to local cookie purge regardless.
   }
 
-  // Bounce to the marketing landing, not the auth modal — signing out
-  // is "I'm done", not "I want to log in again right now". The landing
-  // shows a small confirmation banner via the ?signedout=1 query.
-  const response = NextResponse.redirect(new URL("/?signedout=1", request.url), { status: 303 });
+  // Déconnexion → nouvelle home page statique (servie depuis public/home/).
+  const response = NextResponse.redirect(new URL("/home/index.html", request.url), { status: 303 });
 
   // Hard-delete every sb-* cookie on the response. This is the fix for the
   // "I signed out but still see the old account" bug.

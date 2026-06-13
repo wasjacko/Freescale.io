@@ -57,6 +57,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/auth/");
   const isPublic =
     pathname === "/" ||
+    pathname.startsWith("/home") || // nouvelle home page statique (déconnexion)
     pathname === "/pricing" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||

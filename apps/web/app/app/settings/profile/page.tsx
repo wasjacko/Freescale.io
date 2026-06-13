@@ -1,16 +1,19 @@
 import { DangerZone } from "@/components/settings/DangerZone";
 import { ProfileForm } from "@/components/settings/ProfileForm";
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export const metadata = { title: "Profil · Freescale" };
 
 export default async function ProfileSettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getCurrentUser() est mock-aware (DEV_NO_AUTH) : en local sans session
+  // réelle on récupère l'utilisateur mock, ce qui rend les Paramètres
+  // accessibles pour la simulation. La requête profil ci-dessous renvoie
+  // simplement des valeurs par défaut sous l'utilisateur mock.
+  const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
+  const supabase = await createClient();
 
   const { data: profile } = await supabase
     .from("profiles")
