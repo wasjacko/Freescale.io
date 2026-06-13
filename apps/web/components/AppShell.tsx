@@ -11,11 +11,9 @@ import { MuePanel } from "@/components/MuePanel";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { Sidebar } from "@/components/Sidebar";
-import { SyncErrorBanner } from "@/components/SyncErrorBanner";
 import { Thread } from "@/components/Thread";
 import { TodayView } from "@/components/TodayView";
 import { TopBar } from "@/components/TopBar";
-import { TrialBanner } from "@/components/billing/TrialBanner";
 import { Sprite } from "@/components/icons/Sprite";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
 import { Toaster } from "@/components/ui/Toaster";
@@ -287,8 +285,10 @@ export function AppShell({
         <TopBar />
         <Sidebar user={user} />
         <div className="workspace">
-          <SyncErrorBanner channels={channels} />
-          <TrialBanner />
+          {/* Bandeaux du haut masqués pour l'instant (reconnexion canal + essai).
+              Réactiver : décommenter ci-dessous. */}
+          {/* <SyncErrorBanner channels={channels} /> */}
+          {/* <TrialBanner /> */}
           <TodayView user={user} />
           {/* Inbox en 3 panneaux (façon maquette) : la LISTE reste toujours
               visible à gauche, le FIL au centre. Sous 768px on bascule
