@@ -1,6 +1,16 @@
 "use server";
 
 import { consumeMueAction } from "@/lib/actions/billing";
+import {
+  isDevNoAuth,
+  mockAskMueAnswer,
+  mockDailyBriefing,
+  mockReplySuggestions,
+  mockSuggestedTasks,
+  mockThreadSummary,
+  mockToneRewrite,
+  mockTranslatedMessages,
+} from "@/lib/dev-mock";
 import { extractMessageContent, getThread, getValidAccessToken } from "@/lib/gmail";
 import {
   type MueChatHistoryItem,
@@ -70,6 +80,7 @@ async function getPrimaryWorkspaceId(
 export async function suggestReplies(
   conversationId: string
 ): Promise<{ suggestions: ReplySuggestion[]; error: string | null }> {
+  if (isDevNoAuth()) return { suggestions: mockReplySuggestions(conversationId), error: null };
   const baseUrl = process.env.ANTHROPIC_BASE_URL;
   const authToken = process.env.ANTHROPIC_AUTH_TOKEN;
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -150,6 +161,22 @@ export async function suggestReplies(
 
   const userMessage = `Conversation thread (oldest → newest):\n\n${transcript}\n\nGenerate three reply drafts for me to send next.`;
 
+  // Mue rédige dans TON style (profil appris) + ta mémoire — plus du Claude
+  // générique. (ton/langue PAR CLIENT viendra avec la migration contacts.)
+  const workspaceId = await getActiveWorkspaceId(supabase, user.id);
+  const [profileCtx, memories] = await Promise.all([
+    fetchMueProfileContext(supabase, user.id),
+    workspaceId ? fetchMueMemories(supabase, workspaceId) : Promise.resolve([]),
+  ]);
+  const styleAddendum = [
+    profileCtx.styleProfile
+      ? `\n\nSTYLE D'ÉCRITURE DE L'UTILISATEUR — imite-le fidèlement (tournures, longueur, formules de politesse, niveau de langue) :\n${profileCtx.styleProfile}`
+      : "",
+    memories.length
+      ? `\n\nCONTEXTE MÉMORISÉ (utilise-le si pertinent) :\n${memories.map((m) => `- ${m.content}`).join("\n")}`
+      : "",
+  ].join("");
+
   // SDK auto-reads ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN from env;
   // we only set explicitly when overriding (custom hostnames need authToken
   // form which uses "Authorization: Bearer" vs the x-api-key header).
@@ -170,7 +197,7 @@ export async function suggestReplies(
     const resp = await client.messages.create({
       model,
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT + styleAddendum,
       messages: [{ role: "user", content: userMessage }],
     });
     const block = resp.content.find((b) => b.type === "text");
@@ -443,6 +470,7 @@ export type MueChatMessageRow = {
 export async function listMueChatMessages(input?: {
   conversationId?: string | null;
 }): Promise<{ messages: MueChatMessageRow[]; error: string | null }> {
+  if (isDevNoAuth()) return { messages: [], error: null };
   const supabase = await createClient();
   const { workspaceId, error } = await getPrimaryWorkspaceId(supabase);
   if (!workspaceId) return { messages: [], error: error ?? "no workspace" };
@@ -474,6 +502,7 @@ export async function listMueChatMessages(input?: {
 export async function clearMueChat(input?: {
   conversationId?: string | null;
 }): Promise<{ ok: boolean; error: string | null }> {
+  if (isDevNoAuth()) return { ok: true, error: null };
   const supabase = await createClient();
   const { workspaceId, error } = await getPrimaryWorkspaceId(supabase);
   if (!workspaceId) return { ok: false, error: error ?? "no workspace" };
@@ -505,6 +534,7 @@ export async function askMue(input: {
 }): Promise<AskMueResult> {
   const question = normalizeMueQuestion(input.question);
   if (!question) return { answer: null, error: "Question vide." };
+  if (isDevNoAuth()) return { answer: mockAskMueAnswer(question), error: null };
 
   const supabase = await createClient();
   const {
@@ -696,6 +726,7 @@ export async function rewriteDraftTone(input: {
 }): Promise<{ text: string | null; error: string | null }> {
   const draft = input.text.trim().slice(0, 8000);
   if (!draft) return { text: null, error: "Draft vide." };
+  if (isDevNoAuth()) return { text: mockToneRewrite(input.text, input.tone), error: null };
   const tone: MueTone = ["formal", "casual", "friendly"].includes(input.tone)
     ? input.tone
     : "friendly";
@@ -848,11 +879,16 @@ export type ThreadSummary = { tldr: string; bullets: string[] };
 export async function summarizeThread(
   conversationId: string
 ): Promise<{ summary: ThreadSummary | null; error: string | null }> {
+  if (isDevNoAuth()) return { summary: mockThreadSummary(conversationId), error: null };
   const client = buildAnthropicClient();
   if (!client) return { summary: null, error: "ANTHROPIC credentials not set" };
 
-  const { transcript, error } = await fetchThreadTranscript(conversationId);
-  if (!transcript) return { summary: null, error: error ?? "no transcript" };
+  const supabase = await createClient();
+  const { workspaceId, error: workspaceError } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { summary: null, error: workspaceError ?? "no workspace" };
+
+  const transcript = await fetchBestConversationTranscript(supabase, conversationId, workspaceId);
+  if (!transcript) return { summary: null, error: "no transcript found" };
 
   const usage = await consumeMueAction();
   if (!usage.allowed) return { summary: null, error: usage.error ?? "Limite Mue atteinte." };
@@ -920,11 +956,16 @@ export type SuggestedTask = {
 export async function suggestTasks(
   conversationId: string
 ): Promise<{ tasks: SuggestedTask[]; error: string | null }> {
+  if (isDevNoAuth()) return { tasks: mockSuggestedTasks(conversationId), error: null };
   const client = buildAnthropicClient();
   if (!client) return { tasks: [], error: "ANTHROPIC credentials not set" };
 
-  const { transcript, error } = await fetchThreadTranscript(conversationId);
-  if (!transcript) return { tasks: [], error: error ?? "no transcript" };
+  const supabase = await createClient();
+  const { workspaceId, error: workspaceError } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { tasks: [], error: workspaceError ?? "no workspace" };
+
+  const transcript = await fetchBestConversationTranscript(supabase, conversationId, workspaceId);
+  if (!transcript) return { tasks: [], error: "no transcript found" };
 
   const usage = await consumeMueAction();
   if (!usage.allowed) return { tasks: [], error: usage.error ?? "Limite Mue atteinte." };
@@ -1022,6 +1063,9 @@ export type DailyBriefingItem = {
   why: string;
   priority: "high" | "medium" | "low";
   due: string | null;
+  imageUrl?: string | null;
+  timeAgo?: string | null;
+  avatars?: Array<{ kind: "initials" | "image"; text?: string; bg?: string; url?: string }>;
 };
 export type DailyBriefing = {
   headline: string;
@@ -1032,6 +1076,7 @@ export async function dailyBriefing(): Promise<{
   briefing: DailyBriefing | null;
   error: string | null;
 }> {
+  if (isDevNoAuth()) return { briefing: mockDailyBriefing(), error: null };
   const client = buildAnthropicClient();
   if (!client) return { briefing: null, error: "ANTHROPIC credentials not set" };
 
@@ -1170,6 +1215,7 @@ export async function createTaskFromBrief(input: {
   priority?: "high" | "medium" | "low";
   due?: string | null;
 }): Promise<{ ok: boolean; error: string | null }> {
+  if (isDevNoAuth()) return { ok: true, error: null };
   const supabase = await createClient();
   const {
     data: { user },
@@ -1197,11 +1243,17 @@ export async function translateThread(
   conversationId: string,
   targetLang: string
 ): Promise<{ messages: TranslatedMessage[]; error: string | null }> {
+  if (isDevNoAuth())
+    return { messages: mockTranslatedMessages(conversationId, targetLang), error: null };
   const client = buildAnthropicClient();
   if (!client) return { messages: [], error: "ANTHROPIC credentials not set" };
 
-  const { transcript, error } = await fetchThreadTranscript(conversationId);
-  if (!transcript) return { messages: [], error: error ?? "no transcript" };
+  const supabase = await createClient();
+  const { workspaceId, error: workspaceError } = await getPrimaryWorkspaceId(supabase);
+  if (!workspaceId) return { messages: [], error: workspaceError ?? "no workspace" };
+
+  const transcript = await fetchBestConversationTranscript(supabase, conversationId, workspaceId);
+  if (!transcript) return { messages: [], error: "no transcript found" };
 
   const usage = await consumeMueAction();
   if (!usage.allowed) return { messages: [], error: usage.error ?? "Limite Mue atteinte." };

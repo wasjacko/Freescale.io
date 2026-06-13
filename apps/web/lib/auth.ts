@@ -1,3 +1,4 @@
+import { isDevNoAuth, mockCurrentUser } from "@/lib/dev-mock";
 import { createClient } from "@/lib/supabase/server";
 
 export type CurrentUser = {
@@ -25,7 +26,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  // DEV bypass : pas de session réelle → user mock (local uniquement).
+  if (!user) return isDevNoAuth() ? mockCurrentUser() : null;
 
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
   const fullName =

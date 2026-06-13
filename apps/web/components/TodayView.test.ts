@@ -10,9 +10,9 @@ describe("Today operational home", () => {
     const content = await source("./TodayView.tsx");
 
     expect(content).toContain("dailyBriefing");
-    expect(content).toContain("À traiter maintenant");
+    expect(content).toContain("À faire");
     expect(content).toContain("createTaskFromBrief");
-    expect(content).toContain('view === "today"');
+    expect(content).toContain('view !== "today"');
     expect(content).toContain('setView("inbox")');
   });
 
@@ -27,7 +27,7 @@ describe("Today operational home", () => {
     expect(types).toContain('"today"');
     expect(store).toContain('view: "today"');
     expect(shell).toContain("<TodayView");
-    expect(sidebar).toContain('label: "Aujourd\'hui"');
+    expect(sidebar).toContain('label: "Tâches"');
   });
 
   it("does not interrupt returning users with old acquisition prompts", async () => {

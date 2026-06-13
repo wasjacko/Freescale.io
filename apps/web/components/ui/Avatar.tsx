@@ -54,10 +54,18 @@ export function Avatar({ avatar, className = "avatar", size }: Props) {
       .map((p) => p[0]?.toUpperCase() ?? "")
       .join("") || "?";
 
+  // Avatars sans image : fond noir uni + texte blanc (couleur unique, plus de
+  // pastilles multicolores). On préfère toujours une vraie image quand elle
+  // existe ; le noir n'est que le repli.
+  const initialsStyle: React.CSSProperties = {
+    ...style,
+    background: "#0a0a0a",
+    color: "#fff",
+  };
+
   if (avatar.kind === "initials") {
-    if (avatar.bg) style.background = avatar.bg;
     return (
-      <span className={className} style={style}>
+      <span className={className} style={initialsStyle}>
         {avatar.text}
       </span>
     );
@@ -65,7 +73,7 @@ export function Avatar({ avatar, className = "avatar", size }: Props) {
 
   if (!src) {
     return (
-      <span className={className} style={style}>
+      <span className={className} style={initialsStyle}>
         {fallbackInitials}
       </span>
     );

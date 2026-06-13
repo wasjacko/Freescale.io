@@ -1,8 +1,8 @@
 "use client";
 
-import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { learnMueStyleFromSentMail } from "@/lib/actions/mue";
 import { removeAvatar, savePersonalProfile, uploadAvatar } from "@/lib/actions/profile";
+import { toast } from "@/lib/hooks/useToast";
 import { createClient } from "@/lib/supabase/client";
 import { useRef, useState, useTransition } from "react";
 
@@ -78,7 +78,6 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [mueStyleUpdatedAt, setMueStyleUpdatedAt] = useState(initial.mueStyleUpdatedAt);
   const [dailyDigestEnabled, setDailyDigestEnabled] = useState(initial.dailyDigestEnabled);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatarUrl);
-  const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(false);
   // "Enregistré ✓" badge shown next to the avatar buttons after a
@@ -94,17 +93,15 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
-  const [pwdToast, setPwdToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPwdToast(null);
     if (newPwd.length < 8) {
-      setPwdToast({ kind: "err", text: "Au moins 8 caractères." });
+      toast.error("Au moins 8 caractères.");
       return;
     }
     if (newPwd !== confirmPwd) {
-      setPwdToast({ kind: "err", text: "Les deux mots de passe ne correspondent pas." });
+      toast.error("Les deux mots de passe ne correspondent pas.");
       return;
     }
     setPwdLoading(true);
@@ -116,21 +113,18 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         password: currentPwd,
       });
       if (reauthErr) {
-        setPwdToast({ kind: "err", text: "Mot de passe actuel incorrect." });
+        toast.error("Mot de passe actuel incorrect.");
         setPwdLoading(false);
         return;
       }
       const { error } = await supabase.auth.updateUser({ password: newPwd });
       if (error) throw error;
-      setPwdToast({ kind: "ok", text: "Mot de passe mis à jour." });
+      toast.success("Mot de passe mis à jour.");
       setCurrentPwd("");
       setNewPwd("");
       setConfirmPwd("");
     } catch (err) {
-      setPwdToast({
-        kind: "err",
-        text: err instanceof Error ? err.message : "Mise à jour impossible.",
-      });
+      toast.error(err instanceof Error ? err.message : "Mise à jour impossible.");
     } finally {
       setPwdLoading(false);
     }
@@ -164,33 +158,26 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             new CustomEvent("freescale:signature-updated", { detail: signature })
           );
         }
-        setToast({ kind: "ok", text: "Profil enregistré." });
+        toast.success("Profil enregistré.");
       } catch (err) {
-        setToast({
-          kind: "err",
-          text: err instanceof Error ? err.message : "Échec de l'enregistrement.",
-        });
+        toast.error(err instanceof Error ? err.message : "Échec de l'enregistrement.");
       }
     });
   };
 
   const handleLearnStyle = async () => {
     setStyleLearning(true);
-    setToast(null);
     try {
       const result = await learnMueStyleFromSentMail();
       if (result.error || !result.styleProfile) {
-        setToast({ kind: "err", text: result.error ?? "Analyse impossible." });
+        toast.error(result.error ?? "Analyse impossible.");
         return;
       }
       setMueStyleProfile(result.styleProfile);
       setMueStyleUpdatedAt(new Date().toISOString());
-      setToast({ kind: "ok", text: "Mue a appris votre style." });
+      toast.success("Mue a appris votre style.");
     } catch (err) {
-      setToast({
-        kind: "err",
-        text: err instanceof Error ? err.message : "Analyse impossible.",
-      });
+      toast.error(err instanceof Error ? err.message : "Analyse impossible.");
     } finally {
       setStyleLearning(false);
     }
@@ -203,19 +190,15 @@ export function ProfileForm({ initial }: { initial: Initial }) {
 
   const handleFile = async (file: File) => {
     setUploading(true);
-    setToast(null);
     try {
       const fd = new FormData();
       fd.append("file", file);
       const url = await uploadAvatar(fd);
       if (url) setAvatarUrl(url);
-      setToast({ kind: "ok", text: "Avatar mis à jour." });
+      toast.success("Avatar mis à jour.");
       flashAvatarSaved();
     } catch (err) {
-      setToast({
-        kind: "err",
-        text: err instanceof Error ? err.message : "Upload impossible.",
-      });
+      toast.error(err instanceof Error ? err.message : "Upload impossible.");
     } finally {
       setUploading(false);
     }
@@ -226,13 +209,10 @@ export function ProfileForm({ initial }: { initial: Initial }) {
       try {
         await removeAvatar();
         setAvatarUrl(null);
-        setToast({ kind: "ok", text: "Avatar supprimé." });
+        toast.success("Avatar supprimé.");
         flashAvatarSaved();
       } catch (err) {
-        setToast({
-          kind: "err",
-          text: err instanceof Error ? err.message : "Suppression impossible.",
-        });
+        toast.error(err instanceof Error ? err.message : "Suppression impossible.");
       }
     });
   };
@@ -395,17 +375,7 @@ export function ProfileForm({ initial }: { initial: Initial }) {
 
         <div className="settings-divider" />
 
-        <div className="settings-row">
-          <div className="settings-row-label">
-            <h3>Thème</h3>
-            <p>Auto suit votre OS. Choisissez Clair ou Sombre pour forcer.</p>
-          </div>
-          <div className="settings-row-control">
-            <ThemeToggle />
-          </div>
-        </div>
-
-        <div className="settings-divider" />
+        {/* Sélecteur de thème retiré — l'app est désormais light-only (DA "Complete AI"). */}
 
         <div className="settings-row">
           <div className="settings-row-label">
@@ -510,11 +480,6 @@ export function ProfileForm({ initial }: { initial: Initial }) {
       </div>
 
       <div className="settings-footer">
-        {toast && (
-          <div className={`settings-toast ${toast.kind === "ok" ? "is-ok" : "is-err"}`}>
-            {toast.text}
-          </div>
-        )}
         <button
           type="button"
           className="set-btn set-btn-primary"
@@ -592,11 +557,6 @@ export function ProfileForm({ initial }: { initial: Initial }) {
             className="settings-row-control"
             style={{ justifyContent: "flex-end", width: "100%" }}
           >
-            {pwdToast && (
-              <div className={`settings-toast ${pwdToast.kind === "ok" ? "is-ok" : "is-err"}`}>
-                {pwdToast.text}
-              </div>
-            )}
             <button
               type="submit"
               className="set-btn set-btn-primary"

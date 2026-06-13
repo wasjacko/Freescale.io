@@ -1,0 +1,236 @@
+"use client";
+
+import { NewMessageModal } from "@/components/NewMessageModal";
+import { useData } from "@/lib/contexts/DataContext";
+import { useApp } from "@/lib/store";
+import { useState } from "react";
+
+const SORTS: { key: "date" | "unread" | "starred"; label: string }[] = [
+  { key: "date", label: "Récents" },
+  { key: "unread", label: "Non lus" },
+  { key: "starred", label: "Étoilés" },
+];
+
+const CHANNEL_FILTERS: { key: string; label: string }[] = [
+  { key: "all", label: "Tous" },
+  { key: "gmail", label: "Gmail" },
+  { key: "outlook", label: "Outlook" },
+  { key: "whatsapp", label: "WhatsApp" },
+  { key: "instagram", label: "Instagram" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "slack", label: "Slack" },
+];
+
+const CATEGORY_FILTERS: { key: string; label: string }[] = [
+  { key: "all", label: "Toutes" },
+  { key: "client", label: "Perso / Client" },
+  { key: "promo", label: "Promotions" },
+  { key: "notif", label: "Notifications" },
+  { key: "other", label: "Autres" },
+];
+
+/**
+ * InboxToolbar — barre d'outils pleine largeur au-dessus des deux colonnes
+ * (liste + fil). Non lus · Tri · Canal · Filtrer. L'état vit dans le store
+ * (`useApp`) pour être partagé avec la liste de conversations.
+ */
+export function InboxToolbar() {
+  const { channels } = useData();
+  const {
+    inboxSort,
+    inboxChannel,
+    inboxCategory,
+    setInboxSort,
+    setInboxChannel,
+    setInboxCategory,
+    setActiveConv,
+  } = useApp();
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [channelMenuOpen, setChannelMenuOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
+
+  // Pas de barre tant qu'aucun canal n'est connecté (l'inbox montre le hero).
+  if (channels.length === 0) return null;
+
+  const activeFilterCount = inboxCategory !== "all" ? 1 : 0;
+  const sortLabel =
+    inboxSort === "unread" ? "Non lus" : inboxSort === "starred" ? "Étoilés" : "Récents";
+  const channelLabel =
+    inboxChannel === "all"
+      ? "Tous les canaux"
+      : (CHANNEL_FILTERS.find((c) => c.key === inboxChannel)?.label ?? "Canal");
+
+  return (
+    <div className="ibx-toolbar-bar">
+      <div className="ibx-tool-wrap">
+        <button
+          type="button"
+          className={`ibx-tool ${sortMenuOpen ? "is-open" : ""}`}
+          aria-expanded={sortMenuOpen}
+          onClick={() => {
+            setChannelMenuOpen(false);
+            setSortMenuOpen((v) => !v);
+          }}
+        >
+          <svg
+            className="ibx-tool-ic"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M7 4v16M7 4 4 7M7 4l3 3" />
+            <path d="M17 20V4M17 20l3-3M17 20l-3-3" />
+          </svg>
+          Tri : {sortLabel}
+          <span className="ibx-tool-caret" aria-hidden>
+            ▾
+          </span>
+        </button>
+        {sortMenuOpen && (
+          <>
+            <button
+              type="button"
+              className="ibx-tool-scrim"
+              aria-label="Fermer"
+              onClick={() => setSortMenuOpen(false)}
+            />
+            <div className="ibx-tool-menu" role="menu">
+              {SORTS.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  className={`ibx-tool-item ${inboxSort === s.key ? "is-active" : ""}`}
+                  onClick={() => {
+                    setInboxSort(s.key);
+                    setSortMenuOpen(false);
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="ibx-tool-wrap">
+        <button
+          type="button"
+          className={`ibx-tool ${channelMenuOpen ? "is-open" : ""} ${inboxChannel !== "all" ? "is-active" : ""}`}
+          aria-expanded={channelMenuOpen}
+          onClick={() => {
+            setSortMenuOpen(false);
+            setChannelMenuOpen((v) => !v);
+          }}
+        >
+          {channelLabel}
+          <span className="ibx-tool-caret" aria-hidden>
+            ▾
+          </span>
+        </button>
+        {channelMenuOpen && (
+          <>
+            <button
+              type="button"
+              className="ibx-tool-scrim"
+              aria-label="Fermer"
+              onClick={() => setChannelMenuOpen(false)}
+            />
+            <div className="ibx-tool-menu" role="menu">
+              {CHANNEL_FILTERS.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  className={`ibx-tool-item ${inboxChannel === c.key ? "is-active" : ""}`}
+                  onClick={() => {
+                    setInboxChannel(c.key);
+                    setChannelMenuOpen(false);
+                  }}
+                >
+                  {c.key === "all" ? "Tous les canaux" : c.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="ibx-tool-wrap">
+        <button
+          type="button"
+          className={`ibx-tool ${filterOpen || activeFilterCount > 0 ? "is-active" : ""}`}
+          aria-expanded={filterOpen}
+          onClick={() => setFilterOpen((v) => !v)}
+        >
+          <span className="ibx-tool-plus" aria-hidden>
+            +
+          </span>
+          Filtrer
+          {activeFilterCount > 0 && <span className="ibx-tool-dot" aria-hidden />}
+        </button>
+        {filterOpen && (
+          <>
+            <button
+              type="button"
+              className="ibx-tool-scrim"
+              aria-label="Fermer"
+              onClick={() => setFilterOpen(false)}
+            />
+            <div className="ibx-tool-menu ibx-tool-menu-wide" role="menu">
+              <span className="ibx-tool-menu-label">Catégorie</span>
+              {CATEGORY_FILTERS.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  className={`ibx-tool-item ${inboxCategory === c.key ? "is-active" : ""}`}
+                  onClick={() => {
+                    setInboxCategory(c.key);
+                    setFilterOpen(false);
+                  }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Nouveau message — à l'opposé des filtres (poussé tout à droite). */}
+      <button
+        type="button"
+        className="ibx-tool ibx-tool-new"
+        title="Nouveau message"
+        onClick={() => setComposeOpen(true)}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="ibx-tool-ic"
+          aria-hidden
+        >
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" />
+        </svg>
+        Nouveau message
+      </button>
+
+      {composeOpen && (
+        <NewMessageModal
+          open={composeOpen}
+          onClose={() => setComposeOpen(false)}
+          onCreated={(convId) => setActiveConv(convId)}
+        />
+      )}
+    </div>
+  );
+}

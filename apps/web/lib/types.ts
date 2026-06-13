@@ -48,6 +48,20 @@ export type Conversation = {
   tags?: string[];
   /** Team member currently responsible for this conversation. */
   assignedTo?: string | null;
+
+  // ── Fondations relationnelles (Lot 0) ──────────────────────────────
+  /** ISO du dernier message ENTRANT (du client). */
+  lastInboundAt?: string | null;
+  /** ISO du dernier message SORTANT (de moi). */
+  lastOutboundAt?: string | null;
+  /** Dérivé : la balle est dans MON camp (le client attend ma réponse). */
+  awaitingReply?: boolean;
+  /** Dérivé : la balle est dans LEUR camp (j'attends leur retour → relance). */
+  waitingOnThem?: boolean;
+  /** Ton préféré appris pour ce client (ex. "cool", "formel", "direct"). */
+  clientTone?: string | null;
+  /** Langue préférée pour ce client (ex. "fr", "en"). */
+  clientLang?: string | null;
 };
 
 export type MessageDirection = "in" | "out";
@@ -57,6 +71,8 @@ export type Message = {
   dir: MessageDirection;
   text: string;
   time: string;
+  /** ISO d'envoi — sert aux séparateurs de date du fil (« Aujourd'hui, 10:08 »). */
+  sentAtIso?: string;
   /** For incoming messages with image attachments */
   shots?: boolean;
   /** Email-only fields, populated when the message is part of an email thread */
@@ -91,6 +107,12 @@ export type Task = {
   parentTaskId?: string | null;
   /** Manual sort rank — higher = later in the list. */
   sortableIndex?: number;
+  /** True when the task was generated/suggested by Mue (shows the « IA » badge). */
+  fromAI?: boolean;
+  /** Conversation source — permet « Ouvrir le fil » depuis la tâche. */
+  conversationId?: string | null;
+  /** Échéance brute ISO (due_at). dueLabel reste le libellé d'affichage de secours. */
+  dueAtIso?: string | null;
 };
 
 export type CalEvent = {

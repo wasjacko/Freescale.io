@@ -2,7 +2,7 @@
 
 import { EmailHtmlBody } from "@/components/EmailHtmlBody";
 import { TagPopover } from "@/components/TagPopover";
-import { Icon } from "@/components/icons/Icon";
+import { ChannelLogo, Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import {
   type ConversationCollaboration,
@@ -11,7 +11,7 @@ import {
   listConversationCollaboration,
 } from "@/lib/actions/collaboration";
 import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-templates";
-import { sendEmailReply } from "@/lib/actions/inbox";
+import { createTask, sendEmailReply } from "@/lib/actions/inbox";
 import {
   type ReplySuggestion,
   type SuggestedTask,
@@ -33,8 +33,28 @@ import { useToast } from "@/lib/hooks/useToast";
 import type { MueTone } from "@/lib/mue-chat";
 import { useApp } from "@/lib/store";
 import type { Message } from "@/lib/types";
+import { isAwaitingMyReply } from "@/lib/urgency";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+
+/**
+ * Libellé du séparateur de date dans le fil, façon maquette :
+ * « Aujourd'hui, 10:08 » le jour même, « Mardi, 16:53 » sinon. L'heure est
+ * celle du premier message du jour.
+ */
+function daySeparatorLabel(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const time = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return `Aujourd'hui, ${time}`;
+  const yest = new Date(now);
+  yest.setDate(now.getDate() - 1);
+  if (d.toDateString() === yest.toDateString()) return `Hier, ${time}`;
+  const weekday = d.toLocaleDateString("fr-FR", { weekday: "long" });
+  return `${weekday.charAt(0).toUpperCase() + weekday.slice(1)}, ${time}`;
+}
 
 type ThreadAiResult =
   | { kind: "summary"; data: ThreadSummary }
@@ -56,13 +76,6 @@ const TRANSLATE_LANGS: Array<{ code: string; label: string; flag: string }> = [
   { code: "ja", label: "japonais", flag: "🇯🇵" },
 ];
 
-const QUICK_REPLIES = [
-  { id: "suggest", icon: "i-spark", text: "Suggest reply" },
-  { id: "good", text: "👍 Sounds good" },
-  { id: "call", text: "📅 Book a call" },
-  { id: "thanks", text: "🙏 Thanks!" },
-];
-
 type MsgGroup = {
   dir: "in" | "out";
   items: Message[];
@@ -82,7 +95,11 @@ function groupMessages(messages: Message[]): MsgGroup[] {
   return groups;
 }
 
-export function Thread() {
+export function Thread({
+  currentUser,
+}: {
+  currentUser?: { name: string; avatarUrl: string | null } | null;
+}) {
   const { activeConvId, setActiveConv, setView } = useApp();
   const {
     conversations,
@@ -90,25 +107,26 @@ export function Thread() {
     appendOutgoingMessage,
     retryFailedMessage,
     setTags,
-    toggleStar,
+    archive,
+    snooze,
   } = useData();
+  // Section collaboration (notes internes + activité) repliée par défaut —
+  // elle s'ouvre via l'icône bulle de l'en-tête, façon maquette.
+  const [collabOpen, setCollabOpen] = useState(false);
+  // Composer compact au repos (1 ligne) — s'étend au focus.
+  const [composerFocus, setComposerFocus] = useState(false);
+  // Clic droit sur 🕐 = choix du réveil (clic court = demain 9h).
+  const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
   const conv = conversations.find((c) => c.id === activeConvId);
   const push = useToast((s) => s.push);
 
   const [input, setInput] = useState("");
   const messagesEl = useRef<HTMLElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
-  const starBtnRef = useRef<HTMLButtonElement>(null);
   const tagBtnRef = useRef<HTMLButtonElement>(null);
   const [tagOpen, setTagOpen] = useState(false);
   const [tagAnchor, setTagAnchor] = useState<DOMRect | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  // The "starred" state lives on the conversation row in the DB —
-  // we derive the visual flag from it (no local mirror) so the
-  // server is always the source of truth and the bouton stops being
-  // purely cosmetic.
-  const isStarred = !!conv?.starred;
-
   // Live-fetch messages from Gmail on conv open. messagesByConv (server
   // DB cache) used only as an INSTANT fallback for the conv we last
   // rendered — never leaks across conv switches (would show the wrong
@@ -207,8 +225,123 @@ export function Thread() {
   if (!conv) {
     return (
       <section className="thread thread-empty-pane">
-        <div className="thread-empty-card" aria-hidden>
-          <p>Sélectionnez une conversation pour la lire ici.</p>
+        <div className="thread-empty-card">
+          <div className="thread-empty-illu" aria-hidden>
+            <svg viewBox="0 0 280 212" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="te-g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stopColor="#ff6b8a" />
+                  <stop offset="0.5" stopColor="#b65cf0" />
+                  <stop offset="1" stopColor="#5b78ff" />
+                </linearGradient>
+                <filter id="te-soft" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow
+                    dx="0"
+                    dy="9"
+                    stdDeviation="13"
+                    floodColor="#1e2640"
+                    floodOpacity="0.12"
+                  />
+                </filter>
+                <filter id="te-blur" x="-60%" y="-60%" width="220%" height="220%">
+                  <feGaussianBlur stdDeviation="20" />
+                </filter>
+              </defs>
+
+              {/* Halo dégradé flouté */}
+              <ellipse
+                cx="140"
+                cy="108"
+                rx="104"
+                ry="72"
+                fill="url(#te-g)"
+                opacity="0.16"
+                filter="url(#te-blur)"
+              />
+
+              {/* Connecteurs pointillés vers les canaux */}
+              <g
+                stroke="#d7dde9"
+                strokeWidth="1.6"
+                strokeDasharray="1.5 5"
+                strokeLinecap="round"
+                fill="none"
+              >
+                <path d="M60 58 Q88 70 104 90" />
+                <path d="M224 52 Q194 68 176 90" />
+                <path d="M140 184 Q140 168 140 152" />
+              </g>
+
+              {/* Orbes canaux (blancs + glyphe couleur) */}
+              <g filter="url(#te-soft)">
+                <circle cx="58" cy="52" r="17" fill="#fff" />
+                <circle cx="224" cy="48" r="17" fill="#fff" />
+                <circle cx="140" cy="188" r="16" fill="#fff" />
+              </g>
+              {/* WhatsApp (gauche) */}
+              <path
+                d="M51 56 a8 8 0 1 1 3 3 l-3.4 0.9 z"
+                fill="none"
+                stroke="#25d366"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              {/* Gmail (droite) */}
+              <rect
+                x="216"
+                y="42"
+                width="16"
+                height="12"
+                rx="2.5"
+                fill="none"
+                stroke="#ea4335"
+                strokeWidth="2"
+              />
+              <path d="M216 44 L224 50 L232 44" fill="none" stroke="#ea4335" strokeWidth="2" />
+              {/* LinkedIn (bas) */}
+              <rect x="133" y="181" width="14" height="14" rx="3" fill="#0a66c2" />
+              <rect x="135.5" y="186" width="2.4" height="6.5" fill="#fff" />
+              <circle cx="136.7" cy="184" r="1.3" fill="#fff" />
+              <path
+                d="M140 192.5 v-3.5 a2 2 0 0 1 4 0 v3.5"
+                stroke="#fff"
+                strokeWidth="2"
+                fill="none"
+              />
+
+              {/* Carte « inbox unifiée » */}
+              <g filter="url(#te-soft)">
+                <rect x="76" y="60" width="128" height="100" rx="16" fill="#fff" />
+              </g>
+              {/* En-tête de la carte */}
+              <circle cx="94" cy="80" r="6" fill="url(#te-g)" />
+              <rect x="106" y="76" width="46" height="6" rx="3" fill="#e7eaf1" />
+              <rect x="88" y="96" width="104" height="1.4" fill="#eef1f6" />
+              {/* Lignes de messages */}
+              <circle cx="96" cy="115" r="8" fill="url(#te-g)" />
+              <rect x="110" y="109" width="74" height="6" rx="3" fill="#dfe4ec" />
+              <rect x="110" y="120" width="48" height="6" rx="3" fill="#eceff4" />
+              <circle cx="96" cy="141" r="8" fill="#ccd3e0" />
+              <rect x="110" y="135" width="66" height="6" rx="3" fill="#dfe4ec" />
+              <rect x="110" y="146" width="38" height="6" rx="3" fill="#eceff4" />
+
+              {/* Étincelle accent */}
+              <path
+                d="M210 86 l2.4 5.8 5.8 2.4 -5.8 2.4 -2.4 5.8 -2.4 -5.8 -5.8 -2.4 5.8 -2.4 z"
+                fill="url(#te-g)"
+              />
+            </svg>
+          </div>
+          <h2 className="thread-empty-title">Discutez avec tous vos contacts, au même endroit</h2>
+          <p className="thread-empty-text">
+            C'est ici que vous échangez avec vos contacts sur tous vos canaux connectés. Chaque fois
+            que quelqu'un vous envoie un message, il apparaît ici. Vous pouvez modifier cela et plus
+            encore dans les{" "}
+            <Link href="/app/settings/connections" className="thread-empty-link">
+              Réglages de l'Inbox
+            </Link>
+            .
+          </p>
         </div>
       </section>
     );
@@ -231,41 +364,6 @@ export function Thread() {
         text: err instanceof Error ? `Envoi échoué : ${err.message}` : "Envoi échoué — réessayez.",
         duration: 5000,
       });
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleStarClick = () => {
-    const next = !isStarred;
-    // Persist on the server (DataContext does the optimistic flip on
-    // conversations[…].starred, which is what isStarred now reads from).
-    // Without this call the bouton was purely cosmetic and reset on reload.
-    void toggleStar(activeConvId, next);
-    if (next && starBtnRef.current) {
-      // Particle burst — keep the celebratory animation, but only on
-      // the star-ON transition (un-starring shouldn't celebrate).
-      const burst = document.createElement("span");
-      burst.className = "star-burst";
-      const angles = 8;
-      const colors = ["#F59E0B", "#EC4899", "#A78BFA", "#FCA5A5", "#FBBF24"];
-      for (let i = 0; i < angles; i++) {
-        const a = (Math.PI * 2 * i) / angles + (Math.random() - 0.5) * 0.4;
-        const r = 22 + Math.random() * 10;
-        const p = document.createElement("i");
-        p.style.background = colors[i % colors.length] ?? "#FBBF24";
-        p.style.setProperty("--bx", `${Math.cos(a) * r}px`);
-        p.style.setProperty("--by", `${Math.sin(a) * r}px`);
-        burst.appendChild(p);
-      }
-      starBtnRef.current.appendChild(burst);
-      setTimeout(() => burst.remove(), 600);
-      push({ kind: "info", text: `★ ${conv.name}`, duration: 1800 });
     }
   };
 
@@ -305,6 +403,19 @@ export function Thread() {
 
   const firstName = conv.name.split(/[ –-]/)[0]?.trim() ?? "";
 
+  // Avatar de l'utilisateur (messages sortants) : vraie image si dispo, sinon
+  // initiales. Donne une conversation à deux faces (avatars des deux côtés).
+  const userInitials =
+    (currentUser?.name ?? "Moi")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "M";
+  const userAvatar: import("@/lib/types").Avatar = currentUser?.avatarUrl
+    ? { kind: "img", src: currentUser.avatarUrl, alt: currentUser.name }
+    : { kind: "initials", text: userInitials, bg: "#E8EAFF" };
+
   return (
     <main className="thread">
       <header className="thread-head">
@@ -335,18 +446,45 @@ export function Thread() {
           </svg>
           <span>Inbox</span>
         </button>
-        <div className="contact">
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: l'icône bulle offre le même accès clavier */}
+        <div
+          className="contact contact-clickable"
+          onClick={() => setCollabOpen((v) => !v)}
+          title="Notes internes"
+        >
           <span className="avatar large">
             <Avatar avatar={conv.avatar} className="" />
             <span className="status-dot" />
           </span>
           <div>
-            <h1>{conv.subject || conv.name}</h1>
+            <h1>{conv.name}</h1>
             <div className="contact-sub">
-              {conv.name}
-              {conv.contactEmail ? (
-                <span style={{ opacity: 0.55 }}> · {conv.contactEmail}</span>
-              ) : null}
+              {/* Canal + assignation sur la même ligne sous le nom (compact). */}
+              <span className="thread-chan-inline">
+                <ChannelLogo channel={conv.channel} className="" />
+                {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
+              </span>
+              <span className="contact-sub-sep" aria-hidden>
+                ·
+              </span>
+              <select
+                className="thread-assign"
+                aria-label="Assignée à"
+                value={collab?.assignedTo ?? conv.assignedTo ?? ""}
+                onChange={(event) => void handleAssign(event.target.value)}
+                disabled={
+                  collabLoading ||
+                  collabPending === "assign" ||
+                  !collab?.permissions.canAssignConversation
+                }
+              >
+                <option value="">Non assignée</option>
+                {(collab?.members ?? []).map((member) => (
+                  <option key={member.userId} value={member.userId}>
+                    {member.fullName || member.email}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -368,23 +506,120 @@ export function Thread() {
               <span className="icon-btn-badge">{conv.tags?.length}</span>
             )}
           </button>
+          <span className="snooze-wrap">
+            {snoozeMenuOpen && (
+              <div className="snooze-menu" role="menu">
+                {[
+                  { label: "Ce soir 18h", h: 18, d: 0 },
+                  { label: "Demain 9h", h: 9, d: 1 },
+                  { label: "Lundi 9h", h: 9, d: (8 - new Date().getDay()) % 7 || 7 },
+                ].map((o) => (
+                  <button
+                    key={o.label}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const t = new Date();
+                      t.setDate(t.getDate() + o.d);
+                      t.setHours(o.h, 0, 0, 0);
+                      void snooze(conv.id, t.toISOString());
+                      setSnoozeMenuOpen(false);
+                      push({
+                        kind: "info",
+                        text: `Conversation en pause — ${o.label}`,
+                        action: { label: "Annuler", fn: () => void snooze(conv.id, null) },
+                      });
+                    }}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              className="icon-btn"
+              type="button"
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setSnoozeMenuOpen((v) => !v);
+              }}
+              aria-label="Mettre en pause jusqu'à demain (clic droit : options)"
+              data-tip="En pause jusqu'à demain"
+              onClick={() => {
+                const t = new Date();
+                t.setDate(t.getDate() + 1);
+                t.setHours(9, 0, 0, 0);
+                void snooze(conv.id, t.toISOString());
+                push({
+                  kind: "info",
+                  text: "Conversation en pause jusqu'à demain 9h",
+                  action: { label: "Annuler", fn: () => void snooze(conv.id, null) },
+                });
+              }}
+            >
+              <svg
+                className="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <polyline points="12 7 12 12 15.5 14" />
+              </svg>
+            </button>
+          </span>
           <button
-            ref={starBtnRef}
-            className={`icon-btn ${isStarred ? "is-on" : ""}`}
+            className="icon-btn"
             type="button"
-            aria-label="Favorite"
-            data-tip="Star"
-            onClick={handleStarClick}
-            style={{ color: isStarred ? "#F59E0B" : undefined, position: "relative" }}
+            aria-label="Terminer la conversation"
+            data-tip="Terminer"
+            onClick={() => {
+              const ordered = [...conversations].sort(
+                (a, b) => new Date(b.lastAtIso).getTime() - new Date(a.lastAtIso).getTime()
+              );
+              const idxNow = ordered.findIndex((c) => c.id === conv.id);
+              const next = ordered.find((c, i) => i > idxNow && c.id !== conv.id);
+              archive(conv.id);
+              push({ kind: "success", text: "Conversation terminée" });
+              setActiveConv(next ? next.id : "");
+            }}
           >
-            <svg className="icon" style={{ fill: isStarred ? "#F59E0B" : "none" }}>
-              <use href="#i-star" />
+            <svg
+              className="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="2.5 13 7 17.5 14 9" />
+              <polyline points="10.5 13 15 17.5 22 9" />
             </svg>
           </button>
-          {/* "More actions" stub removed — every previously planned
-              option (mark unread, archive, snooze, set category, etc.)
-              is already reachable via the right-click context menu on
-              the conv row in the inbox. Audit #14. */}
+          <button
+            className={`icon-btn ${collabOpen ? "is-on" : ""}`}
+            type="button"
+            aria-label="Notes internes"
+            data-tip="Notes internes"
+            aria-expanded={collabOpen}
+            onClick={() => setCollabOpen((v) => !v)}
+          >
+            <svg
+              className="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 8.6 8.6 0 0 1-3.5-.7L3 21l1.9-4.4a8.3 8.3 0 0 1-1.4-4.6A8.4 8.4 0 0 1 12 3.6a8.4 8.4 0 0 1 9 7.9z" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -398,7 +633,7 @@ export function Thread() {
 
       {/* Inline chips row showing the current tags. Always visible (not
           behind the popover) so the user always knows what's applied. */}
-      {(conv.tags?.length ?? 0) > 0 && (
+      {collabOpen && (conv.tags?.length ?? 0) > 0 && (
         <div className="thread-tags-row" aria-label="Tags appliqués">
           {(conv.tags ?? []).map((t) => (
             <span key={t} className="tag-chip is-readonly">
@@ -408,67 +643,44 @@ export function Thread() {
         </div>
       )}
 
-      <section className="thread-collab" aria-label="Collaboration équipe">
-        <div className="thread-collab-top">
-          <label>
-            Assigné à
-            <select
-              value={collab?.assignedTo ?? conv.assignedTo ?? ""}
-              onChange={(event) => void handleAssign(event.target.value)}
-              disabled={
-                collabLoading ||
-                collabPending === "assign" ||
-                !collab?.permissions.canAssignConversation
-              }
-            >
-              <option value="">Personne</option>
-              {(collab?.members ?? []).map((member) => (
-                <option key={member.userId} value={member.userId}>
-                  {member.fullName || member.email}
-                </option>
+      {collabOpen && (
+        <section className="thread-collab" aria-label="Collaboration équipe">
+          <form className="thread-note-form" onSubmit={handleCreateNote}>
+            <input
+              value={noteDraft}
+              onChange={(event) => setNoteDraft(event.target.value)}
+              placeholder="Note interne... utilisez @prenom pour mentionner"
+              maxLength={4000}
+            />
+            <button type="submit" disabled={!noteDraft.trim() || collabPending === "note"}>
+              Ajouter
+            </button>
+          </form>
+
+          {(collab?.notes.length ?? 0) > 0 && (
+            <div className="thread-notes">
+              {collab?.notes.slice(0, 3).map((note) => (
+                <article key={note.id} className="thread-note">
+                  <strong>{note.authorName}</strong>
+                  <p>{note.body}</p>
+                </article>
               ))}
-            </select>
-          </label>
-          <span>
-            {collabLoading ? "Chargement équipe..." : `${collab?.members.length ?? 0} membre(s)`}
-          </span>
-        </div>
+            </div>
+          )}
 
-        <form className="thread-note-form" onSubmit={handleCreateNote}>
-          <input
-            value={noteDraft}
-            onChange={(event) => setNoteDraft(event.target.value)}
-            placeholder="Note interne... utilisez @prenom pour mentionner"
-            maxLength={4000}
-          />
-          <button type="submit" disabled={!noteDraft.trim() || collabPending === "note"}>
-            Ajouter
-          </button>
-        </form>
+          {(collab?.activity.length ?? 0) > 0 && (
+            <div className="thread-activity">
+              {collab?.activity.slice(0, 4).map((event) => (
+                <span key={event.id}>
+                  {formatActivityEvent(event.eventType, event.actorName, event.metadata)}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-        {(collab?.notes.length ?? 0) > 0 && (
-          <div className="thread-notes">
-            {collab?.notes.slice(0, 3).map((note) => (
-              <article key={note.id} className="thread-note">
-                <strong>{note.authorName}</strong>
-                <p>{note.body}</p>
-              </article>
-            ))}
-          </div>
-        )}
-
-        {(collab?.activity.length ?? 0) > 0 && (
-          <div className="thread-activity">
-            {collab?.activity.slice(0, 4).map((event) => (
-              <span key={event.id}>
-                {formatActivityEvent(event.eventType, event.actorName, event.metadata)}
-              </span>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {isEmail && <ThreadAiBar conversationId={activeConvId} />}
+      {collabOpen && <ThreadAiBar conversationId={activeConvId} />}
 
       <section
         className={`messages ${isEmail ? "is-email" : ""} ${isLoading ? "is-loading" : ""}`}
@@ -510,66 +722,96 @@ export function Thread() {
                 <EmailCard
                   key={m.id}
                   message={m}
-                  fallbackName={m.dir === "out" ? "Moi" : conv.name}
-                  fallbackAvatar={m.dir === "out" ? null : conv.avatar}
+                  fallbackName={m.dir === "out" ? (currentUser?.name ?? "Moi") : conv.name}
+                  fallbackAvatar={m.dir === "out" ? userAvatar : conv.avatar}
                 />
               ))
-          : groups.map((g) => {
-              const isOut = g.dir === "out";
-              const lastTime = g.items[g.items.length - 1]?.time ?? "";
-              const groupKey = `${g.dir}-${g.items[0]?.id ?? "start"}-${g.items.at(-1)?.id ?? "end"}`;
-              return (
-                <div key={groupKey} className={`msg-group ${isOut ? "out" : "in"}`}>
-                  {g.items.map((m, idx) => {
-                    const isLast = idx === g.items.length - 1;
-                    const hidden = !isLast;
-                    const isPending = m.status === "pending";
-                    const isFailed = m.status === "failed";
-                    return (
-                      <div key={m.id} className="msg-row">
-                        {!isOut && (
-                          <div className={`msg-avatar${hidden ? " hidden" : ""}`}>
-                            <Avatar avatar={conv.avatar} className="" />
-                          </div>
-                        )}
-                        <div
-                          className={`bubble ${isPending ? "is-pending" : ""} ${
-                            isFailed ? "is-failed" : ""
-                          }`}
-                        >
-                          <p>{m.text}</p>
-                          {isFailed && (
-                            <button
-                              type="button"
-                              className="bubble-retry"
-                              onClick={async () => {
-                                try {
-                                  await retryFailedMessage(activeConvId, m.id);
-                                } catch (err) {
-                                  push({
-                                    kind: "error",
-                                    text:
-                                      err instanceof Error
-                                        ? `Envoi échoué : ${err.message}`
-                                        : "Envoi échoué — réessayez.",
-                                    duration: 5000,
-                                  });
-                                }
-                              }}
-                            >
-                              ↻ Réessayer
-                            </button>
-                          )}
-                        </div>
+          : (() => {
+              let lastDay = "";
+              return groups.map((g) => {
+                const isOut = g.dir === "out";
+                const lastTime = g.items[g.items.length - 1]?.time ?? "";
+                const groupKey = `${g.dir}-${g.items[0]?.id ?? "start"}-${g.items.at(-1)?.id ?? "end"}`;
+                const firstIso = g.items[0]?.sentAtIso;
+                const day = firstIso ? new Date(firstIso).toDateString() : "";
+                const showSep = !!day && day !== lastDay;
+                if (day) lastDay = day;
+                return (
+                  <Fragment key={groupKey}>
+                    {showSep && firstIso && (
+                      <div className="msg-daysep">
+                        <span>{daySeparatorLabel(firstIso)}</span>
                       </div>
-                    );
-                  })}
-                  <span className="msg-time" style={isOut ? { textAlign: "right" } : undefined}>
-                    {lastTime}
-                  </span>
-                </div>
-              );
-            })}
+                    )}
+                    <div className={`msg-group ${isOut ? "out" : "in"}`}>
+                      {/* Avatar rendu UNE fois par groupe, ancré en bas à gauche :
+                          toutes les bulles s'alignent (gouttière fixe), peu
+                          importe le nombre de messages. */}
+                      {!isOut && (
+                        <span className="msg-group-av" aria-hidden>
+                          <Avatar avatar={conv.avatar} className="" />
+                        </span>
+                      )}
+                      {g.items.map((m) => {
+                        const isPending = m.status === "pending";
+                        const isFailed = m.status === "failed";
+                        return (
+                          <div key={m.id} className="msg-row">
+                            <div
+                              className={`bubble ${isPending ? "is-pending" : ""} ${
+                                isFailed ? "is-failed" : ""
+                              }`}
+                            >
+                              <p>{m.text}</p>
+                              {isFailed && (
+                                <button
+                                  type="button"
+                                  className="bubble-retry"
+                                  onClick={async () => {
+                                    try {
+                                      await retryFailedMessage(activeConvId, m.id);
+                                    } catch (err) {
+                                      push({
+                                        kind: "error",
+                                        text:
+                                          err instanceof Error
+                                            ? `Envoi échoué : ${err.message}`
+                                            : "Envoi échoué — réessayez.",
+                                        duration: 5000,
+                                      });
+                                    }
+                                  }}
+                                >
+                                  ↻ Réessayer
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <span className="msg-time" style={isOut ? { textAlign: "right" } : undefined}>
+                        {lastTime}
+                      </span>
+                    </div>
+                  </Fragment>
+                );
+              });
+            })()}
+
+        {/* Ligne système façon maquette : dernière activité collab (assignation,
+            archivage…) affichée comme « Conversation déplacée … ». */}
+        {!isEmail &&
+          collab &&
+          collab.activity.length > 0 &&
+          (() => {
+            const ev = collab.activity[0];
+            if (!ev) return null;
+            return (
+              <div className="msg-system">
+                {formatActivityEvent(ev.eventType, ev.actorName, ev.metadata)}
+              </div>
+            );
+          })()}
       </section>
 
       <footer className="composer">
@@ -578,78 +820,85 @@ export function Thread() {
             conversationId={activeConvId}
             toName={conv.name}
             contactEmail={conv.contactEmail ?? null}
+            autoDraft={isAwaitingMyReply(conv)}
           />
         ) : (
-          <>
-            <div className="quick-replies" id="quick-replies">
-              {QUICK_REPLIES.map((q) => (
+          /* Composer chat aligné sur le composer email (mêmes classes CSS,
+             façon maquette) : « À {contact} », grande zone bordée, puis
+             Joindre · Modèles · Suggérer (Mue) · tons · Envoyer. */
+          <div className="email-composer">
+            <div className="email-composer-headers">
+              <div className="email-composer-row">
+                <span className="email-composer-label">À</span>
+                <span className="email-composer-value">
+                  <strong>{conv.name}</strong>
+                </span>
                 <button
-                  key={q.id}
-                  className="quick-reply"
                   type="button"
-                  onClick={() =>
-                    setInput(
-                      q.id === "suggest"
-                        ? "I appreciate you sharing this — let me come back to you with a thoughtful reply by end of day."
-                        : q.text.replace(/^[\p{Emoji}\s]+/u, "").trim()
-                    )
-                  }
+                  className="email-composer-toggle"
+                  onClick={() => push({ kind: "info", text: "Cc disponible sur les emails 👋" })}
                 >
-                  {q.icon && <Icon name={q.icon} />}
-                  {q.text}
-                </button>
-              ))}
-            </div>
-
-            <div className="composer-box">
-              <input
-                className="composer-input"
-                type="text"
-                placeholder={`Reply to ${firstName}…`}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-              <div className="composer-bar">
-                <div className="composer-tools">
-                  <button
-                    className="icon-btn"
-                    type="button"
-                    aria-label="Emoji"
-                    data-tip="Add emoji"
-                  >
-                    <Icon name="i-smile" />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    type="button"
-                    aria-label="Attach"
-                    data-tip="Attach file"
-                  >
-                    <Icon name="i-clip" />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    type="button"
-                    aria-label="More"
-                    data-tip="More tools"
-                  >
-                    <Icon name="i-more" />
-                  </button>
-                </div>
-                <button
-                  ref={sendBtnRef}
-                  className="btn btn-primary btn-send"
-                  type="button"
-                  aria-label="Send"
-                  data-tip="Send · Enter"
-                  onClick={handleSend}
-                >
-                  <Icon name="i-send" />
+                  Cc
                 </button>
               </div>
             </div>
-          </>
+            <textarea
+              className="email-composer-body"
+              placeholder={`Votre réponse à ${firstName}…`}
+              value={input}
+              onFocus={() => setComposerFocus(true)}
+              onBlur={() => setComposerFocus(false)}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              rows={composerFocus || input ? 4 : 1}
+            />
+            <div className="email-composer-actions">
+              <button
+                type="button"
+                className="email-composer-attach"
+                onClick={() =>
+                  push({ kind: "info", text: "Pièces jointes sur ce canal — bientôt 👋" })
+                }
+              >
+                <Icon name="i-clip" />
+                Joindre
+              </button>
+              <button
+                type="button"
+                className="email-composer-mue"
+                onClick={() =>
+                  setInput(
+                    `Merci pour ton message ${firstName} — je te reviens avec une réponse détaillée d'ici la fin de journée.`
+                  )
+                }
+                title="Mue propose une réponse"
+              >
+                <Icon name="i-spark" />
+                Suggérer (Mue)
+              </button>
+              <span style={{ flex: 1 }} />
+              {composerFocus && input.trim() && (
+                <span className="composer-hint" aria-hidden>
+                  ↵ envoyer
+                </span>
+              )}
+              <button
+                ref={sendBtnRef}
+                type="button"
+                className="email-composer-send"
+                onClick={handleSend}
+                disabled={!input.trim()}
+              >
+                <Icon name="i-send" />
+                Envoyer l'email
+              </button>
+            </div>
+          </div>
         )}
       </footer>
     </main>
@@ -664,9 +913,14 @@ export function Thread() {
  * level "brief du jour" job.
  */
 function ThreadAiBar({ conversationId }: { conversationId: string }) {
+  const router = useRouter();
   const push = useToast((s) => s.push);
   const [result, setResult] = useState<ThreadAiResult | null>(null);
   const [langPickerOpen, setLangPickerOpen] = useState(false);
+  // Tasks the user created from the inline scan — flips the per-task
+  // button to a done state and prevents a double-fire.
+  const [creatingKey, setCreatingKey] = useState<string | null>(null);
+  const [createdKeys, setCreatedKeys] = useState<Set<string>>(new Set());
 
   // Clear any previous result the moment the user switches threads so a
   // stale summary doesn't briefly hang over the new conversation.
@@ -674,6 +928,8 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
     if (!conversationId) return;
     setResult(null);
     setLangPickerOpen(false);
+    setCreatedKeys(new Set());
+    setCreatingKey(null);
   }, [conversationId]);
 
   const handleSummary = async () => {
@@ -712,13 +968,52 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
     }
   };
 
+  const taskKey = (t: SuggestedTask) => `${t.title}::${t.priority}::${t.due ?? "no-due"}`;
+
+  // Create a task from an inline scan suggestion — the capability the old
+  // MuePanel held, moved here so task-creation lives where you read the mail.
+  const handleCreateTask = async (t: SuggestedTask) => {
+    const key = taskKey(t);
+    if (createdKeys.has(key) || creatingKey === key) return;
+    setCreatingKey(key);
+    try {
+      const res = await createTask({
+        title: t.title,
+        priority: t.priority,
+        due: t.due,
+        conversationId,
+      });
+      if (res.ok) {
+        setCreatedKeys((prev) => new Set(prev).add(key));
+        push({ kind: "info", text: `Tâche créée : ${t.title.slice(0, 50)}`, duration: 2500 });
+        router.refresh();
+      } else {
+        push({ kind: "error", text: res.error ?? "Création impossible." });
+      }
+    } catch (err) {
+      push({ kind: "error", text: err instanceof Error ? err.message : "Création impossible." });
+    } finally {
+      setCreatingKey((prev) => (prev === key ? null : prev));
+    }
+  };
+
   return (
     <div className="thread-ai-bar">
       <div className="thread-ai-actions">
-        <button type="button" className="thread-ai-btn" onClick={handleSummary}>
+        <button
+          type="button"
+          className="thread-ai-btn"
+          onClick={handleSummary}
+          disabled={result?.kind === "loading"}
+        >
           <Icon name="i-list" /> Résumer
         </button>
-        <button type="button" className="thread-ai-btn" onClick={handleTasks}>
+        <button
+          type="button"
+          className="thread-ai-btn"
+          onClick={handleTasks}
+          disabled={result?.kind === "loading"}
+        >
           <Icon name="i-spark" /> Tâches
         </button>
         <button
@@ -726,6 +1021,7 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
           className={`thread-ai-btn ${langPickerOpen ? "is-active" : ""}`}
           onClick={() => setLangPickerOpen((o) => !o)}
           aria-expanded={langPickerOpen}
+          disabled={result?.kind === "loading"}
         >
           <Icon name="i-globe" /> Traduire
           <span className="thread-ai-chevron" aria-hidden>
@@ -783,16 +1079,26 @@ function ThreadAiBar({ conversationId }: { conversationId: string }) {
       )}
       {result && result.kind === "tasks" && (
         <ul className="thread-ai-result thread-ai-tasks">
-          {result.data.map((t) => (
-            <li
-              key={`${t.title}-${t.priority}-${t.due ?? "no-due"}`}
-              className={`mue-task is-${t.priority}`}
-            >
-              <span className="mue-task-priority" />
-              <span className="mue-task-title">{t.title}</span>
-              {t.due && <span className="mue-task-due">{t.due}</span>}
-            </li>
-          ))}
+          {result.data.map((t) => {
+            const key = taskKey(t);
+            const created = createdKeys.has(key);
+            return (
+              <li key={key} className={`mue-task is-${t.priority}`}>
+                <span className="mue-task-priority" />
+                <span className="mue-task-title">{t.title}</span>
+                {t.due && <span className="mue-task-due">{t.due}</span>}
+                <button
+                  type="button"
+                  className={`mue-action-confirm ${created ? "is-done" : ""}`}
+                  style={{ flexShrink: 0 }}
+                  onClick={() => void handleCreateTask(t)}
+                  disabled={created || creatingKey === key}
+                >
+                  {created ? "✓ Créée" : creatingKey === key ? "…" : "Créer la tâche"}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
       {result && result.kind === "translation" && (
@@ -898,10 +1204,12 @@ function EmailComposer({
   conversationId,
   toName,
   contactEmail,
+  autoDraft,
 }: {
   conversationId: string;
   toName: string;
   contactEmail: string | null;
+  autoDraft: boolean;
 }) {
   const router = useRouter();
   const push = useToast((s) => s.push);
@@ -922,6 +1230,8 @@ function EmailComposer({
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
   const [suggesting, setSuggesting] = useState(false);
   const [tonePending, setTonePending] = useState<MueTone | null>(null);
+  const [autoDrafting, setAutoDrafting] = useState(false);
+  const [draftedByMue, setDraftedByMue] = useState(false);
 
   // User-saved reply templates. Lazy-loaded the first time the user opens
   // the picker (no network on every conv switch) — then kept in memory
@@ -964,6 +1274,36 @@ function EmailComposer({
     if (!signatureLoaded || !conversationId) return; // Wait for first fetch; avoids a "" → sig flash.
     setBody(signature ? `${SIGNATURE_SEP}${signature}` : "");
   }, [conversationId, signatureLoaded]);
+
+  // Auto-brouillon Mue : à l'ouverture d'un fil où le client attend ma
+  // réponse, Mue pré-charge un brouillon dans MON style — pas un bouton à
+  // cliquer. N'écrase jamais un brouillon déjà commencé.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: signature volontairement hors deps.
+  useEffect(() => {
+    setDraftedByMue(false);
+    if (!autoDraft || !signatureLoaded || !conversationId) return;
+    let cancelled = false;
+    setAutoDrafting(true);
+    suggestReplies(conversationId)
+      .then((res) => {
+        if (cancelled) return;
+        const first = res.suggestions?.[0];
+        if (!first) return;
+        setBody((prev) => {
+          const justSig =
+            prev.trim() === "" || (!!signature && prev === `${SIGNATURE_SEP}${signature}`);
+          if (!justSig) return prev;
+          return signature ? `${first.text}${SIGNATURE_SEP}${signature}` : first.text;
+        });
+        setDraftedByMue(true);
+      })
+      .finally(() => {
+        if (!cancelled) setAutoDrafting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, signatureLoaded, autoDraft]);
 
   // Close the templates menu on outside-click or Escape.
   useEffect(() => {
@@ -1251,11 +1591,28 @@ function EmailComposer({
         </div>
       )}
 
+      {(autoDrafting || draftedByMue) && (
+        <div className={`mue-draft-flag ${autoDrafting ? "is-loading" : ""}`}>
+          <Icon name="i-spark" />
+          <span>
+            {autoDrafting
+              ? "Mue rédige ton brouillon…"
+              : "Brouillon de Mue · à relire avant d'envoyer"}
+          </span>
+        </div>
+      )}
+
       <textarea
         className="email-composer-body"
         placeholder={`Votre réponse à ${toName}…`}
         value={body}
         onChange={(e) => setBody(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            void handleSend();
+          }
+        }}
         rows={4}
       />
 

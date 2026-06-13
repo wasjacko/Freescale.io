@@ -17,10 +17,11 @@ import {
   markConversationUnread as srvMarkUnread,
   sendMessage as srvSend,
   toggleTaskDone as srvToggleTask,
+  unarchiveConversation as srvUnarchive,
 } from "@/lib/actions/inbox";
 import type { MemberRole } from "@/lib/collaboration";
 import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
-import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
+import type { CalEvent, ChannelId, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 import type { ConversationCategory } from "@/lib/types";
 import {
   type ReactNode,
@@ -65,6 +66,15 @@ type Ctx = {
   appendOutgoingMessage: (convId: string, text: string) => Promise<void>;
   retryFailedMessage: (convId: string, msgId: string) => Promise<void>;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
+  addTask: (task: Task) => void;
+  /** Réordonne les tâches de premier niveau selon la nouvelle liste d'ids. */
+  reorderTasks: (orderedVisibleIds: string[]) => void;
+  /** Change le statut d'une tâche (drag entre les colonnes À faire / En cours / Terminé). */
+  setTaskStatus: (taskId: string, status: Task["status"]) => void;
+  /** Supprime une tâche (et ses sous-tâches) — local/optimiste, undo via re-addTask. */
+  removeTask: (taskId: string) => void;
+  /** Patch local d'une tâche (titre, échéance…) — édition inline. */
+  patchTask: (taskId: string, partial: Partial<Task>) => void;
   toggleStar: (convId: string, starred: boolean) => Promise<void>;
   snooze: (convId: string, untilIso: string | null) => Promise<void>;
   setTags: (convId: string, tags: string[]) => Promise<void>;
@@ -84,6 +94,12 @@ type Ctx = {
     durationMinutes?: number;
   }) => Promise<{ ok: boolean; error: string | null }>;
   deleteEvent: (id: string) => Promise<{ ok: boolean; error: string | null }>;
+  createConversation: (
+    name: string,
+    channel: ChannelId,
+    text: string,
+    subject?: string
+  ) => Promise<string>;
 };
 
 const DataCtx = createContext<Ctx | null>(null);
@@ -136,6 +152,7 @@ export function DataProvider({
       next.delete(id);
       return next;
     });
+    void srvUnarchive(id);
   }, []);
 
   const appendOutgoingMessage = useCallback(async (convId: string, text: string) => {
@@ -264,6 +281,53 @@ export function DataProvider({
     await srvToggleTask(taskId, done);
   }, []);
 
+  // Ajout optimiste d'une tâche — impact immédiat sur le dashboard.
+  const addTask = useCallback((task: Task) => {
+    setTasks((prev) => (prev.some((t) => t.id === task.id) ? prev : [task, ...prev]));
+  }, []);
+
+  // Réorganisation par glisser-déposer (façon Notion). Réordonne les tâches
+  // de premier niveau selon `orderedVisibleIds` et réécrit leur sortableIndex
+  // pour refléter le nouvel ordre. Les sous-tâches (non listées) sont conservées
+  // telles quelles, à la suite. Optimiste/local : pas d'action serveur dédiée
+  // côté maquette (DEV_NO_AUTH), l'ordre tient pour la session.
+  const reorderTasks = useCallback((orderedVisibleIds: string[]) => {
+    setTasks((prev) => {
+      const byId = new Map(prev.map((t) => [t.id, t]));
+      const seen = new Set(orderedVisibleIds);
+      const reordered: Task[] = [];
+      for (const id of orderedVisibleIds) {
+        const t = byId.get(id);
+        if (t) reordered.push({ ...t, sortableIndex: reordered.length });
+      }
+      const rest = prev.filter((t) => !seen.has(t.id));
+      return [...reordered, ...rest];
+    });
+  }, []);
+
+  // Change le statut d'une tâche (glisser entre les colonnes À faire / En cours
+  // / Terminé, ou clic sur la case). Optimiste et LOCAL : comme reorderTasks, on
+  // ne touche pas au serveur ici. En maquette (DEV_NO_AUTH) une action serveur
+  // déclencherait un router.refresh() qui réécrase l'état optimiste avec le
+  // payload statique du mock (et remettrait le tableau à zéro). La persistance
+  // réelle du statut se branchera côté Supabase à l'étape prod.
+  const setTaskStatus = useCallback((taskId: string, status: Task["status"]) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status, isDone: status === "done" } : t))
+    );
+  }, []);
+
+  // Suppression locale (menu ⋯ de la page Tâches). Même contrat que
+  // setTaskStatus/reorderTasks : optimiste, sans action serveur en maquette.
+  const removeTask = useCallback((taskId: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId && t.parentTaskId !== taskId));
+  }, []);
+
+  // Patch local générique (renommage, re-planification inline…).
+  const patchTask = useCallback((taskId: string, partial: Partial<Task>) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...partial } : t)));
+  }, []);
+
   const toggleStar = useCallback(async (convId: string, starred: boolean) => {
     // Optimistic flip — UI updates instantly, server catches up.
     setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, starred } : c)));
@@ -385,6 +449,48 @@ export function DataProvider({
     return res;
   }, []);
 
+  const createConversation = useCallback(
+    async (name: string, channel: ChannelId, text: string, subject?: string) => {
+      const newId = `c-new-${crypto.randomUUID()}`;
+      const now = new Date().toISOString();
+      const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+      const newConv: Conversation = {
+        id: newId,
+        name,
+        preview: text.slice(0, 80),
+        lastAtIso: now,
+        avatar: { kind: "initials", text: name.substring(0, 2).toUpperCase(), bg: "#4f46e5" },
+        channel,
+        unread: false,
+        group: "today",
+        subject: subject || "Nouveau message",
+        contactEmail: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
+        category: "client",
+        tags: [],
+        lastInboundAt: null,
+        lastOutboundAt: now,
+      };
+
+      setConversations((prev) => [newConv, ...prev]);
+      setMessagesByConv((prev) => ({
+        ...prev,
+        [newId]: [
+          {
+            id: `msg-${crypto.randomUUID()}`,
+            dir: "out",
+            text,
+            time,
+            sentAtIso: now,
+          },
+        ],
+      }));
+
+      return newId;
+    },
+    []
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       conversations,
@@ -407,6 +513,11 @@ export function DataProvider({
       appendOutgoingMessage,
       retryFailedMessage,
       toggleTask,
+      addTask,
+      reorderTasks,
+      setTaskStatus,
+      removeTask,
+      patchTask,
       toggleStar,
       snooze,
       setTags,
@@ -414,6 +525,7 @@ export function DataProvider({
       createEvent,
       updateEvent,
       deleteEvent,
+      createConversation,
     }),
     [
       conversations,
@@ -435,10 +547,16 @@ export function DataProvider({
       appendOutgoingMessage,
       retryFailedMessage,
       toggleTask,
+      addTask,
+      reorderTasks,
+      setTaskStatus,
+      removeTask,
+      patchTask,
       toggleStar,
       createEvent,
       updateEvent,
       deleteEvent,
+      createConversation,
       snooze,
       setTags,
       setCategory,

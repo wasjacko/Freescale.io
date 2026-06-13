@@ -3,6 +3,7 @@
 import { ChannelLogo } from "@/components/icons/Icon";
 import { disconnectChannel } from "@/lib/actions/connections";
 import { CHANNEL_PROVIDER_REGISTRY, channelProviderLabel } from "@/lib/channels/registry";
+import { toast } from "@/lib/hooks/useToast";
 import type { ChannelId } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -46,7 +47,22 @@ export function ConnectionsList({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [connecting, setConnecting] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(flash);
+
+  useEffect(() => {
+    if (flash) {
+      if (flash.kind === "ok") {
+        toast.success(flash.text);
+      } else {
+        toast.error(flash.text);
+      }
+    }
+  }, [flash]);
+
+  useEffect(() => {
+    if (!canConnect) {
+      toast.error("Seuls les owners et admins peuvent connecter de nouveaux canaux.");
+    }
+  }, [canConnect]);
 
   // Listen for OAuth popup messages from /auth/gmail/callback. On success we
   // route the user straight into the inbox — FlashFromUrl over there will fire
@@ -68,7 +84,7 @@ export function ConnectionsList({
         router.push(url as never);
       } else if (data.type === "gmail_error" || data.type === "outlook_error") {
         setConnecting(null);
-        setToast({ kind: "err", text: `Connexion impossible : ${data.error}` });
+        toast.error(`Connexion impossible : ${data.error}`);
       }
     };
     window.addEventListener("message", onMessage);
@@ -77,7 +93,6 @@ export function ConnectionsList({
 
   const openConnectPopup = (kind: string, path: string) => {
     setConnecting(kind);
-    setToast(null);
     const w = 560;
     const h = 720;
     const left = window.screenX + (window.outerWidth - w) / 2;
@@ -89,10 +104,7 @@ export function ConnectionsList({
     );
     if (!popup) {
       setConnecting(null);
-      setToast({
-        kind: "err",
-        text: "Impossible d'ouvrir la fenêtre. Autorisez les pop-ups pour freescale.site.",
-      });
+      toast.error("Impossible d'ouvrir la fenêtre. Autorisez les pop-ups pour freescale.site.");
       return;
     }
     // Poll for the popup being closed without a message (user closed it
@@ -109,7 +121,7 @@ export function ConnectionsList({
     if (!confirm(`Déconnecter ${label} ? Les emails déjà synchronisés restent.`)) return;
     startTransition(async () => {
       await disconnectChannel(accountId);
-      setToast({ kind: "ok", text: `${label} déconnecté.` });
+      toast.success(`${label} déconnecté.`);
     });
   };
 
@@ -125,21 +137,6 @@ export function ConnectionsList({
           Branchez vos canaux pour que Freescale rassemble tous vos messages en un seul endroit.
         </p>
       </header>
-
-      {!canConnect && (
-        <div className="settings-toast is-err" style={{ width: "fit-content" }}>
-          Seuls les owners et admins peuvent connecter de nouveaux canaux.
-        </div>
-      )}
-
-      {toast && (
-        <div
-          className={`settings-toast ${toast.kind === "ok" ? "is-ok" : "is-err"}`}
-          style={{ width: "fit-content" }}
-        >
-          {toast.text}
-        </div>
-      )}
 
       {/* Connected accounts */}
       {accounts.filter((a) => a.status === "active").length > 0 && (

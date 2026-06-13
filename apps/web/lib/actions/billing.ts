@@ -3,7 +3,6 @@
 import { appUrl } from "@/lib/app-url";
 import {
   type BillingInterval,
-  type PaidPlan,
   type PlanTier,
   formatPlanLabel,
   getMueUsageLimit,
@@ -179,6 +178,7 @@ export async function getBillingOverview(): Promise<{
       trial: getTrialState({
         plan: context.profile.plan,
         trialEndsAt: context.profile.trial_ends_at,
+        billingStatus: context.profile.billing_status,
       }),
     },
     error: null,
@@ -187,7 +187,7 @@ export async function getBillingOverview(): Promise<{
 
 export async function startCheckout(input: {
   interval: BillingInterval;
-  plan: PaidPlan;
+  plan: PlanTier;
 }): Promise<{ url: string | null; error: string | null }> {
   const context = await getBillingContext();
   if (!context.ok) return { url: null, error: context.error };
@@ -290,6 +290,7 @@ export async function consumeMueAction(): Promise<{
   const trial = getTrialState({
     plan: context.profile.plan,
     trialEndsAt: context.profile.trial_ends_at,
+    billingStatus: context.profile.billing_status,
   });
   if (trial.status === "expired") {
     return {

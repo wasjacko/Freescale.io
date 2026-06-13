@@ -76,22 +76,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Authed user on the marketing landing → straight to /app. EXCEPT
-  // when they just came back from sign-out or account deletion (the
-  // session cookie should already be cleared by then; this is a
-  // defense-in-depth for the edge case where the cookie purge raced
-  // with the redirect). Letting these users see the landing once is
-  // fine — they explicitly chose to leave.
-  const hasLandingFlash =
-    request.nextUrl.searchParams.has("signedout") || request.nextUrl.searchParams.has("deleted");
-  if (user && pathname === "/" && !hasLandingFlash) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/app";
-    return NextResponse.redirect(url);
-  }
+  // DEV bypass (local uniquement) : on laisse passer les routes protégées
+  // sans session pour pouvoir bosser sur le SaaS sans login. Double-verrou :
+  // NODE_ENV=development (jamais vrai sur Vercel/prod) + DEV_NO_AUTH=1.
+  const devNoAuth = process.env.NODE_ENV === "development" && process.env.DEV_NO_AUTH === "1";
 
   // Anon users on protected routes → /welcome
-  if (!user && !isPublic) {
+  if (!user && !isPublic && !devNoAuth) {
     const url = request.nextUrl.clone();
     url.pathname = "/welcome";
     url.searchParams.set("next", pathname);

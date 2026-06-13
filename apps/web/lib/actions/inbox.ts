@@ -1,6 +1,7 @@
 "use server";
 
 import { logConversationActivity } from "@/lib/actions/collaboration";
+import { isDevNoAuth } from "@/lib/dev-mock";
 import {
   type GmailAttachment,
   getMessageMetadata,
@@ -63,6 +64,12 @@ export async function markConversationUnread(conversationId: string) {
 export async function archiveConversation(conversationId: string) {
   const supabase = await createClient();
   await supabase.from("conversations").update({ archived: true }).eq("id", conversationId);
+  revalidatePath("/");
+}
+
+export async function unarchiveConversation(conversationId: string) {
+  const supabase = await createClient();
+  await supabase.from("conversations").update({ archived: false }).eq("id", conversationId);
   revalidatePath("/");
 }
 
@@ -600,6 +607,11 @@ export async function createTask(input: {
   due?: string | null; // ISO date YYYY-MM-DD or full timestamp
   parentTaskId?: string | null;
 }): Promise<{ ok: boolean; taskId: string | null; error: string | null }> {
+  if (isDevNoAuth()) {
+    return input.title.trim()
+      ? { ok: true, taskId: `dev-task-${Date.now()}`, error: null }
+      : { ok: false, taskId: null, error: "Title is required." };
+  }
   const supabase = await createClient();
   const {
     data: { user },

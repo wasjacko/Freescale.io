@@ -102,6 +102,11 @@ export function BillingSettings({ overview }: { overview: BillingOverview }) {
             <li>50 actions Mue / mois</li>
             <li>Historique et tâches</li>
           </ul>
+          {overview.plan === "free" && overview.billingStatus !== "active" && (
+            <CheckoutButton interval="monthly" plan="free" variant="secondary">
+              Choisir Solo (19€/mo)
+            </CheckoutButton>
+          )}
         </article>
         <article className="settings-card billing-plan-card is-featured">
           <span className="billing-kicker">Pro</span>

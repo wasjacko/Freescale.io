@@ -1,6 +1,7 @@
 import "server-only";
 import { currentUserCanConnectChannels } from "@/lib/actions/collaboration";
 import type { MemberRole } from "@/lib/collaboration";
+import { isDevNoAuth, mockInboxData } from "@/lib/dev-mock";
 import { createClient } from "@/lib/supabase/server";
 import type { CalEvent, ChannelId, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 import { getActiveWorkspaceId, resolveActiveWorkspace } from "@/lib/workspace";
@@ -50,6 +51,8 @@ export async function getInboxData(): Promise<InboxData> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // DEV bypass : pas de session réelle → données mock (local uniquement).
+  if (!user && isDevNoAuth()) return mockInboxData();
   const active = user ? await resolveActiveWorkspace(supabase, user.id) : null;
   const workspaceId = active?.workspace?.id ?? null;
   const workspaces =
@@ -100,7 +103,7 @@ export async function getInboxData(): Promise<InboxData> {
     supabase
       .from("tasks")
       .select(
-        "id, title, status, priority, due_at, parent_task_id, sortable_index, conversations(contacts(display_name, avatar_url), channel_accounts(kind))"
+        "id, title, status, priority, due_at, parent_task_id, sortable_index, conversation_id, ai_generated, conversations(contacts(display_name, avatar_url), channel_accounts(kind))"
       )
       .eq("workspace_id", workspaceId)
       .neq("status", "done")

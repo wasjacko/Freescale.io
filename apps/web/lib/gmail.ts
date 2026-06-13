@@ -455,13 +455,13 @@ export type GmailAttachment = {
 function buildRawMessage(opts: {
   from: { name?: string | null; email: string };
   to: Array<{ name?: string | null; email: string }>;
-  cc?: Array<{ name?: string | null; email: string }>;
-  bcc?: Array<{ name?: string | null; email: string }>;
+  cc?: Array<{ name?: string | null; email: string }> | undefined;
+  bcc?: Array<{ name?: string | null; email: string }> | undefined;
   subject: string;
   body: string;
-  inReplyTo?: string;
-  references?: string[];
-  attachments?: GmailAttachment[];
+  inReplyTo?: string | undefined;
+  references?: string[] | undefined;
+  attachments?: GmailAttachment[] | undefined;
 }): string {
   const headers: string[] = [
     `From: ${formatAddress(opts.from)}`,
@@ -526,14 +526,14 @@ export async function sendGmailMessage(
   opts: {
     from: { name?: string | null; email: string };
     to: Array<{ name?: string | null; email: string }>;
-    cc?: Array<{ name?: string | null; email: string }>;
-    bcc?: Array<{ name?: string | null; email: string }>;
+    cc?: Array<{ name?: string | null; email: string }> | undefined;
+    bcc?: Array<{ name?: string | null; email: string }> | undefined;
     subject: string;
     body: string;
-    threadId?: string;
-    inReplyTo?: string;
-    references?: string[];
-    attachments?: GmailAttachment[];
+    threadId?: string | undefined;
+    inReplyTo?: string | undefined;
+    references?: string[] | undefined;
+    attachments?: GmailAttachment[] | undefined;
   }
 ): Promise<{ id: string; threadId: string; messageId: string | null }> {
   const raw = buildRawMessage(opts);

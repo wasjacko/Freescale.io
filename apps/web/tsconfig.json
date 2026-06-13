@@ -7,32 +7,15 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@freescale/ui/*": [
-        "../../packages/ui/src/*"
-      ],
-      "@freescale/db/*": [
-        "../../packages/db/src/*"
-      ],
-      "@freescale/ai/*": [
-        "../../packages/ai/src/*"
-      ],
-      "@freescale/types/*": [
-        "../../packages/types/src/*"
-      ]
+      "@/*": ["./*"],
+      "@freescale/ui/*": ["../../packages/ui/src/*"],
+      "@freescale/db/*": ["../../packages/db/src/*"],
+      "@freescale/ai/*": ["../../packages/ai/src/*"],
+      "@freescale/types/*": ["../../packages/types/src/*"]
     },
     "allowJs": true,
     "noEmit": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

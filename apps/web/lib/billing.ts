@@ -22,31 +22,35 @@ export function resolveCheckoutPriceId({
   interval,
   env = process.env,
 }: {
-  plan: PaidPlan;
+  plan: PlanTier;
   interval: BillingInterval;
   env?: Record<string, string | undefined>;
 }): CheckoutPriceResolution {
-  const envKey = `STRIPE_${plan.toUpperCase()}_${interval === "monthly" ? "MONTHLY" : "YEARLY"}_PRICE_ID`;
+  const normalizedPlan = plan === "free" ? "solo" : plan;
+  const envKey = `STRIPE_${normalizedPlan.toUpperCase()}_${interval === "monthly" ? "MONTHLY" : "YEARLY"}_PRICE_ID`;
   return { envKey, priceId: env[envKey] ?? null };
 }
 
 export function getTrialState({
   plan,
   trialEndsAt,
+  billingStatus,
   now = new Date(),
 }: {
   plan: PlanTier;
   trialEndsAt: string | null;
+  billingStatus?: string;
   now?: Date;
 }): { status: TrialStatus; daysRemaining: number | null } {
-  if (plan !== "free") return { status: "paid", daysRemaining: null };
+  if (plan !== "free" || billingStatus === "active") return { status: "paid", daysRemaining: null };
   if (!trialEndsAt) return { status: "none", daysRemaining: null };
 
   const trialEnd = new Date(trialEndsAt);
   if (Number.isNaN(trialEnd.getTime())) return { status: "none", daysRemaining: null };
 
   const diffMs = trialEnd.getTime() - now.getTime();
-  if (diffMs <= 0) return { status: "expired", daysRemaining: 0 };
+  if (diffMs <= 0 || billingStatus === "trial_expired")
+    return { status: "expired", daysRemaining: 0 };
 
   return {
     status: "active",

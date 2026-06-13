@@ -2,6 +2,7 @@
 
 import { EventEditModal } from "@/components/calendar/EventEditModal";
 import { ChannelLogo, Icon } from "@/components/icons/Icon";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import type { CalEvent } from "@/lib/types";
@@ -363,12 +364,33 @@ export function CalendarView() {
           ))}
 
           {events.length === 0 && drag.kind === "idle" && (
-            <div className="cal-empty-hint" style={{ gridColumn: "2 / -1", gridRow: "3 / 6" }}>
-              <p>
-                Clique ou glisse sur un créneau pour créer un évènement.
-                <br />
-                Glisse un évènement existant pour le déplacer.
-              </p>
+            <div
+              style={{
+                gridColumn: "2 / -1",
+                gridRow: "3 / 10",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: 24,
+              }}
+            >
+              <EmptyState
+                icon="i-cal"
+                title="Calendrier vide"
+                description="Cliquez ou glissez sur un créneau pour créer un évènement, ou déplacez un évènement existant."
+                cta={{
+                  label: "Nouvel évènement",
+                  onClick: () =>
+                    setEditingEvent({
+                      id: "__new__",
+                      title: "",
+                      day: new Date().getDay() as CalEvent["day"],
+                      startMinutes: 60,
+                      durationMinutes: 60,
+                      color: "lav",
+                    }),
+                }}
+              />
             </div>
           )}
 

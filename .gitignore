@@ -48,3 +48,4 @@ supabase/.branches/
 apps/web/tsconfig.tsbuildinfo
 apps/api/tsconfig.tsbuildinfo
 packages/types/tsconfig.tsbuildinfo
+.superpowers/

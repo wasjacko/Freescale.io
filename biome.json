@@ -6,13 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignore": [
-      "node_modules",
-      ".next",
-      ".turbo",
-      "dist",
-      "index.html"
-    ]
+    "ignore": ["node_modules", ".next", ".turbo", "dist", "index.html"]
   },
   "formatter": {
     "enabled": true,

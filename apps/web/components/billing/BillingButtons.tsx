@@ -1,7 +1,7 @@
 "use client";
 
 import { createBillingPortalSession, startCheckout } from "@/lib/actions/billing";
-import type { BillingInterval, PaidPlan } from "@/lib/billing";
+import type { BillingInterval, PlanTier } from "@/lib/billing";
 import { useState, useTransition } from "react";
 
 type ButtonVariant = "primary" | "secondary";
@@ -22,7 +22,7 @@ export function CheckoutButton({
   children: React.ReactNode;
   className?: string;
   interval: BillingInterval;
-  plan: PaidPlan;
+  plan: PlanTier;
   variant?: ButtonVariant;
 }) {
   const [isPending, startTransition] = useTransition();

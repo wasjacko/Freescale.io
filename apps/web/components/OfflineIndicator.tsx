@@ -13,27 +13,74 @@ import { useEffect, useState } from "react";
  * confirmation so the user knows it's safe to resume.
  */
 export function OfflineIndicator() {
-  // Default to "online" on first render to avoid SSR/CSR mismatch.
-  // Then sync with the actual state on mount.
   const [state, setState] = useState<"online" | "offline" | "reconnected">("online");
 
   useEffect(() => {
-    // Sync initial state from the browser (might already be offline
-    // when component mounts).
+    let active = true;
+
+    const checkOnlineStatus = async (): Promise<boolean> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const res = await fetch("/api/health", {
+          method: "GET",
+          headers: { "Cache-Control": "no-cache" },
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        return res.ok;
+      } catch {
+        return false;
+      }
+    };
+
+    const verifyConnection = async () => {
+      const isServerOnline = await checkOnlineStatus();
+      if (!active) return;
+      if (isServerOnline) {
+        setState((current) => {
+          if (current === "offline") {
+            setTimeout(() => {
+              if (active) setState("online");
+            }, 2500);
+            return "reconnected";
+          }
+          return current;
+        });
+      } else {
+        setState("offline");
+      }
+    };
+
+    // Initial check on mount
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       setState("offline");
+    } else {
+      void verifyConnection();
     }
+
     const onOnline = () => {
-      setState("reconnected");
-      // Auto-hide the "reconnected" pill after 2.5s.
-      setTimeout(() => setState("online"), 2500);
+      // Browser says online, verify with server immediately
+      void verifyConnection();
     };
-    const onOffline = () => setState("offline");
+
+    const onOffline = () => {
+      if (active) setState("offline");
+    };
+
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
+
+    // Poll every 30 seconds to check server health
+    const timerId = window.setInterval(() => {
+      void verifyConnection();
+    }, 30000);
+
     return () => {
+      active = false;
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
+      window.clearInterval(timerId);
     };
   }, []);
 

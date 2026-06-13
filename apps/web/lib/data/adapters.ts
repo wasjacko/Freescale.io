@@ -101,6 +101,7 @@ export function adaptMessage(row: Row): Message {
     dir: (row.direction as Message["dir"]) ?? "in",
     text: (row.body_text as string) ?? "",
     time: new Date(sent).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    sentAtIso: sent,
     ...(meta.subject ? { subject: meta.subject as string } : {}),
     ...(from?.name ? { senderName: from.name } : {}),
     ...(from?.email ? { senderEmail: from.email } : {}),
@@ -129,7 +130,7 @@ function statusFor(s: unknown): Task["status"] {
 }
 
 function dueLabel(iso: string | null | undefined): { label: string; isToday: boolean } {
-  if (!iso) return { label: "No due date", isToday: false };
+  if (!iso) return { label: "Sans échéance", isToday: false };
   const date = new Date(iso);
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -172,6 +173,9 @@ export function adaptTask(row: Row): Task {
     status: statusFor(row.status),
     parentTaskId: (row.parent_task_id as string | null | undefined) ?? null,
     sortableIndex: typeof row.sortable_index === "number" ? (row.sortable_index as number) : 0,
+    fromAI: !!(row.ai_generated as boolean | null | undefined),
+    conversationId: (row.conversation_id as string | null | undefined) ?? null,
+    dueAtIso: (row.due_at as string | null | undefined) ?? null,
   };
 }
 

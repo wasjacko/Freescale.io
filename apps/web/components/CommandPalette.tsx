@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { type SearchHit, searchInbox } from "@/lib/actions/search";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
@@ -26,18 +27,45 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
   const [serverResults, setServerResults] = useState<SearchHit[]>([]);
   const [searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { setView, setActiveConv } = useApp();
+  const { setView, setActiveConv, setMueOpen } = useApp();
   const { conversations } = useData();
 
   const actions = useMemo(
     () => [
-      { id: "go-today", icon: "✦", name: "Aller à Aujourd'hui", fn: () => setView("today") },
+      { id: "go-today", icon: "✓", name: "Aller aux Tâches", fn: () => setView("today") },
       { id: "go-inbox", icon: "📥", name: "Aller à l'inbox", fn: () => setView("inbox") },
-      { id: "go-tasks", icon: "✓", name: "Aller aux tâches", fn: () => setView("tasks") },
       { id: "go-cal", icon: "📅", name: "Aller au calendrier", fn: () => setView("calendar") },
       { id: "go-ai", icon: "✨", name: "Ouvrir AI Knowledge", fn: () => setView("ai-knowledge") },
+      {
+        id: "new-task",
+        icon: "＋",
+        name: "Nouvelle tâche",
+        fn: () => {
+          setView("today");
+          setTimeout(
+            () => (document.querySelector(".mt-add-input") as HTMLInputElement | null)?.focus(),
+            150
+          );
+        },
+      },
+      {
+        id: "analyze",
+        icon: "✦",
+        name: "Analyser l'inbox (Mue)",
+        fn: () => {
+          setView("today");
+          setTimeout(
+            () =>
+              (
+                document.querySelector(".dock.is-quiet, .dock-cta") as HTMLButtonElement | null
+              )?.click(),
+            200
+          );
+        },
+      },
+      { id: "open-mue", icon: "💬", name: "Ouvrir Mue", fn: () => setMueOpen(true) },
     ],
-    [setView]
+    [setView, setMueOpen]
   );
 
   const q = query.trim().toLowerCase();
@@ -241,7 +269,13 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
           })}
 
           {total === 0 && q && !searching && (
-            <div className="cmdk-empty">Aucun résultat pour &quot;{query}&quot;</div>
+            <div style={{ padding: "32px 16px", display: "flex", justifyContent: "center" }}>
+              <EmptyState
+                icon="i-search"
+                title="Aucun résultat"
+                description={`Aucune conversation ne correspond à "${query}"`}
+              />
+            </div>
           )}
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
   deleteEmailTemplate,
   updateEmailTemplate,
 } from "@/lib/actions/email-templates";
+import { toast } from "@/lib/hooks/useToast";
 import { useState, useTransition } from "react";
 
 /**
@@ -30,7 +31,6 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
   const [body, setBody] = useState("");
   const [visibility, setVisibility] = useState<"personal" | "team">("team");
   const [pending, startTransition] = useTransition();
-  const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const openNew = () => {
@@ -38,7 +38,6 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
     setName("");
     setBody("");
     setVisibility("team");
-    setToast(null);
   };
 
   const openEdit = (t: EmailTemplate) => {
@@ -46,7 +45,6 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
     setName(t.name);
     setBody(t.body);
     setVisibility(t.visibility);
-    setToast(null);
   };
 
   const cancel = () => {
@@ -54,7 +52,6 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
     setName("");
     setBody("");
     setVisibility("team");
-    setToast(null);
   };
 
   // Notify the EmailComposer to invalidate its cached templates list so
@@ -69,7 +66,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
   const handleSave = () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      setToast({ kind: "err", text: "Le nom est requis." });
+      toast.error("Le nom est requis.");
       return;
     }
     startTransition(async () => {
@@ -80,13 +77,13 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
           // server's updated_at DESC ordering).
           setTemplates((prev) => [res.template as EmailTemplate, ...prev]);
           broadcastChange();
-          setToast({ kind: "ok", text: "Modèle créé." });
+          toast.success("Modèle créé.");
           setEditingId(null);
           setName("");
           setBody("");
           setVisibility("team");
         } else {
-          setToast({ kind: "err", text: res.error ?? "Création impossible." });
+          toast.error(res.error ?? "Création impossible.");
         }
       } else if (editingId) {
         const id = editingId;
@@ -100,13 +97,13 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
             )
           );
           broadcastChange();
-          setToast({ kind: "ok", text: "Modèle mis à jour." });
+          toast.success("Modèle mis à jour.");
           setEditingId(null);
           setName("");
           setBody("");
           setVisibility("team");
         } else {
-          setToast({ kind: "err", text: res.error ?? "Mise à jour impossible." });
+          toast.error(res.error ?? "Mise à jour impossible.");
         }
       }
     });
@@ -128,7 +125,7 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
         setConfirmDelete(null);
         if (editingId === id) cancel();
       } else {
-        setToast({ kind: "err", text: res.error ?? "Suppression impossible." });
+        toast.error(res.error ?? "Suppression impossible.");
       }
     });
   };
@@ -298,11 +295,6 @@ export function TemplatesManager({ initial }: { initial: EmailTemplate[] }) {
       </div>
 
       <div className="settings-footer">
-        {toast && (
-          <div className={`settings-toast ${toast.kind === "ok" ? "is-ok" : "is-err"}`}>
-            {toast.text}
-          </div>
-        )}
         {editingId === null && (
           <button type="button" className="set-btn set-btn-primary" onClick={openNew}>
             + Nouveau modèle
