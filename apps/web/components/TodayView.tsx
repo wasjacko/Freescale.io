@@ -1,5 +1,6 @@
 "use client";
 
+import { DayPlan } from "@/components/DayPlan";
 import { EditTaskModal } from "@/components/EditTaskModal";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { ChannelLogo, Icon } from "@/components/icons/Icon";
@@ -962,6 +963,8 @@ export function TodayView(_props: { user: CurrentUser | null }) {
 
   return (
     <section className="today-view today2" aria-label="Cette semaine">
+      {/* Phase 1 — Plan du Jour : actions prioritaires en tête (pilier Prioriser). */}
+      <DayPlan />
       {/* Wavy premium banner to scan messages and create tasks with Mue */}
       <div className="tasks-banner">
         <div className="tasks-banner-content">

@@ -3,6 +3,7 @@
 import { AIKnowledgeView } from "@/components/AIKnowledgeView";
 import { AutoSync } from "@/components/AutoSync";
 import { CalendarView } from "@/components/CalendarView";
+import { ClientsView } from "@/components/ClientsView";
 import { CommandPalette } from "@/components/CommandPalette";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { Inbox } from "@/components/Inbox";
@@ -310,6 +311,8 @@ export function AppShell({
           </div>
           <CalendarView />
           <AIKnowledgeView />
+          {/* Phase 2 — Hub Client/Projet (pilier Centraliser). */}
+          <ClientsView />
         </div>
         {/* Mue — rail compagnon repliable, 3e colonne de .app : même
             endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).

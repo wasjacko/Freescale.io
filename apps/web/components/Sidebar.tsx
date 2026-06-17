@@ -3,10 +3,12 @@
 import { FreescaleMark } from "@/components/brand/FreescaleMark";
 import type { CurrentUser } from "@/lib/auth";
 import { useData } from "@/lib/contexts/DataContext";
+import { MOCK_CLIENTS } from "@/lib/mock-v2";
 import { useApp } from "@/lib/store";
 import Link from "next/link";
+import { Fragment } from "react";
 
-type NavId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge";
+type NavId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge" | "clients";
 
 type NavItem = {
   id: NavId;
@@ -16,6 +18,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Tâches" },
   { id: "inbox", label: "Inbox" },
+  { id: "clients", label: "Clients" },
   { id: "calendar", label: "Calendar" },
   { id: "ai-knowledge", label: "AI Knowledge" },
 ];
@@ -47,6 +50,15 @@ function NavIcon({ id }: { id: NavId }) {
         <svg {...p}>
           <path d="M22 12h-6l-2 3h-4l-2-3H2" />
           <path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z" />
+        </svg>
+      );
+    case "clients":
+      return (
+        <svg {...p}>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
       );
     case "tasks":
@@ -100,6 +112,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
     today: tasks.filter((t) => t.status !== "done").length,
     inbox: conversations.filter((c) => c.unread).length,
     tasks: tasks.filter((t) => t.status !== "done").length,
+    clients: MOCK_CLIENTS.filter((c) => (c.awaitingCount ?? 0) > 0).length,
     calendar: null,
     "ai-knowledge": null,
   };
@@ -114,7 +127,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
         onClick={() => setView("today")}
         aria-label="Accueil — Tâches"
       >
-        <FreescaleMark size={22} className="sidebar-brand-mark" />
+        <FreescaleMark size={26} className="sidebar-brand-mark" />
         <span className="sidebar-brand-word">Freescale</span>
       </button>
 
@@ -122,45 +135,25 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
         {NAV_ITEMS.map((item) => {
           const count = counts[item.id];
           return (
-            <button
-              key={item.id}
-              type="button"
-              className={`nav-item ${view === item.id ? "active" : ""}`}
-              aria-label={item.label}
-              onClick={() => {
-                setView(item.id);
-                if (item.id === "inbox") setActiveConv("");
-              }}
-            >
-              <span className="nav-left">
-                <NavIcon id={item.id} />
-                <span className="nav-text">{item.label}</span>
-              </span>
-              {count != null && count > 0 && (
-                <span
-                  className="count"
-                  onClick={(e) => {
-                    if (item.id !== "inbox") return;
-                    e.stopPropagation();
-                    const first = conversations.find((c) => c.unread);
-                    setView("inbox");
-                    if (first) setActiveConv(first.id);
-                  }}
-                  onKeyDown={(e) => {
-                    if (item.id !== "inbox" || (e.key !== "Enter" && e.key !== " ")) return;
-                    e.stopPropagation();
-                    const first = conversations.find((c) => c.unread);
-                    setView("inbox");
-                    if (first) setActiveConv(first.id);
-                  }}
-                  role={item.id === "inbox" ? "button" : undefined}
-                  tabIndex={item.id === "inbox" ? 0 : undefined}
-                  title={item.id === "inbox" ? "Ouvrir la première non-lue" : undefined}
-                >
-                  {count}
+            <Fragment key={item.id}>
+              <button
+                type="button"
+                className={`nav-item ${view === item.id ? "active" : ""}`}
+                aria-label={item.label}
+                onClick={() => {
+                  setView(item.id);
+                  if (item.id === "inbox") setActiveConv("");
+                }}
+              >
+                <span className="nav-ico">
+                  <NavIcon id={item.id} />
+                  {count != null && count > 0 && <span className="nav-badge">{count}</span>}
                 </span>
-              )}
-            </button>
+                <span className="nav-text">{item.label}</span>
+              </button>
+              {/* Séparateur entre groupes (façon rail de réf.) : après les piliers core. */}
+              {item.id === "clients" && <div className="nav-divider" aria-hidden />}
+            </Fragment>
           );
         })}
       </nav>
@@ -175,7 +168,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
               initials
             )}
           </span>
-          <span className="sidebar-account-name">{user?.name ?? "Compte"}</span>
+          <span className="sidebar-account-name">{user?.firstName ?? user?.name ?? "Compte"}</span>
         </Link>
         {/* Déconnexion (simulé) → nouvelle home page statique. */}
         <a href="/home/index.html" className="sidebar-logout" title="Se déconnecter">
@@ -192,6 +185,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
+          <span>Sortir</span>
         </a>
       </div>
     </aside>

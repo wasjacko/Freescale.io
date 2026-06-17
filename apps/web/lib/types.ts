@@ -15,7 +15,7 @@ export type ChannelId =
   | "messenger"
   | "sms";
 
-export type ViewId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge";
+export type ViewId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge" | "clients";
 
 export type AvatarSource =
   | { kind: "img"; src: string }
@@ -130,4 +130,111 @@ export type UpcomingEvent = {
   title: string;
   when: string;
   channel: ChannelId;
+};
+
+// ───────────────────────────────────────────────────────────────────────
+// Freescale V2 — entités UI (mock only, zéro backend pour l'instant)
+// Portent les 3 piliers : centraliser (Client/Projet) · prioriser
+// (ActionItem) · réduire la recherche (MueAnswer).
+// ───────────────────────────────────────────────────────────────────────
+
+/** Statut d'un projet / livrable. */
+export type ProjectStatus = "on-track" | "at-risk" | "late" | "done";
+
+/** Tonalité visuelle générique des pastilles/barres. */
+export type Tone = "ok" | "warn" | "danger" | "neutral" | "info";
+
+/** Intégrations tech (chips visuels, non branchés). */
+export type IntegrationKind = "github" | "linear" | "stripe" | "notion" | "figma";
+
+export type IntegrationBadge = {
+  kind: IntegrationKind;
+  /** ex. "repo lié", "5 issues", "facture en retard". */
+  label: string;
+  tone?: Tone;
+};
+
+export type Milestone = {
+  id: string;
+  label: string;
+  done: boolean;
+};
+
+export type Project = {
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  /** 0–100. */
+  progress: number;
+  milestones: Milestone[];
+  dueLabel?: string;
+};
+
+export type FileKind = "pdf" | "image" | "doc" | "sheet" | "zip" | "other";
+
+export type FileItem = {
+  id: string;
+  name: string;
+  kind: FileKind;
+  sizeLabel: string;
+  dateLabel: string;
+};
+
+export type InvoiceStatus = "paid" | "pending" | "late";
+
+export type Invoice = {
+  id: string;
+  /** ex. "FAC-2026-014". */
+  number: string;
+  /** Montant en euros. */
+  amount: number;
+  status: InvoiceStatus;
+  dateLabel: string;
+};
+
+/** Fiche client agrégée — le hub 360 (pilier « centraliser »). */
+export type Client = {
+  id: string;
+  name: string;
+  company?: string;
+  email?: string;
+  avatar: Avatar;
+  /** Canaux par lesquels on échange avec ce client. */
+  channels: ChannelId[];
+  /** Libellé du dernier contact (ex. "il y a 2 j"). */
+  lastContactLabel?: string;
+  /** Nombre de conversations en attente de ma réponse. */
+  awaitingCount?: number;
+  project?: Project;
+  files?: FileItem[];
+  invoices?: Invoice[];
+  /** Faits appris par Mue (mock). */
+  mueFacts?: string[];
+  /** Chips d'intégration tech affichés dans le header. */
+  integrations?: IntegrationBadge[];
+  /** IDs des conversations liées (réutilise les convs mock). */
+  conversationIds?: string[];
+};
+
+/** Raison de priorisation d'une action (pilier « prioriser »). */
+export type ActionReason = "late" | "awaiting" | "due-today" | "follow-up";
+
+export type ActionItem = {
+  id: string;
+  title: string;
+  clientName: string;
+  avatar: Avatar;
+  channel: ChannelId;
+  reason: ActionReason;
+  /** ex. "en attente depuis 2 j", "en retard · 2 j". */
+  reasonLabel: string;
+  dueLabel?: string;
+  conversationId?: string | null;
+};
+
+/** Réponse mock de « Ask Mue » (pilier « réduire la recherche »). */
+export type MueAnswer = {
+  text: string;
+  bullets?: string[];
+  sources?: { label: string; count: number }[];
 };
