@@ -21,7 +21,7 @@ const stroke = {
 };
 
 export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClose: () => void }) {
-  const { setView, setMueOpen } = useApp();
+  const { setView, setMueOpen, setDataViewOpen } = useApp();
   const push = useToast((s) => s.push);
   const [active, setActive] = useState(true);
 
@@ -95,6 +95,20 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
 
         <div className="account-menu-sep" />
 
+        <button
+          type="button"
+          className="account-menu-item"
+          onClick={() => {
+            setDataViewOpen(true);
+            onClose();
+          }}
+        >
+          <svg {...stroke}>
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Ce que Freescale voit
+        </button>
         <Link href="/app/settings/profile" className="account-menu-item" onClick={onClose}>
           <svg {...stroke}>
             <circle cx="12" cy="12" r="3" />

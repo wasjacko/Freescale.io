@@ -41,6 +41,9 @@ type State = {
   clientConfirm: { open: boolean; channel: string };
   openClientConfirm: (channel: string) => void;
   closeClientConfirm: () => void;
+  /** Écran « Ce que Freescale voit » (transparence des données ingérées). */
+  dataViewOpen: boolean;
+  setDataViewOpen: (open: boolean) => void;
   // Dossiers de conversations (UI/mock).
   inboxFolders: InboxFolder[];
   activeFolderId: string | null;
@@ -80,6 +83,8 @@ export const useApp = create<State>()(
       clientConfirm: { open: false, channel: "gmail" },
       openClientConfirm: (channel) => set({ clientConfirm: { open: true, channel } }),
       closeClientConfirm: () => set((s) => ({ clientConfirm: { ...s.clientConfirm, open: false } })),
+      dataViewOpen: false,
+      setDataViewOpen: (dataViewOpen) => set({ dataViewOpen }),
       inboxFolders: DEFAULT_FOLDERS,
       activeFolderId: null,
       setActiveFolder: (activeFolderId) => set({ activeFolderId }),

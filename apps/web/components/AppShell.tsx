@@ -6,6 +6,7 @@ import { CalendarView } from "@/components/CalendarView";
 import { ClientsView } from "@/components/ClientsView";
 import { ClientConfirmModal } from "@/components/ClientConfirmModal";
 import { CommandPalette } from "@/components/CommandPalette";
+import { DataVisibilityModal } from "@/components/DataVisibilityModal";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { Inbox } from "@/components/Inbox";
 import { InboxFolders } from "@/components/InboxFolders";
@@ -332,6 +333,7 @@ export function AppShell({
       </div>
 
       <ClientConfirmModal />
+      <DataVisibilityModal />
       <Toaster />
       <Suspense>
         <FlashFromUrl />

@@ -25,8 +25,7 @@ export function RecapView() {
     conversations
       .filter(
         (c) =>
-          ms(c.lastOutboundAt) > ms(c.lastInboundAt) &&
-          (now - ms(c.lastOutboundAt)) / 86400000 >= 2
+          ms(c.lastOutboundAt) > ms(c.lastInboundAt) && (now - ms(c.lastOutboundAt)) / 86400000 >= 2
       )
       .map((c) => c.clientId ?? c.id)
   ).size;
@@ -80,7 +79,12 @@ export function RecapView() {
         <h2 className="recap-section-title">À traiter</h2>
         <div className="recap-kpis">
           {kpis.map((k) => (
-            <button key={k.key} type="button" className={`recap-kpi recap-kpi--${k.tone}`} onClick={k.onClick}>
+            <button
+              key={k.key}
+              type="button"
+              className={`recap-kpi recap-kpi--${k.tone}`}
+              onClick={k.onClick}
+            >
               <span className="recap-kpi-val">{k.val}</span>
               <span className="recap-kpi-label">{k.label}</span>
             </button>
