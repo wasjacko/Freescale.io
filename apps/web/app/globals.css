@@ -22129,6 +22129,51 @@ button:active:not(:disabled):not(.no-press) {
   height: 14px;
   border-radius: 4px;
 }
+/* Sélecteur de canaux dans l'en-tête du fil (client multi-canal). */
+.thread-chan-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.thread-chan-tab {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 130ms var(--ease), background 130ms var(--ease);
+}
+.thread-chan-tab :where(svg, img) {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+}
+.thread-chan-tab:hover {
+  opacity: 0.85;
+}
+.thread-chan-tab.active {
+  opacity: 1;
+  background: rgba(15, 23, 42, 0.07);
+}
+/* Repère "Réponse via {canal}" dans le composer (canaux chat). */
+.composer-via {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+.composer-via :where(svg, img) {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
 /* Marqueur "balle dans ton camp" : accent gauche sur la ligne. */
 .conv--toreply {
   box-shadow: inset 3px 0 0 #ef4444, inset 0 -1.5px 0 rgba(10, 10, 10, 0.07);

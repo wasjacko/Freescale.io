@@ -360,11 +360,40 @@ export function Thread({
           <div>
             <h1>{conv.name}</h1>
             <div className="contact-sub">
-              {/* Canal + assignation sur la même ligne sous le nom (compact). */}
-              <span className="thread-chan-inline">
-                <ChannelLogo channel={conv.channel} className="" />
-                {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
-              </span>
+              {/* Canal unique, ou sélecteur de canaux si le client en a plusieurs. */}
+              {(() => {
+                const siblings = conv.clientId
+                  ? conversations.filter((x) => x.clientId === conv.clientId)
+                  : [conv];
+                if (siblings.length <= 1) {
+                  return (
+                    <span className="thread-chan-inline">
+                      <ChannelLogo channel={conv.channel} className="" />
+                      {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
+                    </span>
+                  );
+                }
+                return (
+                  <span className="thread-chan-tabs" role="tablist" aria-label="Canaux du client">
+                    {siblings.map((x) => (
+                      <button
+                        key={x.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={x.id === conv.id}
+                        className={`thread-chan-tab ${x.id === conv.id ? "active" : ""}`}
+                        title={x.channel}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveConv(x.id);
+                        }}
+                      >
+                        <ChannelLogo channel={x.channel} className="" />
+                      </button>
+                    ))}
+                  </span>
+                );
+              })()}
               <span className="contact-sub-sep" aria-hidden>
                 ·
               </span>
@@ -758,21 +787,28 @@ export function Thread({
              façon maquette) : « À {contact} », grande zone bordée, puis
              Joindre · Modèles · Suggérer (Mue) · tons · Envoyer. */
           <div className="email-composer">
-            <div className="email-composer-headers">
-              <div className="email-composer-row">
-                <span className="email-composer-label">À</span>
-                <span className="email-composer-value">
-                  <strong>{conv.name}</strong>
-                </span>
-                <button
-                  type="button"
-                  className="email-composer-toggle"
-                  onClick={() => push({ kind: "info", text: "Cc disponible sur les emails 👋" })}
-                >
-                  Cc
-                </button>
+            {isEmail ? (
+              <div className="email-composer-headers">
+                <div className="email-composer-row">
+                  <span className="email-composer-label">À</span>
+                  <span className="email-composer-value">
+                    <strong>{conv.name}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    className="email-composer-toggle"
+                    onClick={() => push({ kind: "info", text: "Cc disponible sur les emails 👋" })}
+                  >
+                    Cc
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="composer-via">
+                <ChannelLogo channel={conv.channel} className="" />
+                Réponse via {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
+              </div>
+            )}
             <textarea
               className="email-composer-body"
               placeholder={`Votre réponse à ${firstName}…`}
