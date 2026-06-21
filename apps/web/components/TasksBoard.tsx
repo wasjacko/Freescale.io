@@ -136,7 +136,11 @@ export function TasksBoard() {
       if (sortKey === "due") return ms(a.dueAtIso) - ms(b.dueAtIso);
       if (sortKey === "created") return ms(b.createdAtIso) - ms(a.createdAtIso);
       if (sortKey === "title") return a.title.localeCompare(b.title);
-      return (a.sortableIndex ?? 0) - (b.sortableIndex ?? 0);
+      // Défaut = liste priorisée : priorité (haute→basse) puis échéance la + proche.
+      const rank = { high: 0, medium: 1, low: 2 } as const;
+      const pr = rank[a.priority] - rank[b.priority];
+      if (pr !== 0) return pr;
+      return (ms(a.dueAtIso) || Number.POSITIVE_INFINITY) - (ms(b.dueAtIso) || Number.POSITIVE_INFINITY);
     });
   const clientConvsOf = (t: Task) =>
     (t.clientConvIds?.length ? t.clientConvIds : t.conversationId ? [t.conversationId] : [])
@@ -337,9 +341,8 @@ export function TasksBoard() {
                   <div className="tboard-menu-label">Trier par</div>
                   {(
                     [
-                      ["default", "Par défaut"],
+                      ["default", "Priorité"],
                       ["due", "Échéance"],
-                      ["created", "Date de création"],
                       ["title", "Titre (A-Z)"],
                     ] as const
                   ).map(([k, lbl]) => (
