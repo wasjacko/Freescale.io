@@ -25823,6 +25823,36 @@ button.sidebar-brand {
   font-weight: 600;
 }
 
+/* Bandeau « Mue a détecté X tâches ». */
+.tboard-aibanner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(79, 108, 247, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.18);
+  color: #3a4151;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.tboard-aibanner svg {
+  color: #4f6cf7;
+  flex: none;
+}
+.tboard-aibanner b {
+  color: #10131a;
+}
+.tboard-aibanner-cta {
+  margin-left: auto;
+  color: #4f6cf7;
+  font-weight: 600;
+}
+
 /* Switch Tableau / Kanban. */
 .tboard-viewswitch {
   display: inline-flex;

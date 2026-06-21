@@ -417,6 +417,22 @@ export function TasksBoard() {
         </div>
       )}
 
+      {(() => {
+        const aiCount = topTasks.filter((t) => t.fromAI).length;
+        if (aiCount === 0 || filterSource === "ai") return null;
+        return (
+          <button type="button" className="tboard-aibanner" onClick={() => setFilterSource("ai")}>
+            <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor" stroke="none" aria-hidden>
+              <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
+            </svg>
+            <span>
+              Mue a détecté <b>{aiCount} tâche{aiCount > 1 ? "s" : ""}</b> dans tes messages
+            </span>
+            <span className="tboard-aibanner-cta">Voir →</span>
+          </button>
+        );
+      })()}
+
       {boardView === "table" && (
         <>
           {/* En-tête de colonnes unique (en haut, collant) — plus de répétition par statut. */}
