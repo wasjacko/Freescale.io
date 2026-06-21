@@ -80,7 +80,14 @@ export function AddChannelModal({
                 <span className="add-channel-logo">
                   <ChannelLogo channel={p.kind} />
                 </span>
-                <span className="add-channel-name">{p.label}</span>
+                <span className="add-channel-name">
+                  {p.label}
+                  <span className="add-channel-cap">
+                    {["gmail", "outlook"].includes(p.kind)
+                      ? "Historique + nouveaux"
+                      : "Nouveaux messages"}
+                  </span>
+                </span>
                 {isConnected ? (
                   <span className="add-channel-tag is-connected">Connecté</span>
                 ) : (
