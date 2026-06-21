@@ -22129,6 +22129,24 @@ button:active:not(:disabled):not(.no-press) {
   height: 14px;
   border-radius: 4px;
 }
+/* Indicateur multi-canaux d'un client (Gmail + WhatsApp…) à droite de la ligne. */
+.conv-channels {
+  display: inline-flex;
+  align-self: center;
+  gap: 3px;
+  flex: none;
+}
+.conv-channels-ic {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+}
+.conv-channels-ic :where(svg, img) {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
 /* Ligne « via {plateforme} » sous l'aperçu. */
 .conv-via {
   margin-top: 3px;

@@ -38,6 +38,8 @@ export type ConversationCategory = "client" | "promo" | "notif" | "other" | null
 
 export type Conversation = {
   id: string;
+  /** Regroupe plusieurs canaux d'un même client (fusion « 1 ligne = 1 client »). */
+  clientId?: string;
   name: string;
   preview: string;
   /** ISO date of last message; formatted client-side for correct local time */

@@ -9,6 +9,7 @@ import { channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { useApp } from "@/lib/store";
+import type { ChannelId } from "@/lib/types";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /** Section temporelle pour grouper la liste : Aujourd'hui / Hier / … */
@@ -240,6 +241,32 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     isUnread,
   ]);
 
+  // Fusion « 1 ligne = 1 client » : on regroupe les conversations par clientId
+  // (ou par id si pas de client), en gardant la + récente comme représentante
+  // et en collectant tous ses canaux. L'ordre de tri est préservé.
+  const clientRows = useMemo(() => {
+    const seen = new Map<
+      string,
+      { rep: (typeof filteredConvs)[number]; channels: Set<ChannelId> }
+    >();
+    const order: string[] = [];
+    for (const c of filteredConvs) {
+      const key = c.clientId ?? c.id;
+      const g = seen.get(key);
+      if (!g) {
+        seen.set(key, { rep: c, channels: new Set([c.channel]) });
+        order.push(key);
+      } else {
+        g.channels.add(c.channel);
+      }
+    }
+    return order.map((k) => {
+      const g = seen.get(k);
+      if (!g) throw new Error("unreachable");
+      return { rep: g.rep, channels: [...g.channels] };
+    });
+  }, [filteredConvs]);
+
   const [showSkeletons, setShowSkeletons] = useState(false);
 
   useEffect(() => {
@@ -364,14 +391,14 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
           // Séparateurs de section temporels (uniquement en tri par date) :
           // « Aujourd'hui / Hier / Cette semaine… » pour casser le mur de lignes.
           let lastSection = "";
-          return filteredConvs.map((c) => {
+          return clientRows.map(({ rep: c, channels }) => {
             const isActive = c.id === activeConvId;
             const unread = isUnread(c.id, c.unread);
             const section = sortBy === "date" ? sectionOf(c.lastAtIso) : "";
             const showSection = !!section && section !== lastSection;
             if (showSection) lastSection = section;
             return (
-              <Fragment key={c.id}>
+              <Fragment key={c.clientId ?? c.id}>
                 {showSection && <div className="conv-section">{section}</div>}
                 <button
                   type="button"
@@ -404,6 +431,15 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                     </span>
                     <span className="conv-preview">{c.preview || "…"}</span>
                   </span>
+                  {channels.length > 1 && (
+                    <span className="conv-channels" title={`${channels.length} canaux`}>
+                      {channels.map((ch) => (
+                        <span key={ch} className="conv-channels-ic">
+                          <ChannelLogo channel={ch} />
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </button>
               </Fragment>
             );

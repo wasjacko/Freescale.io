@@ -80,6 +80,7 @@ export function mockInboxData(): InboxData {
   const conversations: Conversation[] = [
     {
       id: "c1",
+      clientId: "cl-sarah",
       name: "Sarah Lemoine",
       preview:
         "Parfait pour la nouvelle direction ! Quelques ajustements avant de partager à l'équipe.",
@@ -95,6 +96,24 @@ export function mockInboxData(): InboxData {
       tags: ["design", "urgent"],
       lastInboundAt: isoAgo({ minutes: 4 }),
       lastOutboundAt: isoAgo({ hours: 3 }),
+      clientTone: "cool",
+      clientLang: "fr",
+    },
+    {
+      id: "c1b",
+      clientId: "cl-sarah",
+      name: "Sarah Lemoine",
+      preview: "Je t'ai aussi envoyé le brief par mail, dis-moi si tu l'as bien reçu.",
+      lastAtIso: isoAgo({ hours: 6 }),
+      avatar: FACE(0),
+      channel: "gmail",
+      group: "today",
+      subject: "Brief refonte — pièce jointe",
+      contactEmail: "sarah@brightstone.fr",
+      category: "client",
+      tags: ["design"],
+      lastInboundAt: isoAgo({ hours: 6 }),
+      lastOutboundAt: isoAgo({ days: 1 }),
       clientTone: "cool",
       clientLang: "fr",
     },
@@ -819,7 +838,7 @@ export function mockInboxData(): InboxData {
 
   // Inbox volontairement resserrée sur les 5 clients principaux — les mêmes
   // que la page Clients (Sarah, Alexandre, Capucine, Thomas, David).
-  const INBOX_CLIENT_IDS = new Set(["c1", "c7", "c3", "c2", "c9"]);
+  const INBOX_CLIENT_IDS = new Set(["c1", "c1b", "c7", "c3", "c2", "c9"]);
   const allConversations = [...conversations, ...generatedConversations].filter((c) =>
     INBOX_CLIENT_IDS.has(c.id)
   );
