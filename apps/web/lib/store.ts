@@ -37,6 +37,10 @@ type State = {
   /** Vue « balle dans ton camp » : tout / à répondre / en attente / terminé. */
   inboxBucket: "all" | "to-reply" | "waiting" | "done";
   setInboxBucket: (b: "all" | "to-reply" | "waiting" | "done") => void;
+  /** Écran de confirmation des clients après connexion d'un canal (mock). */
+  clientConfirm: { open: boolean; channel: string };
+  openClientConfirm: (channel: string) => void;
+  closeClientConfirm: () => void;
   // Dossiers de conversations (UI/mock).
   inboxFolders: InboxFolder[];
   activeFolderId: string | null;
@@ -73,6 +77,9 @@ export const useApp = create<State>()(
       setInboxSearch: (inboxSearch) => set({ inboxSearch }),
       inboxBucket: "all",
       setInboxBucket: (inboxBucket) => set({ inboxBucket }),
+      clientConfirm: { open: false, channel: "gmail" },
+      openClientConfirm: (channel) => set({ clientConfirm: { open: true, channel } }),
+      closeClientConfirm: () => set((s) => ({ clientConfirm: { ...s.clientConfirm, open: false } })),
       inboxFolders: DEFAULT_FOLDERS,
       activeFolderId: null,
       setActiveFolder: (activeFolderId) => set({ activeFolderId }),

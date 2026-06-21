@@ -1,10 +1,9 @@
 "use client";
 
 import { ChannelLogo } from "@/components/icons/Icon";
-import { CHANNEL_PROVIDER_REGISTRY, channelProviderLabel } from "@/lib/channels/registry";
-import { useToast } from "@/lib/hooks/useToast";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { CHANNEL_PROVIDER_REGISTRY } from "@/lib/channels/registry";
+import { useApp } from "@/lib/store";
+import { useEffect } from "react";
 
 const PROVIDERS = CHANNEL_PROVIDER_REGISTRY.filter((provider) =>
   ["gmail", "outlook", "slack", "instagram", "whatsapp", "linkedin", "discord"].includes(
@@ -21,9 +20,7 @@ export function AddChannelModal({
   onClose: () => void;
   connectedKinds: Set<string>;
 }) {
-  const router = useRouter();
-  const push = useToast((s) => s.push);
-  const [connecting, setConnecting] = useState<string | null>(null);
+  const openClientConfirm = useApp((s) => s.openClientConfirm);
 
   // Esc to close while open (pas de verrouillage du scroll : c'est une
   // fenêtre flottante ancrée au bouton, pas une modale plein écran).
@@ -36,64 +33,7 @@ export function AddChannelModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Listen for OAuth popup messages — same protocol as the settings page
-  useEffect(() => {
-    if (!open) return;
-    const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
-      const data = event.data as
-        | { type: "gmail_connected" | "outlook_connected"; email: string; synced: number }
-        | { type: "gmail_error" | "outlook_error"; error: string }
-        | null;
-      if (!data) return;
-      setConnecting(null);
-      if (data.type === "gmail_connected" || data.type === "outlook_connected") {
-        const kind = data.type === "outlook_connected" ? "outlook" : "gmail";
-        const label = channelProviderLabel(kind);
-        push({
-          text: `${label} connecté (${data.email})${
-            data.synced > 0 ? ` · ${data.synced} message${data.synced > 1 ? "s" : ""}` : ""
-          }`,
-          duration: 4000,
-        });
-        onClose();
-        router.refresh();
-      } else if (data.type === "gmail_error" || data.type === "outlook_error") {
-        push({ text: `Connexion impossible : ${data.error}`, duration: 5000 });
-      }
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [open, push, onClose, router]);
-
   if (!open) return null;
-
-  const openOAuthPopup = (kind: string, path: string) => {
-    setConnecting(kind);
-    const w = 560;
-    const h = 720;
-    const left = window.screenX + (window.outerWidth - w) / 2;
-    const top = window.screenY + (window.outerHeight - h) / 2;
-    const popup = window.open(
-      `${path}?popup=1`,
-      "freescale_oauth",
-      `width=${w},height=${h},left=${left},top=${top},popup=yes`
-    );
-    if (!popup) {
-      setConnecting(null);
-      push({
-        text: "Autorisez les pop-ups pour connecter un canal.",
-        duration: 4000,
-      });
-      return;
-    }
-    const timer = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(timer);
-        setConnecting((c) => (c === kind ? null : c));
-      }
-    }, 600);
-  };
 
   return (
     <>
@@ -143,19 +83,17 @@ export function AddChannelModal({
                 <span className="add-channel-name">{p.label}</span>
                 {isConnected ? (
                   <span className="add-channel-tag is-connected">Connecté</span>
-                ) : p.ready && p.startPath ? (
+                ) : (
                   <button
                     type="button"
                     className="add-channel-cta"
                     onClick={() => {
-                      if (p.startPath) openOAuthPopup(p.kind, p.startPath);
+                      onClose();
+                      openClientConfirm(p.kind);
                     }}
-                    disabled={connecting === p.kind}
                   >
-                    {connecting === p.kind ? "Connexion…" : "Connecter"}
+                    Connecter
                   </button>
-                ) : (
-                  <span className="add-channel-tag">Bientôt</span>
                 )}
               </li>
             );

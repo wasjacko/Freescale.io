@@ -4720,6 +4720,164 @@ html {
   background: rgba(15, 23, 42, 0.06);
   color: #4f6cf7;
 }
+/* ── Modal de confirmation client (post-connexion d'un canal) ─────── */
+.ccm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.ccm-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 23, 42, 0.34);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: default;
+}
+.ccm-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  animation: add-sheet-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ccm-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 14px;
+}
+.ccm-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #10131a;
+}
+.ccm-sub {
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+.ccm-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #5b6475;
+  cursor: pointer;
+}
+.ccm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px 20px;
+  overflow-y: auto;
+}
+.ccm-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.1);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 130ms var(--ease), background 130ms var(--ease);
+}
+.ccm-card.is-on {
+  background: rgba(79, 108, 247, 0.06);
+  box-shadow: inset 0 0 0 1.5px #4f6cf7;
+}
+.ccm-card-tx {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.ccm-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #10131a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ccm-card-hint {
+  font-size: 11.5px;
+  color: #9aa0aa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ccm-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ccm-check.is-on {
+  background: #4f6cf7;
+}
+.ccm-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  margin-top: 4px;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+.ccm-skip {
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #5b6475;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ccm-confirm {
+  height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 9px;
+  background: #4f6cf7;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ccm-confirm:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 /* Recherche dans la barre d'outils de l'inbox. */
 .ibx-search-wrap {
   position: relative;

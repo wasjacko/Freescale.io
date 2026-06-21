@@ -4,6 +4,7 @@ import { AIKnowledgeView } from "@/components/AIKnowledgeView";
 import { AutoSync } from "@/components/AutoSync";
 import { CalendarView } from "@/components/CalendarView";
 import { ClientsView } from "@/components/ClientsView";
+import { ClientConfirmModal } from "@/components/ClientConfirmModal";
 import { CommandPalette } from "@/components/CommandPalette";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { Inbox } from "@/components/Inbox";
@@ -330,6 +331,7 @@ export function AppShell({
         <MuePanel />
       </div>
 
+      <ClientConfirmModal />
       <Toaster />
       <Suspense>
         <FlashFromUrl />
