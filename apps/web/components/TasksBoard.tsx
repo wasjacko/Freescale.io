@@ -556,6 +556,15 @@ export function TasksBoard() {
                                     <span className="tboard-task-title">{t.title}</span>
                                     {sub && <span className="tboard-sub">{sub}</span>}
                                   </button>
+                                  {t.status === "awaiting-reply" && t.conversationId && (
+                                    <button
+                                      type="button"
+                                      className="tboard-relance"
+                                      onClick={() => openTask(t)}
+                                    >
+                                      Relancer
+                                    </button>
+                                  )}
                                   {linkedConv ? (
                                     <button
                                       type="button"
