@@ -5147,39 +5147,6 @@ html {
 }
 
 /* Onglets de catégorie au-dessus de la liste de messages. */
-.ibx-tabs {
-  display: flex;
-  gap: 2px;
-  padding: 8px 12px 0;
-  box-shadow: inset 0 -1.5px 0 rgba(10, 10, 10, 0.08);
-}
-.ibx-tab {
-  position: relative;
-  padding: 8px 10px 10px;
-  border: 0;
-  background: transparent;
-  color: #6b7280;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 130ms var(--ease);
-}
-.ibx-tab:hover {
-  color: #10131a;
-}
-.ibx-tab.is-active {
-  color: #4f6cf7;
-}
-.ibx-tab.is-active::after {
-  content: "";
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: -1.5px;
-  height: 2px;
-  border-radius: 2px;
-  background: #4f6cf7;
-}
 /* Pastille couleur d'un label/tag. */
 .ibx-label-dot {
   width: 10px;
