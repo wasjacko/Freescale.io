@@ -22115,18 +22115,18 @@ button:active:not(:disabled):not(.no-press) {
 .ibx-tabs {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   margin-left: 6px;
-  padding: 3px;
-  border-radius: 7px;
+  padding: 4px;
+  border-radius: 10px;
   background: rgba(10, 10, 10, 0.05);
 }
 .ibx-tab {
   border: 0;
-  padding: 3px 9px;
-  border-radius: 7px;
+  padding: 7px 16px;
+  border-radius: 8px;
   background: transparent;
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 600;
   color: #8a8f98;
   cursor: pointer;
@@ -23314,12 +23314,13 @@ button:active:not(:disabled):not(.no-press) {
 /* Onglets inbox : densité calibrée pour que « Completed » tienne en entier
    dans le panneau de 320px (4 onglets égaux, zéro ellipse). */
 .ibx-tabs {
-  padding: 2px;
-  gap: 1px;
+  padding: 4px;
+  gap: 2px;
+  border-radius: 11px;
 }
 .ibx-tab {
-  padding: 4px 4px;
-  font-size: 11px;
+  padding: 9px 6px;
+  font-size: 12.5px;
   letter-spacing: -0.01em;
 }
 
