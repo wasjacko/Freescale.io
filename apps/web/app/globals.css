@@ -22129,6 +22129,13 @@ button:active:not(:disabled):not(.no-press) {
   height: 14px;
   border-radius: 4px;
 }
+/* Marqueur "balle dans ton camp" : accent gauche sur la ligne. */
+.conv--toreply {
+  box-shadow: inset 3px 0 0 #ef4444, inset 0 -1.5px 0 rgba(10, 10, 10, 0.07);
+}
+.conv--waiting {
+  box-shadow: inset 3px 0 0 #d97706, inset 0 -1.5px 0 rgba(10, 10, 10, 0.07);
+}
 /* Indicateur multi-canaux d'un client (Gmail + WhatsApp…) à droite de la ligne. */
 .conv-channels {
   display: inline-flex;

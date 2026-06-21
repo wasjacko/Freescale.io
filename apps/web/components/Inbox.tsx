@@ -35,6 +35,13 @@ function relAge(iso: string): string {
   return `${Math.round(h / 24)}d`;
 }
 
+/** Balle dans MON camp : le client a écrit en dernier → j'ai une réponse à faire. */
+function ballInCourt(c: { lastInboundAt?: string | null; lastOutboundAt?: string | null }): boolean {
+  const inb = c.lastInboundAt ? new Date(c.lastInboundAt).getTime() : 0;
+  const out = c.lastOutboundAt ? new Date(c.lastOutboundAt).getTime() : 0;
+  return inb > out;
+}
+
 const INITIAL_SYNC_SKELETONS = [
   "sync-skeleton-1",
   "sync-skeleton-2",
@@ -53,9 +60,10 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     inboxSort: sortBy,
     inboxChannel: filterChannel,
     inboxCategory: filterCategory,
-    setInboxCategory,
     inboxSearch,
     setInboxSearch,
+    inboxBucket,
+    setInboxBucket,
     inboxUnreadOnly: unreadOnly,
     inboxFolders,
     activeFolderId,
@@ -199,7 +207,13 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     };
     return conversations
       .filter((c) => {
-        if (archived.has(c.id)) return false;
+        // Onglet « Terminé » = conversations archivées ; sinon on les masque.
+        if (inboxBucket === "done") {
+          if (!archived.has(c.id)) return false;
+        } else if (archived.has(c.id)) return false;
+        // Ball-in-court : à répondre (client a écrit en dernier) / en attente (moi).
+        if (inboxBucket === "to-reply" && !ballInCourt(c)) return false;
+        if (inboxBucket === "waiting" && ballInCourt(c)) return false;
         // On masque les reportés SAUF dans la vue « Reportés ».
         if (
           af !== "view:snoozed" &&
@@ -238,6 +252,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     unreadOnly,
     activeFolderId,
     inboxFolders,
+    inboxBucket,
     isUnread,
   ]);
 
@@ -314,22 +329,22 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
         </header>
       )}
 
-      <div className="ibx-tabs" role="tablist" aria-label="Catégories">
+      <div className="ibx-tabs" role="tablist" aria-label="Vue">
         {(
           [
             ["all", "Tout"],
-            ["client", "Clients"],
-            ["promo", "Promotions"],
-            ["notif", "Notifications"],
+            ["to-reply", "À répondre"],
+            ["waiting", "En attente"],
+            ["done", "Terminé"],
           ] as const
         ).map(([key, label]) => (
           <button
             key={key}
             type="button"
             role="tab"
-            aria-selected={filterCategory === key}
-            className={`ibx-tab ${filterCategory === key ? "is-active" : ""}`}
-            onClick={() => setInboxCategory(key)}
+            aria-selected={inboxBucket === key}
+            className={`ibx-tab ${inboxBucket === key ? "is-active" : ""}`}
+            onClick={() => setInboxBucket(key)}
           >
             {label}
           </button>
@@ -394,6 +409,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
           return clientRows.map(({ rep: c, channels }) => {
             const isActive = c.id === activeConvId;
             const unread = isUnread(c.id, c.unread);
+            const ball = archived.has(c.id) ? null : ballInCourt(c) ? "toreply" : "waiting";
             const section = sortBy === "date" ? sectionOf(c.lastAtIso) : "";
             const showSection = !!section && section !== lastSection;
             if (showSection) lastSection = section;
@@ -402,7 +418,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                 {showSection && <div className="conv-section">{section}</div>}
                 <button
                   type="button"
-                  className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""}`}
+                  className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""} ${ball ? `conv--${ball}` : ""}`}
+                  title={ball === "toreply" ? "À répondre" : ball === "waiting" ? "En attente d'eux" : undefined}
                   onClick={() => handleSelect(c.id)}
                   onDoubleClick={() => onContextAction(c.id, unread ? "mark-read" : "mark-unread")}
                   onContextMenu={(e) => {

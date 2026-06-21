@@ -34,6 +34,9 @@ type State = {
   inboxUnreadOnly: boolean;
   inboxSearch: string;
   setInboxSearch: (q: string) => void;
+  /** Vue « balle dans ton camp » : tout / à répondre / en attente / terminé. */
+  inboxBucket: "all" | "to-reply" | "waiting" | "done";
+  setInboxBucket: (b: "all" | "to-reply" | "waiting" | "done") => void;
   // Dossiers de conversations (UI/mock).
   inboxFolders: InboxFolder[];
   activeFolderId: string | null;
@@ -68,6 +71,8 @@ export const useApp = create<State>()(
       inboxUnreadOnly: false,
       inboxSearch: "",
       setInboxSearch: (inboxSearch) => set({ inboxSearch }),
+      inboxBucket: "all",
+      setInboxBucket: (inboxBucket) => set({ inboxBucket }),
       inboxFolders: DEFAULT_FOLDERS,
       activeFolderId: null,
       setActiveFolder: (activeFolderId) => set({ activeFolderId }),
