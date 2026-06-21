@@ -5191,6 +5191,20 @@ html {
 .ibx-label-name {
   text-transform: capitalize;
 }
+/* Zone « Autres » repliable (non-clients). */
+.ibx-folder-others {
+  color: #9aa0aa;
+}
+.ibx-others-chevron {
+  transition: transform 150ms var(--ease);
+}
+.ibx-others-chevron.is-open {
+  transform: rotate(90deg);
+}
+.ibx-folder-sub {
+  padding-left: 30px;
+  color: #6b7280;
+}
 .ibx-folder {
   display: flex;
   align-items: center;

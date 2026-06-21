@@ -90,6 +90,7 @@ export function InboxFolders() {
   const { conversations } = useData();
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
+  const [othersOpen, setOthersOpen] = useState(false);
 
   const open = (id: string | null) => {
     setActiveFolder(id);
@@ -208,6 +209,46 @@ export function InboxFolders() {
           ))}
         </>
       )}
+
+      {/* Zone « Autres » repliée — non-clients (promos, notifs). */}
+      <div className="ibx-folders-sep" />
+      <button
+        type="button"
+        className="ibx-folder ibx-folder-others"
+        onClick={() => setOthersOpen((v) => !v)}
+        aria-expanded={othersOpen}
+      >
+        <svg
+          className={`ibx-folder-ic ibx-others-chevron ${othersOpen ? "is-open" : ""}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <polyline points="9 6 15 12 9 18" />
+        </svg>
+        <span className="ibx-folder-name">Autres</span>
+      </button>
+      {othersOpen &&
+        (
+          [
+            ["cat:promo", "Promotions"],
+            ["cat:notif", "Notifications"],
+            ["cat:other", "Non classés"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`ibx-folder ibx-folder-sub ${activeFolderId === key ? "active" : ""}`}
+            onClick={() => open(key)}
+          >
+            <span className="ibx-folder-name">{label}</span>
+          </button>
+        ))}
     </aside>
   );
 }
