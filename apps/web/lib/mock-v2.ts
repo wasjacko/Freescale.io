@@ -9,8 +9,18 @@ import type { ActionItem, Avatar, Client, MueAnswer } from "@/lib/types";
 
 // Avatars « maison » (illustrations 3D) — utilisés partout à la place des
 // photos pravatar, cohérents avec l'inbox.
-const FACES = ["/avatars/1.webp", "/avatars/2.webp", "/avatars/3.webp", "/avatars/4.webp", "/avatars/5.webp", "/avatars/6.webp"];
-const FACE = (i: number): Avatar => ({ kind: "img", src: FACES[((i % FACES.length) + FACES.length) % FACES.length] as string });
+const FACES = [
+  "/avatars/1.webp",
+  "/avatars/2.webp",
+  "/avatars/3.webp",
+  "/avatars/4.webp",
+  "/avatars/5.webp",
+  "/avatars/6.webp",
+];
+const FACE = (i: number): Avatar => ({
+  kind: "img",
+  src: FACES[((i % FACES.length) + FACES.length) % FACES.length] as string,
+});
 
 // ── Pilier « centraliser » : fiches clients 360 ────────────────────────
 // Réutilise les conversations existantes du mock inbox (c1, c7, c3, c2, c9).
@@ -24,6 +34,7 @@ export const MOCK_CLIENTS: Client[] = [
     channels: ["whatsapp", "gmail"],
     lastContactLabel: "il y a 4 min",
     awaitingCount: 1,
+    owesReply: true,
     project: {
       id: "pr-bright",
       name: "Refonte produit V2",
@@ -78,6 +89,7 @@ export const MOCK_CLIENTS: Client[] = [
     channels: ["slack", "gmail"],
     lastContactLabel: "il y a 35 min",
     awaitingCount: 1,
+    awaitingDays: 2,
     project: {
       id: "pr-api",
       name: "Optimisation API",
@@ -126,6 +138,7 @@ export const MOCK_CLIENTS: Client[] = [
     channels: ["linkedin", "gmail"],
     lastContactLabel: "il y a 5 h",
     awaitingCount: 1,
+    owesReply: true,
     project: {
       id: "pr-vitrine",
       name: "Site vitrine",
@@ -213,8 +226,9 @@ export const MOCK_CLIENTS: Client[] = [
     email: "david@kim-ventures.com",
     avatar: FACE(5),
     channels: ["linkedin"],
-    lastContactLabel: "il y a 4 h",
+    lastContactLabel: "il y a 12 j",
     awaitingCount: 0,
+    silentDays: 12,
     project: {
       id: "pr-kim",
       name: "Board approval & contrat",

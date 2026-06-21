@@ -221,6 +221,13 @@ export type Client = {
   lastContactLabel?: string;
   /** Nombre de conversations en attente de ma réponse. */
   awaitingCount?: number;
+  // ── Santé de la relation (signaux calculables depuis l'inbox) ──
+  /** Je lui dois une réponse (balle dans mon camp). */
+  owesReply?: boolean;
+  /** J'attends sa réponse depuis N jours (balle dans son camp). */
+  awaitingDays?: number | null;
+  /** Aucun échange depuis N jours (relation qui refroidit). */
+  silentDays?: number | null;
   project?: Project;
   files?: FileItem[];
   invoices?: Invoice[];

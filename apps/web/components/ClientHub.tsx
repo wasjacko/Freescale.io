@@ -1,46 +1,25 @@
 "use client";
 
 // Freescale V2 · Phase 2 — Hub Client 360 (pilier CENTRALISER).
-// Tout sur un client au même endroit : aperçu, conversations, tâches,
-// projet, fichiers, facturation, mémoire Mue. 100% UI mock.
+// Tout ce que l'INBOX peut réellement savoir sur un client, au même endroit :
+// santé de la relation, conversations, tâches liées, mémoire Mue. 100% UI mock.
+// On n'affiche PAS de projet/fichiers/facturation : ces données ne peuvent pas
+// venir d'une boîte mail (cela supposerait Stripe / un drive / un PM connectés).
 
+import { relationHealth } from "@/components/ClientsView";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
-import { IntegrationChip, ProgressBar, SectionCard, StatusPill } from "@/components/ui/Primitives";
+import { SectionCard } from "@/components/ui/Primitives";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
-import type { Client, Conversation, InvoiceStatus, ProjectStatus, Task, Tone } from "@/lib/types";
+import type { Client, Conversation, Task } from "@/lib/types";
 import type { ReactNode } from "react";
 import { useState } from "react";
-
-const STATUS_TONE: Record<ProjectStatus, Tone> = {
-  "on-track": "ok",
-  "at-risk": "warn",
-  late: "neutral",
-  done: "neutral",
-};
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  "on-track": "Dans les temps",
-  "at-risk": "À risque",
-  late: "En retard",
-  done: "Terminé",
-};
-const INVOICE_TONE: Record<InvoiceStatus, Tone> = { paid: "ok", pending: "warn", late: "neutral" };
-const INVOICE_LABEL: Record<InvoiceStatus, string> = {
-  paid: "Payée",
-  pending: "En attente",
-  late: "En retard",
-};
-
-const eur = (n: number) => `${n.toLocaleString("fr-FR")} €`;
 
 const TABS = [
   { id: "overview", label: "Aperçu" },
   { id: "convs", label: "Conversations" },
   { id: "tasks", label: "Tâches" },
-  { id: "project", label: "Projet" },
-  { id: "files", label: "Fichiers" },
-  { id: "billing", label: "Facturation" },
   { id: "mue", label: "Ce que Mue sait" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -94,13 +73,6 @@ export function ClientHub({ client, onBack }: { client: Client; onBack: () => vo
               ))}
             </span>
           </div>
-          {client.integrations && client.integrations.length > 0 && (
-            <div className="client-hub__integs">
-              {client.integrations.map((b) => (
-                <IntegrationChip key={b.kind} badge={b} />
-              ))}
-            </div>
-          )}
         </div>
         {ids.length > 0 && (
           <button type="button" className="client-hub__openthread" onClick={openThread}>
@@ -136,12 +108,11 @@ export function ClientHub({ client, onBack }: { client: Client; onBack: () => vo
       </nav>
 
       <div className="client-hub__body">
-        {tab === "overview" && <OverviewTab client={client} convs={convs} />}
+        {tab === "overview" && (
+          <OverviewTab client={client} convs={convs} tasks={tasks} onOpenThread={openThread} />
+        )}
         {tab === "convs" && <ConvsTab convs={convs} />}
         {tab === "tasks" && <TasksTab tasks={tasks} />}
-        {tab === "project" && <ProjectTab client={client} />}
-        {tab === "files" && <FilesTab client={client} />}
-        {tab === "billing" && <BillingTab client={client} />}
         {tab === "mue" && <MueTab client={client} />}
       </div>
     </div>
@@ -152,81 +123,67 @@ function Empty({ children }: { children: ReactNode }) {
   return <div className="hub-empty">{children}</div>;
 }
 
-type TimelineKind = "message" | "mue" | "project" | "invoice";
-
-function OverviewTab({ client, convs }: { client: Client; convs: Conversation[] }) {
-  const p = client.project;
-  const invoices = client.invoices ?? [];
-  const duesCount = invoices.filter((i) => i.status !== "paid").length;
-
-  // Timeline unifiée (mock) synthétisée à partir des données réelles du client :
-  // message le plus récent + action Mue + jalon projet + dernière facture.
-  const lead = convs[0];
-  const lastDone = p?.milestones.filter((m) => m.done).at(-1);
-  const lastInvoice = invoices.at(-1);
-  const timeline: { kind: TimelineKind; title: string; detail?: string; time?: string }[] = [];
-  if (lead)
-    timeline.push({
-      kind: "message",
-      title: `Message de ${client.name}`,
-      detail: lead.preview,
-      time: client.lastContactLabel ?? "",
-    });
-  timeline.push({
-    kind: "mue",
-    title: "Mue a proposé un brouillon de réponse",
-    time: "aujourd'hui",
-  });
-  if (lastDone)
-    timeline.push({
-      kind: "project",
-      title: `Jalon validé — ${lastDone.label}`,
-      time: p?.dueLabel ?? "",
-    });
-  if (lastInvoice)
-    timeline.push({
-      kind: "invoice",
-      title: `Facture ${lastInvoice.number} · ${INVOICE_LABEL[lastInvoice.status]}`,
-      time: lastInvoice.dateLabel,
-    });
+function OverviewTab({
+  client,
+  convs,
+  tasks,
+  onOpenThread,
+}: {
+  client: Client;
+  convs: Conversation[];
+  tasks: Task[];
+  onOpenThread: () => void;
+}) {
+  const h = relationHealth(client);
+  const openTasks = tasks.filter((t) => t.status !== "done").length;
 
   return (
     <div className="hub-overview">
-      <div className="hub-stats">
-        <Stat label="En attente" value={`${client.awaitingCount ?? 0}`} />
-        <Stat label="Conversations" value={`${convs.length}`} />
-        <Stat label="Canaux" value={`${client.channels.length}`} />
-        <Stat label="Factures dues" value={`${duesCount}`} />
+      {/* Bandeau santé de la relation — l'info honnête en haut. */}
+      <div className={`hub-relation hub-relation--${h.state}`}>
+        <span className="hub-relation__dot" aria-hidden />
+        <div className="hub-relation__main">
+          <span className="hub-relation__label">{h.label}</span>
+          <span className="hub-relation__sub">
+            Dernier échange {client.lastContactLabel ?? "—"}
+          </span>
+        </div>
+        {h.state === "owe" && (
+          <button type="button" className="hub-relation__cta" onClick={onOpenThread}>
+            Répondre
+          </button>
+        )}
+        {(h.state === "awaiting" || h.state === "silent") && (
+          <button type="button" className="hub-relation__cta" onClick={onOpenThread}>
+            Relancer
+          </button>
+        )}
       </div>
 
-      <SectionCard title="Activité récente">
-        <ul className="hub-timeline">
-          {timeline.map((e) => (
-            <li key={e.title} className="hub-tl">
-              <span className={`hub-tl__dot hub-tl__dot--${e.kind}`} aria-hidden />
-              <div className="hub-tl__main">
-                <span className="hub-tl__title">{e.title}</span>
-                {e.detail && <span className="hub-tl__detail">{e.detail}</span>}
-              </div>
-              {e.time && <span className="hub-tl__time">{e.time}</span>}
-            </li>
-          ))}
-        </ul>
-      </SectionCard>
+      <div className="hub-stats">
+        <Stat label="À répondre" value={`${client.awaitingCount ?? 0}`} />
+        <Stat label="Tâches en cours" value={`${openTasks}`} />
+        <Stat label="Conversations" value={`${convs.length}`} />
+      </div>
 
-      {p && (
-        <SectionCard title="Projet en cours">
-          <div className="hub-proj-row">
-            <span className="hub-proj-name">{p.name}</span>
-            <StatusPill tone={STATUS_TONE[p.status]}>{STATUS_LABEL[p.status]}</StatusPill>
-          </div>
-          <ProgressBar value={p.progress} tone={STATUS_TONE[p.status]} />
-          <div className="hub-proj-foot">
-            <span>{p.progress}%</span>
-            {p.dueLabel && <span>{p.dueLabel}</span>}
-          </div>
-        </SectionCard>
-      )}
+      <SectionCard title="Derniers échanges">
+        {convs.length === 0 ? (
+          <Empty>Aucune conversation liée.</Empty>
+        ) : (
+          <ul className="hub-list">
+            {convs.map((c) => (
+              <li key={c.id} className="hub-conv">
+                <ChannelLogo channel={c.channel} className="hub-conv__chan" />
+                <div className="hub-conv__main">
+                  <span className="hub-conv__subj">{c.subject ?? c.name}</span>
+                  <span className="hub-conv__prev">{c.preview}</span>
+                </div>
+                {c.unread && <span className="hub-conv__dot" aria-label="non lu" />}
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
 
       {client.mueFacts && client.mueFacts.length > 0 && (
         <SectionCard
@@ -239,6 +196,7 @@ function OverviewTab({ client, convs }: { client: Client; convs: Conversation[] 
             </>
           }
         >
+          <p className="hub-facts__src">D'après vos échanges — corrige si c'est faux.</p>
           <ul className="hub-facts">
             {client.mueFacts.slice(0, 3).map((f) => (
               <li key={f}>{f}</li>
@@ -296,73 +254,6 @@ function TasksTab({ tasks }: { tasks: Task[] }) {
   );
 }
 
-function ProjectTab({ client }: { client: Client }) {
-  const p = client.project;
-  if (!p) return <Empty>Aucun projet.</Empty>;
-  return (
-    <SectionCard
-      title={p.name}
-      action={<StatusPill tone={STATUS_TONE[p.status]}>{STATUS_LABEL[p.status]}</StatusPill>}
-    >
-      <ProgressBar value={p.progress} tone={STATUS_TONE[p.status]} />
-      <div className="hub-proj-foot">
-        <span>{p.progress}% complété</span>
-        {p.dueLabel && <span>{p.dueLabel}</span>}
-      </div>
-      <ul className="hub-milestones">
-        {p.milestones.map((m) => (
-          <li key={m.id} className={m.done ? "is-done" : ""}>
-            <span className="hub-ms__check" aria-hidden>
-              {m.done ? "✓" : ""}
-            </span>
-            {m.label}
-          </li>
-        ))}
-      </ul>
-    </SectionCard>
-  );
-}
-
-function FilesTab({ client }: { client: Client }) {
-  const files = client.files ?? [];
-  if (files.length === 0) return <Empty>Aucun fichier.</Empty>;
-  return (
-    <SectionCard title="Fichiers">
-      <ul className="hub-files">
-        {files.map((f) => (
-          <li key={f.id} className="hub-file">
-            <span className="hub-file__ic">{f.kind.toUpperCase().slice(0, 3)}</span>
-            <span className="hub-file__name">{f.name}</span>
-            <span className="hub-file__meta">
-              {f.sizeLabel} · {f.dateLabel}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </SectionCard>
-  );
-}
-
-function BillingTab({ client }: { client: Client }) {
-  const invs = client.invoices ?? [];
-  if (invs.length === 0) return <Empty>Aucune facture.</Empty>;
-  const total = invs.reduce((s, i) => s + i.amount, 0);
-  return (
-    <SectionCard title="Facturation" action={<span className="hub-total">{eur(total)}</span>}>
-      <ul className="hub-invoices">
-        {invs.map((i) => (
-          <li key={i.id} className="hub-inv">
-            <span className="hub-inv__num">{i.number}</span>
-            <span className="hub-inv__date">{i.dateLabel}</span>
-            <span className="hub-inv__amt">{eur(i.amount)}</span>
-            <StatusPill tone={INVOICE_TONE[i.status]}>{INVOICE_LABEL[i.status]}</StatusPill>
-          </li>
-        ))}
-      </ul>
-    </SectionCard>
-  );
-}
-
 function MueTab({ client }: { client: Client }) {
   const facts = client.mueFacts ?? [];
   if (facts.length === 0) return <Empty>Mue n'a encore rien appris sur ce client.</Empty>;
@@ -377,6 +268,10 @@ function MueTab({ client }: { client: Client }) {
         </>
       }
     >
+      <p className="hub-facts__src">
+        Déduit automatiquement de vos échanges. Ces points peuvent être imparfaits — corrige-les si
+        besoin.
+      </p>
       <ul className="hub-facts">
         {facts.map((f) => (
           <li key={f}>{f}</li>

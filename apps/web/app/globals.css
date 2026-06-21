@@ -24625,6 +24625,59 @@ button.sidebar-brand {
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
+/* Titre + compteur + outils (recherche / filtres). */
+.clients-head__title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.clients-h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #10131a;
+}
+.clients-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #5b6475;
+  font-size: 12px;
+  font-weight: 600;
+}
+.clients-head__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.clients-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #9097a3;
+}
+.clients-search input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: #10131a;
+  width: 170px;
+}
+.clients-empty {
+  padding: 48px 0;
+  text-align: center;
+  color: #9097a3;
+  font-size: 13.5px;
+}
 
 /* Grille de fiches */
 .clients-grid {
@@ -24724,6 +24777,127 @@ button.sidebar-brand {
 .client-card__last {
   font-size: 11.5px;
   color: #9097a3;
+  margin-left: auto;
+}
+
+/* Santé de la relation (carte) — pastille colorée + libellé honnête. */
+.client-card__relation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.035);
+}
+.client-card__rdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: none;
+  background: #9097a3;
+}
+.client-card__rlabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3a4151;
+}
+.client-card__relation--owe .client-card__rdot {
+  background: #d97706;
+}
+.client-card__relation--owe .client-card__rlabel {
+  color: #b4630a;
+}
+.client-card__relation--awaiting .client-card__rdot {
+  background: #2563eb;
+}
+.client-card__relation--silent .client-card__rdot {
+  background: #dc2626;
+}
+.client-card__relation--silent .client-card__rlabel {
+  color: #c0271f;
+}
+.client-card__relation--ok .client-card__rdot {
+  background: #16a34a;
+}
+
+/* Santé de la relation (bandeau du hub). */
+.hub-relation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.04);
+  box-shadow: inset 3px 0 0 #9097a3;
+}
+.hub-relation--owe {
+  background: rgba(217, 119, 6, 0.08);
+  box-shadow: inset 3px 0 0 #d97706;
+}
+.hub-relation--awaiting {
+  background: rgba(37, 99, 235, 0.07);
+  box-shadow: inset 3px 0 0 #2563eb;
+}
+.hub-relation--silent {
+  background: rgba(220, 38, 38, 0.07);
+  box-shadow: inset 3px 0 0 #dc2626;
+}
+.hub-relation--ok {
+  background: rgba(22, 163, 74, 0.07);
+  box-shadow: inset 3px 0 0 #16a34a;
+}
+.hub-relation__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: none;
+  background: #9097a3;
+}
+.hub-relation--owe .hub-relation__dot {
+  background: #d97706;
+}
+.hub-relation--awaiting .hub-relation__dot {
+  background: #2563eb;
+}
+.hub-relation--silent .hub-relation__dot {
+  background: #dc2626;
+}
+.hub-relation--ok .hub-relation__dot {
+  background: #16a34a;
+}
+.hub-relation__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.hub-relation__label {
+  font-size: 14px;
+  font-weight: 650;
+  color: #10131a;
+}
+.hub-relation__sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+.hub-relation__cta {
+  margin-left: auto;
+  padding: 7px 16px;
+  border-radius: 9px;
+  background: #10131a;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.hub-relation__cta:hover {
+  background: #000;
+}
+/* Source / disclaimer des faits Mue. */
+.hub-facts__src {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  color: #9097a3;
+  font-style: italic;
 }
 
 /* ── Hub 360 ───────────────────────────────────────────────── */
