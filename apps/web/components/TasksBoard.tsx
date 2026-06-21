@@ -45,7 +45,7 @@ function dueMeta(iso: string | null | undefined, fallback: string) {
 
 export function TasksBoard() {
   const { tasks, conversations, setTaskStatus, addTask, patchTask } = useData();
-  const { setView, setActiveConv } = useApp();
+  const { setView, setActiveConv, setAiReviewOpen } = useApp();
   const [collapsed, setCollapsed] = useState<Set<GroupKey>>(() => new Set());
   // Bascule Tableau ↔ Kanban.
   const [boardView, setBoardView] = useState<"table" | "kanban">("table");
@@ -421,10 +421,10 @@ export function TasksBoard() {
       )}
 
       {(() => {
-        const aiCount = topTasks.filter((t) => t.fromAI).length;
+        const aiCount = topTasks.filter((t) => t.fromAI && t.status !== "done").length;
         if (aiCount === 0 || filterSource === "ai") return null;
         return (
-          <button type="button" className="tboard-aibanner" onClick={() => setFilterSource("ai")}>
+          <button type="button" className="tboard-aibanner" onClick={() => setAiReviewOpen(true)}>
             <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor" stroke="none" aria-hidden>
               <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
             </svg>

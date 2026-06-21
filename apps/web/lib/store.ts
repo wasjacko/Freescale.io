@@ -44,6 +44,9 @@ type State = {
   /** Écran « Ce que Freescale voit » (transparence des données ingérées). */
   dataViewOpen: boolean;
   setDataViewOpen: (open: boolean) => void;
+  /** Revue des tâches détectées par Mue (garder / ignorer). */
+  aiReviewOpen: boolean;
+  setAiReviewOpen: (open: boolean) => void;
   // Dossiers de conversations (UI/mock).
   inboxFolders: InboxFolder[];
   activeFolderId: string | null;
@@ -85,6 +88,8 @@ export const useApp = create<State>()(
       closeClientConfirm: () => set((s) => ({ clientConfirm: { ...s.clientConfirm, open: false } })),
       dataViewOpen: false,
       setDataViewOpen: (dataViewOpen) => set({ dataViewOpen }),
+      aiReviewOpen: false,
+      setAiReviewOpen: (aiReviewOpen) => set({ aiReviewOpen }),
       inboxFolders: DEFAULT_FOLDERS,
       activeFolderId: null,
       setActiveFolder: (activeFolderId) => set({ activeFolderId }),

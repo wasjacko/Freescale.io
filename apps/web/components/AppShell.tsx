@@ -1,6 +1,7 @@
 "use client";
 
 import { AIKnowledgeView } from "@/components/AIKnowledgeView";
+import { AiTasksReviewModal } from "@/components/AiTasksReviewModal";
 import { AutoSync } from "@/components/AutoSync";
 import { CalendarView } from "@/components/CalendarView";
 import { ClientsView } from "@/components/ClientsView";
@@ -334,6 +335,7 @@ export function AppShell({
 
       <ClientConfirmModal />
       <DataVisibilityModal />
+      <AiTasksReviewModal />
       <Toaster />
       <Suspense>
         <FlashFromUrl />
