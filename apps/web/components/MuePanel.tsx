@@ -35,8 +35,27 @@ export function MuePanel() {
     setMueView,
     suggestTasksOpen,
     setSuggestTasksOpen,
+    setView,
+    setActiveConv,
+    setInboxBucket,
   } = useApp();
   const { conversations } = useData();
+  // Brief : nb de CLIENTS distincts dont la balle est dans mon camp (à répondre).
+  const awaitingCount = new Set(
+    conversations
+      .filter((c) => {
+        const inb = c.lastInboundAt ? new Date(c.lastInboundAt).getTime() : 0;
+        const out = c.lastOutboundAt ? new Date(c.lastOutboundAt).getTime() : 0;
+        return inb > out;
+      })
+      .map((c) => c.clientId ?? c.id)
+  ).size;
+  const openToReply = () => {
+    setView("inbox");
+    setActiveConv("");
+    setInboxBucket("to-reply");
+    setMueOpen(false);
+  };
   const push = useToast((s) => s.push);
   const [askInput, setAskInput] = useState("");
   const [askPending, setAskPending] = useState(false);
@@ -240,6 +259,21 @@ export function MuePanel() {
               ) : (
                 // Les 2 choix de base — toujours affichés (plus d'écran « contact »).
                 <div className="mue-choices">
+                  {awaitingCount > 0 && (
+                    <button type="button" className="mue-brief" onClick={openToReply}>
+                      <span className="mue-brief-badge">{awaitingCount}</span>
+                      <span className="mue-brief-tx">
+                        <b>
+                          {awaitingCount} client{awaitingCount > 1 ? "s" : ""} attend
+                          {awaitingCount > 1 ? "ent" : ""} ta réponse
+                        </b>
+                        <small>Aujourd'hui · clique pour les voir</small>
+                      </span>
+                      <span className="mue-brief-arrow" aria-hidden>
+                        →
+                      </span>
+                    </button>
+                  )}
                   <h2 className="mue-choices-title">Comment je t'aide ?</h2>
                   <button
                     type="button"
