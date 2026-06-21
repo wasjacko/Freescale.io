@@ -24391,9 +24391,23 @@ button.sidebar-brand {
   flex-direction: column;
   gap: 8px;
   padding: 18px;
+  border: 0;
   border-radius: 10px;
   background: #f6f7fb;
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 140ms var(--ease), transform 140ms var(--ease);
+}
+.recap-kpi:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.recap-kpi--alert .recap-kpi-val {
+  color: #dc2626;
+}
+.recap-kpi--warn .recap-kpi-val {
+  color: #d97706;
 }
 .recap-kpi-val {
   font-size: 32px;
