@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useData } from "@/lib/contexts/DataContext";
-import { Icon, ChannelLogo } from "@/components/icons/Icon";
+import { ChannelLogo, Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
+import { useData } from "@/lib/contexts/DataContext";
+import { useState } from "react";
 
 const TAB_STATUSES = [
   { id: "todo", label: "To do" },
@@ -40,7 +40,9 @@ export function TasksView() {
       </header>
 
       <div className="scan-banner">
-        <span className="scan-icon"><Icon name="i-spark" /></span>
+        <span className="scan-icon">
+          <Icon name="i-spark" />
+        </span>
         <span className="scan-text">Scan and analyze new messages</span>
         <button className="btn-analyze" type="button">
           <Icon name="i-spark" className="scan-spark icon" />
@@ -79,11 +81,14 @@ export function TasksView() {
               />
               <span className="task-avatar">
                 <Avatar avatar={task.avatar} />
-                <span className="conv-badge"><ChannelLogo channel={task.channel} className="" /></span>
+                <span className="conv-badge">
+                  <ChannelLogo channel={task.channel} className="" />
+                </span>
               </span>
               <span className="task-title">{task.title}</span>
               <span className={`priority ${task.priority}`}>
-                {task.priority[0]?.toUpperCase()}{task.priority.slice(1)}
+                {task.priority[0]?.toUpperCase()}
+                {task.priority.slice(1)}
               </span>
               <span className={`task-due ${task.isToday ? "is-today" : ""}`}>{task.dueLabel}</span>
               <button className="task-expand" type="button" aria-label="Expand">

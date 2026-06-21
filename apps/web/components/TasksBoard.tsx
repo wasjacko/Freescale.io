@@ -128,9 +128,7 @@ export function TasksBoard() {
   const [filterMenu, setFilterMenu] = useState(false);
   const ms = (iso: string | null | undefined) => (iso ? new Date(iso).getTime() : 0);
   const displayed = topTasks
-    .filter((t) =>
-      filterSource === "all" ? true : filterSource === "ai" ? !!t.fromAI : !t.fromAI
-    )
+    .filter((t) => (filterSource === "all" ? true : filterSource === "ai" ? !!t.fromAI : !t.fromAI))
     .slice()
     .sort((a, b) => {
       if (sortKey === "due") return ms(a.dueAtIso) - ms(b.dueAtIso);
@@ -140,7 +138,9 @@ export function TasksBoard() {
       const rank = { high: 0, medium: 1, low: 2 } as const;
       const pr = rank[a.priority] - rank[b.priority];
       if (pr !== 0) return pr;
-      return (ms(a.dueAtIso) || Number.POSITIVE_INFINITY) - (ms(b.dueAtIso) || Number.POSITIVE_INFINITY);
+      return (
+        (ms(a.dueAtIso) || Number.POSITIVE_INFINITY) - (ms(b.dueAtIso) || Number.POSITIVE_INFINITY)
+      );
     });
   const clientConvsOf = (t: Task) =>
     (t.clientConvIds?.length ? t.clientConvIds : t.conversationId ? [t.conversationId] : [])
@@ -425,11 +425,22 @@ export function TasksBoard() {
         if (aiCount === 0 || filterSource === "ai") return null;
         return (
           <button type="button" className="tboard-aibanner" onClick={() => setAiReviewOpen(true)}>
-            <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor" stroke="none" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width={15}
+              height={15}
+              fill="currentColor"
+              stroke="none"
+              aria-hidden
+            >
               <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
             </svg>
             <span>
-              Mue a détecté <b>{aiCount} tâche{aiCount > 1 ? "s" : ""}</b> dans tes messages
+              Mue a détecté{" "}
+              <b>
+                {aiCount} tâche{aiCount > 1 ? "s" : ""}
+              </b>{" "}
+              dans tes messages
             </span>
             <span className="tboard-aibanner-cta">Voir →</span>
           </button>
@@ -653,7 +664,8 @@ export function TasksBoard() {
                                       defaultValue={toDateInput(t.dueAtIso)}
                                       onBlur={(e) => commitDate(t.id, "due", e.target.value)}
                                       onKeyDown={(e) => {
-                                        if (e.key === "Enter") commitDate(t.id, "due", e.currentTarget.value);
+                                        if (e.key === "Enter")
+                                          commitDate(t.id, "due", e.currentTarget.value);
                                         if (e.key === "Escape") setEditCell(null);
                                       }}
                                     />

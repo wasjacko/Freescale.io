@@ -19,15 +19,51 @@ type Proposed = {
 // sont pré-cochés ; les newsletters/notifs sont proposées décochées.
 const FACE = (n: number): AvatarT => ({ kind: "img", src: `/avatars/${n}.webp` });
 const PROPOSED: Proposed[] = [
-  { id: "p1", name: "Sarah Lemoine", hint: "14 échanges · aller-retours réguliers", avatar: FACE(1), suggested: true },
-  { id: "p2", name: "Alexandre Dupont", hint: "9 échanges · projet en cours", avatar: FACE(2), suggested: true },
+  {
+    id: "p1",
+    name: "Sarah Lemoine",
+    hint: "14 échanges · aller-retours réguliers",
+    avatar: FACE(1),
+    suggested: true,
+  },
+  {
+    id: "p2",
+    name: "Alexandre Dupont",
+    hint: "9 échanges · projet en cours",
+    avatar: FACE(2),
+    suggested: true,
+  },
   { id: "p3", name: "Thomas Aubry", hint: "contrat en cours", avatar: FACE(4), suggested: true },
   { id: "p4", name: "Capucine Roy", hint: "devis envoyé", avatar: FACE(5), suggested: true },
   { id: "p5", name: "David Kim", hint: "6 échanges", avatar: FACE(6), suggested: true },
-  { id: "p6", name: "Sophie Bernard", hint: "proposition validée", avatar: FACE(3), suggested: true },
-  { id: "p7", name: "Notion", hint: "notifications produit", avatar: { kind: "initials", text: "N", bg: "#EEE" }, suggested: false },
-  { id: "p8", name: "Stripe", hint: "reçus de paiement", avatar: { kind: "initials", text: "S", bg: "#E8EAFF" }, suggested: false },
-  { id: "p9", name: "LinkedIn", hint: "alertes réseau", avatar: { kind: "initials", text: "in", bg: "#E1ECFF" }, suggested: false },
+  {
+    id: "p6",
+    name: "Sophie Bernard",
+    hint: "proposition validée",
+    avatar: FACE(3),
+    suggested: true,
+  },
+  {
+    id: "p7",
+    name: "Notion",
+    hint: "notifications produit",
+    avatar: { kind: "initials", text: "N", bg: "#EEE" },
+    suggested: false,
+  },
+  {
+    id: "p8",
+    name: "Stripe",
+    hint: "reçus de paiement",
+    avatar: { kind: "initials", text: "S", bg: "#E8EAFF" },
+    suggested: false,
+  },
+  {
+    id: "p9",
+    name: "LinkedIn",
+    hint: "alertes réseau",
+    avatar: { kind: "initials", text: "in", bg: "#E1ECFF" },
+    suggested: false,
+  },
 ];
 
 export function ClientConfirmModal() {
@@ -84,7 +120,12 @@ export function ClientConfirmModal() {
               probables. Confirme — seuls eux entreront dans ton inbox.
             </p>
           </div>
-          <button type="button" className="ccm-close" aria-label="Fermer" onClick={closeClientConfirm}>
+          <button
+            type="button"
+            className="ccm-close"
+            aria-label="Fermer"
+            onClick={closeClientConfirm}
+          >
             ✕
           </button>
         </header>
@@ -117,7 +158,12 @@ export function ClientConfirmModal() {
           <button type="button" className="ccm-skip" onClick={closeClientConfirm}>
             Plus tard
           </button>
-          <button type="button" className="ccm-confirm" onClick={closeClientConfirm} disabled={count === 0}>
+          <button
+            type="button"
+            className="ccm-confirm"
+            onClick={closeClientConfirm}
+            disabled={count === 0}
+          >
             Confirmer {count} client{count > 1 ? "s" : ""}
           </button>
         </footer>

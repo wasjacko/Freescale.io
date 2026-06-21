@@ -36,7 +36,10 @@ function relAge(iso: string): string {
 }
 
 /** Balle dans MON camp : le client a écrit en dernier → j'ai une réponse à faire. */
-function ballInCourt(c: { lastInboundAt?: string | null; lastOutboundAt?: string | null }): boolean {
+function ballInCourt(c: {
+  lastInboundAt?: string | null;
+  lastOutboundAt?: string | null;
+}): boolean {
   const inb = c.lastInboundAt ? new Date(c.lastInboundAt).getTime() : 0;
   const out = c.lastOutboundAt ? new Date(c.lastOutboundAt).getTime() : 0;
   return inb > out;
@@ -424,7 +427,13 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                 <button
                   type="button"
                   className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""} ${ball ? `conv--${ball}` : ""}`}
-                  title={ball === "toreply" ? "À répondre" : ball === "waiting" ? "En attente d'eux" : undefined}
+                  title={
+                    ball === "toreply"
+                      ? "À répondre"
+                      : ball === "waiting"
+                        ? "En attente d'eux"
+                        : undefined
+                  }
                   onClick={() => handleSelect(c.id)}
                   onDoubleClick={() => onContextAction(c.id, unread ? "mark-read" : "mark-unread")}
                   onContextMenu={(e) => {
