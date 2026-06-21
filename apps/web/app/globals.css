@@ -22391,6 +22391,20 @@ button:active:not(:disabled):not(.no-press) {
   height: 16px;
   border-radius: 4px;
 }
+/* Relance temporisée (lignes en attente d'eux). */
+.conv-relance {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #d97706;
+}
+.conv-relance b {
+  color: #4f6cf7;
+  font-weight: 700;
+}
 /* Marqueur "balle dans ton camp" : accent gauche sur la ligne. */
 .conv--toreply {
   box-shadow: inset 3px 0 0 #ef4444, inset 0 -1.5px 0 rgba(10, 10, 10, 0.07);

@@ -410,6 +410,10 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
             const isActive = c.id === activeConvId;
             const unread = isUnread(c.id, c.unread);
             const ball = archived.has(c.id) ? null : ballInCourt(c) ? "toreply" : "waiting";
+            const waitDays =
+              ball === "waiting" && c.lastOutboundAt
+                ? Math.floor((Date.now() - new Date(c.lastOutboundAt).getTime()) / 86400000)
+                : 0;
             const section = sortBy === "date" ? sectionOf(c.lastAtIso) : "";
             const showSection = !!section && section !== lastSection;
             if (showSection) lastSection = section;
@@ -447,6 +451,11 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                       </span>
                     </span>
                     <span className="conv-preview">{c.preview || "…"}</span>
+                    {waitDays >= 2 && (
+                      <span className="conv-relance">
+                        ⏳ En attente {waitDays} j · <b>Relancer</b>
+                      </span>
+                    )}
                   </span>
                   {channels.length > 1 && (
                     <span className="conv-channels" title={`${channels.length} canaux`}>
