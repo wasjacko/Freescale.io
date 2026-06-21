@@ -228,6 +228,17 @@ export function ContextMenu({
       )}
       <div className="ctx-divider" />
       <button
+        className="ctx-item"
+        type="button"
+        onClick={() => {
+          onAction({ kind: "set-category", category: "other" });
+          onAction("archive");
+          onClose();
+        }}
+      >
+        <Icon name="i-user" /> Pas un client
+      </button>
+      <button
         className="ctx-item is-danger"
         type="button"
         onClick={() => {
