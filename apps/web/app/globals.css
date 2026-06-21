@@ -26027,11 +26027,42 @@ button.sidebar-brand {
 .tboard-row > *:not(:last-child) {
   box-shadow: inset -1px 0 0 rgba(15, 23, 42, 0.18);
 }
-/* Contenu centré dans les colonnes Échéance / Créée le / Source. */
+/* Contenu centré dans les colonnes Échéance / Priorité / Source. */
 .tboard-due,
-.tboard-created,
+.tboard-prio,
 .tboard-source {
   justify-content: center;
+}
+/* Indicateur de priorité (point couleur + libellé). */
+.tprio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.tprio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.tprio--high {
+  color: #dc2626;
+}
+.tprio--high .tprio-dot {
+  background: #dc2626;
+}
+.tprio--medium {
+  color: #d97706;
+}
+.tprio--medium .tprio-dot {
+  background: #d97706;
+}
+.tprio--low {
+  color: #6b7280;
+}
+.tprio--low .tprio-dot {
+  background: #9aa0aa;
 }
 .tboard-row.is-open {
   box-shadow: none;

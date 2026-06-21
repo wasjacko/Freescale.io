@@ -25,14 +25,6 @@ const GROUPS: { key: GroupKey; label: string; accent: string; match: Task["statu
   { key: "done", label: "Terminé", accent: "#16a34a", match: ["done"] },
 ];
 
-/** Libellé court de date de création (ex : « 12 juin »). */
-function createdLabel(iso: string | null | undefined) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-}
-
 function dueMeta(iso: string | null | undefined, fallback: string) {
   if (!iso) return { label: fallback, tone: "normal" as const };
   const due = new Date(iso);
@@ -433,7 +425,7 @@ export function TasksBoard() {
               <span className="tboard-head-task">Tâche</span>
               <span>Client</span>
               <span>Échéance</span>
-              <span>Créée le</span>
+              <span>Priorité</span>
               <span>Source</span>
             </div>
           </div>
@@ -652,34 +644,15 @@ export function TasksBoard() {
                                   )}
                                 </span>
 
-                                <span className="tboard-cell tboard-created">
-                                  {editCell?.id === t.id && editCell.field === "created" ? (
-                                    <input
-                                      type="date"
-                                      className="tboard-dateedit"
-                                      // biome-ignore lint/a11y/noAutofocus: édition inline ouverte à la demande
-                                      autoFocus
-                                      defaultValue={toDateInput(t.createdAtIso)}
-                                      onBlur={(e) => commitDate(t.id, "created", e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter")
-                                          commitDate(t.id, "created", e.currentTarget.value);
-                                        if (e.key === "Escape") setEditCell(null);
-                                      }}
-                                    />
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      className="tboard-cellbtn"
-                                      onClick={() => setEditCell({ id: t.id, field: "created" })}
-                                    >
-                                      {t.createdAtIso ? (
-                                        createdLabel(t.createdAtIso)
-                                      ) : (
-                                        <span className="tboard-cell-add">+ Définir</span>
-                                      )}
-                                    </button>
-                                  )}
+                                <span className="tboard-cell tboard-prio">
+                                  <span className={`tprio tprio--${t.priority}`}>
+                                    <span className="tprio-dot" />
+                                    {t.priority === "high"
+                                      ? "Haute"
+                                      : t.priority === "low"
+                                        ? "Basse"
+                                        : "Moyenne"}
+                                  </span>
                                 </span>
 
                                 <span className="tboard-cell tboard-source">
