@@ -673,7 +673,7 @@ export function mockInboxData(): InboxData {
       startMinutes: 60,
       durationMinutes: 60,
       day: 2,
-      color: "pink",
+      color: "blue",
       channel: "gmail",
     },
     {

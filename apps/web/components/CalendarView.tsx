@@ -8,30 +8,43 @@ import { useToast } from "@/lib/hooks/useToast";
 import type { CalEvent } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+// Format 24 h, cohérent avec le reste de l'UI française (8 h → 18 h).
 const HOURS = [
-  "8 AM",
-  "9 AM",
-  "10 AM",
-  "11 AM",
-  "12 PM",
-  "1 PM",
-  "2 PM",
-  "3 PM",
-  "4 PM",
-  "5 PM",
-  "6 PM",
+  "08:00",
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+  "18:00",
 ];
 
-function buildWeekLabels() {
+// Semaine lundi→dimanche (convention FR/Europe). On stocke le jour des
+// évènements en getDay() JS (0=Dim..6=Sam) ; cet ordre mappe colonne→jour.
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
+const ABBRS_MON = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+
+// Lundi de la semaine affichée (décalée de `offset` semaines).
+function mondayOf(offset: number) {
   const now = new Date();
-  const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-  const abbrs = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-  return abbrs.map((abbr, i) => {
-    const d = new Date(sunday);
-    d.setDate(sunday.getDate() + i);
+  const back = (now.getDay() + 6) % 7; // jours depuis lundi
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - back + offset * 7);
+}
+
+function buildWeekLabels(offset: number) {
+  const now = new Date();
+  const monday = mondayOf(offset);
+  return ABBRS_MON.map((abbr, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
     return {
       abbr,
       num: d.getDate(),
+      weekday: d.getDay(),
       isToday:
         d.getFullYear() === now.getFullYear() &&
         d.getMonth() === now.getMonth() &&
@@ -40,14 +53,23 @@ function buildWeekLabels() {
   });
 }
 
-function weekRangeLabel() {
-  const now = new Date();
-  const sun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-  const sat = new Date(sun);
-  sat.setDate(sun.getDate() + 6);
+function weekRangeLabel(offset: number) {
+  const mon = mondayOf(offset);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
-  return `${fmt(sun)} – ${fmt(sat)}, ${sat.getFullYear()}`;
+  return `${fmt(mon)} – ${fmt(sun)}, ${sun.getFullYear()}`;
 }
+
+// weekday (0=Dim..6=Sam) → index de colonne (0=Lun..6=Dim).
+const colOfWeekday = (wd: number) => WEEKDAY_ORDER.indexOf(wd as (typeof WEEKDAY_ORDER)[number]);
+
+// Légende des couleurs (donne enfin un sens aux couleurs).
+const LEGEND: { color: string; label: string }[] = [
+  { color: "blue", label: "RDV client" },
+  { color: "lav", label: "Focus" },
+  { color: "green", label: "Échéance" },
+];
 
 const ROW_HEIGHT = 32; // px per 30-min slot
 const GRID_ROWS = 22; // 11 hours × 2 (8 AM → 7 PM)
@@ -66,11 +88,14 @@ function pxToStartMinutes(y: number): number {
  * the pointer in? Computed from horizontal offset relative to the grid
  * minus the time-label gutter (first column ~64px wide).
  */
-function xToDay(x: number, gridWidth: number, timeColWidth = 64): number {
+// Renvoie le jour (getDay() 0=Dim..6=Sam) sous le pointeur, en tenant compte
+// de l'ordre lundi-d'abord et du nombre de colonnes (7 en semaine, 1 en jour).
+function xToDay(x: number, gridWidth: number, cols: number, timeColWidth = 60): number {
+  if (cols === 1) return WEEKDAY_ORDER[0]; // remplacé par selectedDay côté appelant
   const usable = gridWidth - timeColWidth;
   const xInBody = Math.max(0, x - timeColWidth);
-  const dayWidth = usable / 7;
-  return Math.max(0, Math.min(6, Math.floor(xInBody / dayWidth)));
+  const colIndex = Math.max(0, Math.min(6, Math.floor(xInBody / (usable / 7))));
+  return WEEKDAY_ORDER[colIndex] as number;
 }
 
 type DragState =
@@ -95,8 +120,21 @@ type DragState =
 export function CalendarView() {
   const { events, createEvent, updateEvent, deleteEvent } = useData();
   const push = useToast((s) => s.push);
-  const dayLabels = useMemo(buildWeekLabels, []);
-  const weekRange = useMemo(weekRangeLabel, []);
+
+  // Navigation : semaine affichée + vue (semaine / jour).
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [view, setView] = useState<"week" | "day">("week");
+  const [selectedDay, setSelectedDay] = useState<number>(() => new Date().getDay());
+
+  const dayLabels = useMemo(() => buildWeekLabels(weekOffset), [weekOffset]);
+  const weekRange = useMemo(() => weekRangeLabel(weekOffset), [weekOffset]);
+  // En vue jour, on n'affiche que la colonne du jour choisi.
+  const visibleDayLabels =
+    view === "day" ? dayLabels.filter((d) => d.weekday === selectedDay) : dayLabels;
+  // Les évènements mock n'ont pas de date → on ne les montre que sur la
+  // semaine courante (offset 0), sinon ils se répéteraient chaque semaine.
+  const showEvents = weekOffset === 0;
+  const dayAt = (x: number, width: number) => (view === "day" ? selectedDay : xToDay(x, width, 7));
 
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<DragState>({ kind: "idle" });
@@ -123,7 +161,7 @@ export function CalendarView() {
     const rect = gridRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const day = xToDay(x, rect.width);
+    const day = dayAt(x, rect.width);
 
     // Reject drags that started in the day-label row (above the grid).
     if (y < 0) return;
@@ -146,7 +184,7 @@ export function CalendarView() {
     if (drag.kind === "creating") {
       setDrag({ ...drag, currentY: Math.max(0, Math.min(GRID_ROWS * ROW_HEIGHT, y)) });
     } else if (drag.kind === "moving") {
-      const day = xToDay(x, rect.width);
+      const day = dayAt(x, rect.width);
       const startMinutes = pxToStartMinutes(y - drag.anchorOffsetY);
       setDrag({
         ...drag,
@@ -311,12 +349,60 @@ export function CalendarView() {
     <section className="calendar-view" aria-label="Calendar">
       <header className="cal-head">
         <div className="cal-controls">
-          <button className="cal-btn" type="button">
+          <button
+            className="cal-btn"
+            type="button"
+            onClick={() => {
+              setWeekOffset(0);
+              setSelectedDay(new Date().getDay());
+            }}
+          >
             Aujourd&apos;hui
           </button>
-          <button className="cal-range" type="button">
-            {weekRange}
-          </button>
+          <div className="cal-nav">
+            <button
+              className="cal-nav__btn"
+              type="button"
+              aria-label="Semaine précédente"
+              onClick={() => setWeekOffset((o) => o - 1)}
+            >
+              ‹
+            </button>
+            <button
+              className="cal-nav__btn"
+              type="button"
+              aria-label="Semaine suivante"
+              onClick={() => setWeekOffset((o) => o + 1)}
+            >
+              ›
+            </button>
+          </div>
+          <span className="cal-range">{weekRange}</span>
+        </div>
+
+        <div className="cal-controls">
+          <ul className="cal-legend" aria-label="Légende des couleurs">
+            {LEGEND.map((l) => (
+              <li key={l.color} className="cal-legend__item">
+                <span className={`cal-legend__dot ${l.color}`} aria-hidden />
+                {l.label}
+              </li>
+            ))}
+          </ul>
+          <div className="cal-viewtoggle" role="tablist" aria-label="Vue">
+            {(["week", "day"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                className={`cal-viewtoggle__btn ${view === v ? "is-active" : ""}`}
+                onClick={() => setView(v)}
+              >
+                {v === "week" ? "Semaine" : "Jour"}
+              </button>
+            ))}
+          </div>
           <button
             className="btn-new-task"
             type="button"
@@ -324,10 +410,10 @@ export function CalendarView() {
               setEditingEvent({
                 id: "__new__",
                 title: "",
-                day: new Date().getDay() as CalEvent["day"],
+                day: (view === "day" ? selectedDay : new Date().getDay()) as CalEvent["day"],
                 startMinutes: 60,
                 durationMinutes: 60,
-                color: "lav",
+                color: "blue",
               })
             }
           >
@@ -337,19 +423,28 @@ export function CalendarView() {
         </div>
       </header>
 
-      <div className="cal-days">
+      <div className={`cal-days ${view === "day" ? "is-day" : ""}`}>
         <div className="cal-tz">GMT+2</div>
-        {dayLabels.map((d) => (
-          <div key={`${d.abbr}-${d.num}`} className={`cal-day ${d.isToday ? "is-today" : ""}`}>
+        {visibleDayLabels.map((d) => (
+          <button
+            key={`${d.abbr}-${d.num}`}
+            type="button"
+            className={`cal-day ${d.isToday ? "is-today" : ""}`}
+            onClick={() => {
+              setSelectedDay(d.weekday);
+              setView("day");
+            }}
+            title="Voir cette journée"
+          >
             {d.abbr} <span className="daynum">{d.num}</span>
-          </div>
+          </button>
         ))}
       </div>
 
       <div className="cal-body">
         <div
           ref={gridRef}
-          className={`cal-grid ${drag.kind === "creating" ? "is-creating" : ""} ${drag.kind === "moving" ? "is-moving" : ""}`}
+          className={`cal-grid ${view === "day" ? "is-day" : ""} ${drag.kind === "creating" ? "is-creating" : ""} ${drag.kind === "moving" ? "is-moving" : ""}`}
           onPointerDown={onGridPointerDown}
           onPointerMove={onGridPointerMove}
           onPointerUp={onGridPointerUp}
@@ -362,7 +457,7 @@ export function CalendarView() {
             </div>
           ))}
 
-          {events.length === 0 && drag.kind === "idle" && (
+          {showEvents && events.length === 0 && drag.kind === "idle" && (
             <div
               style={{
                 gridColumn: "2 / -1",
@@ -393,40 +488,45 @@ export function CalendarView() {
             </div>
           )}
 
-          {visibleEvents.map((ev) => {
-            const rowStart = ev.startMinutes / 30 + 1;
-            const rowSpan = ev.durationMinutes / 30;
-            const isBeingDragged = drag.kind === "moving" && drag.eventId === ev.id;
-            return (
-              <div
-                key={ev.id}
-                className={`cal-event ${ev.color} ${isBeingDragged ? "is-dragging" : ""}`}
-                style={{
-                  gridColumn: ev.day + 2,
-                  gridRow: `${rowStart} / span ${rowSpan}`,
-                }}
-                onPointerDown={(e) => onEventPointerDown(e, ev)}
-                onPointerMove={onEventPointerMove}
-                onPointerUp={(e) => onEventPointerUp(e, ev)}
-                onPointerCancel={onGridPointerCancel}
-              >
-                <strong>{ev.title || "Sans titre"}</strong>
-                <span className="ev-time">{formatTime(ev.startMinutes, ev.durationMinutes)}</span>
-                {ev.channel && (
-                  <span className="ev-logo">
-                    <ChannelLogo channel={ev.channel} className="" />
-                  </span>
-                )}
-              </div>
-            );
-          })}
+          {showEvents &&
+            visibleEvents
+              .filter((ev) => view !== "day" || ev.day === selectedDay)
+              .map((ev) => {
+                const rowStart = ev.startMinutes / 30 + 1;
+                const rowSpan = ev.durationMinutes / 30;
+                const isBeingDragged = drag.kind === "moving" && drag.eventId === ev.id;
+                return (
+                  <div
+                    key={ev.id}
+                    className={`cal-event ${ev.color} ${isBeingDragged ? "is-dragging" : ""}`}
+                    style={{
+                      gridColumn: (view === "day" ? 0 : colOfWeekday(ev.day)) + 2,
+                      gridRow: `${rowStart} / span ${rowSpan}`,
+                    }}
+                    onPointerDown={(e) => onEventPointerDown(e, ev)}
+                    onPointerMove={onEventPointerMove}
+                    onPointerUp={(e) => onEventPointerUp(e, ev)}
+                    onPointerCancel={onGridPointerCancel}
+                  >
+                    <strong>{ev.title || "Sans titre"}</strong>
+                    <span className="ev-time">
+                      {formatTime(ev.startMinutes, ev.durationMinutes)}
+                    </span>
+                    {ev.channel && (
+                      <span className="ev-logo">
+                        <ChannelLogo channel={ev.channel} className="" />
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
 
           {/* Ghost while drag-creating */}
           {ghost && (
             <div
-              className="cal-event cal-event-ghost lav"
+              className="cal-event cal-event-ghost blue"
               style={{
-                gridColumn: ghost.day + 2,
+                gridColumn: (view === "day" ? 0 : colOfWeekday(ghost.day)) + 2,
                 gridRow: `${ghost.rowStart} / span ${ghost.rowSpan}`,
               }}
             >
@@ -436,7 +536,9 @@ export function CalendarView() {
           )}
         </div>
 
-        <div className="cal-now" data-time={nowTime} style={{ top: `${nowTop}px` }} />
+        {showEvents && (view === "week" || selectedDay === now.getDay()) && (
+          <div className="cal-now" data-time={nowTime} style={{ top: `${nowTop}px` }} />
+        )}
       </div>
 
       {editingEvent && (

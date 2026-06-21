@@ -5782,6 +5782,95 @@ html {
   border-top: 1px solid rgba(15, 23, 42, 0.06);
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
+/* Vue Jour : une seule colonne de journée. */
+.cal-days.is-day,
+.cal-grid.is-day {
+  grid-template-columns: 60px minmax(0, 1fr);
+}
+/* Navigation semaine ‹ › */
+.cal-nav {
+  display: inline-flex;
+  gap: 2px;
+}
+.cal-nav__btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 18px;
+  line-height: 1;
+  color: #3a4151;
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+.cal-nav__btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+/* Bascule Semaine / Jour */
+.cal-viewtoggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.05);
+}
+.cal-viewtoggle__btn {
+  padding: 5px 12px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #5b6475;
+  cursor: pointer;
+  transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.cal-viewtoggle__btn.is-active {
+  background: #fff;
+  color: #10131a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+/* Légende des couleurs */
+.cal-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cal-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+.cal-legend__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex: none;
+}
+.cal-legend__dot.blue {
+  background: #4f6cf7;
+}
+.cal-legend__dot.lav {
+  background: #a78bfa;
+}
+.cal-legend__dot.green {
+  background: #16a34a;
+}
+/* Les en-têtes de jour deviennent cliquables (→ vue jour). */
+.cal-day {
+  background: transparent;
+  cursor: pointer;
+}
+.cal-day:hover .daynum {
+  background: rgba(15, 23, 42, 0.08);
+}
+.cal-day.is-today:hover .daynum {
+  background: #0a0a0a;
+}
 .cal-tz {
   padding: 14px 8px;
   font-size: 10.5px;
