@@ -30,6 +30,7 @@ import { formatActivityEvent } from "@/lib/collaboration";
 import { useData } from "@/lib/contexts/DataContext";
 import { cleanEmailBody } from "@/lib/email-body-clean";
 import { useToast } from "@/lib/hooks/useToast";
+import { MOCK_CLIENTS } from "@/lib/mock-v2";
 import type { MueTone } from "@/lib/mue-chat";
 import { useApp } from "@/lib/store";
 import type { Message } from "@/lib/types";
@@ -100,7 +101,7 @@ export function Thread({
 }: {
   currentUser?: { name: string; avatarUrl: string | null } | null;
 }) {
-  const { activeConvId, setActiveConv, setView } = useApp();
+  const { activeConvId, setActiveConv, setView, setActiveClientId } = useApp();
   const {
     conversations,
     messagesByConv,
@@ -227,112 +228,9 @@ export function Thread({
       <section className="thread thread-empty-pane">
         <div className="thread-empty-card">
           <div className="thread-empty-illu" aria-hidden>
-            <svg viewBox="0 0 280 212" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="te-g" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stopColor="#ff6b8a" />
-                  <stop offset="0.5" stopColor="#b65cf0" />
-                  <stop offset="1" stopColor="#5b78ff" />
-                </linearGradient>
-                <filter id="te-soft" x="-50%" y="-50%" width="200%" height="200%">
-                  <feDropShadow
-                    dx="0"
-                    dy="9"
-                    stdDeviation="13"
-                    floodColor="#1e2640"
-                    floodOpacity="0.12"
-                  />
-                </filter>
-                <filter id="te-blur" x="-60%" y="-60%" width="220%" height="220%">
-                  <feGaussianBlur stdDeviation="20" />
-                </filter>
-              </defs>
-
-              {/* Halo dégradé flouté */}
-              <ellipse
-                cx="140"
-                cy="108"
-                rx="104"
-                ry="72"
-                fill="url(#te-g)"
-                opacity="0.16"
-                filter="url(#te-blur)"
-              />
-
-              {/* Connecteurs pointillés vers les canaux */}
-              <g
-                stroke="#d7dde9"
-                strokeWidth="1.6"
-                strokeDasharray="1.5 5"
-                strokeLinecap="round"
-                fill="none"
-              >
-                <path d="M60 58 Q88 70 104 90" />
-                <path d="M224 52 Q194 68 176 90" />
-                <path d="M140 184 Q140 168 140 152" />
-              </g>
-
-              {/* Orbes canaux (blancs + glyphe couleur) */}
-              <g filter="url(#te-soft)">
-                <circle cx="58" cy="52" r="17" fill="#fff" />
-                <circle cx="224" cy="48" r="17" fill="#fff" />
-                <circle cx="140" cy="188" r="16" fill="#fff" />
-              </g>
-              {/* WhatsApp (gauche) */}
-              <path
-                d="M51 56 a8 8 0 1 1 3 3 l-3.4 0.9 z"
-                fill="none"
-                stroke="#25d366"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              />
-              {/* Gmail (droite) */}
-              <rect
-                x="216"
-                y="42"
-                width="16"
-                height="12"
-                rx="2.5"
-                fill="none"
-                stroke="#ea4335"
-                strokeWidth="2"
-              />
-              <path d="M216 44 L224 50 L232 44" fill="none" stroke="#ea4335" strokeWidth="2" />
-              {/* LinkedIn (bas) */}
-              <rect x="133" y="181" width="14" height="14" rx="3" fill="#0a66c2" />
-              <rect x="135.5" y="186" width="2.4" height="6.5" fill="#fff" />
-              <circle cx="136.7" cy="184" r="1.3" fill="#fff" />
-              <path
-                d="M140 192.5 v-3.5 a2 2 0 0 1 4 0 v3.5"
-                stroke="#fff"
-                strokeWidth="2"
-                fill="none"
-              />
-
-              {/* Carte « inbox unifiée » */}
-              <g filter="url(#te-soft)">
-                <rect x="76" y="60" width="128" height="100" rx="16" fill="#fff" />
-              </g>
-              {/* En-tête de la carte */}
-              <circle cx="94" cy="80" r="6" fill="url(#te-g)" />
-              <rect x="106" y="76" width="46" height="6" rx="3" fill="#e7eaf1" />
-              <rect x="88" y="96" width="104" height="1.4" fill="#eef1f6" />
-              {/* Lignes de messages */}
-              <circle cx="96" cy="115" r="8" fill="url(#te-g)" />
-              <rect x="110" y="109" width="74" height="6" rx="3" fill="#dfe4ec" />
-              <rect x="110" y="120" width="48" height="6" rx="3" fill="#eceff4" />
-              <circle cx="96" cy="141" r="8" fill="#ccd3e0" />
-              <rect x="110" y="135" width="66" height="6" rx="3" fill="#dfe4ec" />
-              <rect x="110" y="146" width="38" height="6" rx="3" fill="#eceff4" />
-
-              {/* Étincelle accent */}
-              <path
-                d="M210 86 l2.4 5.8 5.8 2.4 -5.8 2.4 -2.4 5.8 -2.4 -5.8 -5.8 -2.4 5.8 -2.4 z"
-                fill="url(#te-g)"
-              />
-            </svg>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/inbox-empty.webp" alt="" className="thread-empty-img" />
           </div>
-          <h2 className="thread-empty-title">Discutez avec tous vos contacts, au même endroit</h2>
           <p className="thread-empty-text">
             C'est ici que vous échangez avec vos contacts sur tous vos canaux connectés. Chaque fois
             que quelqu'un vous envoie un message, il apparaît ici. Vous pouvez modifier cela et plus
@@ -402,6 +300,9 @@ export function Thread({
   };
 
   const firstName = conv.name.split(/[ –-]/)[0]?.trim() ?? "";
+
+  // Client (mock) lié à cette conversation → bouton « Voir la fiche client ».
+  const linkedClient = MOCK_CLIENTS.find((c) => c.conversationIds?.includes(conv.id));
 
   // Avatar de l'utilisateur (messages sortants) : vraie image si dispo, sinon
   // initiales. Donne une conversation à deux faces (avatars des deux côtés).
@@ -489,6 +390,36 @@ export function Thread({
           </div>
         </div>
         <div className="head-actions">
+          {linkedClient && (
+            <button
+              type="button"
+              className="thread-client-btn"
+              data-tip="Voir la fiche client"
+              aria-label="Voir la fiche client"
+              onClick={() => {
+                setActiveClientId(linkedClient.id);
+                setView("clients");
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width={15}
+                height={15}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.9}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span>Fiche client</span>
+            </button>
+          )}
           <button
             ref={tagBtnRef}
             className={`icon-btn ${(conv.tags?.length ?? 0) > 0 ? "is-on" : ""}`}

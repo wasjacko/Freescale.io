@@ -7,13 +7,15 @@ import { ClientsView } from "@/components/ClientsView";
 import { CommandPalette } from "@/components/CommandPalette";
 import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { Inbox } from "@/components/Inbox";
+import { InboxFolders } from "@/components/InboxFolders";
 import { InboxToolbar } from "@/components/InboxToolbar";
 import { MuePanel } from "@/components/MuePanel";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { RecapView } from "@/components/RecapView";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { Sidebar } from "@/components/Sidebar";
+import { TasksBoard } from "@/components/TasksBoard";
 import { Thread } from "@/components/Thread";
-import { TodayView } from "@/components/TodayView";
 import { TopBar } from "@/components/TopBar";
 import { Sprite } from "@/components/icons/Sprite";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
@@ -283,36 +285,44 @@ export function AppShell({
         />
       )}
       <div className={appClasses} data-active-conv={activeConvId ? "1" : "0"}>
-        <TopBar />
-        <Sidebar user={user} />
+        <TopBar user={user} />
+        <Sidebar />
         <div className="workspace">
           {/* Bandeaux du haut masqués pour l'instant (reconnexion canal + essai).
               Réactiver : décommenter ci-dessous. */}
           {/* <SyncErrorBanner channels={channels} /> */}
           {/* <TrialBanner /> */}
-          <TodayView user={user} />
+          <TasksBoard />
           {/* Inbox en 3 panneaux (façon maquette) : la LISTE reste toujours
               visible à gauche, le FIL au centre. Sous 768px on bascule
               liste↔fil (cf. media query). Thread gère lui-même son état vide. */}
           <div className="conv-shell">
-            {showOnboardingChips && view === "inbox" && (
-              <OnboardingChips
-                initialRole={user?.profileRole}
-                initialObjective={user?.profileObjective}
-                initialUsageMode={user?.profileUsageMode}
-              />
-            )}
-            {/* Barre d'outils pleine largeur, au-dessus des deux colonnes. */}
-            <InboxToolbar />
-            <div className="conv-shell-body conv-shell-split">
-              <Inbox currentUserId={user?.id ?? null} />
-              <Thread currentUser={user ? { name: user.name, avatarUrl: user.avatarUrl } : null} />
+            {/* Colonne dossiers — à l'extrême gauche, pleine hauteur du bloc. */}
+            <InboxFolders />
+            <div className="conv-shell-main">
+              {showOnboardingChips && view === "inbox" && (
+                <OnboardingChips
+                  initialRole={user?.profileRole}
+                  initialObjective={user?.profileObjective}
+                  initialUsageMode={user?.profileUsageMode}
+                />
+              )}
+              {/* Barre d'outils pleine largeur, au-dessus des deux colonnes. */}
+              <InboxToolbar />
+              <div className="conv-shell-body conv-shell-split">
+                <Inbox currentUserId={user?.id ?? null} />
+                <Thread
+                  currentUser={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
+                />
+              </div>
             </div>
           </div>
           <CalendarView />
           <AIKnowledgeView />
           {/* Phase 2 — Hub Client/Projet (pilier Centraliser). */}
           <ClientsView />
+          {/* Bilan « Cette semaine » — KPI factuels (sorti de la topbar). */}
+          <RecapView />
         </div>
         {/* Mue — rail compagnon repliable, 3e colonne de .app : même
             endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).

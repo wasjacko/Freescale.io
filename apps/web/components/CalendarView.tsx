@@ -310,7 +310,6 @@ export function CalendarView() {
   return (
     <section className="calendar-view" aria-label="Calendar">
       <header className="cal-head">
-        <h1>Calendar</h1>
         <div className="cal-controls">
           <button className="cal-btn" type="button">
             Aujourd&apos;hui

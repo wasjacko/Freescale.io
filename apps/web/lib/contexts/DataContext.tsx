@@ -63,6 +63,8 @@ type Ctx = {
   markUnread: (id: string) => Promise<void>;
   archive: (id: string) => void;
   unarchive: (id: string) => void;
+  /** Ajoute un client/conversation (UI/mock) en haut de l'inbox. */
+  addConversation: (conv: Conversation) => void;
   appendOutgoingMessage: (convId: string, text: string) => Promise<void>;
   retryFailedMessage: (convId: string, msgId: string) => Promise<void>;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
@@ -284,6 +286,11 @@ export function DataProvider({
   // Ajout optimiste d'une tâche — impact immédiat sur le dashboard.
   const addTask = useCallback((task: Task) => {
     setTasks((prev) => (prev.some((t) => t.id === task.id) ? prev : [task, ...prev]));
+  }, []);
+
+  // Ajout d'un client/conversation (UI/mock) — en tête de l'inbox.
+  const addConversation = useCallback((conv: Conversation) => {
+    setConversations((prev) => (prev.some((c) => c.id === conv.id) ? prev : [conv, ...prev]));
   }, []);
 
   // Réorganisation par glisser-déposer (façon Notion). Réordonne les tâches
@@ -510,6 +517,7 @@ export function DataProvider({
       markUnread,
       archive,
       unarchive,
+      addConversation,
       appendOutgoingMessage,
       retryFailedMessage,
       toggleTask,
@@ -544,6 +552,7 @@ export function DataProvider({
       markUnread,
       archive,
       unarchive,
+      addConversation,
       appendOutgoingMessage,
       retryFailedMessage,
       toggleTask,

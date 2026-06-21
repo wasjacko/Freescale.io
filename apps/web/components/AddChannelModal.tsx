@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const PROVIDERS = CHANNEL_PROVIDER_REGISTRY.filter((provider) =>
-  ["gmail", "outlook", "slack", "instagram", "whatsapp", "discord"].includes(provider.kind)
+  ["gmail", "outlook", "slack", "instagram", "whatsapp", "linkedin", "discord"].includes(
+    provider.kind
+  )
 );
 
 export function AddChannelModal({
@@ -23,18 +25,15 @@ export function AddChannelModal({
   const push = useToast((s) => s.push);
   const [connecting, setConnecting] = useState<string | null>(null);
 
-  // Lock body scroll + Esc to close while open
+  // Esc to close while open (pas de verrouillage du scroll : c'est une
+  // fenêtre flottante ancrée au bouton, pas une modale plein écran).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   // Listen for OAuth popup messages — same protocol as the settings page
@@ -97,20 +96,20 @@ export function AddChannelModal({
   };
 
   return (
-    <div
-      className="add-channel-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Connecter un canal"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-      tabIndex={-1}
-    >
-      <div className="add-channel-sheet">
+    <>
+      <button
+        type="button"
+        className="add-channel-backdrop"
+        aria-hidden
+        tabIndex={-1}
+        onClick={onClose}
+      />
+      <div
+        className="add-channel-sheet"
+        role="dialog"
+        aria-modal="false"
+        aria-label="Connecter un canal"
+      >
         <header className="add-channel-head">
           <div>
             <h2>Connecter un canal</h2>
@@ -163,6 +162,6 @@ export function AddChannelModal({
           })}
         </ul>
       </div>
-    </div>
+    </>
   );
 }

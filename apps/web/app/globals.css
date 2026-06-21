@@ -59,7 +59,7 @@
   --shadow-floating: 0 10px 40px rgba(88, 92, 255, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
 
   /* === Typography === */
-  --font-sans: "Geist", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: "Hanken Grotesk", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   /* === Motion timing (referenced from animation utilities) === */
   --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
@@ -347,7 +347,7 @@
   /* Motion */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --font: "Geist", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font: "Hanken Grotesk", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   /* Serif display — italique élégant haute-contraste (signature de la DA) */
   --font-serif: "Instrument Serif", "Times New Roman", Georgia, serif;
 }
@@ -2547,7 +2547,12 @@ html {
   --mue-panel-w: 380px;
   /* Accent du bouton CTA Mue, réutilisé pour le stroke du panneau. */
   --mue-cta: rgba(79, 108, 247, 0.55);
-  --topbar-h: 64px;
+  --topbar-h: 52px;
+  /* Espacement de page unifié (toutes les vues : Tâches, Inbox, Clients…). */
+  --page-pad-x: 20px;
+  --page-pad-top: 18px;
+  --page-pad-bottom: 20px;
+  --page-gap: 16px;
   /* Look 100% flat : plus aucune stroke. On neutralise les hairlines à la
      source (token utilisé par ~49 bordures, y compris sur pseudo-éléments). */
   --line: transparent;
@@ -2578,10 +2583,10 @@ html {
   grid-row: 1;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
   /* Bandeau transparent : ni fond ni stroke — il se fond avec le canvas. */
-  margin: 11px 18px 10px 0;
+  margin: 11px 10px 10px 0;
   padding: 0 5px;
   min-width: 0;
   border: 0;
@@ -2620,16 +2625,17 @@ html {
   width: 34px;
   height: 34px;
   padding: 0;
-  border-radius: 8px;
-  background: #eef0f3;
-  box-shadow: inset 0 0 0 1px rgba(10, 10, 10, 0.11);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.13), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.09);
   color: #5b616b;
   cursor: pointer;
   transition: background 140ms var(--ease), box-shadow 140ms var(--ease), color 140ms var(--ease);
 }
 .topbar-actbtn:hover {
-  background: #e4e7eb;
+  background: #fff;
   color: var(--ink, #0a0a0a);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.22), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.1);
 }
 .topbar-actbtn svg {
   width: 16px;
@@ -2640,22 +2646,39 @@ html {
 .topbar-mue {
   width: auto;
   gap: 7px;
-  padding: 0 12px 0 10px;
+  padding: 0 13px 0 11px;
+}
+/* Bouton Agent — INACTIF : fond blanc + liseré dégradé (frame technique). */
+.topbar-actbtn.topbar-mue {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%) border-box;
+  color: #4f6cf7;
+  box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.08);
+}
+.topbar-actbtn.topbar-mue:hover {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%) border-box;
+  color: #4f6cf7;
+  box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.16);
 }
 .topbar-mue .topbar-actbtn-label {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-/* Mue ouvert : état sélectionné en accent indigo (couleur de Mue). */
-.topbar-mue.is-active {
-  background: rgba(79, 108, 247, 0.1);
-  box-shadow: inset 0 0 0 1px var(--mue-cta);
-  color: #3f53d6;
+/* Agent OUVERT : bouton full gradient, texte blanc. */
+.topbar-actbtn.topbar-mue.is-active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(79, 108, 247, 0.4);
 }
-.topbar-mue.is-active:hover {
-  background: rgba(79, 108, 247, 0.16);
-  color: #3f53d6;
+.topbar-actbtn.topbar-mue.is-active:hover {
+  background: linear-gradient(135deg, #4660ee 0%, #6f54f5 100%);
+  color: #fff;
 }
 .topbar-logo {
   display: inline-flex;
@@ -3928,12 +3951,12 @@ html {
   flex-direction: column;
   /* Padding haut aligné avec le bloc topbar (plus compact). */
   padding: 20px 14px 16px;
-  gap: 22px;
+  gap: 6px;
   overflow: hidden;
-  /* Fond blanc pour le menu, MAIS pas sous le logo Freescale : la zone du haut
-     (hauteur de la topbar) reste transparente pour s'aligner avec le bandeau. */
-  background: linear-gradient(180deg, transparent var(--topbar-h, 64px), #fff var(--topbar-h, 64px));
-  border-right: 1px solid var(--line);
+  /* Sidebar transparente : le fond gris de l'app passe derrière (plus de
+     panneau blanc ni de filet vertical à droite). */
+  background: transparent;
+  border-right: none;
 }
 
 .brand {
@@ -3971,11 +3994,175 @@ html {
 
 /* Toggle replier/déplier — en bas de la sidebar (sur la chose qu'il replie). */
 .sidebar-foot {
+  position: relative;
   margin-top: auto;
   padding-top: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* ── Panneau de compte flottant (clic sur l'avatar) ─────────────── */
+.account-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+.account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 61;
+  width: 268px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.08),
+    0 18px 44px rgba(15, 23, 42, 0.2);
+  animation: accountMenuIn 0.14s var(--ease);
+}
+@keyframes accountMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Avatar du compte dans la topbar (haut-droite). */
+.topbar-account {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+.topbar-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--accent, #0a0a0a);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  transition: box-shadow 130ms var(--ease);
+}
+.topbar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.topbar-avatar:hover {
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.25);
+}
+.account-menu-head {
+  padding: 9px 10px 11px;
+}
+.account-menu-as {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+.account-menu-email {
+  display: block;
+  margin-top: 1px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #10131a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account-menu-sep {
+  height: 1px;
+  margin: 5px 4px;
+  background: rgba(15, 23, 42, 0.08);
+}
+.account-menu-status,
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #10131a;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms var(--ease);
+}
+.account-menu-status:hover,
+.account-menu-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+.account-menu-item svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  color: #6b7280;
+}
+.account-menu-item.is-danger {
+  color: #dc2626;
+}
+.account-menu-item.is-danger svg {
+  color: #dc2626;
+}
+.account-menu-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #cbd2dc;
+}
+.account-menu-dot.is-on {
+  background: #16a34a;
+}
+.account-menu-status-label {
+  flex: 1;
+}
+.account-menu-switch {
+  flex: none;
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: #cbd2dc;
+  transition: background 150ms var(--ease);
+}
+.account-menu-switch.is-on {
+  background: #16a34a;
+}
+.account-menu-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 150ms var(--ease);
+}
+.account-menu-switch.is-on .account-menu-knob {
+  transform: translateX(16px);
 }
 .sidebar-foot .sidebar-account {
   flex: 1;
@@ -4445,12 +4632,11 @@ html {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
-  /* Fond blanc derrière le bloc de contenu : les marges droite et basse (18px)
-     autour de la frame apparaissent en blanc, plus en gris. */
-  background: #fff;
-  /* Espace au-dessus des blocs (tâches, inbox…) : ils descendent un peu sous la
-     topbar, ce qui réduit d'autant leur hauteur. */
-  padding-top: 14px;
+  /* Transparent : le fond gris de l'app apparaît dans les marges autour des
+     cartes de contenu (Inbox, Tâches, Calendar…). */
+  background: transparent;
+  /* Petit espace au-dessus des blocs (collés sous la topbar, gap réduit). */
+  padding-top: 4px;
   transition: margin-right 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 /* Mue n'est plus une colonne de droite : il vit dans la carte conv-shell.
@@ -4474,9 +4660,8 @@ html {
 .conv-shell {
   --inbox-w: 320px;
   display: flex;
-  /* Colonne : barre d'outils pleine largeur en haut, puis le corps (liste +
-     fil) en dessous. */
-  flex-direction: column;
+  /* Ligne : colonne dossiers (gauche) + zone principale (barre + liste/fil). */
+  flex-direction: row;
   gap: 0;
   padding: 0;
   min-height: 0;
@@ -4488,6 +4673,240 @@ html {
     rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
+/* Zone principale à droite des dossiers : barre d'outils + corps empilés. */
+.conv-shell-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+/* ── Colonne dossiers — extrême gauche du bloc Inbox ──────────────── */
+.ibx-folders {
+  flex: 0 0 188px;
+  width: 188px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 10px;
+  overflow-y: auto;
+  box-shadow: inset -1.5px 0 0 rgba(10, 10, 10, 0.08);
+}
+.ibx-folders-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa0aa;
+}
+.ibx-folders-add {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #9aa0aa;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ibx-folders-add:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #4f6cf7;
+}
+/* Recherche dans la barre d'outils de l'inbox. */
+.ibx-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+  flex: 1;
+  max-width: 320px;
+}
+.ibx-search-ic {
+  position: absolute;
+  left: 10px;
+  color: #9aa0aa;
+  pointer-events: none;
+}
+.ibx-search-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 28px 0 32px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #10131a;
+  font: inherit;
+  font-size: 12.5px;
+  outline: none;
+}
+.ibx-search-input::placeholder {
+  color: #9aa0aa;
+}
+.ibx-search-input:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(79, 108, 247, 0.45);
+}
+.ibx-search-clear {
+  position: absolute;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.1);
+  color: #5b6475;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+/* État « aucun résultat » — simple : icône en trait + texte court. */
+.ibx-noresult {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 10px;
+  padding: 56px 24px;
+  text-align: center;
+  color: #b3b9c4;
+}
+.ibx-noresult-title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* Onglets de catégorie au-dessus de la liste de messages. */
+.ibx-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px 0;
+  box-shadow: inset 0 -1.5px 0 rgba(10, 10, 10, 0.08);
+}
+.ibx-tab {
+  position: relative;
+  padding: 8px 10px 10px;
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 130ms var(--ease);
+}
+.ibx-tab:hover {
+  color: #10131a;
+}
+.ibx-tab.is-active {
+  color: #4f6cf7;
+}
+.ibx-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1.5px;
+  height: 2px;
+  border-radius: 2px;
+  background: #4f6cf7;
+}
+/* Pastille couleur d'un label/tag. */
+.ibx-label-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+  margin: 0 3px;
+}
+.ibx-label-name {
+  text-transform: capitalize;
+}
+.ibx-folder {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5b6475;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms var(--ease), color 140ms var(--ease);
+}
+.ibx-folder:hover {
+  background: rgba(15, 23, 42, 0.045);
+  color: var(--ink, #10131a);
+}
+.ibx-folder.active {
+  background: rgba(10, 10, 10, 0.09);
+  color: var(--ink, #10131a);
+  font-weight: 600;
+}
+.ibx-folder-ic {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.ibx-folder-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ibx-folder-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9aa0aa;
+}
+.ibx-folder-add {
+  color: #9aa0aa;
+}
+.ibx-folders-sep {
+  height: 1px;
+  margin: 8px 6px;
+  background: rgba(15, 23, 42, 0.08);
+}
+.ibx-folder-addclient {
+  color: #4f6cf7;
+  font-weight: 600;
+}
+.ibx-folder-addclient:hover {
+  background: rgba(79, 108, 247, 0.1);
+  color: #4f6cf7;
+}
+.ibx-folder-input {
+  width: 100%;
+  height: 34px;
+  padding: 0 9px;
+  border: 1.5px solid rgba(79, 108, 247, 0.5);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink, #10131a);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
 /* Corps en deux colonnes : liste (largeur fixe) + fil. */
 .conv-shell-body {
   display: flex;
@@ -4503,7 +4922,7 @@ html {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  padding: 12px 18px;
+  padding: 14px var(--page-pad-x);
   box-shadow: inset 0 -1.5px 0 rgba(10, 10, 10, 0.11);
 }
 /* La liste : largeur fixe à gauche, divider à droite (box-shadow car le
@@ -4873,7 +5292,7 @@ html {
   /* Hauteur fixe + centrage : la position verticale du titre ne dépend plus de
      la hauteur des boutons (sinon il « saute » d'une page à l'autre). */
   min-height: 64px;
-  padding: 0 24px;
+  padding: 0 var(--page-pad-x);
   flex-wrap: wrap;
 }
 .cal-head h1 {
@@ -4897,7 +5316,7 @@ html {
   gap: 14px;
   /* Même hauteur fixe que .cal-head pour aligner le titre au pixel près. */
   min-height: 64px;
-  padding: 0 24px;
+  padding: 0 var(--page-pad-x);
   flex-wrap: wrap;
 }
 .page-head h1 {
@@ -6701,9 +7120,14 @@ html {
   width: 100%;
   margin-top: 4px;
   padding: 8px 10px;
+  border: 0;
   border-radius: 8px;
+  background: transparent;
   text-decoration: none;
+  text-align: left;
+  font: inherit;
   color: var(--ink, #10131a);
+  cursor: pointer;
   transition: background 140ms var(--ease);
 }
 .sidebar-account:hover {
@@ -10968,11 +11392,12 @@ html {
        No noise texture this time so it stays clean, not glassmorphism. */
 .copilot {
   position: fixed;
-  /* Bloc encadré, sous la topbar + même espace au-dessus que les blocs de
-     contenu (14px), ce qui réduit d'autant sa hauteur. */
-  top: calc(var(--topbar-h, 56px) + 14px);
-  right: 18px;
-  bottom: 18px;
+  /* Calé sur le bord EXTERNE des cartes de contenu : celles-ci ont un double
+     liseré qui dépasse de ~4px (haut + bas), donc on étend le panneau de 4px
+     pour qu'il fasse exactement la même hauteur visuelle. */
+  top: var(--topbar-h, 52px);
+  right: 10px;
+  bottom: 0;
   width: var(--mue-panel-w);
   z-index: 50;
   min-height: 0;
@@ -10980,7 +11405,8 @@ html {
   flex-direction: column;
   overflow: hidden;
   border: none;
-  border-radius: var(--r-xl, 14px);
+  /* Collé au bas de la frame : coins du bas droits comme la carte. */
+  border-radius: var(--r-xl, 14px) var(--r-xl, 14px) 0 0;
   /* Fermé : on le pousse hors écran en tenant compte de sa marge droite. */
   transform: translateX(calc(100% + 18px));
   transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -10997,8 +11423,18 @@ html {
      douce, comme le cadre des autres pages. (Porté ici car .mue-pane est le
      même élément que .copilot et écraserait sinon son background.) */
   color: var(--ink, #0a0a0a);
-  /* Fond en dégradé doux teinté Mue renforcé, sans border-box/stroke. */
-  background: linear-gradient(180deg, #e5eaff 0%, #fafbff 45%, #ffffff 85%);
+  /* Fond dégradé indigo plus appuyé + grain (noise) bien marqué par-dessus. */
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/><feColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.16 0 0 0 0 0.34 0 0 0 .5 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")
+      repeat,
+    linear-gradient(
+      180deg,
+      #232a6e 0%,
+      #322c93 30%,
+      #3f389f 58%,
+      #4a42ac 82%,
+      #534ab6 100%
+    );
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 10px 30px rgba(79, 108, 247, 0.1), 0 1px
     2px rgba(15, 23, 42, 0.05);
 }
@@ -11052,9 +11488,14 @@ html {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #8a8a92;
+  /* Header sur le haut foncé du dégradé → icônes en clair. */
+  color: rgba(255, 255, 255, 0.72);
   cursor: pointer;
   transition: background 140ms, color 140ms;
+}
+.mue-agent-iconbtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 .mue-agent-iconbtn:hover {
   background: rgba(10, 10, 10, 0.06);
@@ -11168,6 +11609,7 @@ html {
 /* Bas : illimité + composer + feedback */
 .mue-agent-foot {
   flex: none;
+  margin-bottom: 26px;
 }
 .mue-agent-unlim {
   display: inline-flex;
@@ -11175,7 +11617,7 @@ html {
   gap: 6px;
   margin: 0 0 9px 4px;
   font-size: 12.5px;
-  color: #8a8a92;
+  color: rgba(255, 255, 255, 0.9);
 }
 .mue-agent-unlim svg {
   width: 16px;
@@ -11187,17 +11629,24 @@ html {
   gap: 6px;
   padding: 12px 12px 8px;
   border: 0;
-  border-radius: 13px;
-  background: #f7f7f8;
-  box-shadow: inset 0 0 0 1px rgba(10, 10, 10, 0.13);
+  border-radius: 14px;
+  /* Glassmorphisme : verre dépoli translucide sur le dégradé du panneau. */
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 24px rgba(10, 10, 30, 0.18);
 }
 .mue-agent-input {
   border: 0;
   background: transparent;
   outline: none;
   padding: 4px 6px;
-  color: var(--ink, #0a0a0a);
+  color: #fff;
   font-size: 14px;
+}
+.mue-agent-input::placeholder {
+  color: rgba(255, 255, 255, 0.88);
 }
 .mue-agent-input::placeholder {
   color: #9a9aa2;
@@ -11215,9 +11664,13 @@ html {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #8a8a92;
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   transition: background 140ms, color 140ms;
+}
+.mue-agent-cbtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 .mue-agent-cbtn:hover {
   background: rgba(10, 10, 10, 0.06);
@@ -11445,10 +11898,10 @@ html {
   color: #0f172a;
 }
 /* Desktop : le panneau pousse le contenu — la topbar reste pleine largeur.
-   +18px pour la marge droite du bloc Mue (cadre encadré, pas collé au bord). */
+   Petit écart (6px) entre la carte de contenu et le panneau Mue. */
 @media (min-width: 1101px) {
   .app.mue-open .workspace {
-    margin-right: calc(var(--mue-panel-w) + 18px);
+    margin-right: calc(var(--mue-panel-w) + 12px);
   }
 }
 
@@ -14604,13 +15057,14 @@ button:active:not(:disabled):not(.no-press) {
     grid-template-columns: 1fr !important;
   }
 
-  /* Slide-over Drawer for Tablet */
+  /* Slide-over Drawer for Tablet — calé sur le bord externe des cartes
+     (double liseré qui dépasse de ~4px) pour une hauteur visuelle identique. */
   .copilot {
     display: flex !important;
     position: fixed !important;
-    top: 16px;
-    right: 16px;
-    bottom: 16px;
+    top: var(--topbar-h, 52px);
+    right: 10px;
+    bottom: 0;
     width: 380px;
     z-index: 50;
     transform: translateX(calc(100% + 32px));
@@ -17175,43 +17629,43 @@ button:active:not(:disabled):not(.no-press) {
 /* =============================================================================
    Add Channel modal — opened from the sidebar "+" button
    ============================================================================= */
-.add-channel-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(15, 23, 42, 0.34);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  animation: add-overlay-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes add-overlay-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+/* Conteneur relatif autour du CTA : la fenêtre flottante s'y ancre. */
+.topbar-connect {
+  position: relative;
+  display: inline-flex;
 }
 
+/* Backdrop transparent : ferme au clic extérieur, sans assombrir l'écran. */
+.add-channel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+
+/* Fenêtre flottante ancrée sous le bouton « Connecter un canal ». */
 .add-channel-sheet {
-  position: relative;
-  width: 100%;
-  max-width: 440px;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 70;
+  width: 320px;
+  max-width: min(320px, calc(100vw - 20px));
   background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 15px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.96) inset, 0 24px 60px rgba(15, 23, 42, 0.2), 0 4px 14px
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.96) inset, 0 18px 44px rgba(15, 23, 42, 0.18), 0 4px 12px
     rgba(15, 23, 42, 0.08);
   overflow: hidden;
-  animation: add-sheet-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: top right;
+  animation: add-sheet-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes add-sheet-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
+    transform: translateY(-6px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -17223,8 +17677,8 @@ button:active:not(:disabled):not(.no-press) {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  padding: 22px 22px 16px;
+  gap: 12px;
+  padding: 14px 14px 10px;
 }
 .add-channel-head h2 {
   font-size: 15px;
@@ -17260,7 +17714,7 @@ button:active:not(:disabled):not(.no-press) {
 .add-channel-list {
   list-style: none;
   margin: 0;
-  padding: 6px 10px 14px;
+  padding: 4px 8px 10px;
 }
 .add-channel-row {
   display: flex;
@@ -17455,10 +17909,11 @@ button:active:not(:disabled):not(.no-press) {
   display: flex;
   flex-direction: column;
   padding: 10px 12px;
-  /* Carte blanche allégée posée sur la bande du composer. */
+  /* Pas de contour sur les côtés ni en bas : juste un filet en haut qui sépare
+     la zone de réponse des messages (le cadre vient de la carte du fil). */
   background: #fff;
-  border-radius: 11px;
-  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.12);
+  border-radius: 0;
+  border-top: 1.5px solid rgba(15, 23, 42, 0.1);
   gap: 8px;
 }
 .email-composer-headers {
@@ -18008,21 +18463,29 @@ button:active:not(:disabled):not(.no-press) {
 /* Empty thread pane — no conversation selected */
 .thread-empty-pane {
   display: grid;
-  place-items: center;
+  /* Contenu remonté : aligné en haut plutôt que centré verticalement. */
+  place-items: start center;
   background: #fff;
-  padding: 32px;
+  padding: 48px 32px 32px;
+  overflow: auto;
 }
 .thread-empty-card {
-  max-width: 400px;
+  max-width: 640px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 4px;
+  gap: 0;
 }
 .thread-empty-illu {
-  width: 248px;
-  margin-bottom: 14px;
+  width: 620px;
+  max-width: 92%;
+  margin-bottom: 0;
+}
+.thread-empty-img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .thread-empty-illu svg {
   width: 100%;
@@ -18037,9 +18500,10 @@ button:active:not(:disabled):not(.no-press) {
   color: #0f172a;
 }
 .thread-empty-text {
-  margin: 6px 0 0;
+  max-width: 380px;
+  margin: 0 auto;
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: #6b7280;
 }
 .thread-empty-link {
@@ -20712,8 +21176,8 @@ button:active:not(:disabled):not(.no-press) {
   /* Structure identique à la page Calendar : frame sans padding latéral propre,
      l'inset 24px vient du container, les sections sont à plat dedans. Léger
      padding haut (titre retiré) pour ne pas coller le contenu au bord. */
-  gap: 18px;
-  padding: 18px 24px 24px;
+  gap: var(--page-gap);
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
   /* Marges à droite et en bas : la frame ne touche pas les bords de l'écran.
      width:auto neutralise le width:100% de .today2 pour que la marge droite
      insère réellement la frame (sinon elle déborde). */
@@ -21102,7 +21566,7 @@ button:active:not(:disabled):not(.no-press) {
   height: 72px;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--page-pad-x);
   border-bottom: 1px solid #eef0f5;
   display: flex;
   align-items: center;
@@ -21514,9 +21978,9 @@ button:active:not(:disabled):not(.no-press) {
   height: 32px;
   padding: 0 12px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 5px;
   background: #fff;
-  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.16);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 1px 1px rgba(15, 23, 42, 0.04);
   color: #344054;
   font-size: 12.5px;
   font-weight: 500;
@@ -21524,14 +21988,15 @@ button:active:not(:disabled):not(.no-press) {
   transition: background 120ms var(--ease), box-shadow 120ms var(--ease), color 120ms var(--ease);
 }
 .ibx-tool:hover {
-  background: #f7f8fa;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 .ibx-tool.is-open {
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.3);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14), 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 .ibx-tool.is-active {
   background: rgba(47, 125, 246, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(47, 125, 246, 0.4);
+  box-shadow: 0 1px 2px rgba(47, 125, 246, 0.18);
   color: #2f7df6;
 }
 .ibx-tool-ic {
@@ -21585,6 +22050,8 @@ button:active:not(:disabled):not(.no-press) {
 .ibx-tool-item {
   display: flex;
   align-items: center;
+  gap: 6px;
+  width: 100%;
   padding: 8px 10px;
   border: 0;
   border-radius: 8px;
@@ -21594,6 +22061,22 @@ button:active:not(:disabled):not(.no-press) {
   font-weight: 500;
   text-align: left;
   cursor: pointer;
+}
+.ibx-tool-item-hint {
+  color: #9aa0aa;
+  font-weight: 500;
+}
+.ibx-tool-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: rgba(15, 23, 42, 0.08);
+}
+.ibx-tool-item--add {
+  color: #4f6cf7;
+  font-weight: 600;
+}
+.ibx-tool-item--add:hover {
+  background: rgba(79, 108, 247, 0.1);
 }
 .ibx-tool-item:hover {
   background: #f4f5f7;
@@ -21624,9 +22107,34 @@ button:active:not(:disabled):not(.no-press) {
 .conv {
   align-items: center;
   gap: 12px;
-  padding: 12px 10px;
+  padding: 16px 12px;
   border-radius: 0;
   box-shadow: inset 0 -1.5px 0 rgba(10, 10, 10, 0.07);
+}
+/* Badge canal sur l'avatar : d'où vient le message (plateforme). */
+.conv-channel {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 1px 2px rgba(15, 23, 42, 0.18);
+}
+.conv-channel :where(svg, img) {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+/* Ligne « via {plateforme} » sous l'aperçu. */
+.conv-via {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #9aa0aa;
 }
 .conv:hover {
   background: #f7f8fa;
@@ -21846,11 +22354,12 @@ button:active:not(:disabled):not(.no-press) {
 }
 /* Boutons d'action topbar : carrés GRIS clair (façon maquette). */
 .topbar-actbtn {
-  background: #f0f2f4;
-  box-shadow: inset 0 0 0 1px rgba(10, 10, 10, 0.13);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.13), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.09);
 }
 .topbar-actbtn:hover {
-  background: #e7eaee;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.22), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.1);
 }
 /* Caret ⌄ après le nom du panneau Mue. */
 .mue-agent-caret {
@@ -22612,26 +23121,32 @@ button.sidebar-brand {
 .topbar-channels {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-left: auto;
+  justify-content: flex-end;
+  gap: 6px;
 }
 .topbar-channel {
   position: relative;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 7px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: transparent;
   box-shadow: none;
 }
+/* Tuile uniforme : même taille + même radius pour tous les logos, le visuel
+   est rogné à ce radius (les icônes « app » gardent ainsi un coin homogène). */
 .topbar-channel-logo {
   display: grid;
   place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  overflow: hidden;
 }
 .topbar-channel-logo svg {
-  width: 27px;
-  height: 27px;
+  width: 26px;
+  height: 26px;
 }
 .topbar-channel.is-off {
   background: transparent;
@@ -22675,12 +23190,42 @@ button.sidebar-brand {
   height: 14px;
 }
 
+/* CTA « Connecter un canal » — pilule texte qui ouvre la modale des canaux. */
+.topbar-connect-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  margin-left: 0;
+  border: 1.5px solid rgba(15, 23, 42, 0.14);
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #5b6475;
+  background: #fff;
+  box-shadow: inset 0 1.5px 2.5px rgba(15, 23, 42, 0.09);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 130ms var(--ease), color 130ms var(--ease), box-shadow 130ms var(--ease),
+    border-color 130ms var(--ease);
+}
+.topbar-connect-cta:hover {
+  background: #fff;
+  color: var(--ink, #0a0a0a);
+  border-color: rgba(15, 23, 42, 0.24);
+  box-shadow: inset 0 1.5px 2.5px rgba(15, 23, 42, 0.1);
+}
+.topbar-connect-cta svg {
+  flex: none;
+}
+
 /* TopBar — groupe des deux boutons (Réglages · Agent) tout à droite. */
 .topbar-actions {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin-left: 12px;
+  margin-left: 0;
 }
 .topbar-actbtn svg {
   width: 16px;
@@ -22887,11 +23432,15 @@ button.sidebar-brand {
 .sidebar .sidebar-brand {
   position: relative;
   z-index: 30;
+  /* Aligné verticalement au centre du bandeau (topbar) : la zone logo prend
+     la hauteur du topbar et on annule le padding-haut de la sidebar (20px). */
+  height: var(--topbar-h, 64px);
+  margin-top: -20px;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  padding: 14px 6px 8px 12px;
+  padding: 0 6px 0 12px;
   white-space: nowrap;
 }
 .sidebar .sidebar-brand-word {
@@ -22902,7 +23451,7 @@ button.sidebar-brand {
 
 /* Navigation empilée */
 .sidebar .nav-section {
-  margin-top: 8px;
+  margin-top: 0;
   gap: 2px;
   padding: 0 8px;
 }
@@ -22913,7 +23462,7 @@ button.sidebar-brand {
   justify-content: center;
   gap: 6px;
   padding: 9px 4px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: transparent;
   font-size: 11px;
   font-weight: 500;
@@ -22922,7 +23471,7 @@ button.sidebar-brand {
   box-shadow: none;
 }
 .sidebar .nav-item:hover {
-  background: rgba(10, 10, 10, 0.04);
+  background: transparent;
   color: var(--ink, #10131a);
 }
 /* L'icône vit dans un carré arrondi qui se colore à l'état actif. */
@@ -22932,12 +23481,18 @@ button.sidebar-brand {
   place-items: center;
   width: 42px;
   height: 36px;
-  border-radius: 11px;
+  border-radius: 8px;
   color: #6b7280;
   transition: background 150ms var(--ease), color 150ms var(--ease);
 }
 .sidebar .nav-item:hover .nav-ico {
+  background: rgba(10, 10, 10, 0.06);
   color: var(--ink, #10131a);
+}
+/* L'item actif garde son carré indigo, même au survol. */
+.sidebar .nav-item.active:hover .nav-ico {
+  background: rgba(79, 108, 247, 0.13);
+  color: var(--rail-accent);
 }
 .sidebar .nav-ico .icon {
   width: 22px;
@@ -23299,19 +23854,14 @@ button.sidebar-brand {
   bottom: 10px;
   width: 3px;
   border-radius: 999px;
-  background: var(--neutral, #5b6475);
+  /* Accent calme et unique (plus de rouge/ambre par « urgence »). */
+  background: rgba(79, 108, 247, 0.5);
 }
-.action-card--late::before {
-  background: var(--danger, #dc2626);
-}
-.action-card--awaiting::before {
-  background: var(--warn, #d97706);
-}
-.action-card--due-today::before {
-  background: var(--info, #4f6cf7);
-}
-.action-card--follow-up::before {
-  background: var(--neutral, #5b6475);
+.action-card__reason {
+  font-size: 12px;
+  font-weight: 500;
+  color: #5b6475;
+  white-space: nowrap;
 }
 
 .action-card__check {
@@ -23447,8 +23997,8 @@ button.sidebar-brand {
   display: none;
   min-height: 0;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 24px 24px;
+  gap: var(--page-gap);
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
   width: auto;
   margin: 0 18px 18px 0;
   border-radius: var(--r-xl, 14px);
@@ -23468,6 +24018,124 @@ button.sidebar-brand {
 .app.view-clients .calendar-view,
 .app.view-clients .ai-view {
   display: none;
+}
+
+/* ── Page « Cette semaine » (bilan / KPI) ───────────────────────── */
+.recap-view {
+  display: none;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--page-gap);
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
+  width: auto;
+  margin: 0 18px 18px 0;
+  overflow: auto;
+}
+.app.view-recap .recap-view {
+  display: flex;
+  grid-column: 1 / -1;
+}
+.app.view-recap .workspace {
+  grid-template-columns: 1fr;
+}
+.app.view-recap .today-view,
+.app.view-recap .conv-shell,
+.app.view-recap .calendar-view,
+.app.view-recap .ai-view,
+.app.view-recap .clients-view {
+  display: none;
+}
+.recap-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.recap-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #10131a;
+}
+.recap-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+.recap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.recap-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #10131a;
+}
+.recap-spark {
+  color: #f59e0b;
+}
+.recap-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+.recap-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 10px;
+  background: #f6f7fb;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+.recap-kpi-val {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #10131a;
+}
+.recap-kpi-label {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: #6b7280;
+}
+.recap-follow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.recap-follow-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+}
+.recap-follow-val {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 8px;
+  border-radius: 9px;
+  background: var(--info-bg, rgba(79, 108, 247, 0.12));
+  color: var(--info, #4f6cf7);
+  font-size: 18px;
+  font-weight: 700;
+}
+.recap-follow-label {
+  font-size: 13.5px;
+  color: #3a4151;
 }
 
 /* En-tête de la grille */
@@ -24019,4 +24687,2502 @@ button.sidebar-brand {
   text-align: center;
   font-size: 13px;
   color: #9097a3;
+}
+
+/* ============================================================
+   V2 — Phase 3 · Ask Mue (pilier RÉDUIRE LE TEMPS DE RECHERCHE)
+   « Demande, ne cherche pas » : barre + réponse sourcée (mock).
+   ============================================================ */
+.askmue-view {
+  display: none;
+  min-height: 0;
+  flex-direction: column;
+  padding: 48px 24px 24px;
+  width: auto;
+  margin: 0 18px 18px 0;
+  border-radius: var(--r-xl, 14px);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(211, 216, 225, 0.9);
+  overflow: auto;
+}
+.app.view-mue .askmue-view {
+  display: flex;
+  grid-column: 1 / -1;
+}
+.app.view-mue .workspace {
+  grid-template-columns: 1fr;
+}
+.app.view-mue .today-view,
+.app.view-mue .conv-shell,
+.app.view-mue .calendar-view,
+.app.view-mue .ai-view {
+  display: none;
+}
+
+.askmue-inner {
+  width: min(680px, 100%);
+  margin: 0 auto;
+}
+.askmue-hero {
+  text-align: center;
+  margin-bottom: 22px;
+}
+.askmue-spark {
+  color: var(--info, #4f6cf7);
+}
+.askmue-hero .askmue-spark {
+  font-size: 22px;
+}
+.askmue-title {
+  margin: 6px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #10131a;
+}
+.askmue-sub {
+  margin: 6px auto 0;
+  max-width: 460px;
+  font-size: 13.5px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* Barre de question */
+.askmue-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(79, 108, 247, 0.35), 0 8px 24px rgba(79, 108, 247, 0.08);
+}
+.askmue-bar:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--info, #4f6cf7), 0 8px 26px rgba(79, 108, 247, 0.16);
+}
+.askmue-bar-ic {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: #9097a3;
+}
+.askmue-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14.5px;
+  color: #10131a;
+}
+.askmue-input::placeholder {
+  color: #9097a3;
+}
+.askmue-send {
+  flex: none;
+  padding: 9px 18px;
+  border-radius: 10px;
+  background: var(--info, #4f6cf7);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 130ms var(--ease);
+}
+.askmue-send:hover {
+  opacity: 0.9;
+}
+
+/* Suggestions */
+.askmue-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.askmue-suggestions-label {
+  font-size: 12px;
+  color: #9097a3;
+}
+.askmue-chip {
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #3a4151;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.askmue-chip:hover {
+  background: var(--info-bg, rgba(79, 108, 247, 0.12));
+  color: var(--info, #4f6cf7);
+}
+
+/* État « Mue réfléchit » */
+.askmue-thinking {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #6b7280;
+}
+.askmue-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.askmue-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--info, #4f6cf7);
+  animation: askmueBlink 1s infinite ease-in-out;
+}
+.askmue-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.askmue-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes askmueBlink {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+/* Réponse */
+.askmue-answer {
+  margin-top: 22px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(79, 108, 247, 0.05), rgba(79, 108, 247, 0.02));
+  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.18);
+}
+.askmue-answer-q {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--info, #4f6cf7);
+  margin-bottom: 10px;
+}
+.askmue-text {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #10131a;
+  line-height: 1.5;
+}
+.askmue-bullets {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.askmue-bullets li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 13.5px;
+  color: #3a4151;
+  line-height: 1.5;
+}
+.askmue-bullets li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--info, #4f6cf7);
+}
+.askmue-sources {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 16px;
+  padding-top: 14px;
+  box-shadow: inset 0 1px 0 rgba(79, 108, 247, 0.15);
+}
+.askmue-sources-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9097a3;
+}
+
+/* ============================================================
+   V2 — Phase 4 · Preuve (compteur temps gagné) + responsive
+   ============================================================ */
+.tsaved {
+  position: relative;
+}
+.tsaved-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: var(--info-bg, rgba(79, 108, 247, 0.12));
+  color: var(--info, #4f6cf7);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+.tsaved-btn:hover,
+.tsaved-btn.is-active {
+  background: rgba(79, 108, 247, 0.2);
+}
+.tsaved-btn b {
+  font-weight: 700;
+}
+.tsaved-spark {
+  font-size: 11px;
+}
+.tsaved-word {
+  color: inherit;
+}
+.tsaved-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: transparent;
+  cursor: default;
+}
+.tsaved-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 90;
+  width: 268px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(211, 216, 225, 0.9), 0 16px 40px rgba(15, 23, 42, 0.14);
+}
+.tsaved-pop-head {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 12px;
+}
+.tsaved-pop-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9097a3;
+}
+.tsaved-pop-big {
+  margin-top: 4px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--info, #4f6cf7);
+  line-height: 1;
+}
+.tsaved-pop-sub {
+  margin-top: 3px;
+  font-size: 12px;
+  color: #6b7280;
+}
+.tsaved-pop-section {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9097a3;
+  margin-top: 14px;
+}
+.tsaved-pop-section:first-child {
+  margin-top: 0;
+}
+.tsaved-pop-list {
+  list-style: none;
+  margin: 7px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tsaved-pop-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #3a4151;
+}
+.tsaved-pop-list li b {
+  font-weight: 700;
+  color: #10131a;
+}
+.tsaved-pop-list li b.tsaved-followval {
+  color: var(--info, #4f6cf7);
+}
+.tsaved-pop-foot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-top: 12px;
+}
+.tsaved-pop-foot div {
+  display: flex;
+  flex-direction: column;
+}
+.tsaved-pop-foot b {
+  font-size: 18px;
+  font-weight: 700;
+  color: #10131a;
+  letter-spacing: -0.02em;
+}
+.tsaved-pop-foot span {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* ── Responsive (< 768px) des écrans V2 ─────────────────────── */
+@media (max-width: 768px) {
+  .day-plan__head {
+    flex-direction: column;
+  }
+  .day-plan__saved {
+    align-self: flex-start;
+    flex-direction: row;
+    gap: 6px;
+    padding: 6px 12px;
+  }
+  .action-card__cta {
+    padding: 6px 10px;
+  }
+  .clients-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .clients-grid {
+    grid-template-columns: 1fr;
+  }
+  .hub-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .client-hub__tabs {
+    gap: 0;
+  }
+  .askmue-view {
+    padding: 28px 16px 20px;
+  }
+  .askmue-title {
+    font-size: 22px;
+  }
+  .tsaved-word {
+    display: none;
+  }
+}
+
+/* Bouton « Voir la fiche client » dans l'en-tête d'un thread (V2). */
+.thread-client-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 8px;
+  background: var(--info-bg, rgba(79, 108, 247, 0.12));
+  color: var(--info, #4f6cf7);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 130ms var(--ease);
+}
+.thread-client-btn:hover {
+  background: rgba(79, 108, 247, 0.2);
+}
+.thread-client-btn svg {
+  flex: none;
+}
+
+/* Timeline unifiée du hub (onglet Aperçu) — V2. */
+.hub-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hub-tl {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 2px;
+}
+.hub-tl:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 20px;
+  bottom: -2px;
+  width: 1.5px;
+  background: rgba(15, 23, 42, 0.08);
+}
+.hub-tl__dot {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  margin-top: 5px;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--neutral, #5b6475);
+  box-shadow: 0 0 0 3px #fff;
+}
+.hub-tl__dot--message {
+  background: var(--info, #4f6cf7);
+}
+.hub-tl__dot--mue {
+  background: #a259ff;
+}
+.hub-tl__dot--project {
+  background: var(--ok, #16a34a);
+}
+.hub-tl__dot--invoice {
+  background: var(--warn, #d97706);
+}
+.hub-tl__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hub-tl__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #10131a;
+}
+.hub-tl__detail {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hub-tl__time {
+  flex: none;
+  padding-top: 1px;
+  font-size: 11.5px;
+  color: #9097a3;
+  white-space: nowrap;
+}
+
+/* Plan du jour intégré au panneau Mue (affiché sans fil ouvert). */
+.mue-agent-hero.has-plan {
+  justify-content: flex-start;
+  align-items: stretch;
+  text-align: left;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+/* État « choix » : le hero ne s'étire plus → les CTA restent en haut et le
+   composer (« Que veux-tu faire ? ») remonte juste en dessous, sans grand vide. */
+.mue-agent-hero.has-choices {
+  flex: 1;
+  justify-content: flex-start;
+  padding-bottom: 14px;
+}
+.mue-pane .day-plan {
+  margin: 2px 0 12px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.mue-pane .day-plan__head {
+  margin-bottom: 10px;
+}
+.mue-pane .day-plan__title {
+  font-size: 15px;
+}
+.mue-pane .day-plan__list {
+  gap: 7px;
+}
+.mue-pane .action-card {
+  gap: 9px;
+  padding: 8px 10px;
+  background: #fff;
+}
+.mue-pane .action-card__cta {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.mue-agent-hero.has-plan .mue-agent-sub {
+  margin: 2px 0 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ============================================================
+   V2 — Vue Tâches façon tableau (inspiré Monday)
+   ============================================================ */
+.today-view.tboard {
+  gap: 0;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
+}
+.tboard-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.tboard-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #10131a;
+}
+.tboard-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tboard-tool {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.tboard-tool--ghost {
+  background: rgba(15, 23, 42, 0.05);
+  color: #5b6475;
+}
+.tboard-tool--ghost:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.tboard-tool--ghost:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.08);
+  color: #10131a;
+}
+/* Bouton icône (Filtrer / Trier). */
+.tboard-tool--icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  padding: 0;
+}
+.tboard-tool--icon.is-active {
+  background: rgba(79, 108, 247, 0.12);
+  color: #4f6cf7;
+}
+.tboard-tool-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4f6cf7;
+}
+.tboard-toolwrap {
+  position: relative;
+  display: inline-flex;
+}
+/* Menus déroulants Filtrer / Trier. */
+.tboard-menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  border: 0;
+  background: transparent;
+}
+.tboard-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 31;
+  min-width: 172px;
+  padding: 6px;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.07);
+}
+.tboard-menu-label {
+  padding: 6px 10px 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9aa0aa;
+}
+.tboard-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #344054;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.tboard-menu-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+.tboard-menu-item.is-active {
+  color: #4f6cf7;
+  font-weight: 600;
+}
+.tboard-menu-item.is-active::after {
+  content: "✓";
+}
+.tboard-tool--mue {
+  background: var(--info-bg, rgba(79, 108, 247, 0.12));
+  color: var(--info, #4f6cf7);
+  font-weight: 600;
+}
+.tboard-tool--new {
+  background: #10131a;
+  color: #fff;
+  font-weight: 600;
+}
+.tboard-tool--new:disabled {
+  opacity: 0.85;
+  cursor: default;
+}
+
+/* Composer « Nouvelle tâche » — barre d'ajout rapide en haut du tableau. */
+.tboard-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.45);
+  animation: tboardAddIn 0.22s var(--ease);
+}
+@keyframes tboardAddIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tboard-add-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.04);
+  font-size: 13.5px;
+  color: #10131a;
+  outline: none;
+}
+.tboard-add-input::placeholder {
+  color: #9097a3;
+}
+.tboard-add-input:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(79, 108, 247, 0.5);
+}
+.tboard-add-status {
+  height: 34px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.04);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #5b6475;
+  cursor: pointer;
+  outline: none;
+}
+.tboard-add-btn {
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 6px;
+  background: var(--mue-cta, #4f6cf7);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tboard-add-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.tboard-add-cancel {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.04);
+  color: #5b6475;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tboard-add-cancel:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+.tboard-client-name--empty {
+  color: #9097a3;
+}
+
+/* ── Page Tâches : hiérarchie de surfaces plus marquée ─────────────
+   Canevas gris → carte centrale blanche élevée (le bloc principal) →
+   tableaux de groupe légèrement détachés. Tout est scopé à la vue Tâches. */
+/* Toute la page Tâches sur un même fond gris (sidebar + barre du haut +
+   contenu) ; seule la carte centrale reste blanche et ressort. */
+/* Fond gris sur TOUTE l'app (derrière la sidebar, la barre du haut et le
+   contenu). Le mode sombre garde le dessus via ses règles plus spécifiques. */
+.app {
+  background: #f5f6fa;
+}
+/* Chaque page (Inbox, Tâches, Calendar, Clients…) est une carte blanche qui
+   flotte sur le gris : moins arrondie, sans contour, ombre nette et contrastée. */
+.today-view,
+.calendar-view,
+.conv-shell,
+.ai-view,
+.clients-view,
+.recap-view {
+  border: none;
+  /* Collé au bas de la frame : coins du bas droits, arrondi seulement en haut. */
+  border-radius: 8px 8px 0 0;
+  background: #fff;
+  margin-left: 6px;
+  margin-right: 10px;
+  margin-bottom: 0;
+  /* Double liseré : trait fin, petit espace blanc, second trait fin, puis ombre. */
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.14),
+    0 0 0 3px #ffffff,
+    0 0 0 4px rgba(15, 23, 42, 0.11),
+    0 12px 28px rgba(15, 23, 42, 0.12);
+}
+.app.view-today .tboard-table {
+  box-shadow: inset 4px 0 0 var(--g, #4f6cf7), inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+
+/* Repli/dépli d'un groupe (chevron) : hauteur animée dans les deux sens. */
+.tboard-group-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tboard-group-wrap.is-open {
+  grid-template-rows: 1fr;
+}
+.tboard-group-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.tboard-group {
+  margin-bottom: 18px;
+}
+.tboard-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--g, #4f6cf7);
+  cursor: pointer;
+}
+.tboard-chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.15s var(--ease);
+}
+.tboard-chevron.is-col {
+  transform: rotate(-90deg);
+}
+.tboard-group-name {
+  letter-spacing: -0.01em;
+}
+.tboard-group-count {
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.08);
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Switch Tableau / Kanban. */
+.tboard-viewswitch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.05);
+  margin-right: auto;
+}
+.tboard-vbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5b6475;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.tboard-vbtn:hover {
+  color: #10131a;
+}
+.tboard-vbtn.is-on {
+  background: #fff;
+  color: #10131a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+/* ── Vue Kanban ───────────────────────────────────────────────────── */
+.tboard-kanban {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  margin-top: 8px;
+}
+.kcol {
+  flex: 0 0 268px;
+  width: 268px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kcol-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #10131a;
+}
+.kcol-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--g, #4f6cf7);
+  flex: none;
+}
+.kcol-count {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #9aa0aa;
+}
+.kcol-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px;
+  /* Côté gauche droit : le trait coloré reste rectiligne (pas arrondi). */
+  border-radius: 0 10px 10px 0;
+  background: rgba(15, 23, 42, 0.035);
+  box-shadow: inset 3px 0 0 var(--g, #4f6cf7);
+}
+.kcard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 140ms var(--ease), transform 140ms var(--ease);
+}
+.kcard:hover {
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+.kcard {
+  cursor: grab;
+}
+.kcard.is-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+.kcol-body.is-dragover {
+  background: color-mix(in srgb, var(--g, #4f6cf7) 12%, #fff);
+  box-shadow: inset 3px 0 0 var(--g, #4f6cf7), inset 0 0 0 2px var(--g, #4f6cf7);
+}
+/* Tableau : surbrillance du groupe ciblé + ligne en cours de glissement. */
+.tboard-group.is-dragover .tboard-table {
+  box-shadow: inset 4px 0 0 var(--g, #4f6cf7), inset 0 0 0 2px var(--g, #4f6cf7);
+}
+.tboard-row.is-dragging {
+  opacity: 0.5;
+}
+.kcard.is-new {
+  animation: tboardRowNew 2.6s var(--ease) forwards;
+}
+.kcard-cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.kcard-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+/* Vignette image dans la cellule Tâche (vue tableau). */
+.tboard-thumb {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+.kcard-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #10131a;
+  line-height: 1.35;
+}
+.kcard-src {
+  flex: none;
+}
+.kcard-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.kcard-spacer {
+  flex: 1;
+}
+.kcard-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9aa0aa;
+}
+.kcard-msg {
+  color: #4f6cf7;
+  flex: none;
+}
+.kcard-due {
+  font-size: 12px;
+  color: #5b6475;
+}
+.kcol-empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #9aa0aa;
+}
+
+.tboard-table {
+  margin-top: 6px;
+  /* Coins gauche droits : le trait coloré reste rectiligne (pas arrondi). */
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+  background: #fff;
+  /* Trait gauche à la couleur de la section (box-shadow : le flat-killer
+     neutralise border-color). */
+  box-shadow: inset 4px 0 0 var(--g, #4f6cf7), inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+.tboard-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 104px 124px 112px 96px;
+  align-items: stretch;
+  min-height: 44px;
+  box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.16);
+}
+/* Cellules : centrées verticalement + séparateur vertical entre colonnes. */
+.tboard-row > * {
+  display: flex;
+  align-items: center;
+}
+.tboard-row > *:not(:last-child) {
+  box-shadow: inset -1px 0 0 rgba(15, 23, 42, 0.18);
+}
+/* Contenu centré dans les colonnes Échéance / Créée le / Source. */
+.tboard-due,
+.tboard-created,
+.tboard-source {
+  justify-content: center;
+}
+.tboard-row.is-open {
+  box-shadow: none;
+}
+.tboard-row:last-child {
+  box-shadow: none;
+}
+.tboard-row:not(.tboard-row--head):hover {
+  background: rgba(79, 108, 247, 0.03);
+}
+/* Lueur de transfert : tâche fraîchement ajoutée depuis le panneau Mue. */
+.tboard-row.is-new {
+  animation: tboardRowNew 2.6s var(--ease) forwards;
+}
+@keyframes tboardRowNew {
+  0% {
+    background: rgba(79, 108, 247, 0.22);
+    box-shadow: inset 3px 0 0 #4f6cf7, inset 0 -1px 0 rgba(15, 23, 42, 0.06);
+  }
+  20% {
+    background: rgba(79, 108, 247, 0.18);
+    box-shadow: inset 3px 0 0 #4f6cf7, inset 0 -1px 0 rgba(15, 23, 42, 0.06);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 0 transparent, inset 0 -1px 0 rgba(15, 23, 42, 0.06);
+  }
+}
+/* En-tête de colonnes unique (collant en haut du tableau). */
+.tboard-headbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+.tboard-headbar .tboard-row--head {
+  background: #fff;
+}
+.tboard-row--head {
+  min-height: 36px;
+  background: rgba(15, 23, 42, 0.045);
+}
+/* « Tâche » couvre la colonne case + la colonne tâche → pas de cellule vide
+   ni de séparateur inutile à gauche. Aligné à gauche. */
+.tboard-head-task {
+  grid-column: 1 / 3;
+  justify-content: flex-start !important;
+  padding-left: 14px;
+}
+.tboard-row--head span {
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #10131a;
+}
+.tboard-cell {
+  padding: 6px 10px;
+  min-width: 0;
+  font-size: 13px;
+  color: #10131a;
+}
+
+/* ── Colonne « message lié » : toggle de dépli ────────────────────── */
+.tboard-link {
+  display: grid;
+  place-items: center;
+}
+.tlink {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4f6cf7;
+  cursor: pointer;
+  transition: background 140ms var(--ease), color 140ms var(--ease);
+}
+.tlink:hover {
+  background: rgba(79, 108, 247, 0.12);
+}
+.tlink.is-open {
+  background: rgba(79, 108, 247, 0.16);
+}
+.tlink-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: #4f6cf7;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+.tlink--none {
+  color: #c2c7d0;
+  cursor: default;
+}
+
+/* ── Colonne source (IA / manuel) ─────────────────────────────────── */
+.tsource {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tsource--ai {
+  color: #4f6cf7;
+  background: rgba(79, 108, 247, 0.12);
+}
+.tsource--manual {
+  color: #6b7280;
+  background: rgba(15, 23, 42, 0.05);
+}
+.tboard-created {
+  color: #6b7280;
+  font-size: 12.5px;
+}
+/* Cellule date cliquable (échéance / créée le) → édition inline. */
+.tboard-cellbtn {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 130ms var(--ease);
+}
+.tboard-cellbtn:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+.tboard-cell-add {
+  color: #b3b9c4;
+  font-weight: 500;
+}
+.tboard-cellbtn:hover .tboard-cell-add {
+  color: #4f6cf7;
+}
+.tboard-dateedit {
+  width: 118px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(79, 108, 247, 0.5);
+  font: inherit;
+  font-size: 12.5px;
+  color: #10131a;
+  outline: none;
+}
+
+/* ── Sous-ligne dépliée : message lié à la tâche ──────────────────── */
+/* Dépliant animé : la hauteur s'anime (0fr→1fr) + fondu, à l'ouverture
+   ET à la fermeture (l'élément reste monté). */
+.tboard-detail-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tboard-detail-wrap.is-open {
+  grid-template-rows: 1fr;
+}
+.tboard-detail-inner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 200ms ease, transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tboard-detail-wrap.is-open .tboard-detail-inner {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tboard-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 14px 12px 44px;
+  border: 0;
+  background: rgba(79, 108, 247, 0.04);
+  box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.09), inset 2px 0 0 #4f6cf7;
+  text-align: left;
+  cursor: pointer;
+}
+.tboard-detail:hover {
+  background: rgba(79, 108, 247, 0.08);
+}
+.tboard-detail-label {
+  flex: none;
+  align-self: flex-start;
+  margin-top: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9aa0aa;
+}
+.tboard-detail-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+.tboard-detail-tx {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.tboard-detail-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #10131a;
+  min-width: 0;
+}
+.tboard-detail-chan {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.tboard-detail-subject {
+  color: #6b7280;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tboard-detail-preview {
+  font-size: 12.5px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tboard-detail-open {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f6cf7;
+}
+
+.tboard-check {
+  display: grid;
+  place-items: center;
+}
+/* Case de sélection multiple (multiselect) custom. */
+.tsel {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.tsel input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.tsel-box {
+  width: 19px;
+  height: 19px;
+  border-radius: 5px;
+  background: #fff;
+  /* box-shadow plutôt que border : le flat-killer global force border-color transparent. */
+  box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  transition: background 120ms var(--ease), box-shadow 120ms var(--ease);
+}
+.tsel:hover .tsel-box {
+  box-shadow: inset 0 0 0 2px #4f6cf7;
+}
+.tsel input:checked + .tsel-box,
+.tsel input:indeterminate + .tsel-box {
+  background: #4f6cf7;
+  box-shadow: inset 0 0 0 2px #4f6cf7;
+}
+.tsel input:checked + .tsel-box::after {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+}
+.tsel input:indeterminate + .tsel-box::after {
+  content: "";
+  width: 9px;
+  height: 2px;
+  border-radius: 1px;
+  background: #fff;
+}
+
+/* Télécommande flottante (centrée en bas) — actions sur la sélection. */
+.tboard-dock {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 10px 7px 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 32px rgba(15, 23, 42, 0.18),
+    0 2px 8px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  animation: dock-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.tboard-dock-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #10131a;
+  white-space: nowrap;
+}
+.tboard-dock-badge {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #4f6cf7;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.tboard-dock-sep {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: rgba(15, 23, 42, 0.1);
+}
+.tboard-dock-act {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #3a4151;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.tboard-dock-act:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #10131a;
+}
+.tboard-dock-act--danger:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+/* Menu « Déplacer vers » — popover au-dessus de la télécommande. */
+.tboard-dock-move {
+  position: relative;
+}
+.tboard-dock-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+.tboard-dock-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: 178px;
+  padding: 6px;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.07);
+}
+.tboard-dock-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #10131a;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.tboard-dock-menu-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+.tboard-dock-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+.tboard-dock-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #5b6475;
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+.tboard-dock-close:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+.tcheck {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.22);
+  color: transparent;
+  cursor: pointer;
+  transition: background 0.12s var(--ease), box-shadow 0.12s var(--ease), color 0.12s var(--ease);
+}
+.tcheck:hover {
+  box-shadow: inset 0 0 0 1.5px #16a34a;
+}
+.tcheck.is-done {
+  background: #16a34a;
+  box-shadow: none;
+  color: #fff;
+}
+
+.tboard-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+/* Bouton interne : le titre cliquable (ouvre le fil). */
+.tboard-task-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 0 1 auto;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+/* Icône message dans la colonne Tâche : poussée à droite → toutes alignées. */
+.tboard-task .tlink,
+.tboard-task .tlink--none {
+  margin-left: auto;
+  flex: none;
+  position: relative;
+}
+/* Petit séparateur vertical à gauche de l'icône message. */
+.tboard-task .tlink::before,
+.tboard-task .tlink--none::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 26px;
+  background: rgba(15, 23, 42, 0.16);
+}
+.tboard-task-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #10131a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tboard-sub {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #6b7280;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.tboard-client {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+/* Pile d'avatars clients (plusieurs clients sur une tâche). */
+.tboard-client-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.tboard-client-stack > * {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px #fff;
+  border-radius: 50%;
+}
+.tboard-client-stack > *:first-child {
+  margin-left: 0;
+}
+.tboard-client-more {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5b6475;
+  background: rgba(15, 23, 42, 0.08);
+}
+/* Placeholder « sans client » : cercle gris vide (façon owner non assigné). */
+.tboard-client-empty {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(15, 23, 42, 0.18);
+}
+.tboard-client .avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex: none;
+}
+.tboard-client-name {
+  font-size: 12.5px;
+  color: #3a4151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tboard-chan {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+.tboard-chan svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tlabel {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.tboard-due {
+  font-size: 12.5px;
+  color: #5b6475;
+}
+.tboard-due--overdue {
+  color: #64748b;
+  font-weight: 600;
+}
+.tboard-due--today {
+  color: #10131a;
+  font-weight: 600;
+}
+
+.tboard-empty {
+  padding: 14px;
+  font-size: 12.5px;
+  color: #9097a3;
+}
+
+/* Panneau Mue — les 2 choix de base (Suggérer / Prioriser). */
+.mue-choices {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mue-choices-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-align: center;
+}
+.mue-choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 140ms var(--ease), transform 140ms var(--ease);
+}
+/* Liseré IA fin en conic-gradient, masqué en anneau, qui tourne au hover. */
+.mue-choice::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--mue-angle),
+    #4f6cf7,
+    #a855f7,
+    #22d3ee,
+    #4f6cf7
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+  pointer-events: none;
+}
+.mue-choice:hover {
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+}
+.mue-choice:hover::before {
+  opacity: 1;
+  animation: mueBorderSpin 2.4s linear infinite;
+}
+@property --mue-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes mueBorderSpin {
+  to {
+    --mue-angle: 360deg;
+  }
+}
+.mue-choice-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--info-bg, rgba(79, 108, 247, 0.12));
+  color: var(--info, #4f6cf7);
+}
+.mue-choice-ic svg {
+  width: 19px;
+  height: 19px;
+}
+.mue-choice-tx {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mue-choice-tx b {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #10131a;
+}
+.mue-choice-tx small {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+.mue-plan-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.mue-plan-back:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+/* Textes posés sur le haut foncé du panneau Mue → en clair. */
+.mue-pane .day-plan__title,
+.mue-pane .mue-agent-greet {
+  color: #fff;
+}
+.mue-pane .day-plan__sub,
+.mue-pane .mue-agent-sub {
+  color: rgba(255, 255, 255, 0.82);
+}
+.mue-pane .day-plan__sub b {
+  color: #fff;
+}
+.mue-plan-back svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ============================================================
+   Mue — flux « Suggérer des tâches » (scanner), refait au propre.
+   Rendu sur le panneau navy : header clair, scan progressif,
+   cartes blanches qui ressortent.
+   ============================================================ */
+.tscan {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tscan-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0 12px;
+}
+.tscan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.tscan-close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.tscan-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+/* ── Phase scan ─────────────────────────────────────────────── */
+.tscan-scan {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+}
+.tscan-think {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+}
+.tscan-think-glow {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  z-index: 0;
+  width: 240px;
+  height: 240px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(168, 139, 250, 0.32), transparent 68%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+/* Étoile IA — sparkle 4 branches, gradient arc-en-ciel, rotation lente. */
+.tscan-star {
+  position: relative;
+  z-index: 1;
+  width: 74px;
+  height: 74px;
+  background: conic-gradient(from 0deg, #34d399, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #34d399);
+  clip-path: polygon(
+    50% 0%,
+    57% 43%,
+    100% 50%,
+    57% 57%,
+    50% 100%,
+    43% 57%,
+    0% 50%,
+    43% 43%
+  );
+  filter: drop-shadow(0 6px 16px rgba(124, 92, 255, 0.45));
+  animation: tscanStarSpin 3.4s linear infinite;
+}
+@keyframes tscanStarSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.tscan-step {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  min-height: 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  text-align: center;
+}
+.tscan-scan-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tscan-srow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  opacity: 0.5;
+  transition: opacity 0.3s var(--ease), background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.tscan-srow.is-scanned {
+  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.14);
+}
+.tscan-srow.is-on {
+  opacity: 1;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), inset 0 0 0 1.5px rgba(168, 139, 250, 0.9);
+}
+.tscan-srow-av {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.tscan-srow-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.tscan-srow-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tscan-srow-prev {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tscan-srow.is-on .tscan-srow-name {
+  color: #10131a;
+}
+.tscan-srow.is-on .tscan-srow-prev {
+  color: #6b7280;
+}
+.tscan-srow-ch {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+.tscan-srow-ch svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Phase réflexion : le fil de pensées de Mue (lecture + raisonnement) ── */
+@keyframes tscanFeedIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tthink {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.tthink-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.66);
+  animation: tscanFeedIn 0.32s var(--ease) both;
+  transition: color 0.3s var(--ease);
+}
+.tthink-step.is-active {
+  color: #fff;
+}
+.tthink-spark {
+  flex: none;
+  margin-top: 1px;
+  color: #fde68a;
+}
+.tthink-msg {
+  position: relative;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: tscanFeedIn 0.32s var(--ease) both;
+  transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.tthink-msg.is-active {
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: inset 0 0 0 1px rgba(199, 210, 254, 0.45);
+}
+.tthink-msg-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+.tthink-ch {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+.tthink-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+.tthink-quote {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.8);
+}
+.tthink-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 7px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #c7d2fe;
+  animation: tthinkReason 0.4s var(--ease) 0.55s both;
+}
+@keyframes tthinkReason {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tthink-arrow {
+  flex: none;
+  color: #a5b4fc;
+  font-weight: 700;
+}
+
+/* ── Phase résultat ─────────────────────────────────────────── */
+.tscan-result {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tscan-title {
+  flex: none;
+  margin-bottom: 12px;
+}
+.tscan-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.tscan-title p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.tscan-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.tscan-card {
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  animation: tscanIn 0.35s var(--ease) both;
+}
+@keyframes tscanIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.tscan-card.is-done {
+  opacity: 0.6;
+}
+.tscan-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+.tscan-card-av {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.tscan-card-client {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3a4151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tscan-card-time {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: #9097a3;
+  white-space: nowrap;
+}
+.tscan-card-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #10131a;
+  line-height: 1.3;
+}
+.tscan-card-why {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tscan-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+.tscan-prio {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+.tscan-prio--high {
+  background: #e11d48;
+}
+.tscan-prio--medium {
+  background: #4f6cf7;
+}
+.tscan-prio--low {
+  background: #8b93a4;
+}
+.tscan-add {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: #10131a;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.13s var(--ease), background 0.13s var(--ease);
+}
+.tscan-add:hover {
+  opacity: 0.85;
+}
+.tscan-add.is-done {
+  background: var(--ok-bg, rgba(22, 163, 74, 0.12));
+  color: var(--ok, #16a34a);
+  cursor: default;
+}
+.tscan-foot {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  padding-top: 12px;
+}
+.tscan-addall {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  background: #10131a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.13s var(--ease);
+}
+.tscan-addall:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.tscan-donebtn {
+  flex: none;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: #fff;
+  color: #10131a;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+.tscan-donebtn:hover {
+  background: #f4f5f7;
+}
+
+/* ── États vide / erreur ────────────────────────────────────── */
+.tscan-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 20px;
+}
+.tscan-state-orb {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.tscan-state h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+}
+.tscan-state p {
+  margin: 0;
+  max-width: 240px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.tscan-state .tscan-donebtn {
+  margin-top: 6px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Skeleton « pastel gradient » — état de génération IA
+   Cartes fantômes qui montrent où Mue est en train de remplir le
+   composant : liseré arc-en-ciel pastel qui tourne + bandes pastel
+   qui scintillent. Réutilisé par le scanner (Suggérer) et le plan
+   du jour (Priorise). 100% UI.
+   ════════════════════════════════════════════════════════════════ */
+@property --skel-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes skelRing {
+  to {
+    --skel-angle: 360deg;
+  }
+}
+@keyframes skelSweep {
+  0% {
+    background-position: 130% 0;
+  }
+  100% {
+    background-position: -130% 0;
+  }
+}
+
+.skel-card,
+.skel-row {
+  position: relative;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+  animation: tscanIn 0.35s var(--ease) both;
+}
+.skel-card {
+  padding: 10px 11px;
+}
+.skel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+}
+/* Liseré arc-en-ciel pastel qui tourne doucement = « Mue génère ». */
+.skel-card::before,
+.skel-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--skel-angle),
+    #f9a8d4,
+    #c4b5fd,
+    #93c5fd,
+    #6ee7b7,
+    #fde68a,
+    #f9a8d4
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0.75;
+  animation: skelRing 3s linear infinite;
+  pointer-events: none;
+}
+.skel-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+.skel-bar {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #ece9fb 0%,
+    #f5e9f5 22%,
+    #e9eefb 45%,
+    #e9f6f0 68%,
+    #fdf2e6 86%,
+    #ece9fb 100%
+  );
+  background-size: 220% 100%;
+  animation: skelSweep 1.55s ease-in-out infinite;
+}
+.skel-bar--sm {
+  width: 38%;
+  height: 9px;
+}
+.skel-bar--lg {
+  width: 82%;
+}
+.skel-bar--btn {
+  flex: none;
+  width: 46px;
+  height: 22px;
+  border-radius: 8px;
+}
+.skel-dot {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ece9fb, #e9eefb, #e9f6f0, #ece9fb);
+  background-size: 220% 100%;
+  animation: skelSweep 1.55s ease-in-out infinite;
+}
+.skel-dot--lg {
+  width: 34px;
+  height: 34px;
+}
+.skel-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Titre de chargement du scanner + petite étoile IA qui tourne. */
+.tscan-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.tscan-ministar {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  background: conic-gradient(from 0deg, #34d399, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #34d399);
+  clip-path: polygon(
+    50% 0%,
+    57% 43%,
+    100% 50%,
+    57% 57%,
+    50% 100%,
+    43% 57%,
+    0% 50%,
+    43% 43%
+  );
+  animation: tscanStarSpin 3.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel-card::before,
+  .skel-row::before,
+  .skel-bar,
+  .skel-dot,
+  .tscan-ministar {
+    animation: none;
+  }
 }

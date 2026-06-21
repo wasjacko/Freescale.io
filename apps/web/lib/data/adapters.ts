@@ -123,9 +123,17 @@ function priorityFor(p: unknown): Task["priority"] {
 }
 
 function statusFor(s: unknown): Task["status"] {
-  if (s === "todo" || s === "in-progress" || s === "awaiting-reply" || s === "done") return s;
+  if (
+    s === "to-scope" ||
+    s === "todo" ||
+    s === "in-progress" ||
+    s === "awaiting-reply" ||
+    s === "done"
+  )
+    return s;
   if (s === "in_progress") return "in-progress";
   if (s === "awaiting_reply") return "awaiting-reply";
+  if (s === "to_scope") return "to-scope";
   return "todo";
 }
 

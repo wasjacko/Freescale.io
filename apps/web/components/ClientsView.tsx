@@ -8,13 +8,14 @@ import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { ProgressBar, StatusPill } from "@/components/ui/Primitives";
 import { MOCK_CLIENTS } from "@/lib/mock-v2";
+import { useApp } from "@/lib/store";
 import type { Client, ProjectStatus, Tone } from "@/lib/types";
 import { useState } from "react";
 
 const STATUS_TONE: Record<ProjectStatus, Tone> = {
   "on-track": "ok",
   "at-risk": "warn",
-  late: "danger",
+  late: "neutral",
   done: "neutral",
 };
 const STATUS_LABEL: Record<ProjectStatus, string> = {
@@ -32,14 +33,16 @@ const FILTERS: [Filter, string][] = [
 ];
 
 export function ClientsView() {
-  const [openId, setOpenId] = useState<string | null>(null);
+  // Le client ouvert vit dans le store → on peut ouvrir une fiche depuis
+  // ailleurs (ex. bouton « Voir la fiche client » d'un thread de l'inbox).
+  const { activeClientId, setActiveClientId } = useApp();
   const [filter, setFilter] = useState<Filter>("all");
 
-  const openClient = MOCK_CLIENTS.find((c) => c.id === openId) ?? null;
+  const openClient = MOCK_CLIENTS.find((c) => c.id === activeClientId) ?? null;
   if (openClient) {
     return (
       <section className="clients-view" aria-label="Fiche client">
-        <ClientHub client={openClient} onBack={() => setOpenId(null)} />
+        <ClientHub client={openClient} onBack={() => setActiveClientId("")} />
       </section>
     );
   }
@@ -55,7 +58,6 @@ export function ClientsView() {
     <section className="clients-view" aria-label="Clients">
       <header className="clients-head">
         <div>
-          <h1 className="clients-title">Clients</h1>
           <p className="clients-sub">Tout ce qui concerne chaque client, au même endroit.</p>
         </div>
         <div className="clients-filters">
@@ -74,7 +76,7 @@ export function ClientsView() {
 
       <div className="clients-grid">
         {clients.map((c) => (
-          <ClientCard key={c.id} client={c} onOpen={() => setOpenId(c.id)} />
+          <ClientCard key={c.id} client={c} onOpen={() => setActiveClientId(c.id)} />
         ))}
       </div>
     </section>
@@ -87,7 +89,7 @@ function ClientCard({ client, onOpen }: { client: Client; onOpen: () => void }) 
     <button type="button" className="client-card" onClick={onOpen}>
       <div className="client-card__top">
         <span className="client-card__av">
-          <Avatar avatar={client.avatar} size={44} />
+          <Avatar avatar={{ ...client.avatar, alt: client.name }} size={44} />
         </span>
         <div className="client-card__id">
           <span className="client-card__name">{client.name}</span>

@@ -8,6 +8,7 @@ import type {
 } from "@/lib/actions/mue";
 import type { CurrentUser } from "@/lib/auth";
 import type { InboxData } from "@/lib/data/queries";
+import { MOCK_MUE_ANSWERS } from "@/lib/mock-v2";
 import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
 
 /**
@@ -32,7 +33,7 @@ export function mockCurrentUser(): CurrentUser {
     email: "dev@freescale.local",
     name: "Wacil AIT",
     firstName: "Wacil",
-    avatarUrl: "https://i.pravatar.cc/150?img=68",
+    avatarUrl: "/avatar.png",
     role: "Freelance",
     onboardedAt: "2026-01-01T00:00:00.000Z", // déjà onboardé → pas de chips
     profileRole: "Développeur",
@@ -54,6 +55,21 @@ function isoAgo(opts: { days?: number; hours?: number; minutes?: number }): stri
 // (clearbit). Fallback initiales si l'image ne charge pas (géré par <Avatar/>).
 const IMG = (src: string): Conversation["avatar"] => ({ kind: "img", src });
 
+// Avatars « maison » (illustrations 3D) — on s'en sert PARTOUT pour les
+// contacts/clients à la place des photos pravatar. 5 visuels, on boucle.
+const FACES = [
+  "/avatars/1.webp",
+  "/avatars/2.webp",
+  "/avatars/3.webp",
+  "/avatars/4.webp",
+  "/avatars/5.webp",
+  "/avatars/6.webp",
+];
+const FACE = (i: number): Conversation["avatar"] => ({
+  kind: "img",
+  src: FACES[((i % FACES.length) + FACES.length) % FACES.length] as string,
+});
+
 const AV = (text: string, bg: string): Conversation["avatar"] => ({
   kind: "initials",
   text,
@@ -68,7 +84,7 @@ export function mockInboxData(): InboxData {
       preview:
         "Parfait pour la nouvelle direction ! Quelques ajustements avant de partager à l'équipe.",
       lastAtIso: isoAgo({ minutes: 4 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=47"),
+      avatar: FACE(0),
       channel: "whatsapp",
       unread: true,
       group: "today",
@@ -88,7 +104,7 @@ export function mockInboxData(): InboxData {
       preview:
         "J'ai bien reçu les livrables, mais j'ai une question sur les temps de chargement de l'API.",
       lastAtIso: isoAgo({ minutes: 35 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=33"),
+      avatar: FACE(1),
       channel: "slack",
       unread: true,
       group: "today",
@@ -106,7 +122,7 @@ export function mockInboxData(): InboxData {
       name: "Clara Martin",
       preview: "Bonjour ! Est-ce qu'on peut caler notre call de kick-off lundi après-midi à 14h ?",
       lastAtIso: isoAgo({ hours: 1, minutes: 15 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=5"),
+      avatar: FACE(2),
       channel: "gmail",
       unread: true,
       group: "today",
@@ -126,7 +142,7 @@ export function mockInboxData(): InboxData {
       preview:
         "Peux-tu m'envoyer le contrat signé avant vendredi ? On veut lancer le sprint lundi.",
       lastAtIso: isoAgo({ hours: 2 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=12"),
+      avatar: FACE(3),
       channel: "gmail",
       unread: true,
       group: "today",
@@ -145,7 +161,7 @@ export function mockInboxData(): InboxData {
       preview:
         "The feedback from the board is highly positive. Can we proceed to signing next week?",
       lastAtIso: isoAgo({ hours: 4 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=60"),
+      avatar: FACE(5),
       channel: "linkedin",
       group: "today",
       subject: "Board approval & Contract",
@@ -162,7 +178,7 @@ export function mockInboxData(): InboxData {
       name: "Capucine Roy",
       preview: "J'ai relu le devis, tout est bon de mon côté. On valide ?",
       lastAtIso: isoAgo({ hours: 5 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=45"),
+      avatar: FACE(4),
       channel: "linkedin",
       group: "today",
       subject: "Devis refonte site vitrine",
@@ -179,7 +195,7 @@ export function mockInboxData(): InboxData {
       preview:
         "Merci pour le retour rapide. Je valide la proposition financière. On commence quand ?",
       lastAtIso: isoAgo({ hours: 18 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=25"),
+      avatar: FACE(0),
       channel: "whatsapp",
       group: "yesterday",
       subject: "Validation proposition commerciale",
@@ -209,7 +225,7 @@ export function mockInboxData(): InboxData {
       preview:
         "Est-ce qu'on pourrait ajouter un écran de statistiques sur le dashboard ? Quel serait le surcoût ?",
       lastAtIso: isoAgo({ days: 1, hours: 4 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=11"),
+      avatar: FACE(1),
       channel: "outlook",
       group: "yesterday",
       subject: "Demande d'évolution — Module Stats",
@@ -226,7 +242,7 @@ export function mockInboxData(): InboxData {
       name: "Luc Mercier",
       preview: "Hello ! Dispo pour un call rapide cette semaine sur le projet e-commerce ?",
       lastAtIso: isoAgo({ days: 2 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=59"),
+      avatar: FACE(2),
       channel: "gmail",
       group: "this-week",
       subject: "Call projet e-commerce",
@@ -243,7 +259,7 @@ export function mockInboxData(): InboxData {
       preview:
         "Je serai en congé toute la semaine prochaine, n'hésite pas à m'envoyer le code d'accès par mail.",
       lastAtIso: isoAgo({ days: 3 }),
-      avatar: IMG("https://i.pravatar.cc/150?img=32"),
+      avatar: FACE(3),
       channel: "slack",
       group: "this-week",
       subject: "Accès hébergement / Absence",
@@ -508,6 +524,8 @@ export function mockInboxData(): InboxData {
       fromAI: true,
       conversationId: "c1",
       dueAtIso: dueIn(0),
+      createdAtIso: isoAgo({ hours: 2 }),
+      coverImage: "/tasks/1.png",
     },
     {
       id: "t2",
@@ -520,7 +538,9 @@ export function mockInboxData(): InboxData {
       sortableIndex: 2000,
       fromAI: true,
       conversationId: "c2",
+      clientConvIds: ["c2", "c7", "c9"],
       dueAtIso: dueIn(2),
+      createdAtIso: isoAgo({ days: 1 }),
     },
     // Sous-tâches de t2 — la checklist du contrat (démo du chip « 1/2 »).
     {
@@ -557,29 +577,74 @@ export function mockInboxData(): InboxData {
       fromAI: true,
       conversationId: "c3",
       dueAtIso: dueIn(-2),
-    },
-    {
-      id: "t4",
-      title: "Planifier le call e-commerce avec Luc",
-      priority: "low",
-      dueLabel: "Cette semaine",
-      avatar: AV("LM", "#FFF4B8"),
-      channel: "gmail",
-      status: "todo",
-      sortableIndex: 4000,
-      fromAI: true,
-      conversationId: "c5",
-      dueAtIso: dueIn(3),
+      createdAtIso: isoAgo({ days: 3 }),
     },
     {
       id: "t5",
-      title: "Préparer le brief de la refonte landing page",
+      title: "Cadrer le brief de la refonte landing page",
       priority: "low",
       dueLabel: "Cette semaine",
-      avatar: AV("NS", "#EAE6FF"),
+      avatar: FACE(2),
       channel: "gmail",
-      status: "todo",
+      status: "to-scope",
       sortableIndex: 5000,
+      createdAtIso: isoAgo({ days: 1, hours: 4 }),
+    },
+    {
+      id: "t6",
+      title: "Livrer les wireframes V1 à Sarah",
+      priority: "medium",
+      dueLabel: "12 juin",
+      avatar: AV("SL", "#FFE5E1"),
+      channel: "whatsapp",
+      status: "done",
+      sortableIndex: 6000,
+      fromAI: true,
+      conversationId: "c1",
+      createdAtIso: isoAgo({ days: 8 }),
+    },
+    {
+      id: "t7",
+      title: "Optimiser les requêtes API pour Alexandre",
+      priority: "high",
+      dueLabel: "Demain",
+      avatar: FACE(1),
+      channel: "slack",
+      status: "in-progress",
+      sortableIndex: 2300,
+      fromAI: true,
+      conversationId: "c7",
+      dueAtIso: dueIn(1),
+      createdAtIso: isoAgo({ hours: 6 }),
+    },
+    {
+      id: "t8",
+      title: "Préparer la proposition commerciale pour Sophie",
+      priority: "medium",
+      dueLabel: "Cette semaine",
+      avatar: FACE(0),
+      channel: "whatsapp",
+      status: "in-progress",
+      sortableIndex: 2400,
+      conversationId: "c10",
+      dueAtIso: dueIn(3),
+      createdAtIso: isoAgo({ days: 1 }),
+      coverImage: "/tasks/2.png",
+    },
+    {
+      id: "t9",
+      title: "Chiffrer l'écran de statistiques du dashboard",
+      priority: "medium",
+      dueLabel: "Jeudi",
+      avatar: FACE(3),
+      channel: "outlook",
+      status: "in-progress",
+      sortableIndex: 2500,
+      fromAI: true,
+      conversationId: "c11",
+      clientConvIds: ["c9", "c1"],
+      dueAtIso: dueIn(4),
+      createdAtIso: isoAgo({ days: 2 }),
     },
   ];
 
@@ -725,7 +790,7 @@ export function mockInboxData(): InboxData {
       lastAtIso,
       // Vraie photo (pravatar) pour chaque contact ; repli initiales noires
       // géré par <Avatar/> si l'image ne charge pas.
-      avatar: IMG(`https://i.pravatar.cc/150?img=${(i % 70) + 1}`),
+      avatar: FACE(i),
       channel,
       unread,
       group,
@@ -752,7 +817,12 @@ export function mockInboxData(): InboxData {
     ];
   }
 
-  const allConversations = [...conversations, ...generatedConversations];
+  // Inbox volontairement resserrée sur les 5 clients principaux — les mêmes
+  // que la page Clients (Sarah, Alexandre, Capucine, Thomas, David).
+  const INBOX_CLIENT_IDS = new Set(["c1", "c7", "c3", "c2", "c9"]);
+  const allConversations = [...conversations, ...generatedConversations].filter((c) =>
+    INBOX_CLIENT_IDS.has(c.id)
+  );
   const allMessagesByConv = { ...messagesByConv, ...generatedMessagesByConv };
 
   return {
@@ -795,58 +865,47 @@ const MOCK_CONTACT: Record<string, string> = {
 
 export function mockDailyBriefing(): DailyBriefing {
   return {
-    headline: "4 suggestions de tâches prêtes pour ton dashboard.",
+    headline: "4 tâches détectées dans tes conversations récentes.",
     items: [
       {
         conversationId: "c1",
         contactName: "Sarah Lemoine",
-        title: "Visual exploration",
-        why: "Exploring visual styles, moods, and color palettes.",
+        title: "Envoyer la V2 des maquettes à Sarah",
+        why: "Elle a validé la direction et attend la V2.",
         priority: "high",
         due: null,
-        timeAgo: "2h ago",
-        avatars: [
-          { kind: "image", url: "https://i.pravatar.cc/150?img=47" },
-          { kind: "image", url: "https://i.pravatar.cc/150?img=33" },
-        ],
+        timeAgo: "il y a 4 min",
+        avatars: [{ kind: "image", url: FACES[0] as string }],
+      },
+      {
+        conversationId: "c7",
+        contactName: "Alexandre Dupont",
+        title: "Répondre à Alexandre sur les temps de réponse de l'API",
+        why: "Question technique en attente depuis ce matin.",
+        priority: "high",
+        due: null,
+        timeAgo: "il y a 35 min",
+        avatars: [{ kind: "image", url: FACES[1] as string }],
+      },
+      {
+        conversationId: "c9",
+        contactName: "David Kim",
+        title: "Confirmer la signature avec David (semaine prochaine)",
+        why: "Le board a validé, il veut avancer sur la signature.",
+        priority: "medium",
+        due: null,
+        timeAgo: "il y a 1 h",
+        avatars: [{ kind: "image", url: FACES[2] as string }],
       },
       {
         conversationId: "c2",
         contactName: "Thomas Aubry",
-        title: "Image generation",
-        why: "Creating a futuristic portrait using text prompts.",
+        title: "Envoyer le contrat signé à Thomas",
+        why: "Il veut le contrat avant vendredi pour lancer le sprint.",
         priority: "high",
         due: null,
-        timeAgo: "3h ago",
-        imageUrl: "/mock-silhouette.png",
-        avatars: [{ kind: "image", url: "https://i.pravatar.cc/150?img=47" }],
-      },
-      {
-        conversationId: "c3",
-        contactName: "Capucine Roy",
-        title: "Team session",
-        why: "Collaborative prompt editing and refinement.",
-        priority: "medium",
-        due: null,
-        timeAgo: "3h ago",
-        avatars: [
-          { kind: "image", url: "https://i.pravatar.cc/150?img=47" },
-          { kind: "image", url: "https://i.pravatar.cc/150?img=33" },
-          { kind: "image", url: "https://i.pravatar.cc/150?img=12" },
-        ],
-      },
-      {
-        conversationId: "c4",
-        contactName: "Luc Mercier",
-        title: "Visualisation",
-        why: "Creating images from text prompts.",
-        priority: "low",
-        due: null,
-        timeAgo: "4h ago",
-        avatars: [
-          { kind: "image", url: "https://i.pravatar.cc/150?img=5" },
-          { kind: "image", url: "https://i.pravatar.cc/150?img=60" },
-        ],
+        timeAgo: "il y a 2 h",
+        avatars: [{ kind: "image", url: FACES[3] as string }],
       },
     ],
   };
@@ -895,6 +954,18 @@ export function mockReplySuggestions(_conversationId: string): ReplySuggestion[]
 
 export function mockAskMueAnswer(question: string): string {
   const q = question.toLowerCase();
+  // Questions « activité » → réponse sourcée (Dupont / Sarah / factures…),
+  // façon « demande, ne cherche pas » directement dans le copilote.
+  for (const entry of MOCK_MUE_ANSWERS) {
+    if (entry.match.some((m) => q.includes(m))) {
+      const a = entry.answer;
+      const bullets = a.bullets?.length ? `\n\n${a.bullets.map((b) => `• ${b}`).join("\n")}` : "";
+      const sources = a.sources?.length
+        ? `\n\nSources : ${a.sources.map((s) => `${s.count} ${s.label}`).join(" · ")}`
+        : "";
+      return `${a.text}${bullets}${sources}`;
+    }
+  }
   if (q.includes("résum") || q.includes("resum")) {
     return "En deux mots : la direction est validée, il reste des ajustements mineurs, et la prochaine étape est d'envoyer la V2. Tu veux que je te prépare un brouillon de réponse ?";
   }

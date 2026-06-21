@@ -7,7 +7,10 @@
 
 import type { ActionItem, Avatar, Client, MueAnswer } from "@/lib/types";
 
-const IMG = (src: string): Avatar => ({ kind: "img", src });
+// Avatars « maison » (illustrations 3D) — utilisés partout à la place des
+// photos pravatar, cohérents avec l'inbox.
+const FACES = ["/avatars/1.webp", "/avatars/2.webp", "/avatars/3.webp", "/avatars/4.webp", "/avatars/5.webp", "/avatars/6.webp"];
+const FACE = (i: number): Avatar => ({ kind: "img", src: FACES[((i % FACES.length) + FACES.length) % FACES.length] as string });
 
 // ── Pilier « centraliser » : fiches clients 360 ────────────────────────
 // Réutilise les conversations existantes du mock inbox (c1, c7, c3, c2, c9).
@@ -17,7 +20,7 @@ export const MOCK_CLIENTS: Client[] = [
     name: "Sarah Lemoine",
     company: "Brightstone",
     email: "sarah@brightstone.fr",
-    avatar: IMG("https://i.pravatar.cc/150?img=47"),
+    avatar: FACE(0),
     channels: ["whatsapp", "gmail"],
     lastContactLabel: "il y a 4 min",
     awaitingCount: 1,
@@ -71,7 +74,7 @@ export const MOCK_CLIENTS: Client[] = [
     name: "Alexandre Dupont",
     company: "Dupont Consulting",
     email: "alexandre@dupont-consulting.fr",
-    avatar: IMG("https://i.pravatar.cc/150?img=33"),
+    avatar: FACE(1),
     channels: ["slack", "gmail"],
     lastContactLabel: "il y a 35 min",
     awaitingCount: 1,
@@ -119,7 +122,7 @@ export const MOCK_CLIENTS: Client[] = [
     name: "Capucine Roy",
     company: "Studio Mave",
     email: "capucine@studio-mave.fr",
-    avatar: IMG("https://i.pravatar.cc/150?img=45"),
+    avatar: FACE(4),
     channels: ["linkedin", "gmail"],
     lastContactLabel: "il y a 5 h",
     awaitingCount: 1,
@@ -164,7 +167,7 @@ export const MOCK_CLIENTS: Client[] = [
     name: "Thomas Aubry",
     company: "ITWA",
     email: "thomas@itwa.io",
-    avatar: IMG("https://i.pravatar.cc/150?img=12"),
+    avatar: FACE(3),
     channels: ["gmail"],
     lastContactLabel: "il y a 2 h",
     awaitingCount: 1,
@@ -208,7 +211,7 @@ export const MOCK_CLIENTS: Client[] = [
     name: "David Kim",
     company: "Kim Ventures",
     email: "david@kim-ventures.com",
-    avatar: IMG("https://i.pravatar.cc/150?img=60"),
+    avatar: FACE(5),
     channels: ["linkedin"],
     lastContactLabel: "il y a 4 h",
     awaitingCount: 0,
@@ -244,7 +247,7 @@ export const MOCK_ACTIONS: ActionItem[] = [
     id: "a1",
     title: "Valider le devis de Capucine",
     clientName: "Capucine Roy",
-    avatar: IMG("https://i.pravatar.cc/150?img=45"),
+    avatar: FACE(4),
     channel: "linkedin",
     reason: "late",
     reasonLabel: "en retard · 2 j",
@@ -254,7 +257,7 @@ export const MOCK_ACTIONS: ActionItem[] = [
     id: "a2",
     title: "Répondre à Alexandre sur les temps de réponse API",
     clientName: "Alexandre Dupont",
-    avatar: IMG("https://i.pravatar.cc/150?img=33"),
+    avatar: FACE(1),
     channel: "slack",
     reason: "awaiting",
     reasonLabel: "en attente depuis 35 min",
@@ -264,7 +267,7 @@ export const MOCK_ACTIONS: ActionItem[] = [
     id: "a3",
     title: "Envoyer le contrat signé à Thomas",
     clientName: "Thomas Aubry",
-    avatar: IMG("https://i.pravatar.cc/150?img=12"),
+    avatar: FACE(3),
     channel: "gmail",
     reason: "due-today",
     reasonLabel: "à faire aujourd'hui",
@@ -275,7 +278,7 @@ export const MOCK_ACTIONS: ActionItem[] = [
     id: "a4",
     title: "Confirmer le kick-off avec Clara (lundi 14h)",
     clientName: "Clara Martin",
-    avatar: IMG("https://i.pravatar.cc/150?img=5"),
+    avatar: FACE(2),
     channel: "gmail",
     reason: "awaiting",
     reasonLabel: "en attente depuis 1 h",
@@ -285,7 +288,7 @@ export const MOCK_ACTIONS: ActionItem[] = [
     id: "a5",
     title: "Relancer Sophie sur le démarrage",
     clientName: "Sophie Bernard",
-    avatar: IMG("https://i.pravatar.cc/150?img=25"),
+    avatar: FACE(0),
     channel: "whatsapp",
     reason: "follow-up",
     reasonLabel: "relance recommandée",
@@ -351,13 +354,20 @@ export const MOCK_SUGGESTED_QUESTIONS = [
   "Quelles factures sont en retard ?",
 ];
 
-/** Temps gagné (mock figé) — pilier « preuve de valeur ». */
-export const MOCK_TIME_SAVED = {
-  label: "~2h40",
-  weekLabel: "cette semaine",
-  breakdown: [
-    { label: "Brouillons Mue acceptés", value: "1h05" },
-    { label: "Recherches évitées", value: "55 min" },
-    { label: "Tri automatique", value: "40 min" },
+/**
+ * Bilan de la semaine — FAITS RÉELS comptables (pas d'« heures gagnées »
+ * interprétées). « activity » = ce que Mue a fait ; « followUp » = ce qui
+ * demande encore ton attention (rend le bilan utile, pas auto-congratulant).
+ */
+export const MOCK_WEEK_RECAP = {
+  activity: [
+    { label: "Brouillons proposés par Mue", value: 12 },
+    { label: "Messages triés automatiquement", value: 23 },
+    { label: "Relances envoyées", value: 5 },
+    { label: "Tâches créées depuis tes messages", value: 4 },
+  ],
+  followUp: [
+    { label: "Clients en attente de réponse", value: 4 },
+    { label: "Actions prioritaires aujourd'hui", value: 3 },
   ],
 };

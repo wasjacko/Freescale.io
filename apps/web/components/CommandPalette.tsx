@@ -34,8 +34,8 @@ export function CommandPalette({ open, onClose }: CmdkProps) {
     () => [
       { id: "go-today", icon: "✓", name: "Aller aux Tâches", fn: () => setView("today") },
       { id: "go-inbox", icon: "📥", name: "Aller à l'inbox", fn: () => setView("inbox") },
+      { id: "go-clients", icon: "👥", name: "Aller aux Clients", fn: () => setView("clients") },
       { id: "go-cal", icon: "📅", name: "Aller au calendrier", fn: () => setView("calendar") },
-      { id: "go-ai", icon: "✨", name: "Ouvrir AI Knowledge", fn: () => setView("ai-knowledge") },
       {
         id: "new-task",
         icon: "＋",

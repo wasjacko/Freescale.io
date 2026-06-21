@@ -31,6 +31,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
           rel="stylesheet"
         />
+        {/* HK Grotesk (version open source « Hanken Grotesk » du même fondeur) :
+            police de toute l'UI, sauf le logo qui garde son serif. */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
         {/* App is light-only now — tell the browser so native controls,
             scrollbars and the initial canvas never render dark. */}
         <meta name="color-scheme" content="light" />

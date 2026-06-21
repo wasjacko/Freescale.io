@@ -2,8 +2,10 @@
 
 import { type ContextAction, ContextMenu } from "@/components/ContextMenu";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
+import { ChannelLogo } from "@/components/icons/Icon";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
 import { Avatar } from "@/components/ui/Avatar";
+import { channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { useApp } from "@/lib/store";
@@ -50,7 +52,12 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     inboxSort: sortBy,
     inboxChannel: filterChannel,
     inboxCategory: filterCategory,
+    setInboxCategory,
+    inboxSearch,
+    setInboxSearch,
     inboxUnreadOnly: unreadOnly,
+    inboxFolders,
+    activeFolderId,
   } = useApp();
   const {
     conversations,
@@ -71,7 +78,6 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
   const [ctx, setCtx] = useState<{ x: number; y: number; convId: string } | null>(null);
   // « / » = recherche locale éphémère (filtre par nom, Esc pour fermer).
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQ, setSearchQ] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -177,16 +183,36 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
   // filtrées par canal et triées selon les préférences de l'utilisateur.
   const filteredConvs = useMemo(() => {
     const now = Date.now();
+    const af = activeFolderId;
+    // Ensemble des conversations d'un dossier custom (si af est un id de dossier).
+    const folder = af ? inboxFolders.find((f) => f.id === af) : null;
+    // La vue active correspond-elle à cette conversation ?
+    const matchView = (c: (typeof conversations)[number]) => {
+      if (af == null) return true; // Inbox = tout
+      if (af === "view:starred") return !!c.starred;
+      if (af === "view:snoozed") return !!c.snoozedUntilIso;
+      if (af === "view:sent" || af === "view:drafts" || af === "view:trash") return false;
+      if (af.startsWith("label:")) return (c.tags ?? []).includes(af.slice(6));
+      if (folder) return folder.convIds.includes(c.id);
+      return true;
+    };
     return conversations
       .filter((c) => {
         if (archived.has(c.id)) return false;
-        if (c.snoozedUntilIso && new Date(c.snoozedUntilIso).getTime() > now) return false;
+        // On masque les reportés SAUF dans la vue « Reportés ».
+        if (
+          af !== "view:snoozed" &&
+          c.snoozedUntilIso &&
+          new Date(c.snoozedUntilIso).getTime() > now
+        )
+          return false;
         if (filterChannel !== "all" && c.channel !== filterChannel) return false;
         if (filterCategory !== "all" && (c.category ?? "other") !== filterCategory) return false;
         if (unreadOnly && !isUnread(c.id, c.unread)) return false;
+        if (!matchView(c)) return false;
         return true;
       })
-      .filter((c) => !searchQ || c.name.toLowerCase().includes(searchQ.toLowerCase()))
+      .filter((c) => !inboxSearch || c.name.toLowerCase().includes(inboxSearch.toLowerCase()))
       .sort((a, b) => {
         if (sortBy === "unread") {
           const uA = isUnread(a.id, a.unread);
@@ -204,11 +230,13 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
   }, [
     conversations,
     archived,
-    searchQ,
+    inboxSearch,
     sortBy,
     filterChannel,
     filterCategory,
     unreadOnly,
+    activeFolderId,
+    inboxFolders,
     isUnread,
   ]);
 
@@ -244,20 +272,42 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
             ref={searchRef}
             className="ibx-search"
             placeholder="Filtrer…"
-            value={searchQ}
-            onChange={(e) => setSearchQ(e.target.value)}
+            value={inboxSearch}
+            onChange={(e) => setInboxSearch(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
-                setSearchQ("");
+                setInboxSearch("");
                 setSearchOpen(false);
               }
             }}
             onBlur={() => {
-              if (!searchQ) setSearchOpen(false);
+              if (!inboxSearch) setSearchOpen(false);
             }}
           />
         </header>
       )}
+
+      <div className="ibx-tabs" role="tablist" aria-label="Catégories">
+        {(
+          [
+            ["all", "Tout"],
+            ["client", "Clients"],
+            ["promo", "Promotions"],
+            ["notif", "Notifications"],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={filterCategory === key}
+            className={`ibx-tab ${filterCategory === key ? "is-active" : ""}`}
+            onClick={() => setInboxCategory(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="conv-list" id="conv-list">
         {filteredConvs.length === 0 && showSkeletons && (
@@ -289,14 +339,24 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
           (() => {
             const trulyEmpty = conversations.filter((c) => !archived.has(c.id)).length === 0;
             return (
-              <div className="empty-state is-visible">
-                <div className="empty-orb" />
-                <div className="empty-title">{trulyEmpty ? "Inbox zero 🎉" : "Aucun résultat"}</div>
-                <div className="empty-text">
-                  {trulyEmpty
-                    ? "Aucune conversation dans votre boîte. Connectez un canal pour commencer, ou prenez une pause."
-                    : "Aucune conversation ne correspond."}
-                </div>
+              <div className="ibx-noresult">
+                <svg
+                  viewBox="0 0 24 24"
+                  width={26}
+                  height={26}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <p className="ibx-noresult-title">
+                  {trulyEmpty ? "Aucune conversation" : "Aucun résultat"}
+                </p>
               </div>
             );
           })()}
@@ -325,6 +385,12 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                 >
                   <span className="conv-avatar">
                     <Avatar avatar={c.avatar} />
+                    <span
+                      className="conv-channel"
+                      title={`Reçu via ${channelProviderLabel(c.channel)}`}
+                    >
+                      <ChannelLogo channel={c.channel} />
+                    </span>
                   </span>
                   <span className="conv-main">
                     <span className="conv-top">

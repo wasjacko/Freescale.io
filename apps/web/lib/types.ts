@@ -15,7 +15,15 @@ export type ChannelId =
   | "messenger"
   | "sms";
 
-export type ViewId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge" | "clients";
+export type ViewId =
+  | "today"
+  | "inbox"
+  | "tasks"
+  | "calendar"
+  | "ai-knowledge"
+  | "clients"
+  | "recap"
+  | "mue";
 
 export type AvatarSource =
   | { kind: "img"; src: string }
@@ -102,7 +110,7 @@ export type Task = {
   isDone?: boolean;
   avatar: Avatar;
   channel: ChannelId;
-  status: "todo" | "in-progress" | "awaiting-reply" | "done";
+  status: "to-scope" | "todo" | "in-progress" | "awaiting-reply" | "done";
   /** Parent task id when this task is a subtask; null/undefined for top-level tasks. */
   parentTaskId?: string | null;
   /** Manual sort rank — higher = later in the list. */
@@ -111,8 +119,14 @@ export type Task = {
   fromAI?: boolean;
   /** Conversation source — permet « Ouvrir le fil » depuis la tâche. */
   conversationId?: string | null;
+  /** Plusieurs clients sur la tâche : ids de conversations → avatars empilés. */
+  clientConvIds?: string[] | null;
   /** Échéance brute ISO (due_at). dueLabel reste le libellé d'affichage de secours. */
   dueAtIso?: string | null;
+  /** Date de création ISO — affichée dans la colonne « Créée le ». */
+  createdAtIso?: string | null;
+  /** Image jointe (cover) — affichée dans la carte Kanban / la ligne. */
+  coverImage?: string | null;
 };
 
 export type CalEvent = {

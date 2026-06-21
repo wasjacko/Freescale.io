@@ -1,6 +1,8 @@
 "use client";
 
+import { AddChannelModal } from "@/components/AddChannelModal";
 import { NewMessageModal } from "@/components/NewMessageModal";
+import { channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import { useState } from "react";
@@ -9,24 +11,6 @@ const SORTS: { key: "date" | "unread" | "starred"; label: string }[] = [
   { key: "date", label: "Récents" },
   { key: "unread", label: "Non lus" },
   { key: "starred", label: "Étoilés" },
-];
-
-const CHANNEL_FILTERS: { key: string; label: string }[] = [
-  { key: "all", label: "Tous" },
-  { key: "gmail", label: "Gmail" },
-  { key: "outlook", label: "Outlook" },
-  { key: "whatsapp", label: "WhatsApp" },
-  { key: "instagram", label: "Instagram" },
-  { key: "linkedin", label: "LinkedIn" },
-  { key: "slack", label: "Slack" },
-];
-
-const CATEGORY_FILTERS: { key: string; label: string }[] = [
-  { key: "all", label: "Toutes" },
-  { key: "client", label: "Perso / Client" },
-  { key: "promo", label: "Promotions" },
-  { key: "notif", label: "Notifications" },
-  { key: "other", label: "Autres" },
 ];
 
 /**
@@ -39,27 +23,33 @@ export function InboxToolbar() {
   const {
     inboxSort,
     inboxChannel,
-    inboxCategory,
+    inboxSearch,
     setInboxSort,
     setInboxChannel,
-    setInboxCategory,
+    setInboxSearch,
     setActiveConv,
   } = useApp();
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [channelMenuOpen, setChannelMenuOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [addChannelOpen, setAddChannelOpen] = useState(false);
 
   // Pas de barre tant qu'aucun canal n'est connecté (l'inbox montre le hero).
   if (channels.length === 0) return null;
 
-  const activeFilterCount = inboxCategory !== "all" ? 1 : 0;
+  // Filtre canal : uniquement les canaux RÉELLEMENT connectés (+ « Tous »).
+  const connectedKinds = new Set(channels.map((c) => c.kind));
+  const channelOptions = [
+    { key: "all", label: "Tous les canaux" },
+    ...[...connectedKinds].map((kind) => ({ key: kind, label: channelProviderLabel(kind) })),
+  ];
+
   const sortLabel =
     inboxSort === "unread" ? "Non lus" : inboxSort === "starred" ? "Étoilés" : "Récents";
   const channelLabel =
     inboxChannel === "all"
       ? "Tous les canaux"
-      : (CHANNEL_FILTERS.find((c) => c.key === inboxChannel)?.label ?? "Canal");
+      : (channelOptions.find((c) => c.key === inboxChannel)?.label ?? "Canal");
 
   return (
     <div className="ibx-toolbar-bar">
@@ -142,7 +132,7 @@ export function InboxToolbar() {
               onClick={() => setChannelMenuOpen(false)}
             />
             <div className="ibx-tool-menu" role="menu">
-              {CHANNEL_FILTERS.map((c) => (
+              {channelOptions.map((c) => (
                 <button
                   key={c.key}
                   type="button"
@@ -152,52 +142,67 @@ export function InboxToolbar() {
                     setChannelMenuOpen(false);
                   }}
                 >
-                  {c.key === "all" ? "Tous les canaux" : c.label}
+                  {c.label}
+                  {c.key === "all" && <span className="ibx-tool-item-hint">(défaut)</span>}
                 </button>
               ))}
+              <div className="ibx-tool-sep" />
+              <button
+                type="button"
+                className="ibx-tool-item ibx-tool-item--add"
+                onClick={() => {
+                  setChannelMenuOpen(false);
+                  setAddChannelOpen(true);
+                }}
+              >
+                <span className="ibx-tool-plus" aria-hidden>
+                  +
+                </span>
+                Ajouter un canal
+              </button>
             </div>
           </>
         )}
+        <AddChannelModal
+          open={addChannelOpen}
+          onClose={() => setAddChannelOpen(false)}
+          connectedKinds={connectedKinds}
+        />
       </div>
 
-      <div className="ibx-tool-wrap">
-        <button
-          type="button"
-          className={`ibx-tool ${filterOpen || activeFilterCount > 0 ? "is-active" : ""}`}
-          aria-expanded={filterOpen}
-          onClick={() => setFilterOpen((v) => !v)}
+      <div className="ibx-search-wrap">
+        <svg
+          viewBox="0 0 24 24"
+          width="15"
+          height="15"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="ibx-search-ic"
+          aria-hidden
         >
-          <span className="ibx-tool-plus" aria-hidden>
-            +
-          </span>
-          Filtrer
-          {activeFilterCount > 0 && <span className="ibx-tool-dot" aria-hidden />}
-        </button>
-        {filterOpen && (
-          <>
-            <button
-              type="button"
-              className="ibx-tool-scrim"
-              aria-label="Fermer"
-              onClick={() => setFilterOpen(false)}
-            />
-            <div className="ibx-tool-menu ibx-tool-menu-wide" role="menu">
-              <span className="ibx-tool-menu-label">Catégorie</span>
-              {CATEGORY_FILTERS.map((c) => (
-                <button
-                  key={c.key}
-                  type="button"
-                  className={`ibx-tool-item ${inboxCategory === c.key ? "is-active" : ""}`}
-                  onClick={() => {
-                    setInboxCategory(c.key);
-                    setFilterOpen(false);
-                  }}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </>
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          className="ibx-search-input"
+          placeholder="Rechercher…"
+          value={inboxSearch}
+          onChange={(e) => setInboxSearch(e.target.value)}
+          aria-label="Rechercher dans l'inbox"
+        />
+        {inboxSearch && (
+          <button
+            type="button"
+            className="ibx-search-clear"
+            aria-label="Effacer"
+            onClick={() => setInboxSearch("")}
+          >
+            ✕
+          </button>
         )}
       </div>
 

@@ -136,7 +136,6 @@ export function AIKnowledgeView() {
       <div className="ai-proof-inner">
         {/* Hero — la promesse devient une preuve */}
         <header className="page-head">
-          <h1>Ce que Mue sait de toi</h1>
           <div className="page-head-actions">
             <button className="cal-btn" type="button" onClick={handleRelearn} disabled={relearning}>
               {relearning ? "Analyse…" : "Rafraîchir"}

@@ -1,5 +1,6 @@
 "use client";
 
+import { DayPlan } from "@/components/DayPlan";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
@@ -26,7 +27,15 @@ type AskMessage = {
  * le thread (ThreadAiBar). Ici, Mue est ce à quoi tu parles.
  */
 export function MuePanel() {
-  const { activeConvId, mueOpen, setMueOpen, suggestTasksOpen, setSuggestTasksOpen } = useApp();
+  const {
+    activeConvId,
+    mueOpen,
+    setMueOpen,
+    mueView,
+    setMueView,
+    suggestTasksOpen,
+    setSuggestTasksOpen,
+  } = useApp();
   const { conversations } = useData();
   const push = useToast((s) => s.push);
   const [askInput, setAskInput] = useState("");
@@ -38,12 +47,6 @@ export function MuePanel() {
     () => conversations.find((c) => c.id === activeConvId) ?? null,
     [conversations, activeConvId]
   );
-  const firstName = conv?.name.split(/[ –-]/)[0]?.trim() ?? "ton contact";
-
-  const sameContactCount = useMemo(() => {
-    if (!conv) return 0;
-    return conversations.filter((c) => c.name === conv.name).length;
-  }, [conversations, conv]);
 
   // Reset the input + (re)load the chat history whenever the active
   // conversation changes, so the thread you're looking at always shows
@@ -218,46 +221,54 @@ export function MuePanel() {
           </header>
 
           {!hasChat ? (
-            <div className="mue-agent-hero">
-              <h2 className="mue-agent-greet">Bonjour, Wass</h2>
-              <p className="mue-agent-sub">
-                {conv
-                  ? `Échange avec ${firstName} · ${sameContactCount} conversation${sameContactCount > 1 ? "s" : ""}`
-                  : "Accès anticipé · Aide-nous à façonner la suite"}
-              </p>
-              <div className="mue-agent-pills">
-                {suggestions.map((s) => (
+            <div className={`mue-agent-hero ${mueView === "plan" ? "has-plan" : "has-choices"}`}>
+              {mueView === "plan" ? (
+                // « Priorise mes tâches » → le plan du jour, avec retour aux choix.
+                <>
                   <button
-                    key={s.label}
                     type="button"
-                    className="mue-agent-pill"
-                    onClick={() => void runAsk(s.label)}
+                    className="mue-plan-back"
+                    onClick={() => setMueView("choices")}
                   >
-                    <span className="mue-agent-pill-ic">
-                      {s.icon === "doc" && (
-                        <svg {...stroke}>
-                          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-                          <path d="M14 3v5h5" />
-                          <line x1="9" y1="13" x2="15" y2="13" />
-                          <line x1="9" y1="17" x2="13" y2="17" />
-                        </svg>
-                      )}
-                      {s.icon === "reply" && (
-                        <svg {...stroke}>
-                          <polyline points="9 17 4 12 9 7" />
-                          <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-                        </svg>
-                      )}
-                      {s.icon === "bolt" && (
-                        <svg {...stroke}>
-                          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                        </svg>
-                      )}
-                    </span>
-                    {s.label}
+                    <svg {...stroke}>
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Retour
                   </button>
-                ))}
-              </div>
+                  <DayPlan />
+                </>
+              ) : (
+                // Les 2 choix de base — toujours affichés (plus d'écran « contact »).
+                <div className="mue-choices">
+                  <h2 className="mue-choices-title">Comment je t'aide ?</h2>
+                  <button
+                    type="button"
+                    className="mue-choice"
+                    onClick={() => setSuggestTasksOpen(true)}
+                  >
+                    <span className="mue-choice-ic">
+                      <svg {...stroke}>
+                        <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
+                      </svg>
+                    </span>
+                    <span className="mue-choice-tx">
+                      <b>Suggérer des tâches</b>
+                      <small>Mue scanne tes messages récents</small>
+                    </span>
+                  </button>
+                  <button type="button" className="mue-choice" onClick={() => setMueView("plan")}>
+                    <span className="mue-choice-ic">
+                      <svg {...stroke}>
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
+                    </span>
+                    <span className="mue-choice-tx">
+                      <b>Priorise mes tâches cette semaine</b>
+                      <small>Mue ordonne ce qui compte</small>
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="mue-agent-chat">
@@ -336,18 +347,6 @@ export function MuePanel() {
                 </button>
               </div>
             </form>
-            <p className="mue-agent-feedback">
-              Aide-nous à l'améliorer ·{" "}
-              <button
-                type="button"
-                className="mue-agent-fblink"
-                onClick={() =>
-                  push({ kind: "info", text: "Merci ! Le feedback arrive bientôt 👋" })
-                }
-              >
-                Donner un avis
-              </button>
-            </p>
           </div>
         </>
       )}

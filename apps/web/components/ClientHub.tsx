@@ -15,7 +15,7 @@ import { useState } from "react";
 const STATUS_TONE: Record<ProjectStatus, Tone> = {
   "on-track": "ok",
   "at-risk": "warn",
-  late: "danger",
+  late: "neutral",
   done: "neutral",
 };
 const STATUS_LABEL: Record<ProjectStatus, string> = {
@@ -24,7 +24,7 @@ const STATUS_LABEL: Record<ProjectStatus, string> = {
   late: "En retard",
   done: "Terminé",
 };
-const INVOICE_TONE: Record<InvoiceStatus, Tone> = { paid: "ok", pending: "warn", late: "danger" };
+const INVOICE_TONE: Record<InvoiceStatus, Tone> = { paid: "ok", pending: "warn", late: "neutral" };
 const INVOICE_LABEL: Record<InvoiceStatus, string> = {
   paid: "Payée",
   pending: "En attente",
@@ -74,7 +74,7 @@ export function ClientHub({ client, onBack }: { client: Client; onBack: () => vo
 
       <header className="client-hub__head">
         <span className="client-hub__av">
-          <Avatar avatar={client.avatar} size={56} />
+          <Avatar avatar={{ ...client.avatar, alt: client.name }} size={56} />
         </span>
         <div className="client-hub__id">
           <h1 className="client-hub__name">{client.name}</h1>
@@ -111,7 +111,7 @@ export function ClientHub({ client, onBack }: { client: Client; onBack: () => vo
       </nav>
 
       <div className="client-hub__body">
-        {tab === "overview" && <OverviewTab client={client} convCount={convs.length} />}
+        {tab === "overview" && <OverviewTab client={client} convs={convs} />}
         {tab === "convs" && <ConvsTab convs={convs} />}
         {tab === "tasks" && <TasksTab tasks={tasks} />}
         {tab === "project" && <ProjectTab client={client} />}
@@ -127,17 +127,67 @@ function Empty({ children }: { children: ReactNode }) {
   return <div className="hub-empty">{children}</div>;
 }
 
-function OverviewTab({ client, convCount }: { client: Client; convCount: number }) {
+type TimelineKind = "message" | "mue" | "project" | "invoice";
+
+function OverviewTab({ client, convs }: { client: Client; convs: Conversation[] }) {
   const p = client.project;
-  const duesCount = (client.invoices ?? []).filter((i) => i.status !== "paid").length;
+  const invoices = client.invoices ?? [];
+  const duesCount = invoices.filter((i) => i.status !== "paid").length;
+
+  // Timeline unifiée (mock) synthétisée à partir des données réelles du client :
+  // message le plus récent + action Mue + jalon projet + dernière facture.
+  const lead = convs[0];
+  const lastDone = p?.milestones.filter((m) => m.done).at(-1);
+  const lastInvoice = invoices.at(-1);
+  const timeline: { kind: TimelineKind; title: string; detail?: string; time?: string }[] = [];
+  if (lead)
+    timeline.push({
+      kind: "message",
+      title: `Message de ${client.name}`,
+      detail: lead.preview,
+      time: client.lastContactLabel ?? "",
+    });
+  timeline.push({
+    kind: "mue",
+    title: "Mue a proposé un brouillon de réponse",
+    time: "aujourd'hui",
+  });
+  if (lastDone)
+    timeline.push({
+      kind: "project",
+      title: `Jalon validé — ${lastDone.label}`,
+      time: p?.dueLabel ?? "",
+    });
+  if (lastInvoice)
+    timeline.push({
+      kind: "invoice",
+      title: `Facture ${lastInvoice.number} · ${INVOICE_LABEL[lastInvoice.status]}`,
+      time: lastInvoice.dateLabel,
+    });
+
   return (
     <div className="hub-overview">
       <div className="hub-stats">
         <Stat label="En attente" value={`${client.awaitingCount ?? 0}`} />
-        <Stat label="Conversations" value={`${convCount}`} />
+        <Stat label="Conversations" value={`${convs.length}`} />
         <Stat label="Canaux" value={`${client.channels.length}`} />
         <Stat label="Factures dues" value={`${duesCount}`} />
       </div>
+
+      <SectionCard title="Activité récente">
+        <ul className="hub-timeline">
+          {timeline.map((e) => (
+            <li key={e.title} className="hub-tl">
+              <span className={`hub-tl__dot hub-tl__dot--${e.kind}`} aria-hidden />
+              <div className="hub-tl__main">
+                <span className="hub-tl__title">{e.title}</span>
+                {e.detail && <span className="hub-tl__detail">{e.detail}</span>}
+              </div>
+              {e.time && <span className="hub-tl__time">{e.time}</span>}
+            </li>
+          ))}
+        </ul>
+      </SectionCard>
 
       {p && (
         <SectionCard title="Projet en cours">

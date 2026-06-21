@@ -1,14 +1,19 @@
 "use client";
 
 import { FreescaleMark } from "@/components/brand/FreescaleMark";
-import type { CurrentUser } from "@/lib/auth";
 import { useData } from "@/lib/contexts/DataContext";
-import { MOCK_CLIENTS } from "@/lib/mock-v2";
 import { useApp } from "@/lib/store";
-import Link from "next/link";
 import { Fragment } from "react";
 
-type NavId = "today" | "inbox" | "tasks" | "calendar" | "ai-knowledge" | "clients";
+type NavId =
+  | "today"
+  | "inbox"
+  | "tasks"
+  | "calendar"
+  | "ai-knowledge"
+  | "clients"
+  | "recap"
+  | "mue";
 
 type NavItem = {
   id: NavId;
@@ -16,11 +21,11 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { id: "today", label: "Tâches" },
   { id: "inbox", label: "Inbox" },
+  { id: "today", label: "Tâches" },
   { id: "clients", label: "Clients" },
   { id: "calendar", label: "Calendar" },
-  { id: "ai-knowledge", label: "AI Knowledge" },
+  { id: "recap", label: "Analytics" },
 ];
 
 /** Icônes outline fines et cohérentes (façon Lucide), une par section. */
@@ -61,6 +66,14 @@ function NavIcon({ id }: { id: NavId }) {
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
       );
+    case "mue":
+      return (
+        <svg {...p}>
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.5" y2="16.5" />
+          <path d="M11 7.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z" />
+        </svg>
+      );
     case "tasks":
       return (
         <svg {...p}>
@@ -79,6 +92,15 @@ function NavIcon({ id }: { id: NavId }) {
           <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
       );
+    case "recap":
+      return (
+        <svg {...p}>
+          <line x1="4" y1="20" x2="20" y2="20" />
+          <rect x="5" y="11" width="3.5" height="6" rx="1" />
+          <rect x="10.25" y="7" width="3.5" height="10" rx="1" />
+          <rect x="15.5" y="13" width="3.5" height="4" rx="1" />
+        </svg>
+      );
     case "ai-knowledge":
       return (
         <svg {...p}>
@@ -93,27 +115,21 @@ function NavIcon({ id }: { id: NavId }) {
  * Sidebar — navigation pleine hauteur : logo en haut, sections, et footer
  * « Aide & support » en bas (façon maquette).
  */
-export function Sidebar({ user }: { user: CurrentUser | null }) {
+export function Sidebar() {
   const { view, setView, setActiveConv, toggleSidebar } = useApp();
   const data = useData();
   const conversations = data.conversations ?? [];
   const tasks = data.tasks ?? [];
-
-  const initials =
-    user?.name
-      .split(" ")
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() ?? "?";
 
   // Real counts derived from the live DB
   const counts: Record<NavId, number | null> = {
     today: tasks.filter((t) => t.status !== "done").length,
     inbox: conversations.filter((c) => c.unread).length,
     tasks: tasks.filter((t) => t.status !== "done").length,
-    clients: MOCK_CLIENTS.filter((c) => (c.awaitingCount ?? 0) > 0).length,
+    clients: null,
+    mue: null,
     calendar: null,
+    recap: null,
     "ai-knowledge": null,
   };
 
@@ -151,43 +167,12 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
                 </span>
                 <span className="nav-text">{item.label}</span>
               </button>
-              {/* Séparateur entre groupes (façon rail de réf.) : après les piliers core. */}
-              {item.id === "clients" && <div className="nav-divider" aria-hidden />}
+              {/* Séparateur entre groupes (façon rail de réf.) : après Tâches. */}
+              {item.id === "today" && <div className="nav-divider" aria-hidden />}
             </Fragment>
           );
         })}
       </nav>
-
-      <div className="sidebar-foot">
-        <Link href="/app/settings/profile" className="sidebar-account">
-          <span className="sidebar-account-av">
-            {user?.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
-            ) : (
-              initials
-            )}
-          </span>
-          <span className="sidebar-account-name">{user?.firstName ?? user?.name ?? "Compte"}</span>
-        </Link>
-        {/* Déconnexion (simulé) → nouvelle home page statique. */}
-        <a href="/home/index.html" className="sidebar-logout" title="Se déconnecter">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          <span>Sortir</span>
-        </a>
-      </div>
     </aside>
   );
 }

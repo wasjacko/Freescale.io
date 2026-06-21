@@ -139,23 +139,23 @@ export function Sprite() {
 
       {/* Brand logos */}
       <symbol id="l-gmail" viewBox="0 0 48 48">
-        <path fill="#fff" d="M8 39h7V22l-9-6.8V37a2 2 0 0 0 2 2Z" />
-        <path fill="#4285F4" d="M8 39h7V22L6 15.2V37a2 2 0 0 0 2 2Z" />
-        <path fill="#34A853" d="M33 39h7a2 2 0 0 0 2-2V15.2L33 22Z" />
-        <path fill="#FBBC04" d="M33 11v11l9-6.8V13a2 2 0 0 0-2-2Z" />
-        <path fill="#EA4335" d="M15 22V11l9 6.8L33 11v11l-9 6.8Z" />
-        <path fill="#C5221F" d="M6 13v2.2L15 22V11H8a2 2 0 0 0-2 2Z" />
+        <image
+          href="/channels/gmail.webp"
+          x="0"
+          y="0"
+          width="48"
+          height="48"
+          preserveAspectRatio="xMidYMid meet"
+        />
       </symbol>
       <symbol id="l-outlook" viewBox="0 0 48 48">
-        <rect x="4" y="9" width="29" height="30" rx="4" fill="#0078D4" />
-        <path fill="#106EBE" d="M33 14h9a2 2 0 0 1 2 2v17a2 2 0 0 1-2 2h-9Z" />
-        <path fill="#50A7F2" d="M33 16h11v6H33Z" />
-        <path fill="#185ABD" d="M33 22h11v7H33Z" />
-        <path fill="#0F6CBD" d="M33 29h11v6H33Z" />
-        <circle cx="18.5" cy="24" r="8" fill="#fff" opacity=".95" />
-        <path
-          fill="#0078D4"
-          d="M18.5 30.2c-3.1 0-5.2-2.4-5.2-6.1s2.1-6.2 5.2-6.2 5.2 2.4 5.2 6.2-2.1 6.1-5.2 6.1Zm0-2.5c1.5 0 2.5-1.4 2.5-3.6s-1-3.7-2.5-3.7-2.5 1.4-2.5 3.7 1 3.6 2.5 3.6Z"
+        <image
+          href="/channels/outlook.webp"
+          x="0"
+          y="0"
+          width="48"
+          height="48"
+          preserveAspectRatio="xMidYMid meet"
         />
       </symbol>
       <symbol id="l-icloud" viewBox="0 0 48 48">
@@ -177,53 +177,46 @@ export function Sprite() {
         <path fill="#94A3B8" d="M10 16h28L24 27Z" />
         <path fill="#38BDF8" d="M10 35 21 25l3 2 3-2 11 10Z" opacity=".75" />
       </symbol>
+      {/* Logos réels fournis (fichiers dans /public/channels) — référencés en
+          <image> pour garder le mécanisme <use> + le style existant partout. */}
       <symbol id="l-instagram" viewBox="0 0 48 48">
-        <defs>
-          <radialGradient id="ig-grad" cx="28%" cy="102%" r="130%">
-            <stop offset="0" stopColor="#FFD776" />
-            <stop offset="0.15" stopColor="#FCAF45" />
-            <stop offset="0.35" stopColor="#F77737" />
-            <stop offset="0.55" stopColor="#F56040" />
-            <stop offset="0.72" stopColor="#E1306C" />
-            <stop offset="0.88" stopColor="#C13584" />
-            <stop offset="1" stopColor="#833AB4" />
-          </radialGradient>
-        </defs>
-        <rect x="3" y="3" width="42" height="42" rx="11" fill="url(#ig-grad)" />
-        <rect
-          x="11"
-          y="11"
-          width="26"
-          height="26"
-          rx="8"
-          fill="none"
-          stroke="#fff"
-          strokeWidth="3"
+        <image
+          href="/channels/instagram.webp"
+          x="0"
+          y="0"
+          width="48"
+          height="48"
+          preserveAspectRatio="xMidYMid meet"
         />
-        <circle cx="24" cy="24" r="6.5" fill="none" stroke="#fff" strokeWidth="3" />
-        <circle cx="33" cy="15" r="2.2" fill="#fff" />
       </symbol>
       <symbol id="l-whatsapp" viewBox="0 0 48 48">
-        <path
-          fill="#25D366"
-          d="M24 4C13 4 4 13 4 24c0 3.6 1 7 2.7 9.9L4 44l10.4-2.7C17.2 43 20.5 44 24 44c11 0 20-9 20-20S35 4 24 4Z"
-        />
-        <path
-          fill="#fff"
-          d="M34.4 28.6c-.5-.3-3.2-1.6-3.7-1.8-.5-.2-.9-.3-1.2.3-.4.5-1.4 1.8-1.7 2.1-.3.4-.6.4-1.2.1-3-1.5-5-2.7-7-6.1-.5-.9.5-.8 1.5-2.7.2-.4.1-.7-.1-1-.1-.3-1.2-2.9-1.6-4-.4-1-.9-.9-1.2-.9h-1c-.4 0-1 .1-1.5.7-.5.6-2 2-2 4.8s2 5.6 2.3 6c.3.4 4 6.1 9.7 8.6 3.6 1.5 5 1.6 6.8 1.4 1.1-.2 3.2-1.3 3.7-2.6.5-1.3.5-2.3.3-2.6-.1-.3-.5-.4-1.1-.7Z"
+        <image
+          href="/channels/whatsapp.webp"
+          x="0"
+          y="0"
+          width="48"
+          height="48"
+          preserveAspectRatio="xMidYMid meet"
         />
       </symbol>
       <symbol id="l-slack" viewBox="0 0 48 48">
-        <path fill="#E01E5A" d="M14 30a4 4 0 1 1-4-4h4Zm2 0a4 4 0 0 1 8 0v10a4 4 0 0 1-8 0Z" />
-        <path fill="#36C5F0" d="M18 14a4 4 0 1 1 4-4v4Zm0 2a4 4 0 0 1 0 8H8a4 4 0 0 1 0-8Z" />
-        <path fill="#2EB67D" d="M34 18a4 4 0 1 1 4 4h-4Zm-2 0a4 4 0 0 1-8 0V8a4 4 0 0 1 8 0Z" />
-        <path fill="#ECB22E" d="M30 34a4 4 0 1 1-4 4v-4Zm0-2a4 4 0 0 1 0-8h10a4 4 0 0 1 0 8Z" />
+        <image
+          href="/channels/slack.webp"
+          x="0"
+          y="0"
+          width="48"
+          height="48"
+          preserveAspectRatio="xMidYMid meet"
+        />
       </symbol>
       <symbol id="l-discord" viewBox="0 0 48 48">
-        <rect x="4" y="4" width="40" height="40" rx="10" fill="#5865F2" />
-        <path
-          fill="#fff"
-          d="M33.5 15.2a23 23 0 0 0-5.6-1.7l-.3.5a17 17 0 0 0-7.2 0l-.3-.5a23 23 0 0 0-5.6 1.7c-3.6 5.3-4.6 10.5-4.1 15.6 2.4 1.7 4.7 2.8 7 3.5l.6-.8c.9-.3 1.8-.7 2.5-1.2l-.5-.3c-3 1-6-.7-6.4-2.4 4.5 1.8 9.4 1.8 13.9 0-.4 1.7-3.4 3.4-6.4 2.4l-.5.3c.8.5 1.7.9 2.5 1.2l.6.8c2.3-.7 4.6-1.8 7-3.5.6-5.9-1-11-4.1-15.6ZM19.4 28.1c-1.3 0-2.4-1.2-2.4-2.6 0-1.5 1-2.7 2.4-2.7s2.5 1.2 2.4 2.7c0 1.4-1 2.6-2.4 2.6Zm9 0c-1.4 0-2.4-1.2-2.4-2.6 0-1.5 1-2.7 2.4-2.7s2.5 1.2 2.4 2.7c0 1.4-1 2.6-2.4 2.6Z"
+        <image
+          href="/channels/discord.webp"
+          x="0"
+          y="0"
+          width="48"
+          height="48"
+          preserveAspectRatio="xMidYMid meet"
         />
       </symbol>
       <symbol id="l-x" viewBox="0 0 48 48">
@@ -234,10 +227,13 @@ export function Sprite() {
         />
       </symbol>
       <symbol id="l-linkedin" viewBox="0 0 48 48">
-        <rect x="3" y="3" width="42" height="42" rx="6" fill="#0A66C2" />
-        <path
-          fill="#fff"
-          d="M16 19h-5v17h5V19Zm-2.5-8.3a2.9 2.9 0 1 0 0 5.8 2.9 2.9 0 0 0 0-5.8ZM37 36h-5v-9c0-2.2-.8-3.7-2.8-3.7-1.5 0-2.5 1-2.9 2.1-.2.4-.2.9-.2 1.5V36h-5V19h5v2.2c.7-1 1.9-2.5 4.6-2.5 3.4 0 5.9 2.2 5.9 6.9V36Z"
+        <image
+          href="/channels/linkedin.webp"
+          x="0"
+          y="0"
+          width="48"
+          height="48"
+          preserveAspectRatio="xMidYMid meet"
         />
       </symbol>
       <symbol id="l-telegram" viewBox="0 0 48 48">

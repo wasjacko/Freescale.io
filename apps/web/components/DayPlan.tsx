@@ -6,29 +6,33 @@
 
 import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
-import { StatusPill } from "@/components/ui/Primitives";
-import { MOCK_ACTIONS, MOCK_TIME_SAVED } from "@/lib/mock-v2";
+import { MOCK_ACTIONS } from "@/lib/mock-v2";
 import { useApp } from "@/lib/store";
-import type { ActionItem, ActionReason, Tone } from "@/lib/types";
-import { useMemo, useState } from "react";
+import type { ActionItem, ActionReason } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
 
-// Tri d'urgence SIMULÉ : en retard > en attente > aujourd'hui > relance.
+// Ordre d'affichage SIMULÉ : en retard > en attente > aujourd'hui > relance.
 const REASON_ORDER: Record<ActionReason, number> = {
   late: 0,
   awaiting: 1,
   "due-today": 2,
   "follow-up": 3,
 };
-const REASON_TONE: Record<ActionReason, Tone> = {
-  late: "danger",
-  awaiting: "warn",
-  "due-today": "info",
-  "follow-up": "neutral",
-};
+
+// Lignes « fantômes » pendant que Mue priorise (skeleton pastel).
+const SKELETONS = [0, 1, 2];
 
 export function DayPlan() {
   const { setView, setActiveConv } = useApp();
   const [doneIds, setDoneIds] = useState<Set<string>>(() => new Set());
+
+  // Court temps de « priorisation » : on montre des squelettes pastel le temps
+  // que Mue ordonne les actions, puis le vrai plan apparaît à leur place.
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = window.setTimeout(() => setLoading(false), 1900);
+    return () => window.clearTimeout(t);
+  }, []);
 
   const actions = useMemo(
     () =>
@@ -52,7 +56,14 @@ export function DayPlan() {
         <div>
           <h2 className="day-plan__title">Ton plan du jour</h2>
           <p className="day-plan__sub">
-            {remaining > 0 ? (
+            {loading ? (
+              <>
+                <span className="day-plan__spark" aria-hidden>
+                  ✦
+                </span>{" "}
+                Mue priorise tes tâches…
+              </>
+            ) : remaining > 0 ? (
               <>
                 <span className="day-plan__spark" aria-hidden>
                   ✦
@@ -64,13 +75,22 @@ export function DayPlan() {
             )}
           </p>
         </div>
-        <div className="day-plan__saved" title="Estimation du temps gagné cette semaine">
-          <span className="day-plan__saved-val">{MOCK_TIME_SAVED.label}</span>
-          <span className="day-plan__saved-label">gagnées {MOCK_TIME_SAVED.weekLabel}</span>
-        </div>
       </header>
 
-      {remaining === 0 ? (
+      {loading ? (
+        <ul className="day-plan__list" aria-hidden>
+          {SKELETONS.map((i) => (
+            <li key={i} className="skel-row" style={{ animationDelay: `${i * 110}ms` }}>
+              <span className="skel-dot skel-dot--lg" />
+              <span className="skel-row-body">
+                <span className="skel-bar skel-bar--lg" />
+                <span className="skel-bar skel-bar--sm" />
+              </span>
+              <span className="skel-bar skel-bar--btn" />
+            </li>
+          ))}
+        </ul>
+      ) : remaining === 0 ? (
         <div className="day-plan__empty">
           <span className="day-plan__empty-mark" aria-hidden>
             ✓
@@ -127,7 +147,7 @@ function ActionCard({
       </button>
 
       <span className="action-card__av">
-        <Avatar avatar={action.avatar} size={34} />
+        <Avatar avatar={{ ...action.avatar, alt: action.clientName }} size={34} />
         <ChannelLogo channel={action.channel} className="action-card__chan" />
       </span>
 
@@ -135,7 +155,7 @@ function ActionCard({
         <span className="action-card__title">{action.title}</span>
         <span className="action-card__meta">
           <span className="action-card__client">{action.clientName}</span>
-          <StatusPill tone={REASON_TONE[action.reason]}>{action.reasonLabel}</StatusPill>
+          <span className="action-card__reason">{action.reasonLabel}</span>
           {action.dueLabel && <span className="action-card__due">· {action.dueLabel}</span>}
         </span>
       </button>
