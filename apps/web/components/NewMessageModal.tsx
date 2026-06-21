@@ -14,8 +14,18 @@ export function NewMessageModal({
   onClose: () => void;
   onCreated: (convId: string) => void;
 }) {
-  const { createConversation } = useData();
+  const { createConversation, conversations } = useData();
   const push = useToast((s) => s.push);
+
+  // Clients existants (1 par client) → puces de sélection rapide.
+  const clients = (() => {
+    const seen = new Map<string, { name: string; channel: ChannelId }>();
+    for (const c of conversations) {
+      const key = c.clientId ?? c.id;
+      if (!seen.has(key)) seen.set(key, { name: c.name, channel: c.channel });
+    }
+    return [...seen.values()];
+  })();
 
   const [name, setName] = useState("");
   const [channel, setChannel] = useState<ChannelId>("gmail");
@@ -112,6 +122,23 @@ export function NewMessageModal({
         </header>
 
         <form onSubmit={handleSubmit} className="new-msg-form">
+          {clients.length > 0 && (
+            <div className="new-msg-clients">
+              {clients.map((cl) => (
+                <button
+                  key={cl.name}
+                  type="button"
+                  className={`new-msg-chip ${name === cl.name ? "is-on" : ""}`}
+                  onClick={() => {
+                    setName(cl.name);
+                    setChannel(cl.channel);
+                  }}
+                >
+                  {cl.name}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="new-msg-field">
             <label htmlFor="msg-recipient">Destinataire</label>
             <input

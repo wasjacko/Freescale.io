@@ -4771,6 +4771,28 @@ html {
   font-size: 16px;
 }
 
+/* Puces de sélection rapide d'un client (Nouveau message). */
+.new-msg-clients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.new-msg-chip {
+  height: 28px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #3a4151;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.new-msg-chip.is-on {
+  background: rgba(79, 108, 247, 0.12);
+  color: #4f6cf7;
+}
+
 /* Revue des tâches détectées par Mue. */
 .atr-list {
   display: flex;
