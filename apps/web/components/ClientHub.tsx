@@ -8,6 +8,7 @@ import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { IntegrationChip, ProgressBar, SectionCard, StatusPill } from "@/components/ui/Primitives";
 import { useData } from "@/lib/contexts/DataContext";
+import { useApp } from "@/lib/store";
 import type { Client, Conversation, InvoiceStatus, ProjectStatus, Task, Tone } from "@/lib/types";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -47,7 +48,13 @@ type TabId = (typeof TABS)[number]["id"];
 export function ClientHub({ client, onBack }: { client: Client; onBack: () => void }) {
   const [tab, setTab] = useState<TabId>("overview");
   const data = useData();
+  const { setView, setActiveConv } = useApp();
   const ids = client.conversationIds ?? [];
+  const openThread = () => {
+    if (!ids[0]) return;
+    setActiveConv(ids[0]);
+    setView("inbox");
+  };
   const convs = (data.conversations ?? []).filter((c) => ids.includes(c.id));
   const tasks = (data.tasks ?? []).filter(
     (t) => t.conversationId && ids.includes(t.conversationId)
@@ -95,6 +102,14 @@ export function ClientHub({ client, onBack }: { client: Client; onBack: () => vo
             </div>
           )}
         </div>
+        {ids.length > 0 && (
+          <button type="button" className="client-hub__openthread" onClick={openThread}>
+            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Ouvrir le fil
+          </button>
+        )}
       </header>
 
       <nav className="client-hub__tabs">

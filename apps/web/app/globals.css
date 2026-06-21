@@ -24587,6 +24587,25 @@ button.sidebar-brand {
   align-items: flex-start;
   gap: 14px;
 }
+.client-hub__openthread {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #4f6cf7;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.client-hub__openthread:hover {
+  background: #3f57d8;
+}
 .client-hub__av .avatar {
   width: 56px;
   height: 56px;
