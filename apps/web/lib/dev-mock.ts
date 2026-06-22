@@ -24,7 +24,11 @@ import type { CalEvent, Conversation, Message, Task, UpcomingEvent } from "@/lib
  * Turn it OFF anytime by removing DEV_NO_AUTH from .env.local.
  */
 export function isDevNoAuth(): boolean {
-  return process.env.NODE_ENV === "development" && process.env.DEV_NO_AUTH === "1";
+  // Mode dev local : NODE_ENV=development + DEV_NO_AUTH=1.
+  if (process.env.NODE_ENV === "development" && process.env.DEV_NO_AUTH === "1") return true;
+  // Mode démo public (prod) : DEMO_MODE=1 → données 100% mock, zéro backend.
+  if (process.env.DEMO_MODE === "1") return true;
+  return false;
 }
 
 export function mockCurrentUser(): CurrentUser {

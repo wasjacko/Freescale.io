@@ -77,10 +77,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // DEV bypass (local uniquement) : on laisse passer les routes protégées
-  // sans session pour pouvoir bosser sur le SaaS sans login. Double-verrou :
-  // NODE_ENV=development (jamais vrai sur Vercel/prod) + DEV_NO_AUTH=1.
-  const devNoAuth = process.env.NODE_ENV === "development" && process.env.DEV_NO_AUTH === "1";
+  // DEV bypass (local) : NODE_ENV=development + DEV_NO_AUTH=1.
+  // DEMO bypass (prod) : DEMO_MODE=1 → vitrine publique en données 100% mock,
+  // aucun backend touché. Permet de montrer l'app en ligne sans login.
+  const devNoAuth =
+    (process.env.NODE_ENV === "development" && process.env.DEV_NO_AUTH === "1") ||
+    process.env.DEMO_MODE === "1";
 
   // Anon users on protected routes → /welcome
   if (!user && !isPublic && !devNoAuth) {
