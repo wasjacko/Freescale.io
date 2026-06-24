@@ -6,6 +6,7 @@
 import { ClientHub } from "@/components/ClientHub";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
+import { useData } from "@/lib/contexts/DataContext";
 import { MOCK_CLIENTS } from "@/lib/mock-v2";
 import { useApp } from "@/lib/store";
 import type { Client, Tone } from "@/lib/types";
@@ -39,9 +40,65 @@ const FILTERS: [Filter, string][] = [
 export function ClientsView() {
   // Le client ouvert vit dans le store → on peut ouvrir une fiche depuis
   // ailleurs (ex. bouton « Voir la fiche client » d'un thread de l'inbox).
-  const { activeClientId, setActiveClientId } = useApp();
+  const { activeClientId, setActiveClientId, setView, setActiveConv, setInboxBucket } = useApp();
+  const { conversations, tasks } = useData();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+
+  // ── KPI actionnables (anciennement page Analytics) ────────────────
+  // Faits dérivés des conversations + tâches — pas de vanity metrics.
+  const now = Date.now();
+  const ms = (iso?: string | null) => (iso ? new Date(iso).getTime() : 0);
+  const toReplyCount = new Set(
+    conversations
+      .filter((c) => ms(c.lastInboundAt) > ms(c.lastOutboundAt))
+      .map((c) => c.clientId ?? c.id)
+  ).size;
+  const relancesCount = new Set(
+    conversations
+      .filter(
+        (c) =>
+          ms(c.lastOutboundAt) > ms(c.lastInboundAt) && (now - ms(c.lastOutboundAt)) / 86400000 >= 2
+      )
+      .map((c) => c.clientId ?? c.id)
+  ).size;
+  const openTasks = tasks.filter((t) => !t.parentTaskId && t.status !== "done");
+  const overdueCount = openTasks.filter((t) => t.dueAtIso && ms(t.dueAtIso) < now).length;
+  const openInbox = (bucket: "to-reply" | "waiting") => {
+    setView("inbox");
+    setActiveConv("");
+    setInboxBucket(bucket);
+  };
+  const kpis = [
+    {
+      key: "reply",
+      val: toReplyCount,
+      label: "clients attendent ta réponse",
+      tone: "alert" as const,
+      onClick: () => openInbox("to-reply"),
+    },
+    {
+      key: "relance",
+      val: relancesCount,
+      label: "relances à faire (sans réponse ≥ 2 j)",
+      tone: "warn" as const,
+      onClick: () => openInbox("waiting"),
+    },
+    {
+      key: "open",
+      val: openTasks.length,
+      label: "tâches en cours",
+      tone: "neutral" as const,
+      onClick: () => setView("today"),
+    },
+    {
+      key: "overdue",
+      val: overdueCount,
+      label: "tâches en retard",
+      tone: overdueCount > 0 ? ("alert" as const) : ("neutral" as const),
+      onClick: () => setView("today"),
+    },
+  ];
 
   const clients = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -67,10 +124,10 @@ export function ClientsView() {
   }
 
   return (
-    <section className="clients-view" aria-label="Clients">
+    <section className="clients-view" aria-label="Santé client">
       <header className="clients-head">
         <div className="clients-head__title">
-          <h1 className="clients-h1">Clients</h1>
+          <h1 className="clients-h1">Santé client</h1>
           <span className="clients-count">{MOCK_CLIENTS.length}</span>
         </div>
         <div className="clients-head__tools">
@@ -109,6 +166,21 @@ export function ClientsView() {
           </div>
         </div>
       </header>
+
+      {/* À traiter — KPI actionnables (anciennement page Analytics). */}
+      <div className="clients-kpis" aria-label="À traiter">
+        {kpis.map((k) => (
+          <button
+            key={k.key}
+            type="button"
+            className={`clients-kpi clients-kpi--${k.tone}`}
+            onClick={k.onClick}
+          >
+            <span className="clients-kpi-val">{k.val}</span>
+            <span className="clients-kpi-label">{k.label}</span>
+          </button>
+        ))}
+      </div>
 
       {clients.length === 0 ? (
         <div className="clients-empty">Aucun client ne correspond.</div>

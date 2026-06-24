@@ -23,9 +23,8 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { id: "inbox", label: "Inbox" },
   { id: "today", label: "Tâches" },
-  { id: "clients", label: "Clients" },
+  { id: "clients", label: "Santé client" },
   { id: "calendar", label: "Calendar" },
-  { id: "recap", label: "Analytics" },
 ];
 
 /** Icônes outline fines et cohérentes (façon Lucide), une par section. */

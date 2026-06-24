@@ -24601,10 +24601,49 @@ button.sidebar-brand {
 .recap-spark {
   color: #f59e0b;
 }
-.recap-kpis {
+.recap-kpis,
+.clients-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
+}
+.clients-kpis {
+  margin-bottom: 18px;
+}
+.clients-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 0;
+  border-radius: 10px;
+  background: #f6f7fb;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 140ms var(--ease), transform 140ms var(--ease);
+}
+.clients-kpi:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.clients-kpi-val {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: #10131a;
+}
+.clients-kpi--alert .clients-kpi-val {
+  color: #dc2626;
+}
+.clients-kpi--warn .clients-kpi-val {
+  color: #d97706;
+}
+.clients-kpi-label {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: #6b7280;
 }
 .recap-kpi {
   display: flex;

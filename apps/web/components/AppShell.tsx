@@ -14,7 +14,6 @@ import { InboxFolders } from "@/components/InboxFolders";
 import { InboxToolbar } from "@/components/InboxToolbar";
 import { MuePanel } from "@/components/MuePanel";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { RecapView } from "@/components/RecapView";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { Sidebar } from "@/components/Sidebar";
 import { TasksBoard } from "@/components/TasksBoard";
@@ -262,11 +261,20 @@ export function AppShell({
     setView,
   ]);
 
+  // L'ancienne page "recap" (Analytics) a fusionné dans "Santé client" (clients).
+  // Si le store Zustand persisté pointe encore vers recap, on rebascule.
+  useEffect(() => {
+    if (view === "recap") setView("clients");
+  }, [view, setView]);
+
+  // Map vue → suffixe de classe CSS. "ai-knowledge" → "ai", "recap" → "clients"
+  // (vues fusionnées).
+  const viewSuffix = view === "ai-knowledge" ? "ai" : view === "recap" ? "clients" : view;
   const appClasses = [
     "app",
     sidebarCollapsed ? "sidebar-collapsed" : "",
     mueOpen ? "mue-open" : "",
-    `view-${view === "ai-knowledge" ? "ai" : view}`,
+    `view-${viewSuffix}`,
   ]
     .filter(Boolean)
     .join(" ");
@@ -324,8 +332,6 @@ export function AppShell({
           <AIKnowledgeView />
           {/* Phase 2 — Hub Client/Projet (pilier Centraliser). */}
           <ClientsView />
-          {/* Bilan « Cette semaine » — KPI factuels (sorti de la topbar). */}
-          <RecapView />
         </div>
         {/* Mue — rail compagnon repliable, 3e colonne de .app : même
             endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).
