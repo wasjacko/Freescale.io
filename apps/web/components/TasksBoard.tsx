@@ -10,6 +10,7 @@ import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import type { Task } from "@/lib/types";
 import { type CSSProperties, Fragment, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type GroupKey = "to-scope" | "todo" | "in-progress" | "awaiting-reply" | "done";
 const GROUPS: { key: GroupKey; label: string; accent: string; match: Task["status"][] }[] = [
@@ -171,7 +172,17 @@ export function TasksBoard() {
   // Édition inline d'une date (échéance / création) : clic sur la cellule.
   const [editCell, setEditCell] = useState<{ id: string; field: "due" | "created" } | null>(null);
   // Menu d'édition de la priorité (clic sur la cellule Priorité).
-  const [prioMenuId, setPrioMenuId] = useState<string | null>(null);
+  // On garde la position du bouton pour rendre le popover via portal
+  // (sinon l'overflow:hidden des rangées coupe le menu).
+  const [prioMenu, setPrioMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const openPrioMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (prioMenu?.id === id) {
+      setPrioMenu(null);
+      return;
+    }
+    const r = e.currentTarget.getBoundingClientRect();
+    setPrioMenu({ id, x: r.left + r.width / 2, y: r.bottom + 4 });
+  };
   const toDateInput = (iso: string | null | undefined) =>
     iso && !Number.isNaN(new Date(iso).getTime()) ? new Date(iso).toISOString().slice(0, 10) : "";
   const commitDate = (id: string, field: "due" | "created", value: string) => {
@@ -690,11 +701,9 @@ export function TasksBoard() {
                                   <button
                                     type="button"
                                     className={`tprio tprio--${t.priority} tprio-btn`}
-                                    onClick={() =>
-                                      setPrioMenuId((cur) => (cur === t.id ? null : t.id))
-                                    }
+                                    onClick={(e) => openPrioMenu(t.id, e)}
                                     aria-haspopup="menu"
-                                    aria-expanded={prioMenuId === t.id}
+                                    aria-expanded={prioMenu?.id === t.id}
                                   >
                                     <span className="tprio-dot" />
                                     {t.priority === "high"
@@ -703,40 +712,6 @@ export function TasksBoard() {
                                         ? "Basse"
                                         : "Moyenne"}
                                   </button>
-                                  {prioMenuId === t.id && (
-                                    <>
-                                      <button
-                                        type="button"
-                                        className="tprio-scrim"
-                                        aria-label="Fermer"
-                                        onClick={() => setPrioMenuId(null)}
-                                      />
-                                      <div className="tprio-menu" role="menu">
-                                        {(
-                                          [
-                                            ["high", "Haute"],
-                                            ["medium", "Moyenne"],
-                                            ["low", "Basse"],
-                                          ] as const
-                                        ).map(([p, label]) => (
-                                          <button
-                                            key={p}
-                                            type="button"
-                                            className={`tprio-opt tprio--${p} ${
-                                              t.priority === p ? "is-active" : ""
-                                            }`}
-                                            onClick={() => {
-                                              patchTask(t.id, { priority: p });
-                                              setPrioMenuId(null);
-                                            }}
-                                          >
-                                            <span className="tprio-dot" />
-                                            {label}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </>
-                                  )}
                                 </span>
 
                                 <span className="tboard-cell tboard-source">
@@ -923,6 +898,54 @@ export function TasksBoard() {
           })}
         </div>
       )}
+      {prioMenu &&
+        typeof document !== "undefined" &&
+        (() => {
+          const t = displayed.find((x) => x.id === prioMenu.id);
+          if (!t) return null;
+          // Position : on centre sous le bouton et on clamp dans la fenêtre.
+          const W = 144;
+          const H = 132;
+          const left = Math.max(8, Math.min(window.innerWidth - W - 8, prioMenu.x - W / 2));
+          const top = Math.min(window.innerHeight - H - 8, prioMenu.y);
+          return createPortal(
+            <>
+              <button
+                type="button"
+                className="tprio-scrim"
+                aria-label="Fermer"
+                onClick={() => setPrioMenu(null)}
+              />
+              <div
+                className="tprio-menu"
+                role="menu"
+                style={{ position: "fixed", left, top, transform: "none" }}
+              >
+                {(
+                  [
+                    ["high", "Haute"],
+                    ["medium", "Moyenne"],
+                    ["low", "Basse"],
+                  ] as const
+                ).map(([p, label]) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`tprio-opt tprio--${p} ${t.priority === p ? "is-active" : ""}`}
+                    onClick={() => {
+                      patchTask(t.id, { priority: p });
+                      setPrioMenu(null);
+                    }}
+                  >
+                    <span className="tprio-dot" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>,
+            document.body
+          );
+        })()}
     </section>
   );
 }
