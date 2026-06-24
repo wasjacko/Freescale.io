@@ -1,6 +1,5 @@
 "use client";
 
-import { AIKnowledgeView } from "@/components/AIKnowledgeView";
 import { AiTasksReviewModal } from "@/components/AiTasksReviewModal";
 import { AutoSync } from "@/components/AutoSync";
 import { CalendarView } from "@/components/CalendarView";
@@ -12,6 +11,7 @@ import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { Inbox } from "@/components/Inbox";
 import { InboxFolders } from "@/components/InboxFolders";
 import { InboxToolbar } from "@/components/InboxToolbar";
+import { MueFullView } from "@/components/MueFullView";
 import { MuePanel } from "@/components/MuePanel";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
@@ -338,7 +338,7 @@ export function AppShell({
             </div>
           </div>
           <CalendarView />
-          <AIKnowledgeView />
+          <MueFullView />
           {/* Phase 2 — Hub Client/Projet (pilier Centraliser). */}
           <ClientsView />
         </div>

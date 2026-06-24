@@ -25,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "today", label: "Tâches" },
   { id: "clients", label: "Santé client" },
   { id: "calendar", label: "Calendar" },
+  { id: "ai-knowledge", label: "Mue" },
 ];
 
 /** Icônes outline fines et cohérentes (façon Lucide), une par section. */
