@@ -15,7 +15,7 @@ type ActionRef = { entity: "task"; id: string; title: string };
 type AskMessage = {
   id: string;
   role: "user" | "mue";
-  kind?: "text" | "scan" | "action";
+  kind?: "text" | "scan" | "action" | "privacy";
   content: string;
   tone?: "normal" | "error";
   action?: ActionRef;
@@ -163,6 +163,26 @@ export function MuePanel() {
       ...prev,
       { id: `user-${Date.now()}`, role: "user", content: "Suggérer des tâches" },
       { id: `scan-${Date.now()}`, role: "mue", kind: "scan", content: "" },
+    ]);
+  };
+
+  // Lance une discussion « Confidentialité » avec un message Mue vidéo +
+  // l'explication RGPD (zéro entraînement, stockage chiffré non exploitable).
+  const runPrivacy = () => {
+    setAskMessages((prev) => [
+      ...prev,
+      {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: "Comment Mue protège mes données ?",
+      },
+      {
+        id: `priv-${Date.now()}`,
+        role: "mue",
+        kind: "privacy",
+        content:
+          "Tes échanges restent chez toi : Mue ne s'entraîne PAS sur tes messages, ils sont stockés chiffrés dans un espace dédié à ton compte, isolé du modèle et de nos équipes. Personne n'y accède — pas même nous.",
+      },
     ]);
   };
 
@@ -556,6 +576,25 @@ export function MuePanel() {
         </div>
       </header>
 
+      {/* CTA RGPD — sous l'en-tête, visible uniquement quand le chat est vide.
+          Clic → lance une discussion 'Confidentialité' avec vidéo + explication. */}
+      {mode === "ask" && !hasChat && (
+        <button type="button" className="mue2-privacy-cta" onClick={runPrivacy}>
+          <span className="mue2-privacy-ic" aria-hidden>
+            <svg {...stroke} width={16} height={16}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </span>
+          <span className="mue2-privacy-tx">
+            <b>Comment Mue protège tes données</b>
+            <small>Vidéo · 1 min</small>
+          </span>
+          <span className="mue2-privacy-arrow" aria-hidden>
+            →
+          </span>
+        </button>
+      )}
+
       {mode === "agents" ? (
         <div className="mue2-agents">
           <span className="mue2-agents-orb">
@@ -612,6 +651,63 @@ export function MuePanel() {
                     <MueMark size={16} /> Mue
                   </div>
                   <MueTaskScanner inline />
+                </div>
+              ) : m.kind === "privacy" ? (
+                <div key={m.id} className="mue2-msg is-mue mue2-msg--privacy">
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue
+                  </div>
+                  {/* Lecteur vidéo (mock) — RGPD & confidentialité. */}
+                  <div className="mue2-video" role="group" aria-label="Vidéo confidentialité">
+                    <div className="mue2-video-thumb">
+                      <span className="mue2-video-shield" aria-hidden>
+                        <svg {...stroke} width={28} height={28}>
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          <polyline points="9 12 11 14 15 10" />
+                        </svg>
+                      </span>
+                      <button type="button" className="mue2-video-play" aria-label="Lire la vidéo">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width={22}
+                          height={22}
+                          fill="currentColor"
+                          aria-hidden
+                        >
+                          <polygon points="6 4 20 12 6 20 6 4" />
+                        </svg>
+                      </button>
+                      <span className="mue2-video-time">1:02</span>
+                      <span className="mue2-video-title">RGPD & Confidentialité</span>
+                    </div>
+                    <ul className="mue2-video-bullets">
+                      <li>
+                        <svg {...stroke} width={14} height={14}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Aucun entraînement sur tes messages
+                      </li>
+                      <li>
+                        <svg {...stroke} width={14} height={14}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Stockage chiffré, espace isolé de ton compte
+                      </li>
+                      <li>
+                        <svg {...stroke} width={14} height={14}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Non exploitable — par le modèle ni par nous
+                      </li>
+                      <li>
+                        <svg {...stroke} width={14} height={14}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Suppression définitive à tout moment
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="mue2-msg-body">{m.content}</div>
                 </div>
               ) : (
                 <div

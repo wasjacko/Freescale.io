@@ -30927,3 +30927,162 @@ button.sidebar-brand {
   background: #14141a;
   box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.22);
 }
+
+/* ════════════ CTA RGPD (Mue) + lecteur vidéo confidentialité ════════════ */
+.mue2-privacy-cta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 12px 0;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.08), rgba(79, 108, 247, 0.08));
+  box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.2);
+  color: var(--ink, #10131a);
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease);
+}
+.mue2-privacy-cta:hover {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.14), rgba(79, 108, 247, 0.14));
+  box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.4);
+}
+.mue2-privacy-ic {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(22, 163, 74, 0.15);
+  color: #16a34a;
+  flex: none;
+}
+.mue2-privacy-tx {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.mue2-privacy-tx b {
+  font-size: 13px;
+  font-weight: 650;
+}
+.mue2-privacy-tx small {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+.mue2-privacy-arrow {
+  font-size: 16px;
+  color: #6b7280;
+}
+[data-theme="dark"] .mue2-privacy-cta {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.14), rgba(120, 140, 255, 0.14));
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.35);
+}
+[data-theme="dark"] .mue2-privacy-tx small,
+[data-theme="dark"] .mue2-privacy-arrow {
+  color: var(--muted);
+}
+
+/* Lecteur vidéo dans le message Mue (mock). */
+.mue2-video {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.mue2-video-thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(120% 80% at 30% 20%, #0e2a4a 0%, #0b1326 60%, #06080f 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.mue2-video-thumb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 70% 80%, rgba(120, 140, 255, 0.35), transparent 55%),
+    radial-gradient(circle at 25% 65%, rgba(22, 163, 74, 0.3), transparent 50%);
+  opacity: 0.9;
+}
+.mue2-video-shield {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #c2ffd9;
+  z-index: 1;
+}
+.mue2-video-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #10131a;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 130ms var(--ease);
+}
+.mue2-video-play:hover {
+  transform: scale(1.06);
+}
+.mue2-video-play svg {
+  margin-left: 3px;
+}
+.mue2-video-time {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.mue2-video-title {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.mue2-video-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+}
+.mue2-video-bullets li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+.mue2-video-bullets svg {
+  color: #16a34a;
+  flex: none;
+}
+[data-theme="dark"] .mue2-video-bullets li {
+  color: var(--body);
+}
