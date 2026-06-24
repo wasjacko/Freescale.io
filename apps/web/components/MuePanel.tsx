@@ -104,16 +104,7 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
  * Le scan de tâches se joue INLINE dans le chat (skeleton pastel → tâches).
  */
 export function MuePanel() {
-  const {
-    activeConvId,
-    mueOpen,
-    setMueOpen,
-    suggestTasksOpen,
-    setSuggestTasksOpen,
-    setView,
-    setActiveConv,
-    setInboxBucket,
-  } = useApp();
+  const { activeConvId, mueOpen, setMueOpen, suggestTasksOpen, setSuggestTasksOpen } = useApp();
   const { conversations, addTask } = useData();
   const push = useToast((s) => s.push);
 
@@ -129,23 +120,6 @@ export function MuePanel() {
     () => conversations.find((c) => c.id === activeConvId) ?? null,
     [conversations, activeConvId]
   );
-
-  // Brief : nb de CLIENTS distincts dont la balle est dans mon camp.
-  const awaitingCount = new Set(
-    conversations
-      .filter((c) => {
-        const inb = c.lastInboundAt ? new Date(c.lastInboundAt).getTime() : 0;
-        const out = c.lastOutboundAt ? new Date(c.lastOutboundAt).getTime() : 0;
-        return inb > out;
-      })
-      .map((c) => c.clientId ?? c.id)
-  ).size;
-  const openToReply = () => {
-    setView("inbox");
-    setActiveConv("");
-    setInboxBucket("to-reply");
-    setMueOpen(false);
-  };
 
   // Recharge l'historique quand la conversation active change.
   useEffect(() => {
@@ -489,20 +463,6 @@ export function MuePanel() {
         // ── État vide : composer dégradé + 3 suggestions ──
         <div className="mue2-empty">
           {composer}
-          {awaitingCount > 0 && !conv && (
-            <button type="button" className="mue2-brief" onClick={openToReply}>
-              <span className="mue2-brief-badge">{awaitingCount}</span>
-              <span>
-                <b>
-                  {awaitingCount} client{awaitingCount > 1 ? "s" : ""} attend
-                  {awaitingCount > 1 ? "ent" : ""} ta réponse
-                </b>
-              </span>
-              <span className="mue2-brief-arrow" aria-hidden>
-                →
-              </span>
-            </button>
-          )}
           <div className="mue2-cards">
             {suggestions.map((s) => (
               <button key={s.title} type="button" className="mue2-card" onClick={s.run}>
