@@ -45,7 +45,7 @@ function dueMeta(iso: string | null | undefined, fallback: string) {
 }
 
 export function TasksBoard() {
-  const { tasks, conversations, setTaskStatus, addTask, patchTask } = useData();
+  const { tasks, conversations, messagesByConv, setTaskStatus, addTask, patchTask } = useData();
   const { setView, setActiveConv, setAiReviewOpen } = useApp();
   const [collapsed, setCollapsed] = useState<Set<GroupKey>>(() => new Set());
   // Bascule Tableau ↔ Kanban.
@@ -682,10 +682,7 @@ export function TasksBoard() {
                                       )}
                                     </span>
                                   ) : (
-                                    <span
-                                      className="tboard-client-none"
-                                      aria-label="Sans client"
-                                    >
+                                    <span className="tboard-client-none" aria-label="Sans client">
                                       —
                                     </span>
                                   )}
@@ -760,41 +757,84 @@ export function TasksBoard() {
                               </div>
 
                               {linkedConv && (
-                                <div className={`tboard-detail-wrap ${isOpen ? "is-open" : ""}`}>
-                                  <div className="tboard-detail-inner">
-                                    <button
-                                      type="button"
-                                      className="tboard-detail"
-                                      onClick={() => openTask(t)}
-                                      aria-label="Ouvrir le fil lié"
-                                      tabIndex={isOpen ? 0 : -1}
-                                    >
-                                      <span className="tboard-detail-label">Message lié</span>
-                                      <span className="tboard-detail-card">
-                                        <Avatar
-                                          avatar={{ ...linkedConv.avatar, alt: linkedConv.name }}
-                                          size={26}
-                                        />
-                                        <span className="tboard-detail-tx">
-                                          <span className="tboard-detail-top">
-                                            <ChannelLogo
-                                              channel={linkedConv.channel}
-                                              className="tboard-detail-chan"
-                                            />
-                                            <b>{linkedConv.name}</b>
-                                            {linkedConv.subject && (
-                                              <span className="tboard-detail-subject">
-                                                {linkedConv.subject}
-                                              </span>
-                                            )}
-                                          </span>
-                                          <span className="tboard-detail-preview">
+                                <div className={`tdetail-wrap ${isOpen ? "is-open" : ""}`}>
+                                  <div className="tdetail">
+                                    <header className="tdetail-head">
+                                      <Avatar
+                                        avatar={{ ...linkedConv.avatar, alt: linkedConv.name }}
+                                        size={32}
+                                      />
+                                      <div className="tdetail-id">
+                                        <span className="tdetail-name">
+                                          {linkedConv.name}
+                                          <ChannelLogo
+                                            channel={linkedConv.channel}
+                                            className="tdetail-chan"
+                                          />
+                                        </span>
+                                        {linkedConv.subject && (
+                                          <span className="tdetail-subj">{linkedConv.subject}</span>
+                                        )}
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className="tdetail-open"
+                                        onClick={() => openTask(t)}
+                                      >
+                                        Ouvrir le fil →
+                                      </button>
+                                    </header>
+
+                                    <ul className="tdetail-msgs">
+                                      {(messagesByConv[linkedConv.id] ?? []).slice(-2).map((m) => (
+                                        <li
+                                          key={m.id}
+                                          className={`tdetail-msg tdetail-msg--${m.dir === "out" ? "out" : "in"}`}
+                                        >
+                                          <span className="tdetail-bubble">{m.text}</span>
+                                          <span className="tdetail-time">{m.time}</span>
+                                        </li>
+                                      ))}
+                                      {(messagesByConv[linkedConv.id] ?? []).length === 0 && (
+                                        <li className="tdetail-msg tdetail-msg--in">
+                                          <span className="tdetail-bubble">
                                             {linkedConv.preview}
                                           </span>
-                                        </span>
-                                        <span className="tboard-detail-open">Ouvrir le fil →</span>
+                                        </li>
+                                      )}
+                                    </ul>
+
+                                    <footer className="tdetail-foot">
+                                      <button
+                                        type="button"
+                                        className="tdetail-quick"
+                                        onClick={() => openTask(t)}
+                                      >
+                                        <svg
+                                          viewBox="0 0 24 24"
+                                          width={13}
+                                          height={13}
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth={1.9}
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          aria-hidden
+                                        >
+                                          <polyline points="9 17 4 12 9 7" />
+                                          <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+                                        </svg>
+                                        Répondre
+                                      </button>
+                                      <span className="tdetail-spacer" />
+                                      <span className="tdetail-meta">
+                                        {(messagesByConv[linkedConv.id] ?? []).length} message
+                                        {((messagesByConv[linkedConv.id] ?? []).length || 0) > 1
+                                          ? "s"
+                                          : ""}{" "}
+                                        · {linkedConv.name}
                                       </span>
-                                    </button>
+                                    </footer>
                                   </div>
                                 </div>
                               )}
