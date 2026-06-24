@@ -5257,10 +5257,11 @@ html {
 /* Barre d'outils pleine largeur, au-dessus des deux colonnes. */
 /* Conteneur toolbar : la barre de contrôles + (en dessous) la rangée de chips.
    Le séparateur du bas vit sur le conteneur pour englober les deux lignes. */
-.ibx-toolbar {
+.ibx-toolbar-wrap {
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   box-shadow: inset 0 -1.5px 0 rgba(10, 10, 10, 0.11);
 }
 .ibx-toolbar-bar {

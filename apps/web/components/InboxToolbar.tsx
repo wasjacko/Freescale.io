@@ -111,7 +111,7 @@ export function InboxToolbar() {
   const activeCount = chips.length;
 
   return (
-    <div className="ibx-toolbar">
+    <div className="ibx-toolbar-wrap">
       <div className="ibx-toolbar-bar">
         <div className="ibx-tool-wrap">
           <button
