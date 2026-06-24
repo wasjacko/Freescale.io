@@ -2684,8 +2684,8 @@ html {
   mask-composite: exclude;
   opacity: 0;
   transform: scale(0.985);
-  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1),
-    transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 520ms
+    cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
   z-index: -1;
 }
@@ -12036,6 +12036,11 @@ html {
 /* ════════ Mue v2 — façon « Brain » : tabs + composer dégradé + chat pur ════════ */
 .mue-pane.mue2 {
   padding: 0;
+  color: var(--ink, #0a0a0a);
+  background: radial-gradient(130% 90% at 50% 0%, #ffffff 0%, #f4f6f9 62%);
+  box-shadow: 0 10px 34px rgba(15, 23, 42, 0.1), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
   background: radial-gradient(130% 90% at 50% 0%, #1b1d26 0%, #0e0f14 62%);
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.34);
@@ -12060,11 +12065,18 @@ html {
   border-radius: 10px 10px 0 0;
   font-size: 13px;
   font-weight: 600;
-  color: #8a90a2;
+  color: #6b7280;
   cursor: pointer;
   transition: background 130ms var(--ease), color 130ms var(--ease);
 }
 .mue2-tab.is-on {
+  color: #4f6cf7;
+  background: rgba(79, 108, 247, 0.1);
+}
+[data-theme="dark"] .mue2-tab {
+  color: #8a90a2;
+}
+[data-theme="dark"] .mue2-tab.is-on {
   color: #cdd3ff;
   background: rgba(120, 140, 255, 0.14);
 }
@@ -12074,9 +12086,16 @@ html {
   padding-bottom: 4px;
 }
 .mue2 .mue-agent-iconbtn {
-  color: #9aa0b0;
+  color: #6b7280;
 }
 .mue2 .mue-agent-iconbtn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--ink, #0a0a0a);
+}
+[data-theme="dark"] .mue2 .mue-agent-iconbtn {
+  color: #9aa0b0;
+}
+[data-theme="dark"] .mue2 .mue-agent-iconbtn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
@@ -12087,6 +12106,11 @@ html {
   border-radius: 16px;
   padding: 14px 14px 10px;
   border: 1.5px solid transparent;
+  background: linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, #6f8bff 0%, #b78cff 48%, #ff9d7a 100%) border-box;
+  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.1);
+}
+[data-theme="dark"] .mue2-composer {
   background: linear-gradient(#15171d, #15171d) padding-box,
     linear-gradient(135deg, #6f8bff 0%, #b78cff 48%, #ff9d7a 100%) border-box;
   box-shadow: 0 8px 30px rgba(120, 90, 255, 0.14);
@@ -12096,13 +12120,19 @@ html {
   border: 0;
   background: transparent;
   resize: none;
-  color: #e8eaf0;
+  color: var(--ink, #0a0a0a);
   font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
   outline: none;
 }
 .mue2-input::placeholder {
+  color: #9aa0aa;
+}
+[data-theme="dark"] .mue2-input {
+  color: #e8eaf0;
+}
+[data-theme="dark"] .mue2-input::placeholder {
   color: #6b7080;
 }
 .mue2-composer-row {
@@ -12117,6 +12147,9 @@ html {
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
+  color: #475569;
+}
+[data-theme="dark"] .mue2-model {
   color: #c9cee0;
 }
 .mue2-send {
@@ -12125,7 +12158,7 @@ html {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: #10131a;
   color: #fff;
   cursor: pointer;
   transition: background 130ms var(--ease);
@@ -12135,6 +12168,12 @@ html {
   height: 16px;
 }
 .mue2-send:not(:disabled):hover {
+  background: #000;
+}
+[data-theme="dark"] .mue2-send {
+  background: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .mue2-send:not(:disabled):hover {
   background: rgba(255, 255, 255, 0.2);
 }
 .mue2-send:disabled {
@@ -12158,10 +12197,14 @@ html {
   gap: 10px;
   padding: 11px 12px;
   border-radius: 12px;
-  background: rgba(120, 140, 255, 0.13);
-  color: #cdd3ff;
+  background: rgba(79, 108, 247, 0.08);
+  color: #3046c1;
   text-align: left;
   cursor: pointer;
+}
+[data-theme="dark"] .mue2-brief {
+  background: rgba(120, 140, 255, 0.13);
+  color: #cdd3ff;
 }
 .mue2-brief-badge {
   display: grid;
@@ -12193,17 +12236,25 @@ html {
   gap: 6px;
   padding: 13px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.09);
   text-align: left;
   cursor: pointer;
   transition: background 130ms var(--ease), box-shadow 130ms var(--ease), transform 130ms
     var(--ease);
 }
 .mue2-card:hover {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.2), 0 6px 18px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
+}
+[data-theme="dark"] .mue2-card {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+[data-theme="dark"] .mue2-card:hover {
   background: rgba(255, 255, 255, 0.07);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
-  transform: translateY(-1px);
 }
 .mue2-card-ic {
   display: grid;
@@ -12211,6 +12262,10 @@ html {
   width: 30px;
   height: 30px;
   border-radius: 8px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #475569;
+}
+[data-theme="dark"] .mue2-card-ic {
   background: rgba(255, 255, 255, 0.06);
   color: #c9cee0;
 }
@@ -12221,11 +12276,17 @@ html {
 .mue2-card-title {
   font-size: 13px;
   font-weight: 650;
-  color: #eef0f6;
+  color: var(--ink, #10131a);
 }
 .mue2-card-sub {
   font-size: 11.5px;
   line-height: 1.35;
+  color: #6b7280;
+}
+[data-theme="dark"] .mue2-card-title {
+  color: #eef0f6;
+}
+[data-theme="dark"] .mue2-card-sub {
   color: #8a90a2;
 }
 
@@ -12244,14 +12305,14 @@ html {
   max-width: 85%;
   padding: 9px 13px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.09);
-  color: #eef0f6;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--ink, #10131a);
   font-size: 13.5px;
   line-height: 1.45;
 }
 .mue2-msg.is-mue {
   align-self: stretch;
-  color: #dfe3ee;
+  color: #1f2433;
 }
 .mue2-msg-head {
   display: flex;
@@ -12260,6 +12321,16 @@ html {
   margin-bottom: 7px;
   font-size: 13px;
   font-weight: 700;
+  color: var(--ink, #10131a);
+}
+[data-theme="dark"] .mue2-msg.is-user {
+  background: rgba(255, 255, 255, 0.09);
+  color: #eef0f6;
+}
+[data-theme="dark"] .mue2-msg.is-mue {
+  color: #dfe3ee;
+}
+[data-theme="dark"] .mue2-msg-head {
   color: #eef0f6;
 }
 .mue2-msg-body {
@@ -12268,6 +12339,9 @@ html {
   white-space: pre-wrap;
 }
 .mue2-msg.is-error .mue2-msg-body {
+  color: #dc2626;
+}
+[data-theme="dark"] .mue2-msg.is-error .mue2-msg-body {
   color: #ff9d9d;
 }
 .mue2-thinking {
@@ -12279,8 +12353,11 @@ html {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: #8a90a2;
+  background: #b5bac4;
   animation: mue2blink 1s infinite;
+}
+[data-theme="dark"] .mue2-thinking span {
+  background: #8a90a2;
 }
 .mue2-thinking span:nth-child(2) {
   animation-delay: 0.15s;
@@ -12316,32 +12393,48 @@ html {
   margin: 8px 0 0;
   padding: 4px 8px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  color: #eef0f6;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
+  color: var(--ink, #10131a);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background 130ms var(--ease), box-shadow 130ms var(--ease);
 }
 .mue2-ref:hover {
-  background: rgba(255, 255, 255, 0.11);
-  box-shadow: inset 0 0 0 1px rgba(120, 140, 255, 0.55);
+  background: rgba(79, 108, 247, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.5);
 }
 .mue2-ref-dot {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  box-shadow: inset 0 0 0 2px #9aa0b0;
+  box-shadow: inset 0 0 0 2px #6b7280;
 }
 .mue2-ref-badge {
   padding: 1px 6px;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.14);
-  color: #c9cee0;
+  background: rgba(15, 23, 42, 0.08);
+  color: #475569;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.03em;
+}
+[data-theme="dark"] .mue2-ref {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  color: #eef0f6;
+}
+[data-theme="dark"] .mue2-ref:hover {
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 0 0 1px rgba(120, 140, 255, 0.55);
+}
+[data-theme="dark"] .mue2-ref-dot {
+  box-shadow: inset 0 0 0 2px #9aa0b0;
+}
+[data-theme="dark"] .mue2-ref-badge {
+  background: rgba(255, 255, 255, 0.14);
+  color: #c9cee0;
 }
 /* Suggestions de suivi (« Améliorations »). */
 .mue2-improve {
@@ -12352,7 +12445,7 @@ html {
 }
 .mue2-improve-label {
   font-size: 12px;
-  color: #8a90a2;
+  color: #6b7280;
 }
 .mue2-improve-chip {
   display: inline-flex;
@@ -12362,9 +12455,9 @@ html {
   max-width: 100%;
   padding: 9px 14px;
   border-radius: 999px;
-  background: transparent;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-  color: #e8eaf0;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
+  color: var(--ink, #10131a);
   font-size: 13px;
   font-weight: 500;
   text-align: left;
@@ -12372,12 +12465,25 @@ html {
   transition: background 130ms var(--ease), box-shadow 130ms var(--ease);
 }
 .mue2-improve-chip:hover {
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26);
+  background: rgba(15, 23, 42, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.26);
 }
 .mue2-improve-arrow {
-  color: #8a90a2;
+  color: #9aa0aa;
   flex: none;
+}
+[data-theme="dark"] .mue2-improve-label,
+[data-theme="dark"] .mue2-improve-arrow {
+  color: #8a90a2;
+}
+[data-theme="dark"] .mue2-improve-chip {
+  background: transparent;
+  color: #e8eaf0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+[data-theme="dark"] .mue2-improve-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26);
 }
 
 /* ── Fiche tâche (modal de détail ouverte depuis le chat) ── */
@@ -12572,19 +12678,30 @@ html {
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  color: #b9c0ff;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  color: #4f6cf7;
 }
 .mue2-agents h2 {
   font-size: 16px;
   font-weight: 700;
-  color: #eef0f6;
+  color: var(--ink, #10131a);
 }
 .mue2-agents p {
   max-width: 260px;
   font-size: 13px;
   line-height: 1.5;
+  color: #6b7280;
+}
+[data-theme="dark"] .mue2-agents-orb {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: #b9c0ff;
+}
+[data-theme="dark"] .mue2-agents h2 {
+  color: #eef0f6;
+}
+[data-theme="dark"] .mue2-agents p {
   color: #8a90a2;
 }
 .mue-agent-head {
