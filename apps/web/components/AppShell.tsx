@@ -43,6 +43,7 @@ export function AppShell({
     toggleSidebar,
     mueOpen,
     setMueOpen,
+    theme,
   } = useApp();
   const { conversations, channels, archive, unarchive, addTask } = useData();
   // Soft profiling: show only when user hasn't been profiled AND has at
@@ -88,6 +89,14 @@ export function AppShell({
       /Mac|iPhone|iPad/.test(navigator.platform) ? "os-mac" : "os-pc"
     );
   }, []);
+
+  // Thème : on (dé)verrouille les ~477 règles [data-theme="dark"] dormantes
+  // en basculant l'attribut sur <html> au runtime (le serveur pose "light").
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+  }, [theme]);
 
   // Document title with unread count
   useEffect(() => {

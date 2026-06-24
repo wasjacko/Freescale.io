@@ -45,7 +45,8 @@ const stroke = {
 };
 
 export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClose: () => void }) {
-  const { setView, setMueOpen, setDataViewOpen, setActiveFolder, setActiveConv } = useApp();
+  const { setView, setMueOpen, setDataViewOpen, setActiveFolder, setActiveConv, theme, setTheme } =
+    useApp();
   const push = useToast((s) => s.push);
 
   useEffect(() => {
@@ -156,22 +157,44 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
           </svg>
           Aide & support
         </button>
-        <button
-          type="button"
-          className="account-menu-item"
-          onClick={() => {
-            push({ kind: "info", text: "Thèmes — bientôt 🎨" });
-            onClose();
-          }}
-        >
-          <svg {...stroke}>
-            <rect x="3" y="3" width="13" height="6" rx="1.5" />
-            <path d="M16 6h3a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-7" />
-            <path d="M12 12v3" />
-            <rect x="9.5" y="15" width="5" height="6" rx="1" />
-          </svg>
-          Thèmes
-        </button>
+        <div className="account-menu-theme">
+          <span className="account-menu-theme-id">
+            <svg {...stroke}>
+              <rect x="3" y="3" width="13" height="6" rx="1.5" />
+              <path d="M16 6h3a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-7" />
+              <path d="M12 12v3" />
+              <rect x="9.5" y="15" width="5" height="6" rx="1" />
+            </svg>
+            Thème
+          </span>
+          <div className="account-menu-theme-seg" role="group" aria-label="Thème">
+            <button
+              type="button"
+              className={`amt-opt ${theme === "light" ? "is-on" : ""}`}
+              aria-pressed={theme === "light"}
+              onClick={() => setTheme("light")}
+              title="Clair"
+            >
+              <svg {...stroke} width={15} height={15}>
+                <circle cx="12" cy="12" r="4.5" />
+                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+              </svg>
+              Clair
+            </button>
+            <button
+              type="button"
+              className={`amt-opt ${theme === "dark" ? "is-on" : ""}`}
+              aria-pressed={theme === "dark"}
+              onClick={() => setTheme("dark")}
+              title="Sombre"
+            >
+              <svg {...stroke} width={15} height={15}>
+                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+              </svg>
+              Sombre
+            </button>
+          </div>
+        </div>
         <button
           type="button"
           className="account-menu-item"

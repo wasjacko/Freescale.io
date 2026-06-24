@@ -26,6 +26,9 @@ type State = {
   mueOpen: boolean;
   mueView: MueView;
   suggestTasksOpen: boolean;
+  /** Thème de l'interface (clair / sombre). */
+  theme: "light" | "dark";
+  setTheme: (t: "light" | "dark") => void;
   // Filtres/tri de l'Inbox — remontés au store pour que la barre d'outils
   // (pleine largeur, au-dessus des deux colonnes) et la liste les partagent.
   inboxSort: InboxSort;
@@ -92,6 +95,8 @@ export const useApp = create<State>()(
       setInboxSearch: (inboxSearch) => set({ inboxSearch }),
       inboxBucket: "all",
       setInboxBucket: (inboxBucket) => set({ inboxBucket }),
+      theme: "light",
+      setTheme: (theme) => set({ theme }),
       clientConfirm: { open: false, channel: "gmail" },
       openClientConfirm: (channel) => set({ clientConfirm: { open: true, channel } }),
       closeClientConfirm: () =>
@@ -176,6 +181,7 @@ export const useApp = create<State>()(
         sidebarCollapsed: s.sidebarCollapsed,
         mueOpen: s.mueOpen,
         inboxFolders: s.inboxFolders,
+        theme: s.theme,
       }),
     }
   )
