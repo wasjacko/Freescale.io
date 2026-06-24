@@ -1,6 +1,7 @@
 "use client";
 
 import { MueFlower } from "@/components/MueFlower";
+import { MueMemoryDrawer } from "@/components/MueMemoryDrawer";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
@@ -119,6 +120,8 @@ export function MuePanel() {
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   // Sélecteur de discussions (popover) : ouverture + recherche.
   const [discOpen, setDiscOpen] = useState(false);
+  // Drawer « Mémoire » — alimente ce que Mue sait de toi.
+  const [memoryOpen, setMemoryOpen] = useState(false);
   const [discQuery, setDiscQuery] = useState("");
   const [currentDisc, setCurrentDisc] = useState<{ id: string; title: string } | null>(null);
 
@@ -394,6 +397,21 @@ export function MuePanel() {
   return (
     <aside className="copilot mue-pane mue2 is-open" aria-label="Mue copilot">
       <header className="mue2-head">
+        <button
+          type="button"
+          className="mue2-mem-btn"
+          title="Mémoire de Mue"
+          aria-label="Mémoire de Mue"
+          onClick={() => setMemoryOpen(true)}
+        >
+          <svg {...stroke} width={15} height={15}>
+            <rect x="3" y="5" width="18" height="5" rx="2" />
+            <rect x="3" y="14" width="18" height="5" rx="2" />
+            <line x1="7" y1="7.5" x2="7.01" y2="7.5" />
+            <line x1="7" y1="16.5" x2="7.01" y2="16.5" />
+          </svg>
+          Mémoire
+        </button>
         <div className="mue2-disc-wrap">
           <button
             type="button"
@@ -659,6 +677,8 @@ export function MuePanel() {
       {detailTaskId && (
         <TaskDetailModal taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
       )}
+
+      <MueMemoryDrawer open={memoryOpen} onClose={() => setMemoryOpen(false)} />
     </aside>
   );
 }
