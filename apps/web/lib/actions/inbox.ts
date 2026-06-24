@@ -82,6 +82,9 @@ export async function toggleConversationStar(conversationId: string, starred: bo
 export async function sendMessage(conversationId: string, text: string) {
   const trimmed = text.trim();
   if (!trimmed) return;
+  // Mode mock/démo : pas de backend — l'envoi optimiste côté client suffit,
+  // on ne touche ni Supabase ni les vrais canaux.
+  if (isDevNoAuth()) return;
   const supabase = await createClient();
   const {
     data: { user },

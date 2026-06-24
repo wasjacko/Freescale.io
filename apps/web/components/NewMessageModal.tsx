@@ -1,9 +1,22 @@
 "use client";
 
+import { ChannelLogo } from "@/components/icons/Icon";
+import { Avatar } from "@/components/ui/Avatar";
+import { channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
-import type { ChannelId } from "@/lib/types";
-import { useEffect, useState } from "react";
+import type { Avatar as AvatarT, ChannelId } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+
+type ClientEntry = {
+  key: string;
+  name: string;
+  avatar: AvatarT;
+  contactEmail?: string;
+  /** Canal → id de la conversation existante (pour continuer le fil). */
+  convByChannel: Map<ChannelId, string>;
+  channels: ChannelId[];
+};
 
 export function NewMessageModal({
   open,
@@ -14,26 +27,60 @@ export function NewMessageModal({
   onClose: () => void;
   onCreated: (convId: string) => void;
 }) {
-  const { createConversation, conversations } = useData();
+  const { createConversation, appendOutgoingMessage, conversations, channels } = useData();
   const push = useToast((s) => s.push);
 
-  // Clients existants (1 par client) → puces de sélection rapide.
-  const clients = (() => {
-    const seen = new Map<string, { name: string; channel: ChannelId }>();
+  // Clients dérivés des conversations (1 entrée par client, multi-canal).
+  const clients = useMemo<ClientEntry[]>(() => {
+    const map = new Map<string, ClientEntry>();
     for (const c of conversations) {
       const key = c.clientId ?? c.id;
-      if (!seen.has(key)) seen.set(key, { name: c.name, channel: c.channel });
+      const existing = map.get(key);
+      const e: ClientEntry = existing ?? {
+        key,
+        name: c.name,
+        avatar: c.avatar,
+        ...(c.contactEmail ? { contactEmail: c.contactEmail } : {}),
+        convByChannel: new Map(),
+        channels: [],
+      };
+      if (!existing) map.set(key, e);
+      if (!e.convByChannel.has(c.channel)) {
+        e.convByChannel.set(c.channel, c.id);
+        e.channels.push(c.channel);
+      }
     }
-    return [...seen.values()];
-  })();
+    return [...map.values()];
+  }, [conversations]);
 
-  const [name, setName] = useState("");
+  // Canaux réellement connectés (pour un nouveau contact).
+  const connectedChannels = useMemo<ChannelId[]>(() => {
+    const set = new Set<ChannelId>();
+    for (const ch of channels) set.add(ch.kind);
+    return set.size > 0 ? [...set] : ["gmail"];
+  }, [channels]);
+
+  const [query, setQuery] = useState("");
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [newName, setNewName] = useState(""); // contact hors liste
   const [channel, setChannel] = useState<ChannelId>("gmail");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Lock body scroll + Esc to close
+  const selected = selectedKey ? (clients.find((c) => c.key === selectedKey) ?? null) : null;
+  // Canaux proposés : ceux du client sélectionné, sinon les canaux connectés.
+  const channelOptions = selected ? selected.channels : connectedChannels;
+
+  const reset = () => {
+    setQuery("");
+    setSelectedKey(null);
+    setNewName("");
+    setSubject("");
+    setMessage("");
+  };
+
+  // Lock body scroll + Esc.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -50,34 +97,74 @@ export function NewMessageModal({
   if (!open) return null;
 
   const isEmail = channel === "gmail" || channel === "outlook";
+  const recipientName = selected?.name ?? newName.trim();
+  const canSend = !!recipientName && !!message.trim() && !submitting;
+
+  const pickClient = (c: ClientEntry) => {
+    setSelectedKey(c.key);
+    setNewName("");
+    setQuery("");
+    setChannel(c.channels[0] ?? connectedChannels[0] ?? "gmail");
+  };
+  const pickNewContact = (nameValue: string) => {
+    setSelectedKey(null);
+    setNewName(nameValue);
+    setQuery("");
+    setChannel(connectedChannels[0] ?? "gmail");
+  };
+  const clearRecipient = () => {
+    setSelectedKey(null);
+    setNewName("");
+    setQuery("");
+  };
+
+  const filtered = query.trim()
+    ? clients.filter((c) => c.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : clients;
+  const exactMatch = clients.some((c) => c.name.toLowerCase() === query.trim().toLowerCase());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      push({ kind: "error", text: "Veuillez entrer un destinataire." });
+    if (!recipientName) {
+      push({ kind: "error", text: "Choisis un client ou saisis un destinataire." });
       return;
     }
     if (!message.trim()) {
-      push({ kind: "error", text: "Veuillez écrire un message." });
+      push({ kind: "error", text: "Écris un message." });
       return;
     }
 
     setSubmitting(true);
     try {
-      const convId = await createConversation(
-        name.trim(),
-        channel,
-        message.trim(),
-        isEmail ? subject.trim() : undefined
-      );
-      push({ kind: "success", text: "Message envoyé !" });
+      let convId: string;
+      const existing = selected?.convByChannel.get(channel);
+      if (existing) {
+        // Le client a déjà un fil sur ce canal → on continue la conversation.
+        await appendOutgoingMessage(existing, message.trim());
+        convId = existing;
+      } else {
+        convId = await createConversation(
+          recipientName,
+          channel,
+          message.trim(),
+          isEmail ? subject.trim() : undefined,
+          selected
+            ? {
+                avatar: selected.avatar,
+                clientId: selected.key,
+                ...(selected.contactEmail ? { contactEmail: selected.contactEmail } : {}),
+              }
+            : undefined
+        );
+      }
+      push({
+        kind: "success",
+        text: `Message envoyé à ${recipientName} (${channelProviderLabel(channel)})`,
+      });
       onCreated(convId);
       onClose();
-      // Reset state
-      setName("");
-      setSubject("");
-      setMessage("");
-    } catch (err) {
+      reset();
+    } catch {
       push({ kind: "error", text: "Erreur lors de l'envoi." });
     } finally {
       setSubmitting(false);
@@ -93,16 +180,13 @@ export function NewMessageModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
       tabIndex={-1}
     >
       <div className="add-channel-sheet" style={{ maxWidth: "480px" }}>
         <header className="add-channel-head">
           <div>
             <h2>Nouveau message</h2>
-            <p>Envoyez un message à un client sur le canal de votre choix.</p>
+            <p>Choisis un client et le canal — Mue envoie sur le bon fil.</p>
           </div>
           <button type="button" className="add-channel-close" aria-label="Fermer" onClick={onClose}>
             <svg
@@ -122,81 +206,124 @@ export function NewMessageModal({
         </header>
 
         <form onSubmit={handleSubmit} className="new-msg-form">
-          {clients.length > 0 && (
-            <div className="new-msg-clients">
-              {clients.map((cl) => (
-                <button
-                  key={cl.name}
-                  type="button"
-                  className={`new-msg-chip ${name === cl.name ? "is-on" : ""}`}
-                  onClick={() => {
-                    setName(cl.name);
-                    setChannel(cl.channel);
-                  }}
-                >
-                  {cl.name}
-                </button>
-              ))}
+          {/* ── Destinataire ── */}
+          {recipientName && (selected || newName) ? (
+            <div className="nm-selected">
+              {selected ? (
+                <Avatar avatar={{ ...selected.avatar, alt: selected.name }} size={32} />
+              ) : (
+                <span className="nm-selected-new" aria-hidden>
+                  {recipientName.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+              <span className="nm-selected-name">{recipientName}</span>
+              {!selected && <span className="nm-selected-tag">nouveau contact</span>}
+              <button type="button" className="nm-selected-change" onClick={clearRecipient}>
+                Changer
+              </button>
+            </div>
+          ) : (
+            <div className="new-msg-field">
+              <label htmlFor="nm-search">Destinataire</label>
+              <input
+                id="nm-search"
+                type="text"
+                placeholder="Rechercher un client ou saisir un nom…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoComplete="off"
+              />
+              <div className="nm-results">
+                {filtered.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    className="nm-result"
+                    onClick={() => pickClient(c)}
+                  >
+                    <Avatar avatar={{ ...c.avatar, alt: c.name }} size={30} />
+                    <span className="nm-result-name">{c.name}</span>
+                    <span className="nm-result-chans">
+                      {c.channels.map((ch) => (
+                        <ChannelLogo key={ch} channel={ch} className="nm-result-chan" />
+                      ))}
+                    </span>
+                  </button>
+                ))}
+                {query.trim() && !exactMatch && (
+                  <button
+                    type="button"
+                    className="nm-result nm-result--new"
+                    onClick={() => pickNewContact(query.trim())}
+                  >
+                    <span className="nm-selected-new" aria-hidden>
+                      +
+                    </span>
+                    <span className="nm-result-name">Écrire à « {query.trim()} »</span>
+                    <span className="nm-result-hint">nouveau contact</span>
+                  </button>
+                )}
+                {filtered.length === 0 && !query.trim() && (
+                  <p className="nm-empty">Aucun client pour l'instant.</p>
+                )}
+              </div>
             </div>
           )}
-          <div className="new-msg-field">
-            <label htmlFor="msg-recipient">Destinataire</label>
-            <input
-              id="msg-recipient"
-              type="text"
-              placeholder="Nom du client..."
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
 
-          <div className="new-msg-field">
-            <label htmlFor="msg-channel">Canal</label>
-            <select
-              id="msg-channel"
-              value={channel}
-              onChange={(e) => setChannel(e.target.value as ChannelId)}
-            >
-              <option value="gmail">Gmail</option>
-              <option value="outlook">Outlook</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="slack">Slack</option>
-              <option value="linkedin">LinkedIn</option>
-            </select>
-          </div>
-
-          {isEmail && (
+          {/* ── Canal ── (segmenté avec logos) */}
+          {recipientName && (
             <div className="new-msg-field">
-              <label htmlFor="msg-subject">Objet</label>
+              <label>Canal</label>
+              <div className="nm-channels">
+                {channelOptions.map((ch) => (
+                  <button
+                    key={ch}
+                    type="button"
+                    className={`nm-chan ${channel === ch ? "is-on" : ""}`}
+                    onClick={() => setChannel(ch)}
+                  >
+                    <ChannelLogo channel={ch} className="nm-chan-logo" />
+                    {channelProviderLabel(ch)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Objet (email) ── */}
+          {recipientName && isEmail && (
+            <div className="new-msg-field">
+              <label htmlFor="nm-subject">Objet</label>
               <input
-                id="msg-subject"
+                id="nm-subject"
                 type="text"
-                placeholder="Sujet du mail..."
+                placeholder="Sujet du mail…"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
               />
             </div>
           )}
 
-          <div className="new-msg-field">
-            <label htmlFor="msg-text">Message</label>
-            <textarea
-              id="msg-text"
-              rows={6}
-              placeholder="Écrivez votre message ici..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              required
-            />
-          </div>
+          {/* ── Message ── */}
+          {recipientName && (
+            <div className="new-msg-field">
+              <label htmlFor="nm-text">Message</label>
+              <textarea
+                id="nm-text"
+                rows={5}
+                placeholder={`Écris à ${recipientName}…`}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="new-msg-actions">
             <button type="button" className="new-msg-cancel" onClick={onClose}>
               Annuler
             </button>
-            <button type="submit" className="new-msg-submit" disabled={submitting}>
-              {submitting ? "Envoi..." : "Envoyer"}
+            <button type="submit" className="new-msg-submit" disabled={!canSend}>
+              {submitting ? "Envoi…" : "Envoyer"}
             </button>
           </div>
         </form>

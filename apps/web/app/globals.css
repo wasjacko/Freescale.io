@@ -18347,6 +18347,159 @@ button:active:not(:disabled):not(.no-press) {
   cursor: not-allowed;
 }
 
+/* ── Nouveau message : sélecteur de destinataire ── */
+.nm-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 230px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+.nm-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 9px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+.nm-result:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+.nm-result .avatar {
+  flex: none;
+  border-radius: 999px;
+}
+.nm-result-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #10131a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nm-result-chans {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+.nm-result-chan {
+  width: 16px;
+  height: 16px;
+}
+.nm-result-chan svg {
+  width: 16px;
+  height: 16px;
+}
+.nm-result-hint {
+  font-size: 11px;
+  color: #9097a3;
+  flex: none;
+}
+.nm-empty {
+  margin: 6px 2px;
+  font-size: 12.5px;
+  color: #9097a3;
+}
+/* Pastille « nouveau contact / + ». */
+.nm-selected-new {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+  background: #eef0f6;
+  color: #5b6475;
+  font-size: 14px;
+  font-weight: 700;
+}
+.nm-result--new .nm-selected-new {
+  width: 30px;
+  height: 30px;
+}
+/* Destinataire choisi (bandeau). */
+.nm-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.04);
+}
+.nm-selected .avatar {
+  flex: none;
+  border-radius: 999px;
+}
+.nm-selected-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 650;
+  color: #10131a;
+}
+.nm-selected-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2f7df6;
+  background: rgba(47, 125, 246, 0.1);
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.nm-selected-change {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f6cf7;
+  cursor: pointer;
+  flex: none;
+}
+.nm-selected-change:hover {
+  text-decoration: underline;
+}
+/* Choix du canal — segmenté avec logos. */
+.nm-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nm-chan {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.12);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: box-shadow 130ms var(--ease), background 130ms var(--ease), color 130ms var(--ease);
+}
+.nm-chan:hover {
+  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.22);
+}
+.nm-chan.is-on {
+  background: rgba(47, 125, 246, 0.08);
+  color: #10131a;
+  box-shadow: inset 0 0 0 1.6px #2f7df6;
+}
+.nm-chan-logo {
+  width: 17px;
+  height: 17px;
+}
+.nm-chan-logo svg {
+  width: 17px;
+  height: 17px;
+}
+
 [data-theme="dark"] .new-msg-field label {
   color: #94a3b8;
 }

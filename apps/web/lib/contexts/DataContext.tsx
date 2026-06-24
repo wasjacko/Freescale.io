@@ -21,7 +21,15 @@ import {
 } from "@/lib/actions/inbox";
 import type { MemberRole } from "@/lib/collaboration";
 import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
-import type { CalEvent, ChannelId, Conversation, Message, Task, UpcomingEvent } from "@/lib/types";
+import type {
+  Avatar,
+  CalEvent,
+  ChannelId,
+  Conversation,
+  Message,
+  Task,
+  UpcomingEvent,
+} from "@/lib/types";
 import type { ConversationCategory } from "@/lib/types";
 import {
   type ReactNode,
@@ -100,7 +108,8 @@ type Ctx = {
     name: string,
     channel: ChannelId,
     text: string,
-    subject?: string
+    subject?: string,
+    meta?: { avatar?: Avatar; clientId?: string; contactEmail?: string }
   ) => Promise<string>;
 };
 
@@ -457,22 +466,35 @@ export function DataProvider({
   }, []);
 
   const createConversation = useCallback(
-    async (name: string, channel: ChannelId, text: string, subject?: string) => {
+    async (
+      name: string,
+      channel: ChannelId,
+      text: string,
+      subject?: string,
+      meta?: { avatar?: Avatar; clientId?: string; contactEmail?: string }
+    ) => {
       const newId = `c-new-${crypto.randomUUID()}`;
       const now = new Date().toISOString();
       const time = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
       const newConv: Conversation = {
         id: newId,
+        // Rattache à un client existant si fourni (fusion « 1 ligne = 1 client »).
+        ...(meta?.clientId ? { clientId: meta.clientId } : {}),
         name,
         preview: text.slice(0, 80),
         lastAtIso: now,
-        avatar: { kind: "initials", text: name.substring(0, 2).toUpperCase(), bg: "#4f46e5" },
+        avatar: meta?.avatar ?? {
+          kind: "initials",
+          text: name.substring(0, 2).toUpperCase(),
+          bg: "#4f46e5",
+        },
         channel,
         unread: false,
         group: "today",
         subject: subject || "Nouveau message",
-        contactEmail: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
+        contactEmail:
+          meta?.contactEmail ?? `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
         category: "client",
         tags: [],
         lastInboundAt: null,
