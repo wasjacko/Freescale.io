@@ -40,44 +40,44 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
-/** Logo fleur Mue (5 pétales en dégradé pastel, façon Brain). */
-const MueFlower = ({ size = 56 }: { size?: number }) => (
-  <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
-    <defs>
-      <linearGradient id="mfv-petal-1" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#7aa2ff" />
-        <stop offset="100%" stopColor="#b78cff" />
-      </linearGradient>
-      <linearGradient id="mfv-petal-2" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#b78cff" />
-        <stop offset="100%" stopColor="#ff9d7a" />
-      </linearGradient>
-      <linearGradient id="mfv-petal-3" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#ff9d7a" />
-        <stop offset="100%" stopColor="#ffd2a8" />
-      </linearGradient>
-      <radialGradient id="mfv-core" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
-        <stop offset="60%" stopColor="#fff" stopOpacity="0.25" />
-        <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-      </radialGradient>
-    </defs>
-    {/* 5 pétales en cercle (rotation par 72°). */}
-    {[0, 72, 144, 216, 288].map((deg, i) => (
-      <ellipse
-        key={deg}
-        cx="32"
-        cy="18"
-        rx="11"
-        ry="16"
-        fill={`url(#mfv-petal-${(i % 3) + 1})`}
-        transform={`rotate(${deg} 32 32)`}
-        opacity="0.92"
-      />
-    ))}
-    <circle cx="32" cy="32" r="8" fill="url(#mfv-core)" />
-  </svg>
-);
+/** Logo fleur Mue — 5 pétales ronds organiques façon Brain², dégradé pastel. */
+const MueFlower = ({ size = 56 }: { size?: number }) => {
+  // Couleurs ordonnées autour du cercle pour un dégradé fluide.
+  const colors = ["#7aa2ff", "#a98aff", "#d088ec", "#ff8fb0", "#ff9d7a"];
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
+      <defs>
+        {colors.map((c, i) => (
+          <radialGradient
+            key={c}
+            id={`mfv-pet-${i}`}
+            cx="0.5"
+            cy="0.35"
+            r="0.7"
+            fx="0.5"
+            fy="0.25"
+          >
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+            <stop offset="55%" stopColor={c} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={c} stopOpacity="1" />
+          </radialGradient>
+        ))}
+      </defs>
+      {/* 5 pétales circulaires arrangés autour du centre (rotation par 72°). */}
+      {colors.map((_, i) => (
+        <circle
+          key={i}
+          cx="32"
+          cy="20"
+          r="13"
+          fill={`url(#mfv-pet-${i})`}
+          transform={`rotate(${i * 72} 32 32)`}
+          style={{ mixBlendMode: "multiply" as const }}
+        />
+      ))}
+    </svg>
+  );
+};
 
 export function MueFullView() {
   const { activeConvId } = useApp();
