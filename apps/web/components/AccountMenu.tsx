@@ -9,7 +9,7 @@ import { BRAIN_USES, CREDITS_REMAINING, brainPct, creditsPct, fmtCredits } from 
 import { useToast } from "@/lib/hooks/useToast";
 import { useApp } from "@/lib/store";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 /** Petit anneau de progression (jauge verte). */
 function Ring({ pct }: { pct: number }) {
@@ -45,9 +45,8 @@ const stroke = {
 };
 
 export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClose: () => void }) {
-  const { setView, setMueOpen, setDataViewOpen } = useApp();
+  const { setView, setMueOpen, setDataViewOpen, setActiveFolder, setActiveConv } = useApp();
   const push = useToast((s) => s.push);
-  const [active, setActive] = useState(true);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -86,19 +85,6 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
             <span className="amc-label">Crédits restants</span>
           </div>
         </div>
-
-        <button
-          type="button"
-          className="account-menu-status"
-          onClick={() => setActive((a) => !a)}
-          aria-pressed={active}
-        >
-          <span className={`account-menu-dot ${active ? "is-on" : ""}`} aria-hidden />
-          <span className="account-menu-status-label">{active ? "Actif" : "Absent"}</span>
-          <span className={`account-menu-switch ${active ? "is-on" : ""}`} aria-hidden>
-            <span className="account-menu-knob" />
-          </span>
-        </button>
 
         <div className="account-menu-sep" />
 
@@ -169,6 +155,40 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
             <line x1="12" y1="17" x2="12" y2="17" />
           </svg>
           Aide & support
+        </button>
+        <button
+          type="button"
+          className="account-menu-item"
+          onClick={() => {
+            push({ kind: "info", text: "Thèmes — bientôt 🎨" });
+            onClose();
+          }}
+        >
+          <svg {...stroke}>
+            <rect x="3" y="3" width="13" height="6" rx="1.5" />
+            <path d="M16 6h3a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-7" />
+            <path d="M12 12v3" />
+            <rect x="9.5" y="15" width="5" height="6" rx="1" />
+          </svg>
+          Thèmes
+        </button>
+        <button
+          type="button"
+          className="account-menu-item"
+          onClick={() => {
+            setView("inbox");
+            setActiveConv("");
+            setActiveFolder("view:trash");
+            onClose();
+          }}
+        >
+          <svg {...stroke}>
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
+          Corbeille
         </button>
 
         <div className="account-menu-sep" />
