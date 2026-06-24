@@ -5,10 +5,34 @@
 // un statut « Actif » et des raccourcis. 100% UI mock (sauf nav réelle).
 
 import type { CurrentUser } from "@/lib/auth";
+import { BRAIN_USES, CREDITS_REMAINING, brainPct, creditsPct, fmtCredits } from "@/lib/credits";
 import { useToast } from "@/lib/hooks/useToast";
 import { useApp } from "@/lib/store";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+/** Petit anneau de progression (jauge verte). */
+function Ring({ pct }: { pct: number }) {
+  const r = 9;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg className="amc-ring" viewBox="0 0 24 24" width={22} height={22} aria-hidden>
+      <circle cx="12" cy="12" r={r} fill="none" stroke="rgba(22,163,74,0.18)" strokeWidth="3" />
+      <circle
+        cx="12"
+        cy="12"
+        r={r}
+        fill="none"
+        stroke="#16a34a"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - Math.min(100, Math.max(0, pct)) / 100)}
+        transform="rotate(-90 12 12)"
+      />
+    </svg>
+  );
+}
 
 const stroke = {
   fill: "none",
@@ -46,6 +70,21 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
         <div className="account-menu-head">
           <span className="account-menu-as">Connecté en tant que {user?.name ?? "Compte"}</span>
           <span className="account-menu-email">{user?.email ?? "—"}</span>
+        </div>
+
+        <div className="account-menu-sep" />
+
+        <div className="account-menu-credits">
+          <div className="amc-row">
+            <Ring pct={brainPct} />
+            <span className="amc-val">{BRAIN_USES}</span>
+            <span className="amc-label">Utilisations de l'IA Mue</span>
+          </div>
+          <div className="amc-row">
+            <Ring pct={creditsPct} />
+            <span className="amc-val">{fmtCredits(CREDITS_REMAINING)}</span>
+            <span className="amc-label">Crédits restants</span>
+          </div>
         </div>
 
         <button

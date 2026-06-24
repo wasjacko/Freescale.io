@@ -6,6 +6,7 @@ import { ChannelLogo } from "@/components/icons/Icon";
 import type { CurrentUser } from "@/lib/auth";
 import { channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
+import { CREDITS_REMAINING, creditsPct, fmtCredits } from "@/lib/credits";
 import { useApp } from "@/lib/store";
 import { useState } from "react";
 
@@ -117,13 +118,19 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
             aria-expanded={accountOpen}
             aria-label="Mon compte"
           >
-            <span className="topbar-avatar-img">
-              {user?.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
-              ) : (
-                initials
-              )}
+            <span
+              className="topbar-avatar-ring"
+              style={{ ["--pct" as string]: `${creditsPct}%` }}
+              title={`${fmtCredits(CREDITS_REMAINING)} crédits restants`}
+            >
+              <span className="topbar-avatar-img">
+                {user?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
+                ) : (
+                  initials
+                )}
+              </span>
             </span>
             <svg
               className="topbar-avatar-caret"
