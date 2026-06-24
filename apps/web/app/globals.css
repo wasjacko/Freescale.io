@@ -12258,7 +12258,12 @@ html {
 /* ── Fiche tâche (modal de détail ouverte depuis le chat) ── */
 .tdm-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  /* Couvre la PAGE principale, pas le panneau Mue : on réserve sa largeur
+     à droite quand il est ouvert. */
+  right: 0;
   z-index: 120;
   display: flex;
   align-items: center;

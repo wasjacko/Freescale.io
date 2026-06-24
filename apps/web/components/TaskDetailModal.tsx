@@ -4,7 +4,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import type { Task } from "@/lib/types";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 const STATUS_LABEL: Record<Task["status"], string> = {
   "to-scope": "À cadrer",
@@ -32,22 +33,37 @@ const PRIO_LABEL: Record<Task["priority"], string> = {
  */
 export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const { tasks, setTaskStatus } = useData();
-  const { setView, setActiveConv, setMueOpen } = useApp();
+  const { setView, setActiveConv, setMueOpen, mueOpen } = useApp();
   const task = tasks.find((t) => t.id === taskId) ?? null;
+
+  // Portal vers <body> : la modal vit AU-DESSUS de toute la page (zone
+  // principale), pas à l'intérieur du panneau Mue.
+  const [mounted, setMounted] = useState(false);
+  // Réserve la largeur RÉELLE du panneau Mue à droite (mesurée sur l'élément,
+  // car le portal sort de .app et n'hérite pas de --mue-panel-w).
+  const [rightInset, setRightInset] = useState(0);
+  useEffect(() => {
+    setMounted(true);
+    const cop = document.querySelector(".copilot");
+    if (mueOpen && cop) {
+      const r = cop.getBoundingClientRect();
+      setRightInset(Math.max(0, window.innerWidth - r.left + 8));
+    } else {
+      setRightInset(0);
+    }
+  }, [mueOpen]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
     };
   }, [onClose]);
 
-  if (!task) return null;
+  if (!task || !mounted) return null;
 
   const done = task.status === "done";
   const openInTasks = () => {
@@ -63,9 +79,10 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
       className="tdm-overlay"
+      style={{ right: rightInset }}
       role="dialog"
       aria-modal="true"
       aria-label={`Tâche ${task.title}`}
@@ -167,6 +184,7 @@ export function TaskDetailModal({ taskId, onClose }: { taskId: string; onClose: 
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
