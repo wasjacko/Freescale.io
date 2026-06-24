@@ -170,6 +170,8 @@ export function TasksBoard() {
 
   // Édition inline d'une date (échéance / création) : clic sur la cellule.
   const [editCell, setEditCell] = useState<{ id: string; field: "due" | "created" } | null>(null);
+  // Menu d'édition de la priorité (clic sur la cellule Priorité).
+  const [prioMenuId, setPrioMenuId] = useState<string | null>(null);
   const toDateInput = (iso: string | null | undefined) =>
     iso && !Number.isNaN(new Date(iso).getTime()) ? new Date(iso).toISOString().slice(0, 10) : "";
   const commitDate = (id: string, field: "due" | "created", value: string) => {
@@ -685,14 +687,56 @@ export function TasksBoard() {
                                 </span>
 
                                 <span className="tboard-cell tboard-prio">
-                                  <span className={`tprio tprio--${t.priority}`}>
+                                  <button
+                                    type="button"
+                                    className={`tprio tprio--${t.priority} tprio-btn`}
+                                    onClick={() =>
+                                      setPrioMenuId((cur) => (cur === t.id ? null : t.id))
+                                    }
+                                    aria-haspopup="menu"
+                                    aria-expanded={prioMenuId === t.id}
+                                  >
                                     <span className="tprio-dot" />
                                     {t.priority === "high"
                                       ? "Haute"
                                       : t.priority === "low"
                                         ? "Basse"
                                         : "Moyenne"}
-                                  </span>
+                                  </button>
+                                  {prioMenuId === t.id && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="tprio-scrim"
+                                        aria-label="Fermer"
+                                        onClick={() => setPrioMenuId(null)}
+                                      />
+                                      <div className="tprio-menu" role="menu">
+                                        {(
+                                          [
+                                            ["high", "Haute"],
+                                            ["medium", "Moyenne"],
+                                            ["low", "Basse"],
+                                          ] as const
+                                        ).map(([p, label]) => (
+                                          <button
+                                            key={p}
+                                            type="button"
+                                            className={`tprio-opt tprio--${p} ${
+                                              t.priority === p ? "is-active" : ""
+                                            }`}
+                                            onClick={() => {
+                                              patchTask(t.id, { priority: p });
+                                              setPrioMenuId(null);
+                                            }}
+                                          >
+                                            <span className="tprio-dot" />
+                                            {label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </>
+                                  )}
                                 </span>
 
                                 <span className="tboard-cell tboard-source">

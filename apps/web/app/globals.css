@@ -27646,6 +27646,73 @@ button.sidebar-brand {
 .tprio--low .tprio-dot {
   background: #9aa0aa;
 }
+/* Cellule priorité éditable : bouton + menu popover. */
+.tboard-prio {
+  position: relative;
+}
+.tprio-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 7px;
+  transition: background 120ms var(--ease);
+}
+.tprio-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+.tprio-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+.tprio-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16), inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+}
+.tprio-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms var(--ease);
+}
+.tprio-opt:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+.tprio-opt.is-active {
+  background: rgba(15, 23, 42, 0.05);
+}
+[data-theme="dark"] .tprio-btn:hover,
+[data-theme="dark"] .tprio-opt:hover,
+[data-theme="dark"] .tprio-opt.is-active {
+  background: rgba(255, 255, 255, 0.07);
+}
+[data-theme="dark"] .tprio-menu {
+  background: #1c1c25;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
 .tboard-row.is-open {
   box-shadow: none;
 }
