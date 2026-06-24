@@ -30034,7 +30034,8 @@ button.sidebar-brand {
 
 /* ════════════ Page IA dédiée — Mue plein écran (.mfv) ════════════ */
 .mfv {
-  display: grid;
+  /* Cachée par défaut — n'apparaît que sur la vue Mue (.app.view-ai). */
+  display: none;
   grid-template-columns: 280px 1fr;
   height: 100%;
   min-height: 0;
@@ -30044,6 +30045,26 @@ button.sidebar-brand {
   border: 1px solid transparent;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
   overflow: hidden;
+}
+.app.view-ai .mfv {
+  display: grid;
+  grid-column: 1 / -1;
+}
+/* Sur la page Mue : on cache TOUTES les autres surfaces principales et
+   le panneau copilote latéral (Mue est déjà la page entière). */
+.app.view-ai .conv-shell,
+.app.view-ai .tasks-view,
+.app.view-ai .today-view,
+.app.view-ai .calendar-view,
+.app.view-ai .clients-view,
+.app.view-ai .recap-view {
+  display: none;
+}
+.app.view-ai .copilot {
+  display: none;
+}
+.app.view-ai .workspace {
+  grid-template-columns: 1fr;
 }
 [data-theme="dark"] .mfv {
   background: #14141a;
