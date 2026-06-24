@@ -1,6 +1,5 @@
 "use client";
 
-import { DayPlan } from "@/components/DayPlan";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
@@ -11,28 +10,53 @@ import { MueTaskScanner } from "./SuggestTasksModal";
 type AskMessage = {
   id: string;
   role: "user" | "mue";
+  kind?: "text" | "scan";
   content: string;
   tone?: "normal" | "error";
 };
 
+type Mode = "ask" | "agents";
+
+const stroke = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.7,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+  viewBox: "0 0 24 24",
+};
+
+const MueMark = ({ size = 18 }: { size?: number }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden className="mue2-mark">
+    <defs>
+      <linearGradient id="mue2grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#7aa2ff" />
+        <stop offset="50%" stopColor="#b78cff" />
+        <stop offset="100%" stopColor="#ff9d7a" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z"
+      fill="url(#mue2grad)"
+    />
+    <path
+      d="M18.5 16l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9.9-2.4z"
+      fill="url(#mue2grad)"
+    />
+  </svg>
+);
+
 /**
- * MuePanel — Mue en panneau latéral, déclenché par un bouton (façon
- * « Agent »).
- *
- *   • fermé  → un bouton pilule « ✦ Mue » (le lanceur). Pas de rail.
- *   • ouvert → un panneau qui glisse depuis la droite et pousse le contenu,
- *              surface conversationnelle « Demander à Mue ».
- *
- * Les actions sur un fil (Résumer · Tâches · Traduire) vivent INLINE dans
- * le thread (ThreadAiBar). Ici, Mue est ce à quoi tu parles.
+ * MuePanel — copilote Mue façon « Brain » : deux modes (Demander / Agents),
+ * un composer à liseré dégradé, 3 suggestions, et une surface de chat pur.
+ * Le scan de tâches se joue INLINE dans le chat (skeleton pastel → tâches).
  */
 export function MuePanel() {
   const {
     activeConvId,
     mueOpen,
     setMueOpen,
-    mueView,
-    setMueView,
     suggestTasksOpen,
     setSuggestTasksOpen,
     setView,
@@ -40,7 +64,20 @@ export function MuePanel() {
     setInboxBucket,
   } = useApp();
   const { conversations } = useData();
-  // Brief : nb de CLIENTS distincts dont la balle est dans mon camp (à répondre).
+  const push = useToast((s) => s.push);
+
+  const [mode, setMode] = useState<Mode>("ask");
+  const [askInput, setAskInput] = useState("");
+  const [askPending, setAskPending] = useState(false);
+  const [askHistoryLoading, setAskHistoryLoading] = useState(false);
+  const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
+
+  const conv = useMemo(
+    () => conversations.find((c) => c.id === activeConvId) ?? null,
+    [conversations, activeConvId]
+  );
+
+  // Brief : nb de CLIENTS distincts dont la balle est dans mon camp.
   const awaitingCount = new Set(
     conversations
       .filter((c) => {
@@ -56,39 +93,19 @@ export function MuePanel() {
     setInboxBucket("to-reply");
     setMueOpen(false);
   };
-  const push = useToast((s) => s.push);
-  const [askInput, setAskInput] = useState("");
-  const [askPending, setAskPending] = useState(false);
-  const [askHistoryLoading, setAskHistoryLoading] = useState(false);
-  const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
 
-  const conv = useMemo(
-    () => conversations.find((c) => c.id === activeConvId) ?? null,
-    [conversations, activeConvId]
-  );
-
-  // Reset the input + (re)load the chat history whenever the active
-  // conversation changes, so the thread you're looking at always shows
-  // its own Mue conversation (and the global one when no conv is open).
+  // Recharge l'historique quand la conversation active change.
   useEffect(() => {
     if (activeConvId === undefined) return;
     setAskInput("");
-
     let cancelled = false;
     setAskHistoryLoading(true);
     listMueChatMessages({ conversationId: activeConvId || null })
       .then((result) => {
         if (cancelled) return;
-        if (result.error) {
-          setAskMessages([]);
-          return;
-        }
+        if (result.error) return setAskMessages([]);
         setAskMessages(
-          result.messages.map((message) => ({
-            id: message.id,
-            role: message.role,
-            content: message.content,
-          }))
+          result.messages.map((m) => ({ id: m.id, role: m.role, content: m.content }))
         );
       })
       .finally(() => {
@@ -99,43 +116,60 @@ export function MuePanel() {
     };
   }, [activeConvId]);
 
+  const logRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [askMessages, askPending]);
+
+  const runScan = () => {
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: "Suggérer des tâches" },
+      { id: `scan-${Date.now()}`, role: "mue", kind: "scan", content: "" },
+    ]);
+  };
+
+  // Déclencheur externe (store) → scan inline.
+  useEffect(() => {
+    if (suggestTasksOpen) {
+      setMode("ask");
+      runScan();
+      setSuggestTasksOpen(false);
+    }
+  }, [suggestTasksOpen, setSuggestTasksOpen]);
+
   const runAsk = async (raw: string) => {
     const question = raw.trim();
     if (!question || askPending) return;
-    const userMessage: AskMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: question,
-    };
-    setAskMessages((prev) => [...prev, userMessage].slice(-6));
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: question },
+    ]);
     setAskInput("");
     setAskPending(true);
     try {
       const res = await askMue({ conversationId: activeConvId ?? null, question });
       const answer = res.answer ?? res.error ?? "Mue n'a pas pu répondre.";
-      setAskMessages((prev) =>
-        [
-          ...prev,
-          {
-            id: `mue-${Date.now()}`,
-            role: "mue" as const,
-            content: answer,
-            tone: res.error ? ("error" as const) : ("normal" as const),
-          },
-        ].slice(-6)
-      );
+      setAskMessages((prev) => [
+        ...prev,
+        {
+          id: `mue-${Date.now()}`,
+          role: "mue",
+          content: answer,
+          tone: res.error ? "error" : "normal",
+        },
+      ]);
     } catch (err) {
-      setAskMessages((prev) =>
-        [
-          ...prev,
-          {
-            id: `mue-${Date.now()}`,
-            role: "mue" as const,
-            content: err instanceof Error ? err.message : "Mue n'a pas pu répondre.",
-            tone: "error" as const,
-          },
-        ].slice(-6)
-      );
+      setAskMessages((prev) => [
+        ...prev,
+        {
+          id: `mue-${Date.now()}`,
+          role: "mue",
+          content: err instanceof Error ? err.message : "Mue n'a pas pu répondre.",
+          tone: "error",
+        },
+      ]);
     } finally {
       setAskPending(false);
     }
@@ -143,245 +177,283 @@ export function MuePanel() {
 
   const handleAsk = (e: React.FormEvent) => {
     e.preventDefault();
-    // Entrée sur le hero vide = première suggestion (démarrage à une touche).
-    if (!askInput.trim() && suggestions[0]) {
-      void runAsk(suggestions[0].label);
-      return;
-    }
+    if (!askInput.trim()) return;
     void runAsk(askInput);
   };
 
-  const handleClearAskHistory = async () => {
+  const handleClear = async () => {
     const previous = askMessages;
     setAskMessages([]);
     try {
       const result = await clearMueChat({ conversationId: activeConvId || null });
       if (!result.ok) {
         setAskMessages(previous);
-        push({ kind: "error", text: result.error ?? "Impossible d'effacer l'historique." });
+        push({ kind: "error", text: result.error ?? "Impossible d'effacer." });
       }
-    } catch (err) {
+    } catch {
       setAskMessages(previous);
-      push({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Impossible d'effacer l'historique.",
-      });
     }
   };
 
-  // (47) Auto-focus du champ à l'ouverture — on tape immédiatement.
-  const askInputRef = useRef<HTMLInputElement>(null);
+  const askInputRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    if (mueOpen) requestAnimationFrame(() => askInputRef.current?.focus());
-  }, [mueOpen]);
+    if (mueOpen && mode === "ask") requestAnimationFrame(() => askInputRef.current?.focus());
+  }, [mueOpen, mode]);
 
-  // Fermé : rien ici — le lanceur « ✦ Mue » vit dans le FAB.
   if (!mueOpen) return null;
 
   const hasChat = askMessages.length > 0 || askPending || askHistoryLoading;
+
+  // 3 suggestions (cartes). « Suggérer des tâches » lance le scan inline.
   const suggestions = conv
     ? [
-        { label: "Résume ce fil", icon: "doc" as const },
-        { label: "Propose une réponse", icon: "reply" as const },
-        { label: "Quelle action faire ?", icon: "bolt" as const },
+        {
+          title: "Résumer ce fil",
+          sub: "L'essentiel en 3 points",
+          icon: "doc",
+          run: () => runAsk("Résume ce fil"),
+        },
+        {
+          title: "Proposer une réponse",
+          sub: "Mue rédige pour toi",
+          icon: "reply",
+          run: () => runAsk("Propose une réponse à ce fil"),
+        },
+        { title: "Suggérer des tâches", sub: "Mue scanne ce client", icon: "spark", run: runScan },
       ]
     : [
-        { label: "Résume ma journée", icon: "doc" as const },
-        { label: "Qu'est-ce qui attend une réponse ?", icon: "reply" as const },
-        { label: "Aide-moi à prioriser", icon: "bolt" as const },
+        {
+          title: "Suggérer des tâches",
+          sub: "Mue scanne tes messages",
+          icon: "spark",
+          run: runScan,
+        },
+        {
+          title: "Résumer ma journée",
+          sub: "Ce qui compte aujourd'hui",
+          icon: "doc",
+          run: () => runAsk("Résume ma journée"),
+        },
+        {
+          title: "Prioriser cette semaine",
+          sub: "Mue ordonne tes tâches",
+          icon: "bolt",
+          run: () => runAsk("Aide-moi à prioriser cette semaine"),
+        },
       ];
 
-  const stroke = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.7,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-    viewBox: "0 0 24 24",
+  const cardIcon = (k: string) => {
+    if (k === "doc")
+      return (
+        <svg {...stroke}>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="8" y1="13" x2="16" y2="13" />
+          <line x1="8" y1="17" x2="13" y2="17" />
+        </svg>
+      );
+    if (k === "reply")
+      return (
+        <svg {...stroke}>
+          <polyline points="9 17 4 12 9 7" />
+          <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+        </svg>
+      );
+    if (k === "bolt")
+      return (
+        <svg {...stroke}>
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
+      </svg>
+    );
   };
 
-  // ── Ouvert : panneau agent (style sombre) ───────────────────────────
+  const composer = (
+    <form className="mue2-composer" onSubmit={handleAsk}>
+      <textarea
+        ref={askInputRef}
+        className="mue2-input"
+        placeholder="Besoin d'aide ? Pose une question, recherche ou crée."
+        value={askInput}
+        onChange={(e) => setAskInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleAsk(e);
+          }
+        }}
+        rows={2}
+        disabled={askPending}
+        aria-label="Demander à Mue"
+      />
+      <div className="mue2-composer-row">
+        <span className="mue2-model">
+          <MueMark size={15} /> Max
+        </span>
+        <button
+          type="submit"
+          className="mue2-send"
+          aria-label="Envoyer"
+          disabled={!askInput.trim() || askPending}
+        >
+          <svg {...stroke}>
+            <line x1="12" y1="19" x2="12" y2="5" />
+            <polyline points="6 11 12 5 18 11" />
+          </svg>
+        </button>
+      </div>
+    </form>
+  );
+
   return (
-    <aside className="copilot mue-pane is-open" aria-label="Mue copilot">
-      {suggestTasksOpen ? (
-        <MueTaskScanner onClose={() => setSuggestTasksOpen(false)} />
-      ) : (
-        <>
-          <header className="mue-agent-head">
-            <span className="mue-agent-id" aria-hidden />
-            <div className="mue-agent-actions">
-              {askMessages.length > 0 && (
-                <button
-                  type="button"
-                  className="mue-agent-iconbtn"
-                  onClick={handleClearAskHistory}
-                  aria-label="Effacer le fil"
-                >
-                  <svg {...stroke}>
-                    <path d="M3 3v5h5" />
-                    <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
-                    <path d="M12 7v5l3 2" />
-                  </svg>
-                </button>
-              )}
-              <button
-                type="button"
-                className="mue-agent-iconbtn"
-                onClick={() => setMueOpen(false)}
-                aria-label="Fermer Mue"
-              >
-                <svg {...stroke}>
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                </svg>
-              </button>
-            </div>
-          </header>
-
-          {!hasChat ? (
-            <div className={`mue-agent-hero ${mueView === "plan" ? "has-plan" : "has-choices"}`}>
-              {mueView === "plan" ? (
-                // « Priorise mes tâches » → le plan du jour, avec retour aux choix.
-                <>
-                  <button
-                    type="button"
-                    className="mue-plan-back"
-                    onClick={() => setMueView("choices")}
-                  >
-                    <svg {...stroke}>
-                      <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                    Retour
-                  </button>
-                  <DayPlan />
-                </>
-              ) : (
-                // Les 2 choix de base — toujours affichés (plus d'écran « contact »).
-                <div className="mue-choices">
-                  {awaitingCount > 0 && (
-                    <button type="button" className="mue-brief" onClick={openToReply}>
-                      <span className="mue-brief-badge">{awaitingCount}</span>
-                      <span className="mue-brief-tx">
-                        <b>
-                          {awaitingCount} client{awaitingCount > 1 ? "s" : ""} attend
-                          {awaitingCount > 1 ? "ent" : ""} ta réponse
-                        </b>
-                        <small>Aujourd'hui · clique pour les voir</small>
-                      </span>
-                      <span className="mue-brief-arrow" aria-hidden>
-                        →
-                      </span>
-                    </button>
-                  )}
-                  <h2 className="mue-choices-title">Comment je t'aide ?</h2>
-                  <button
-                    type="button"
-                    className="mue-choice"
-                    onClick={() => setSuggestTasksOpen(true)}
-                  >
-                    <span className="mue-choice-ic">
-                      <svg {...stroke}>
-                        <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
-                      </svg>
-                    </span>
-                    <span className="mue-choice-tx">
-                      <b>Suggérer des tâches</b>
-                      <small>Mue scanne tes messages récents</small>
-                    </span>
-                  </button>
-                  <button type="button" className="mue-choice" onClick={() => setMueView("plan")}>
-                    <span className="mue-choice-ic">
-                      <svg {...stroke}>
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                      </svg>
-                    </span>
-                    <span className="mue-choice-tx">
-                      <b>Priorise mes tâches cette semaine</b>
-                      <small>Mue ordonne ce qui compte</small>
-                    </span>
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="mue-agent-chat">
-              <div className="mue-chat-log" aria-live="polite">
-                {askHistoryLoading && (
-                  <div className="mue-chat-bubble is-mue is-pending">Chargement du fil Mue…</div>
-                )}
-                {askMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`mue-chat-bubble is-${message.role} ${
-                      message.tone === "error" ? "is-error" : ""
-                    }`}
-                  >
-                    {message.content}
-                  </div>
-                ))}
-                {askPending && (
-                  <div className="mue-chat-bubble is-mue is-pending">Mue réfléchit…</div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="mue-agent-foot">
-            <span className="mue-agent-unlim">
+    <aside className="copilot mue-pane mue2 is-open" aria-label="Mue copilot">
+      <header className="mue2-head">
+        <div className="mue2-tabs" role="tablist" aria-label="Mode">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "ask"}
+            className={`mue2-tab ${mode === "ask" ? "is-on" : ""}`}
+            onClick={() => setMode("ask")}
+          >
+            <MueMark size={15} /> Demander
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "agents"}
+            className={`mue2-tab ${mode === "agents" ? "is-on" : ""}`}
+            onClick={() => setMode("agents")}
+          >
+            <svg {...stroke} width={15} height={15}>
+              <rect x="3" y="8" width="18" height="11" rx="3" />
+              <circle cx="8.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
+              <path d="M12 4v4" />
+            </svg>
+            Agents
+          </button>
+        </div>
+        <div className="mue2-head-actions">
+          {askMessages.length > 0 && mode === "ask" && (
+            <button
+              type="button"
+              className="mue-agent-iconbtn"
+              onClick={handleClear}
+              aria-label="Nouveau fil"
+              title="Nouveau fil"
+            >
               <svg {...stroke}>
-                <path d="M18.5 12c0 1.9-1.6 3.5-3.5 3.5S9.5 13.9 9.5 12 7.9 8.5 6 8.5 2.5 10.1 2.5 12 4.1 15.5 6 15.5s3.5-1.6 3.5-3.5S11.1 8.5 13 8.5s5.5 1.6 5.5 3.5z" />
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
               </svg>
-              Illimité
-            </span>
-            <form className="mue-agent-composer" onSubmit={handleAsk}>
-              <input
-                ref={askInputRef}
-                type="text"
-                className="mue-agent-input"
-                placeholder="Que veux-tu faire ?"
-                value={askInput}
-                onChange={(e) => setAskInput(e.target.value)}
-                aria-label="Demander à Mue"
-                disabled={askPending}
-              />
-              <div className="mue-agent-composer-row">
-                <button type="button" className="mue-agent-cbtn" aria-label="Ajouter">
-                  <svg {...stroke}>
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                </button>
-                <button type="button" className="mue-agent-cbtn" aria-label="Réglages">
-                  <svg {...stroke}>
-                    <line x1="4" y1="8" x2="20" y2="8" />
-                    <line x1="4" y1="16" x2="20" y2="16" />
-                    <circle cx="9" cy="8" r="2" />
-                    <circle cx="15" cy="16" r="2" />
-                  </svg>
-                </button>
-                <span className="mue-agent-spacer" />
-                <button type="button" className="mue-agent-cbtn" aria-label="Dicter">
-                  <svg {...stroke}>
-                    <rect x="9" y="3" width="6" height="11" rx="3" />
-                    <path d="M5 11a7 7 0 0 0 14 0" />
-                    <line x1="12" y1="18" x2="12" y2="21" />
-                  </svg>
-                </button>
-                <button
-                  type="submit"
-                  className="mue-agent-send"
-                  aria-label="Envoyer"
-                  disabled={!askInput.trim() || askPending}
-                >
-                  <svg {...stroke}>
-                    <line x1="12" y1="19" x2="12" y2="5" />
-                    <polyline points="6 11 12 5 18 11" />
-                  </svg>
-                </button>
-              </div>
-            </form>
+            </button>
+          )}
+          <button
+            type="button"
+            className="mue-agent-iconbtn"
+            onClick={() => setMueOpen(false)}
+            aria-label="Fermer Mue"
+          >
+            <svg {...stroke}>
+              <line x1="6" y1="6" x2="18" y2="18" />
+              <line x1="18" y1="6" x2="6" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      {mode === "agents" ? (
+        <div className="mue2-agents">
+          <span className="mue2-agents-orb">
+            <svg {...stroke} width={26} height={26}>
+              <rect x="3" y="8" width="18" height="11" rx="3" />
+              <circle cx="8.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
+              <path d="M12 4v4" />
+            </svg>
+          </span>
+          <h2>Agents Mue</h2>
+          <p>
+            Bientôt : des agents qui agissent seuls (relances, tri, brouillons) pendant que tu fais
+            autre chose.
+          </p>
+        </div>
+      ) : !hasChat ? (
+        // ── État vide : composer dégradé + 3 suggestions ──
+        <div className="mue2-empty">
+          {composer}
+          {awaitingCount > 0 && !conv && (
+            <button type="button" className="mue2-brief" onClick={openToReply}>
+              <span className="mue2-brief-badge">{awaitingCount}</span>
+              <span>
+                <b>
+                  {awaitingCount} client{awaitingCount > 1 ? "s" : ""} attend
+                  {awaitingCount > 1 ? "ent" : ""} ta réponse
+                </b>
+              </span>
+              <span className="mue2-brief-arrow" aria-hidden>
+                →
+              </span>
+            </button>
+          )}
+          <div className="mue2-cards">
+            {suggestions.map((s) => (
+              <button key={s.title} type="button" className="mue2-card" onClick={s.run}>
+                <span className="mue2-card-ic">{cardIcon(s.icon)}</span>
+                <b className="mue2-card-title">{s.title}</b>
+                <small className="mue2-card-sub">{s.sub}</small>
+              </button>
+            ))}
           </div>
+        </div>
+      ) : (
+        // ── Chat pur ──
+        <>
+          <div className="mue2-chat" ref={logRef} aria-live="polite">
+            {askHistoryLoading && <div className="mue2-msg is-mue">Chargement…</div>}
+            {askMessages.map((m) =>
+              m.role === "user" ? (
+                <div key={m.id} className="mue2-msg is-user">
+                  {m.content}
+                </div>
+              ) : m.kind === "scan" ? (
+                <div key={m.id} className="mue2-msg is-mue mue2-msg--scan">
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue
+                  </div>
+                  <MueTaskScanner inline />
+                </div>
+              ) : (
+                <div
+                  key={m.id}
+                  className={`mue2-msg is-mue ${m.tone === "error" ? "is-error" : ""}`}
+                >
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue
+                  </div>
+                  <div className="mue2-msg-body">{m.content}</div>
+                </div>
+              )
+            )}
+            {askPending && (
+              <div className="mue2-msg is-mue">
+                <div className="mue2-msg-head">
+                  <MueMark size={16} /> Mue
+                </div>
+                <div className="mue2-thinking">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="mue2-foot">{composer}</div>
         </>
       )}
     </aside>

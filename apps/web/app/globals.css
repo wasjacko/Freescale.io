@@ -11908,6 +11908,313 @@ html {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 10px 30px rgba(79, 108, 247, 0.1), 0 1px
     2px rgba(15, 23, 42, 0.05);
 }
+
+/* ════════ Mue v2 — façon « Brain » : tabs + composer dégradé + chat pur ════════ */
+.mue-pane.mue2 {
+  padding: 0;
+  color: #e8eaf0;
+  background: radial-gradient(130% 90% at 50% 0%, #1b1d26 0%, #0e0f14 62%);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.34);
+}
+.mue2-head {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 12px 0;
+}
+.mue2-tabs {
+  display: inline-flex;
+  gap: 4px;
+}
+.mue2-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px 10px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a90a2;
+  cursor: pointer;
+  transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.mue2-tab.is-on {
+  color: #cdd3ff;
+  background: rgba(120, 140, 255, 0.14);
+}
+.mue2-head-actions {
+  display: inline-flex;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+.mue2 .mue-agent-iconbtn {
+  color: #9aa0b0;
+}
+.mue2 .mue-agent-iconbtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* Composer à liseré dégradé (pastel). */
+.mue2-composer {
+  position: relative;
+  border-radius: 16px;
+  padding: 14px 14px 10px;
+  border: 1.5px solid transparent;
+  background: linear-gradient(#15171d, #15171d) padding-box,
+    linear-gradient(135deg, #6f8bff 0%, #b78cff 48%, #ff9d7a 100%) border-box;
+  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.14);
+}
+.mue2-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  resize: none;
+  color: #e8eaf0;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+}
+.mue2-input::placeholder {
+  color: #6b7080;
+}
+.mue2-composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.mue2-model {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c9cee0;
+}
+.mue2-send {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+.mue2-send svg {
+  width: 16px;
+  height: 16px;
+}
+.mue2-send:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.mue2-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* État vide : composer + brief + 3 cartes. */
+.mue2-empty {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 12px 16px;
+}
+.mue2-brief {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: rgba(120, 140, 255, 0.13);
+  color: #cdd3ff;
+  text-align: left;
+  cursor: pointer;
+}
+.mue2-brief-badge {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #6f8bff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.mue2-brief b {
+  font-size: 13px;
+  font-weight: 600;
+}
+.mue2-brief-arrow {
+  margin-left: auto;
+  opacity: 0.8;
+}
+.mue2-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mue2-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 13px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease), transform 130ms var(--ease);
+}
+.mue2-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+.mue2-card-ic {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #c9cee0;
+}
+.mue2-card-ic svg {
+  width: 17px;
+  height: 17px;
+}
+.mue2-card-title {
+  font-size: 13px;
+  font-weight: 650;
+  color: #eef0f6;
+}
+.mue2-card-sub {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #8a90a2;
+}
+
+/* Chat pur. */
+.mue2-chat {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 14px;
+}
+.mue2-msg.is-user {
+  align-self: flex-end;
+  max-width: 85%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #eef0f6;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.mue2-msg.is-mue {
+  align-self: stretch;
+  color: #dfe3ee;
+}
+.mue2-msg-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #eef0f6;
+}
+.mue2-msg-body {
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.mue2-msg.is-error .mue2-msg-body {
+  color: #ff9d9d;
+}
+.mue2-thinking {
+  display: inline-flex;
+  gap: 4px;
+  padding: 2px 0;
+}
+.mue2-thinking span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #8a90a2;
+  animation: mue2blink 1s infinite;
+}
+.mue2-thinking span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.mue2-thinking span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes mue2blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+.mue2-foot {
+  flex: none;
+  padding: 8px 12px 14px;
+}
+/* Scanner de tâches intégré au chat : pas de carte propre. */
+.mue2-msg--scan .tscan--inline {
+  background: transparent;
+  padding: 0;
+}
+
+/* Mode Agents (vide pour l'instant). */
+.mue2-agents {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 24px;
+}
+.mue2-agents-orb {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: #b9c0ff;
+}
+.mue2-agents h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #eef0f6;
+}
+.mue2-agents p {
+  max-width: 260px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #8a90a2;
+}
 .mue-agent-head {
   flex: none;
   display: flex;

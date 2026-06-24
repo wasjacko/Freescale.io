@@ -82,7 +82,13 @@ type Phase = "think" | "result" | "empty" | "error";
  *
  * Ajouter une tâche = optimiste sur le dashboard. 100% UI mock.
  */
-export function MueTaskScanner({ onClose }: { onClose: () => void }) {
+export function MueTaskScanner({
+  onClose,
+  inline = false,
+}: {
+  onClose?: () => void;
+  inline?: boolean;
+}) {
   const push = useToast((s) => s.push);
   const { addTask, conversations } = useData();
   const [phase, setPhase] = useState<Phase>("think");
@@ -175,12 +181,13 @@ export function MueTaskScanner({ onClose }: { onClose: () => void }) {
   }, [thoughtCount]);
 
   useEffect(() => {
+    if (inline) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onClose?.();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, inline]);
 
   const addOne = (item: DailyBriefingItem) => {
     const id = item.conversationId;
@@ -221,15 +228,17 @@ export function MueTaskScanner({ onClose }: { onClose: () => void }) {
   const allRevealed = revealed.size >= items.length;
 
   return (
-    <div className="tscan">
-      <header className="tscan-head">
-        <span className="tscan-badge">
-          <Sparkle size={12} /> Mue
-        </span>
-        <button type="button" className="tscan-close" onClick={onClose} aria-label="Fermer">
-          ✕
-        </button>
-      </header>
+    <div className={`tscan ${inline ? "tscan--inline" : ""}`}>
+      {!inline && (
+        <header className="tscan-head">
+          <span className="tscan-badge">
+            <Sparkle size={12} /> Mue
+          </span>
+          <button type="button" className="tscan-close" onClick={onClose} aria-label="Fermer">
+            ✕
+          </button>
+        </header>
+      )}
 
       {phase === "think" && (
         <div className="tscan-result">
@@ -348,9 +357,11 @@ export function MueTaskScanner({ onClose }: { onClose: () => void }) {
               >
                 {remaining === 0 ? "Tout est ajouté ✓" : `Tout ajouter (${remaining})`}
               </button>
-              <button type="button" className="tscan-donebtn" onClick={onClose}>
-                Terminé
-              </button>
+              {!inline && (
+                <button type="button" className="tscan-donebtn" onClick={onClose}>
+                  Terminé
+                </button>
+              )}
             </footer>
           )}
         </div>
