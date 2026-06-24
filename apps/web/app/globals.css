@@ -27309,7 +27309,8 @@ button.sidebar-brand {
     0 12px 28px rgba(15, 23, 42, 0.12);
 }
 .app.view-today .tboard-table {
-  box-shadow: inset 4px 0 0 var(--g, #4f6cf7), inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 
 /* Repli/dépli d'un groupe (chevron) : hauteur animée dans les deux sens. */
@@ -27574,9 +27575,9 @@ button.sidebar-brand {
   border-radius: 0 8px 8px 0;
   overflow: hidden;
   background: #fff;
-  /* Trait gauche à la couleur de la section (box-shadow : le flat-killer
-     neutralise border-color). */
-  box-shadow: inset 4px 0 0 var(--g, #4f6cf7), inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  /* Trait gauche : couleur du groupe ATTÉNUÉE (~28%), 3px, net et continu. */
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 .tboard-row {
   display: grid;
