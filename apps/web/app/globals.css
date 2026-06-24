@@ -28095,3 +28095,68 @@ button.sidebar-brand {
     animation: none;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   TOGGLE STANDARD — un seul style de segmented control dans tout le SaaS.
+   Référence : la bascule Tableau / Kanban des Tâches. Conteneur gris
+   arrondi, bouton actif blanc + ombre douce, inactif gris. Ce bloc est
+   placé en fin de fichier pour gagner la cascade sur les anciennes
+   définitions dispersées.
+   ════════════════════════════════════════════════════════════════════ */
+.tboard-viewswitch,
+.cal-viewtoggle,
+.ibx-tabs,
+.clients-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.05);
+}
+.tboard-vbtn,
+.cal-viewtoggle__btn,
+.ibx-tab,
+.clients-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #5b6475;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.tboard-vbtn:hover,
+.cal-viewtoggle__btn:hover,
+.ibx-tab:hover,
+.clients-filter:hover {
+  color: #10131a;
+}
+.tboard-vbtn.is-on,
+.cal-viewtoggle__btn.is-active,
+.ibx-tab.is-active,
+.clients-filter.is-active {
+  background: #fff;
+  color: #10131a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+/* Inbox : les 4 onglets remplissent la colonne à parts égales (fit ~320px),
+   tout en gardant le look standard. */
+.ibx-tabs {
+  display: flex;
+  width: 100%;
+}
+.ibx-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 6px;
+}
