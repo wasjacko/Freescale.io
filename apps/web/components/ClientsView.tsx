@@ -1,21 +1,23 @@
 "use client";
 
-// Freescale V2 · Phase 2 — Vue « Clients » (pilier CENTRALISER).
-// Grille de fiches client → ouvre le hub 360 (ClientHub). 100% UI mock.
+// Freescale V2 · Phase 2 — « Santé client » = COCKPIT BUSINESS.
+// Tout est DÉDUIT des échanges par Mue (jamais saisi à la main) :
+//   • argent à suivre = montants de devis/factures cités dans les fils
+//   • stade commercial = prospect / actif / dormant (inféré du contenu)
+//   • santé relation = qui doit répondre, silence, relances
+// La liste est triée par « qui mérite ton attention maintenant » (valeur × risque).
 
 import { ClientHub } from "@/components/ClientHub";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
-import { useData } from "@/lib/contexts/DataContext";
 import { MOCK_CLIENTS } from "@/lib/mock-v2";
 import { useApp } from "@/lib/store";
 import type { Client, Tone } from "@/lib/types";
 import { useMemo, useState } from "react";
 
-// ── Santé de la relation ────────────────────────────────────────────
-// On NE prétend PAS connaître l'avancement d'un projet (impossible depuis
-// une inbox). On affiche uniquement des signaux calculables depuis les
-// échanges : qui doit répondre, depuis quand, et le silence éventuel.
+const eur = (n: number) => `${n.toLocaleString("fr-FR")} €`;
+
+// ── Santé de la relation (signaux de communication) ──────────────────
 export type RelationState = "owe" | "awaiting" | "silent" | "ok";
 export function relationHealth(c: Client): {
   state: RelationState;
@@ -30,73 +32,87 @@ export function relationHealth(c: Client): {
   return { state: "ok", label: "Relation à jour", tone: "ok" };
 }
 
-type Filter = "all" | "to-reply" | "risk";
+// ── Argent à suivre = montants évoqués dans les échanges, non réglés ──
+// (détecté par Mue dans les messages — pas une compta certifiée).
+export function moneySignal(c: Client): {
+  dues: number;
+  late: boolean;
+  label: string | null;
+  tone: Tone;
+} {
+  const inv = c.invoices ?? [];
+  const dues = inv.filter((i) => i.status !== "paid").reduce((s, i) => s + i.amount, 0);
+  if (dues === 0) return { dues: 0, late: false, label: null, tone: "ok" };
+  const late = inv.some((i) => i.status === "late");
+  return {
+    dues,
+    late,
+    label: `${eur(dues)} à suivre`,
+    tone: late ? "danger" : "warn",
+  };
+}
+
+const STAGE: Record<NonNullable<Client["stage"]>, { label: string; cls: string }> = {
+  prospect: { label: "Prospect", cls: "prospect" },
+  active: { label: "Actif", cls: "active" },
+  dormant: { label: "Dormant", cls: "dormant" },
+};
+
+// Score d'attention : valeur × risque. Plus c'est haut, plus ça remonte.
+function attentionScore(c: Client): number {
+  const h = relationHealth(c);
+  const m = moneySignal(c);
+  let s = 0;
+  if (h.state === "owe") s += 40;
+  else if (h.state === "silent") s += 30;
+  else if (h.state === "awaiting") s += 15;
+  if (m.dues > 0) s += m.late ? 35 : 18;
+  s += Math.min(m.dues / 1000, 20); // l'argent en jeu fait remonter
+  if (c.stage === "dormant") s += 10;
+  return s;
+}
+
+type Filter = "all" | "money" | "reply" | "risk";
 const FILTERS: [Filter, string][] = [
   ["all", "Tous"],
-  ["to-reply", "À répondre"],
-  ["risk", "À surveiller"],
+  ["money", "Argent à suivre"],
+  ["reply", "À répondre"],
+  ["risk", "À risque"],
 ];
 
 export function ClientsView() {
-  // Le client ouvert vit dans le store → on peut ouvrir une fiche depuis
-  // ailleurs (ex. bouton « Voir la fiche client » d'un thread de l'inbox).
-  const { activeClientId, setActiveClientId, setView, setActiveConv, setInboxBucket } = useApp();
-  const { conversations, tasks } = useData();
+  const { activeClientId, setActiveClientId } = useApp();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
 
-  // ── KPI actionnables (anciennement page Analytics) ────────────────
-  // Faits dérivés des conversations + tâches — pas de vanity metrics.
-  const now = Date.now();
-  const ms = (iso?: string | null) => (iso ? new Date(iso).getTime() : 0);
-  const toReplyCount = new Set(
-    conversations
-      .filter((c) => ms(c.lastInboundAt) > ms(c.lastOutboundAt))
-      .map((c) => c.clientId ?? c.id)
-  ).size;
-  const relancesCount = new Set(
-    conversations
-      .filter(
-        (c) =>
-          ms(c.lastOutboundAt) > ms(c.lastInboundAt) && (now - ms(c.lastOutboundAt)) / 86400000 >= 2
-      )
-      .map((c) => c.clientId ?? c.id)
-  ).size;
-  const openTasks = tasks.filter((t) => !t.parentTaskId && t.status !== "done");
-  const overdueCount = openTasks.filter((t) => t.dueAtIso && ms(t.dueAtIso) < now).length;
-  const openInbox = (bucket: "to-reply" | "waiting") => {
-    setView("inbox");
-    setActiveConv("");
-    setInboxBucket(bucket);
-  };
-  const kpis = [
+  // KPI business — tout dérivé de la liste clients (signaux des échanges).
+  const totalDues = MOCK_CLIENTS.reduce((s, c) => s + moneySignal(c).dues, 0);
+  const clientsWithDues = MOCK_CLIENTS.filter((c) => moneySignal(c).dues > 0).length;
+  const toReplyCount = MOCK_CLIENTS.filter((c) => relationHealth(c).state === "owe").length;
+  const atRiskCount = MOCK_CLIENTS.filter((c) => {
+    const st = relationHealth(c).state;
+    return st === "silent" || st === "awaiting" || c.stage === "dormant";
+  }).length;
+
+  const kpis: { key: Filter; val: string; label: string; tone: "alert" | "warn" | "neutral" }[] = [
     {
-      key: "reply",
-      val: toReplyCount,
-      label: "clients attendent ta réponse",
-      tone: "alert" as const,
-      onClick: () => openInbox("to-reply"),
+      key: "money",
+      val: eur(totalDues),
+      label: "à suivre (devis + factures évoqués)",
+      tone: "warn",
     },
     {
-      key: "relance",
-      val: relancesCount,
-      label: "relances à faire (sans réponse ≥ 2 j)",
-      tone: "warn" as const,
-      onClick: () => openInbox("waiting"),
+      key: "money",
+      val: `${clientsWithDues}`,
+      label: "clients avec de l'argent en attente",
+      tone: "neutral",
     },
+    { key: "reply", val: `${toReplyCount}`, label: "clients attendent ta réponse", tone: "alert" },
     {
-      key: "open",
-      val: openTasks.length,
-      label: "tâches en cours",
-      tone: "neutral" as const,
-      onClick: () => setView("today"),
-    },
-    {
-      key: "overdue",
-      val: overdueCount,
-      label: "tâches en retard",
-      tone: overdueCount > 0 ? ("alert" as const) : ("neutral" as const),
-      onClick: () => setView("today"),
+      key: "risk",
+      val: `${atRiskCount}`,
+      label: "relations à surveiller",
+      tone: atRiskCount > 0 ? "alert" : "neutral",
     },
   ];
 
@@ -104,14 +120,21 @@ export function ClientsView() {
     const q = query.trim().toLowerCase();
     return MOCK_CLIENTS.filter((c) => {
       const h = relationHealth(c);
-      if (filter === "to-reply" && h.state !== "owe") return false;
-      if (filter === "risk" && h.state !== "silent" && h.state !== "awaiting") return false;
+      if (filter === "money" && moneySignal(c).dues === 0) return false;
+      if (filter === "reply" && h.state !== "owe") return false;
+      if (
+        filter === "risk" &&
+        h.state !== "silent" &&
+        h.state !== "awaiting" &&
+        c.stage !== "dormant"
+      )
+        return false;
       if (q) {
         const hay = `${c.name} ${c.company ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
-    });
+    }).sort((a, b) => attentionScore(b) - attentionScore(a));
   }, [filter, query]);
 
   const openClient = MOCK_CLIENTS.find((c) => c.id === activeClientId) ?? null;
@@ -167,20 +190,24 @@ export function ClientsView() {
         </div>
       </header>
 
-      {/* À traiter — KPI actionnables (anciennement page Analytics). */}
-      <div className="clients-kpis" aria-label="À traiter">
-        {kpis.map((k) => (
+      {/* KPI business — argent + attention. Cliquables (filtrent la liste). */}
+      <div className="clients-kpis" aria-label="Pilotage">
+        {kpis.map((k, i) => (
           <button
-            key={k.key}
+            key={`${k.key}-${i}`}
             type="button"
             className={`clients-kpi clients-kpi--${k.tone}`}
-            onClick={k.onClick}
+            onClick={() => setFilter(k.key)}
           >
             <span className="clients-kpi-val">{k.val}</span>
             <span className="clients-kpi-label">{k.label}</span>
           </button>
         ))}
       </div>
+      <p className="clients-disclaimer">
+        Montants et stades <strong>détectés par Mue</strong> dans tes échanges — à vérifier, ce
+        n'est pas ta compta.
+      </p>
 
       {clients.length === 0 ? (
         <div className="clients-empty">Aucun client ne correspond.</div>
@@ -197,6 +224,8 @@ export function ClientsView() {
 
 function ClientCard({ client, onOpen }: { client: Client; onOpen: () => void }) {
   const h = relationHealth(client);
+  const m = moneySignal(client);
+  const stage = client.stage ? STAGE[client.stage] : null;
   return (
     <button type="button" className="client-card" onClick={onOpen}>
       <div className="client-card__top">
@@ -205,7 +234,14 @@ function ClientCard({ client, onOpen }: { client: Client; onOpen: () => void }) 
         </span>
         <div className="client-card__id">
           <span className="client-card__name">{client.name}</span>
-          {client.company && <span className="client-card__company">{client.company}</span>}
+          <span className="client-card__meta">
+            {client.company && <span className="client-card__company">{client.company}</span>}
+            {stage && (
+              <span className={`client-card__stage client-card__stage--${stage.cls}`}>
+                {stage.label}
+              </span>
+            )}
+          </span>
         </div>
         <span className="client-card__channels">
           {client.channels.map((ch) => (
@@ -214,7 +250,26 @@ function ClientCard({ client, onOpen }: { client: Client; onOpen: () => void }) 
         </span>
       </div>
 
-      {/* Santé de la relation — signal honnête, pas un % de projet inventé. */}
+      {/* Ligne ARGENT — le cœur du pilotage business. */}
+      <div className={`client-card__money client-card__money--${m.label ? m.tone : "ok"}`}>
+        <svg
+          viewBox="0 0 24 24"
+          width={15}
+          height={15}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.9}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <line x1="12" y1="1.5" x2="12" y2="22.5" />
+          <path d="M17 5.5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+        <span className="client-card__money-label">{m.label ?? "Rien à suivre"}</span>
+      </div>
+
+      {/* Ligne RELATION — qui doit répondre / silence. */}
       <div className={`client-card__relation client-card__relation--${h.state}`}>
         <span className="client-card__rdot" aria-hidden />
         <span className="client-card__rlabel">{h.label}</span>

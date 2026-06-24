@@ -35,6 +35,7 @@ export const MOCK_CLIENTS: Client[] = [
     lastContactLabel: "il y a 4 min",
     awaitingCount: 1,
     owesReply: true,
+    stage: "active",
     project: {
       id: "pr-bright",
       name: "Refonte produit V2",
@@ -90,6 +91,7 @@ export const MOCK_CLIENTS: Client[] = [
     lastContactLabel: "il y a 35 min",
     awaitingCount: 1,
     awaitingDays: 2,
+    stage: "active",
     project: {
       id: "pr-api",
       name: "Optimisation API",
@@ -139,6 +141,7 @@ export const MOCK_CLIENTS: Client[] = [
     lastContactLabel: "il y a 5 h",
     awaitingCount: 1,
     owesReply: true,
+    stage: "prospect",
     project: {
       id: "pr-vitrine",
       name: "Site vitrine",
@@ -184,6 +187,7 @@ export const MOCK_CLIENTS: Client[] = [
     channels: ["gmail"],
     lastContactLabel: "il y a 2 h",
     awaitingCount: 1,
+    stage: "prospect",
     project: {
       id: "pr-itwa",
       name: "Démarrage sprint",
@@ -229,6 +233,7 @@ export const MOCK_CLIENTS: Client[] = [
     lastContactLabel: "il y a 12 j",
     awaitingCount: 0,
     silentDays: 12,
+    stage: "dormant",
     project: {
       id: "pr-kim",
       name: "Board approval & contrat",

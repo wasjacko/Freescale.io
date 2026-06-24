@@ -24908,6 +24908,71 @@ button.sidebar-brand {
   margin-left: auto;
 }
 
+/* Méta carte : société + chip stade commercial. */
+.client-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.client-card__stage {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.client-card__stage--prospect {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+.client-card__stage--active {
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+}
+.client-card__stage--dormant {
+  background: rgba(100, 116, 139, 0.14);
+  color: #64748b;
+}
+
+/* Ligne ARGENT à suivre (cœur du pilotage business). */
+.client-card__money {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.035);
+  color: #9097a3;
+}
+.client-card__money-label {
+  font-size: 13px;
+  font-weight: 650;
+  color: #6b7280;
+}
+.client-card__money--warn {
+  background: rgba(217, 119, 6, 0.09);
+  color: #d97706;
+}
+.client-card__money--warn .client-card__money-label {
+  color: #b4630a;
+}
+.client-card__money--danger {
+  background: rgba(220, 38, 38, 0.09);
+  color: #dc2626;
+}
+.client-card__money--danger .client-card__money-label {
+  color: #c0271f;
+}
+
+/* Disclaimer honnêteté sous les KPI. */
+.clients-disclaimer {
+  margin: -8px 0 16px;
+  font-size: 11.5px;
+  color: #9097a3;
+}
+
 /* Santé de la relation (carte) — pastille colorée + libellé honnête. */
 .client-card__relation {
   display: flex;

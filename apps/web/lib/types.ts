@@ -228,6 +228,9 @@ export type Client = {
   awaitingDays?: number | null;
   /** Aucun échange depuis N jours (relation qui refroidit). */
   silentDays?: number | null;
+  // ── Pilotage business (déduit des échanges par Mue, jamais saisi) ──
+  /** Stade commercial inféré : prospect / actif / dormant. */
+  stage?: "prospect" | "active" | "dormant";
   project?: Project;
   files?: FileItem[];
   invoices?: Invoice[];
