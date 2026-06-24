@@ -13,6 +13,14 @@ const SORTS: { key: "date" | "unread" | "starred"; label: string }[] = [
   { key: "starred", label: "Étoilés" },
 ];
 
+// Statut « balle dans le camp » (ex-onglets), maintenant dans le Filtre.
+const BUCKETS: { key: "all" | "to-reply" | "waiting" | "done"; label: string }[] = [
+  { key: "all", label: "Tout" },
+  { key: "to-reply", label: "À répondre" },
+  { key: "waiting", label: "En attente" },
+  { key: "done", label: "Terminé" },
+];
+
 /**
  * InboxToolbar — barre d'outils pleine largeur au-dessus des deux colonnes
  * (liste + fil). Non lus · Tri · Canal · Filtrer. L'état vit dans le store
@@ -23,14 +31,16 @@ export function InboxToolbar() {
   const {
     inboxSort,
     inboxChannel,
+    inboxBucket,
     inboxSearch,
     setInboxSort,
     setInboxChannel,
+    setInboxBucket,
     setInboxSearch,
     setActiveConv,
   } = useApp();
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [channelMenuOpen, setChannelMenuOpen] = useState(false);
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [addChannelOpen, setAddChannelOpen] = useState(false);
 
@@ -46,10 +56,8 @@ export function InboxToolbar() {
 
   const sortLabel =
     inboxSort === "unread" ? "Non lus" : inboxSort === "starred" ? "Étoilés" : "Récents";
-  const channelLabel =
-    inboxChannel === "all"
-      ? "Tous les canaux"
-      : (channelOptions.find((c) => c.key === inboxChannel)?.label ?? "Canal");
+  // Le bouton Filtre signale visuellement qu'un filtre (statut ou canal) est posé.
+  const filterActive = inboxBucket !== "all" || inboxChannel !== "all";
 
   return (
     <div className="ibx-toolbar-bar">
@@ -59,7 +67,7 @@ export function InboxToolbar() {
           className={`ibx-tool ${sortMenuOpen ? "is-open" : ""}`}
           aria-expanded={sortMenuOpen}
           onClick={() => {
-            setChannelMenuOpen(false);
+            setFilterMenuOpen(false);
             setSortMenuOpen((v) => !v);
           }}
         >
@@ -111,47 +119,68 @@ export function InboxToolbar() {
       <div className="ibx-tool-wrap">
         <button
           type="button"
-          className={`ibx-tool ${channelMenuOpen ? "is-open" : ""} ${inboxChannel !== "all" ? "is-active" : ""}`}
-          aria-expanded={channelMenuOpen}
+          className={`ibx-tool ${filterMenuOpen ? "is-open" : ""} ${filterActive ? "is-active" : ""}`}
+          aria-expanded={filterMenuOpen}
           onClick={() => {
             setSortMenuOpen(false);
-            setChannelMenuOpen((v) => !v);
+            setFilterMenuOpen((v) => !v);
           }}
         >
-          {channelLabel}
+          <svg
+            className="ibx-tool-ic"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          Filtre
+          {filterActive && <span className="ibx-tool-dot" aria-hidden />}
           <span className="ibx-tool-caret" aria-hidden>
             ▾
           </span>
         </button>
-        {channelMenuOpen && (
+        {filterMenuOpen && (
           <>
             <button
               type="button"
               className="ibx-tool-scrim"
               aria-label="Fermer"
-              onClick={() => setChannelMenuOpen(false)}
+              onClick={() => setFilterMenuOpen(false)}
             />
-            <div className="ibx-tool-menu" role="menu">
+            <div className="ibx-tool-menu ibx-tool-menu--filter" role="menu">
+              <div className="ibx-tool-menu-label">Statut</div>
+              {BUCKETS.map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  className={`ibx-tool-item ${inboxBucket === b.key ? "is-active" : ""}`}
+                  onClick={() => setInboxBucket(b.key)}
+                >
+                  {b.label}
+                </button>
+              ))}
+              <div className="ibx-tool-sep" />
+              <div className="ibx-tool-menu-label">Canal</div>
               {channelOptions.map((c) => (
                 <button
                   key={c.key}
                   type="button"
                   className={`ibx-tool-item ${inboxChannel === c.key ? "is-active" : ""}`}
-                  onClick={() => {
-                    setInboxChannel(c.key);
-                    setChannelMenuOpen(false);
-                  }}
+                  onClick={() => setInboxChannel(c.key)}
                 >
                   {c.label}
-                  {c.key === "all" && <span className="ibx-tool-item-hint">(défaut)</span>}
                 </button>
               ))}
-              <div className="ibx-tool-sep" />
               <button
                 type="button"
                 className="ibx-tool-item ibx-tool-item--add"
                 onClick={() => {
-                  setChannelMenuOpen(false);
+                  setFilterMenuOpen(false);
                   setAddChannelOpen(true);
                 }}
               >
@@ -160,6 +189,21 @@ export function InboxToolbar() {
                 </span>
                 Ajouter un canal
               </button>
+              {filterActive && (
+                <>
+                  <div className="ibx-tool-sep" />
+                  <button
+                    type="button"
+                    className="ibx-tool-item ibx-tool-item--reset"
+                    onClick={() => {
+                      setInboxBucket("all");
+                      setInboxChannel("all");
+                    }}
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                </>
+              )}
             </div>
           </>
         )}
