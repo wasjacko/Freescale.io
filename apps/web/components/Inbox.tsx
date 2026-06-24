@@ -61,7 +61,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     activeConvId,
     setActiveConv,
     inboxSort: sortBy,
-    inboxChannel: filterChannel,
+    inboxChannels: filterChannels,
+    inboxLabels: filterLabels,
     inboxCategory: filterCategory,
     inboxSearch,
     setInboxSearch,
@@ -224,7 +225,9 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
           new Date(c.snoozedUntilIso).getTime() > now
         )
           return false;
-        if (filterChannel !== "all" && c.channel !== filterChannel) return false;
+        if (filterChannels.length > 0 && !filterChannels.includes(c.channel)) return false;
+        if (filterLabels.length > 0 && !(c.tags ?? []).some((t) => filterLabels.includes(t)))
+          return false;
         if (filterCategory !== "all" && (c.category ?? "other") !== filterCategory) return false;
         if (unreadOnly && !isUnread(c.id, c.unread)) return false;
         if (!matchView(c)) return false;
@@ -250,7 +253,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     archived,
     inboxSearch,
     sortBy,
-    filterChannel,
+    filterChannels,
+    filterLabels,
     filterCategory,
     unreadOnly,
     activeFolderId,

@@ -29,7 +29,10 @@ type State = {
   // Filtres/tri de l'Inbox — remontés au store pour que la barre d'outils
   // (pleine largeur, au-dessus des deux colonnes) et la liste les partagent.
   inboxSort: InboxSort;
-  inboxChannel: string;
+  /** Canaux sélectionnés (multi). Vide = tous les canaux. */
+  inboxChannels: string[];
+  /** Étiquettes sélectionnées (multi). Vide = toutes. */
+  inboxLabels: string[];
   inboxCategory: string;
   inboxUnreadOnly: boolean;
   inboxSearch: string;
@@ -60,9 +63,14 @@ type State = {
   setMueView: (v: MueView) => void;
   setSuggestTasksOpen: (open: boolean) => void;
   setInboxSort: (s: InboxSort) => void;
-  setInboxChannel: (c: string) => void;
+  /** Bascule un canal dans la sélection (ajoute/retire). */
+  toggleInboxChannel: (kind: string) => void;
+  /** Bascule une étiquette dans la sélection. */
+  toggleInboxLabel: (tag: string) => void;
   setInboxCategory: (c: string) => void;
   setInboxUnreadOnly: (v: boolean) => void;
+  /** Réinitialise tous les filtres de l'inbox (statut, canaux, labels, non-lus). */
+  resetInboxFilters: () => void;
 };
 
 export const useApp = create<State>()(
@@ -76,7 +84,8 @@ export const useApp = create<State>()(
       mueView: "choices",
       suggestTasksOpen: false,
       inboxSort: "date",
-      inboxChannel: "all",
+      inboxChannels: [],
+      inboxLabels: [],
       inboxCategory: "all",
       inboxUnreadOnly: false,
       inboxSearch: "",
@@ -85,7 +94,8 @@ export const useApp = create<State>()(
       setInboxBucket: (inboxBucket) => set({ inboxBucket }),
       clientConfirm: { open: false, channel: "gmail" },
       openClientConfirm: (channel) => set({ clientConfirm: { open: true, channel } }),
-      closeClientConfirm: () => set((s) => ({ clientConfirm: { ...s.clientConfirm, open: false } })),
+      closeClientConfirm: () =>
+        set((s) => ({ clientConfirm: { ...s.clientConfirm, open: false } })),
       dataViewOpen: false,
       setDataViewOpen: (dataViewOpen) => set({ dataViewOpen }),
       aiReviewOpen: false,
@@ -108,9 +118,22 @@ export const useApp = create<State>()(
       setMueView: (mueView) => set({ mueView }),
       setSuggestTasksOpen: (suggestTasksOpen) => set({ suggestTasksOpen }),
       setInboxSort: (inboxSort) => set({ inboxSort }),
-      setInboxChannel: (inboxChannel) => set({ inboxChannel }),
+      toggleInboxChannel: (kind) =>
+        set((s) => ({
+          inboxChannels: s.inboxChannels.includes(kind)
+            ? s.inboxChannels.filter((k) => k !== kind)
+            : [...s.inboxChannels, kind],
+        })),
+      toggleInboxLabel: (tag) =>
+        set((s) => ({
+          inboxLabels: s.inboxLabels.includes(tag)
+            ? s.inboxLabels.filter((t) => t !== tag)
+            : [...s.inboxLabels, tag],
+        })),
       setInboxCategory: (inboxCategory) => set({ inboxCategory }),
       setInboxUnreadOnly: (inboxUnreadOnly) => set({ inboxUnreadOnly }),
+      resetInboxFilters: () =>
+        set({ inboxBucket: "all", inboxChannels: [], inboxLabels: [], inboxUnreadOnly: false }),
     }),
     {
       name: "fs:app",

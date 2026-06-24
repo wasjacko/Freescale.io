@@ -22538,13 +22538,147 @@ button:active:not(:disabled):not(.no-press) {
   color: #6b7280;
   font-weight: 600;
 }
-/* Pastille « filtre actif » sur le bouton Filtre. */
-.ibx-tool-dot {
+.ibx-tool-menu--filter {
+  min-width: 210px;
+  max-height: min(70vh, 460px);
+  overflow-y: auto;
+}
+/* En-tête du menu Filtre : titre + « Tout effacer ». */
+.ibx-tool-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #10131a;
+}
+.ibx-tool-clear {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #4f6cf7;
+  cursor: pointer;
+}
+.ibx-tool-clear:hover {
+  text-decoration: underline;
+}
+/* Coche (multi-select) et radio (single-select) dans le menu. */
+.ibx-check,
+.ibx-radio {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.22);
+  background: #fff;
+}
+.ibx-check {
+  border-radius: 5px;
+}
+.ibx-radio {
+  border-radius: 999px;
+}
+.ibx-check.is-on,
+.ibx-radio.is-on {
+  background: #2f7df6;
+  box-shadow: inset 0 0 0 1.5px #2f7df6;
+}
+.ibx-radio.is-on::after {
+  content: "";
   width: 6px;
   height: 6px;
   border-radius: 999px;
+  background: #fff;
+}
+/* Badge compteur de filtres actifs sur le bouton Filtre. */
+.ibx-tool-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
   background: #2f7df6;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
   margin-left: 1px;
+}
+/* Ligne « Non lus uniquement » = toggle switch. */
+.ibx-tool-item--toggle {
+  justify-content: space-between;
+}
+.ibx-switch {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.16);
+  transition: background 130ms var(--ease);
+}
+.ibx-switch.is-on {
+  background: #2f7df6;
+}
+.ibx-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+  transition: transform 130ms var(--ease);
+}
+.ibx-switch.is-on .ibx-switch-knob {
+  transform: translateX(12px);
+}
+/* Chips de filtres actifs (toolbar, visibles menu fermé). */
+.ibx-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.ibx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 4px 0 10px;
+  border-radius: 999px;
+  background: rgba(47, 125, 246, 0.1);
+  color: #2f7df6;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ibx-chip-x {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  color: #2f7df6;
+  font-size: 10px;
+  cursor: pointer;
+}
+.ibx-chip-x:hover {
+  background: rgba(47, 125, 246, 0.18);
+}
+.ibx-chips-clear {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.ibx-chips-clear:hover {
+  color: #10131a;
 }
 /* « Nouveau message » poussé à l'opposé des filtres (tout à droite). */
 .ibx-tool-new {
