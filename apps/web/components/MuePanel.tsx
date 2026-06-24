@@ -527,11 +527,12 @@ export function MuePanel() {
             type="button"
             className="mue-agent-iconbtn"
             onClick={() => setMueOpen(false)}
-            aria-label="Fermer Mue"
+            aria-label="Replier Mue"
+            title="Replier"
           >
             <svg {...stroke}>
-              <line x1="6" y1="6" x2="18" y2="18" />
-              <line x1="18" y1="6" x2="6" y2="18" />
+              <polyline points="9 6 15 12 9 18" />
+              <polyline points="15 6 21 12 15 18" />
             </svg>
           </button>
         </div>
