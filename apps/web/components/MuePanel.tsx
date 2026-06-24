@@ -1,5 +1,6 @@
 "use client";
 
+import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
@@ -7,15 +8,65 @@ import { useApp } from "@/lib/store";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MueTaskScanner } from "./SuggestTasksModal";
 
+type ActionRef = { entity: "task"; id: string; title: string };
 type AskMessage = {
   id: string;
   role: "user" | "mue";
-  kind?: "text" | "scan";
+  kind?: "text" | "scan" | "action";
   content: string;
   tone?: "normal" | "error";
+  action?: ActionRef;
+  /** Suggestions de suivi (« Améliorations »). */
+  improvements?: string[];
 };
 
 type Mode = "ask" | "agents";
+
+const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+/** Détecte une demande d'ACTION « créer une tâche / planifier » (mock NLU). */
+function parseTaskRequest(
+  msg: string
+): { title: string; dueLabel: string; dueAtIso: string } | null {
+  const lower = msg.toLowerCase();
+  if (!/(t[aâ]che|task|planifie|bloque|ajoute|cr[ée]e|rdv|rendez|calendr)/.test(lower)) return null;
+
+  // Titre : mot après « tâche/task », sinon après « ajoute/crée ».
+  let title =
+    msg.match(/t[aâ]ches?\s+(?:["«]\s*)?([\p{L}\p{N}-]{2,})/iu)?.[1] ??
+    msg.match(
+      /(?:ajoute|ajouter|cr[ée]e?r?|planifie|bloque)\s+(?:la\s+|le\s+|une\s+|un\s+|ma\s+)?(?:t[aâ]che\s+)?([\p{L}\p{N}-]{2,})/iu
+    )?.[1] ??
+    "";
+  const STOP = new Set(["la", "le", "les", "une", "un", "ma", "mon", "tache", "tâche", "task"]);
+  if (STOP.has(title.toLowerCase())) title = "";
+  if (!title) title = "Nouvelle tâche";
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+
+  // Jour : un jour de semaine cité, sinon demain.
+  const now = new Date();
+  const due = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const wd = WEEKDAYS.findIndex((d) => lower.includes(d));
+  if (wd >= 0) {
+    let add = (wd - now.getDay() + 7) % 7;
+    if (add === 0) add = 7; // « lundi » = le prochain
+    due.setDate(due.getDate() + add);
+  } else {
+    due.setDate(due.getDate() + 1);
+  }
+  // Heure : « 8h », « 8 h », « 8am » ; défaut 9h.
+  const hourMatch = lower.match(/(\d{1,2})\s*(?:h|am|:00)/);
+  const hour = hourMatch ? Math.min(23, Number.parseInt(hourMatch[1] ?? "9", 10)) : 9;
+  due.setHours(hour, 0, 0, 0);
+
+  const dayLabel = due.toLocaleDateString("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const dueLabel = `${dayLabel} · ${hour}h`;
+  return { title, dueLabel, dueAtIso: due.toISOString() };
+}
 
 const stroke = {
   fill: "none",
@@ -63,7 +114,7 @@ export function MuePanel() {
     setActiveConv,
     setInboxBucket,
   } = useApp();
-  const { conversations } = useData();
+  const { conversations, addTask } = useData();
   const push = useToast((s) => s.push);
 
   const [mode, setMode] = useState<Mode>("ask");
@@ -71,6 +122,8 @@ export function MuePanel() {
   const [askPending, setAskPending] = useState(false);
   const [askHistoryLoading, setAskHistoryLoading] = useState(false);
   const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
+  // Tâche ouverte en détail (modal) suite à une action de Mue.
+  const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
 
   const conv = useMemo(
     () => conversations.find((c) => c.id === activeConvId) ?? null,
@@ -175,10 +228,59 @@ export function MuePanel() {
     }
   };
 
+  // Action « créer une tâche » : Mue agit puis renvoie une chose CLIQUABLE
+  // (ouvre la fiche détaillée). Suggestions de suivi façon « Améliorations ».
+  const runTaskAction = (raw: string, parsed: NonNullable<ReturnType<typeof parseTaskRequest>>) => {
+    const taskId = `mue-${Date.now()}`;
+    addTask({
+      id: taskId,
+      title: parsed.title,
+      priority: "medium",
+      dueLabel: parsed.dueLabel,
+      status: "todo",
+      avatar: { kind: "initials", text: "WA", bg: "#4f46e5" },
+      channel: "gmail",
+      sortableIndex: Date.now(),
+      fromAI: true,
+      conversationId: null,
+      dueAtIso: parsed.dueAtIso,
+      createdAtIso: new Date().toISOString(),
+    });
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
+      {
+        id: `act-${Date.now()}`,
+        role: "mue",
+        kind: "action",
+        content: `C'est fait — j'ai créé la tâche avec échéance ${parsed.dueLabel} dans ta liste perso. Tu es bon 👍`,
+        action: { entity: "task", id: taskId, title: parsed.title },
+        improvements: [
+          `Bloque 1h sur mon agenda pour ${parsed.title}`,
+          "Crée un agent qui me rappelle mes tâches chaque matin",
+          "Montre-moi mes tâches en retard cette semaine",
+        ],
+      },
+    ]);
+    setAskInput("");
+  };
+
+  // Aiguillage : action (tâche) si l'intention est détectée, sinon question.
+  const submit = (raw: string) => {
+    const text = raw.trim();
+    if (!text || askPending) return;
+    const parsed = parseTaskRequest(text);
+    if (parsed) {
+      runTaskAction(text, parsed);
+      return;
+    }
+    void runAsk(text);
+  };
+
   const handleAsk = (e: React.FormEvent) => {
     e.preventDefault();
     if (!askInput.trim()) return;
-    void runAsk(askInput);
+    submit(askInput);
   };
 
   const handleClear = async () => {
@@ -436,7 +538,39 @@ export function MuePanel() {
                   <div className="mue2-msg-head">
                     <MueMark size={16} /> Mue
                   </div>
-                  <div className="mue2-msg-body">{m.content}</div>
+                  <div className="mue2-msg-body">
+                    {m.content}
+                    {m.action && (
+                      <button
+                        type="button"
+                        className="mue2-ref"
+                        onClick={() => setDetailTaskId(m.action?.id ?? null)}
+                        title="Ouvrir la fiche"
+                      >
+                        <span className="mue2-ref-dot" aria-hidden />
+                        {m.action.title}
+                        <span className="mue2-ref-badge">TO DO</span>
+                      </button>
+                    )}
+                  </div>
+                  {m.improvements && m.improvements.length > 0 && (
+                    <div className="mue2-improve">
+                      <span className="mue2-improve-label">Améliorations</span>
+                      {m.improvements.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className="mue2-improve-chip"
+                          onClick={() => submit(s)}
+                        >
+                          <span className="mue2-improve-arrow" aria-hidden>
+                            ↳
+                          </span>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             )}
@@ -455,6 +589,10 @@ export function MuePanel() {
           </div>
           <div className="mue2-foot">{composer}</div>
         </>
+      )}
+
+      {detailTaskId && (
+        <TaskDetailModal taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
       )}
     </aside>
   );

@@ -12183,6 +12183,248 @@ html {
   padding: 0;
 }
 
+/* Référence cliquable vers la chose créée (ex. tâche) — ouvre la fiche. */
+.mue2-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  color: #eef0f6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease);
+}
+.mue2-ref:hover {
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 0 0 1px rgba(120, 140, 255, 0.55);
+}
+.mue2-ref-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 2px #9aa0b0;
+}
+.mue2-ref-badge {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #c9cee0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+/* Suggestions de suivi (« Améliorations »). */
+.mue2-improve {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+.mue2-improve-label {
+  font-size: 12px;
+  color: #8a90a2;
+}
+.mue2-improve-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  color: #e8eaf0;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease);
+}
+.mue2-improve-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26);
+}
+.mue2-improve-arrow {
+  color: #8a90a2;
+  flex: none;
+}
+
+/* ── Fiche tâche (modal de détail ouverte depuis le chat) ── */
+.tdm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8, 10, 16, 0.55);
+  backdrop-filter: blur(3px);
+  animation: tdm-fade 150ms var(--ease);
+}
+@keyframes tdm-fade {
+  from {
+    opacity: 0;
+  }
+}
+.tdm-sheet {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+  overflow: hidden;
+  animation: tdm-pop 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tdm-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.tdm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.08);
+}
+.tdm-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6b7280;
+}
+.tdm-close {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+}
+.tdm-close:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+.tdm-body {
+  padding: 18px 20px 8px;
+}
+.tdm-title {
+  margin: 0 0 16px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #10131a;
+}
+.tdm-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tdm-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  font-size: 13.5px;
+}
+.tdm-key {
+  color: #6b7280;
+  font-weight: 500;
+}
+.tdm-val {
+  color: #10131a;
+  font-weight: 600;
+}
+.tdm-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.tdm-status {
+  width: fit-content;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: rgba(15, 23, 42, 0.1);
+  color: #475569;
+}
+.tdm-status--todo {
+  background: rgba(79, 108, 247, 0.14);
+  color: #4f6cf7;
+}
+.tdm-status--progress {
+  background: rgba(217, 119, 6, 0.16);
+  color: #b4630a;
+}
+.tdm-status--done {
+  background: rgba(22, 163, 74, 0.16);
+  color: #16a34a;
+}
+.tdm-status--waiting {
+  background: rgba(8, 145, 178, 0.16);
+  color: #0891b2;
+}
+.tdm-prio {
+  width: fit-content;
+  font-weight: 600;
+}
+.tdm-prio--high {
+  color: #dc2626;
+}
+.tdm-prio--medium {
+  color: #d97706;
+}
+.tdm-prio--low {
+  color: #16a34a;
+}
+.tdm-desc {
+  margin: 18px 0 4px;
+  padding: 12px 0;
+  font-size: 13.5px;
+  color: #9097a3;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.07);
+}
+.tdm-foot {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px 18px;
+}
+.tdm-btn {
+  padding: 9px 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tdm-btn--ghost {
+  color: #475569;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
+}
+.tdm-btn--ghost:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+.tdm-btn--primary {
+  margin-left: auto;
+  background: #10131a;
+  color: #fff;
+}
+.tdm-btn--primary:hover {
+  background: #000;
+}
+
 /* Mode Agents (vide pour l'instant). */
 .mue2-agents {
   flex: 1;
