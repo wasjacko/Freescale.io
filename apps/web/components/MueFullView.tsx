@@ -40,6 +40,45 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
+/** Logo fleur Mue (5 pétales en dégradé pastel, façon Brain). */
+const MueFlower = ({ size = 56 }: { size?: number }) => (
+  <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
+    <defs>
+      <linearGradient id="mfv-petal-1" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#7aa2ff" />
+        <stop offset="100%" stopColor="#b78cff" />
+      </linearGradient>
+      <linearGradient id="mfv-petal-2" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#b78cff" />
+        <stop offset="100%" stopColor="#ff9d7a" />
+      </linearGradient>
+      <linearGradient id="mfv-petal-3" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#ff9d7a" />
+        <stop offset="100%" stopColor="#ffd2a8" />
+      </linearGradient>
+      <radialGradient id="mfv-core" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+        <stop offset="60%" stopColor="#fff" stopOpacity="0.25" />
+        <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    {/* 5 pétales en cercle (rotation par 72°). */}
+    {[0, 72, 144, 216, 288].map((deg, i) => (
+      <ellipse
+        key={deg}
+        cx="32"
+        cy="18"
+        rx="11"
+        ry="16"
+        fill={`url(#mfv-petal-${(i % 3) + 1})`}
+        transform={`rotate(${deg} 32 32)`}
+        opacity="0.92"
+      />
+    ))}
+    <circle cx="32" cy="32" r="8" fill="url(#mfv-core)" />
+  </svg>
+);
+
 export function MueFullView() {
   const { activeConvId } = useApp();
   const { conversations: _convs } = useData();
@@ -143,15 +182,11 @@ export function MueFullView() {
         </header>
 
         {messages.length === 0 ? (
-          <div className="mfv-empty">
-            <span className="mfv-empty-orb">
-              <MueMark size={42} />
+          <div className="mfv-hero">
+            <span className="mfv-hero-mark">
+              <MueFlower size={64} />
             </span>
-            <h2>Demande quelque chose à Mue</h2>
-            <p>
-              Mue voit ta journée — résume un fil, propose une réponse, planifie une tâche, scanne
-              les messages…
-            </p>
+            <h2 className="mfv-hero-title">Mue</h2>
           </div>
         ) : (
           <div className="mfv-chat" ref={logRef}>
@@ -181,6 +216,71 @@ export function MueFullView() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Suggestions condensées (chips) juste au-dessus du composer. */}
+        {messages.length === 0 && (
+          <div className="mfv-chips" aria-label="Suggestions">
+            {(
+              [
+                {
+                  label: "Recherche approfondie",
+                  q: "Fais une recherche approfondie sur mes clients récents",
+                  icon: (
+                    <svg {...stroke} width={14} height={14}>
+                      <circle cx="11" cy="11" r="7" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  ),
+                  cls: "purple",
+                },
+                {
+                  label: "Tâche",
+                  q: "Crée une tâche pour demain",
+                  icon: (
+                    <svg {...stroke} width={14} height={14}>
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ),
+                  cls: "green",
+                },
+                {
+                  label: "Résumer ma journée",
+                  q: "Résume ma journée",
+                  icon: (
+                    <svg {...stroke} width={14} height={14}>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                  ),
+                  cls: "blue",
+                },
+                {
+                  label: "Suggérer des tâches",
+                  q: "Suggère des tâches depuis mes messages",
+                  icon: (
+                    <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor" aria-hidden>
+                      <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
+                    </svg>
+                  ),
+                  cls: "orange",
+                },
+              ] as const
+            ).map((c) => (
+              <button
+                key={c.label}
+                type="button"
+                className={`mfv-chip mfv-chip--${c.cls}`}
+                onClick={() => {
+                  setInput(c.q);
+                  requestAnimationFrame(() => inputRef.current?.focus());
+                }}
+              >
+                <span className="mfv-chip-ic">{c.icon}</span>
+                {c.label}
+              </button>
+            ))}
           </div>
         )}
 

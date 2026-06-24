@@ -30178,38 +30178,84 @@ button.sidebar-brand {
   color: var(--ink, #10131a);
   letter-spacing: -0.01em;
 }
-.mfv-empty {
+/* Hero plein centre — logo fleur Mue + titre 'Mue'. */
+.mfv-hero {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  gap: 10px;
+  gap: 14px;
   padding: 24px;
 }
-.mfv-empty-orb {
+.mfv-hero-mark {
   display: grid;
   place-items: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
-  background: rgba(120, 140, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(120, 140, 255, 0.18);
+  width: 84px;
+  height: 84px;
+  filter: drop-shadow(0 6px 20px rgba(120, 90, 255, 0.18));
 }
-.mfv-empty h2 {
-  font-size: 18px;
-  font-weight: 700;
+.mfv-hero-title {
+  margin: 0;
+  font-family: "Instrument Serif", serif;
+  font-size: 44px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
   color: var(--ink, #10131a);
 }
-.mfv-empty p {
-  max-width: 360px;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: #6b7280;
+
+/* Chips de suggestions condensés (au-dessus du composer). */
+.mfv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 22px 6px;
 }
-[data-theme="dark"] .mfv-empty p {
-  color: var(--muted);
+.mfv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease), color 130ms var(--ease);
+}
+.mfv-chip:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--ink, #10131a);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.2);
+}
+.mfv-chip-ic {
+  display: inline-grid;
+  place-items: center;
+}
+.mfv-chip--purple .mfv-chip-ic {
+  color: #8b5cf6;
+}
+.mfv-chip--green .mfv-chip-ic {
+  color: #16a34a;
+}
+.mfv-chip--blue .mfv-chip-ic {
+  color: #4f6cf7;
+}
+.mfv-chip--orange .mfv-chip-ic {
+  color: #f59e0b;
+}
+[data-theme="dark"] .mfv-chip {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--body);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .mfv-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
 }
 
 /* Chat */
