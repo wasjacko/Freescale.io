@@ -2650,19 +2650,62 @@ html {
   gap: 7px;
   padding: 0 13px 0 11px;
 }
-/* Bouton Agent — INACTIF : fond blanc + liseré dégradé (frame technique). */
+/* ── Bouton Agent (Mue) — neutre au repos, anneau IA animé au hover ── */
+@property --mue-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 .topbar-actbtn.topbar-mue {
-  border: 1.5px solid transparent;
-  background: linear-gradient(#fff, #fff) padding-box,
-    linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%) border-box;
-  color: #4f6cf7;
-  box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.08);
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: #fff;
+  color: var(--ink, #0a0a0a);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.13), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.08);
+}
+/* Anneau conique gradient — invisible au repos, opacité au hover. */
+.topbar-actbtn.topbar-mue::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--mue-angle),
+    #4f6cf7 0deg,
+    #c248e8 110deg,
+    #ff5f7e 200deg,
+    #ffb774 290deg,
+    #4f6cf7 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 220ms var(--ease);
+  pointer-events: none;
+  z-index: -1;
 }
 .topbar-actbtn.topbar-mue:hover {
-  background: linear-gradient(#fff, #fff) padding-box,
-    linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%) border-box;
-  color: #4f6cf7;
-  box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.16);
+  background: #fff;
+  color: var(--ink, #0a0a0a);
+  /* On laisse le liseré statique pour pas qu'il se cumule avec l'anneau. */
+  box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.06);
+}
+.topbar-actbtn.topbar-mue:hover::before {
+  opacity: 1;
+  animation: mue-ring-spin 5.5s linear infinite;
+}
+@keyframes mue-ring-spin {
+  to {
+    --mue-angle: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-actbtn.topbar-mue:hover::before {
+    animation: none;
+  }
 }
 .topbar-mue .topbar-actbtn-label {
   font-size: 13px;
@@ -27309,8 +27352,8 @@ button.sidebar-brand {
     0 12px 28px rgba(15, 23, 42, 0.12);
 }
 .app.view-today .tboard-table {
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent),
-    inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent), inset 0 0 0 1px
+    rgba(15, 23, 42, 0.12);
 }
 
 /* Repli/dépli d'un groupe (chevron) : hauteur animée dans les deux sens. */
@@ -27576,8 +27619,8 @@ button.sidebar-brand {
   overflow: hidden;
   background: #fff;
   /* Trait gauche : couleur du groupe ATTÉNUÉE (~28%), 3px, net et continu. */
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent),
-    inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent), inset 0 0 0 1px
+    rgba(15, 23, 42, 0.12);
 }
 .tboard-row {
   display: grid;
