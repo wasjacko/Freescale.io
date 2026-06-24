@@ -183,6 +183,28 @@ export function TasksBoard() {
     const r = e.currentTarget.getBoundingClientRect();
     setPrioMenu({ id, x: r.left + r.width / 2, y: r.bottom + 4 });
   };
+  // Menu d'édition des clients liés (multi-sélection, popover via portal).
+  const [clientMenu, setClientMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const openClientMenu = (id: string, e: React.MouseEvent<HTMLElement>) => {
+    if (clientMenu?.id === id) {
+      setClientMenu(null);
+      return;
+    }
+    const r = e.currentTarget.getBoundingClientRect();
+    setClientMenu({ id, x: r.left + r.width / 2, y: r.bottom + 4 });
+  };
+  // Toggle l'appartenance d'un client (conversationId) à la tâche.
+  const toggleTaskClient = (t: Task, convId: string) => {
+    const current = t.clientConvIds?.length
+      ? t.clientConvIds
+      : t.conversationId
+        ? [t.conversationId]
+        : [];
+    const next = current.includes(convId)
+      ? current.filter((id) => id !== convId)
+      : [...current, convId];
+    patchTask(t.id, { clientConvIds: next.length ? next : null });
+  };
   const toDateInput = (iso: string | null | undefined) =>
     iso && !Number.isNaN(new Date(iso).getTime()) ? new Date(iso).toISOString().slice(0, 10) : "";
   const commitDate = (id: string, field: "due" | "created", value: string) => {
@@ -633,11 +655,16 @@ export function TasksBoard() {
                                   )}
                                 </div>
 
-                                <span
-                                  className="tboard-cell tboard-client"
+                                <button
+                                  type="button"
+                                  className="tboard-cell tboard-client tboard-client-btn"
                                   title={
-                                    clientConvs.map((c) => c.name).join(", ") || clientNameOf(t)
+                                    clientConvs.map((c) => c.name).join(", ") ||
+                                    "Aucun client — clique pour en ajouter"
                                   }
+                                  aria-haspopup="menu"
+                                  aria-expanded={clientMenu?.id === t.id}
+                                  onClick={(e) => openClientMenu(t.id, e)}
                                 >
                                   {clientConvs.length > 0 ? (
                                     <span className="tboard-client-stack">
@@ -654,18 +681,28 @@ export function TasksBoard() {
                                         </span>
                                       )}
                                     </span>
-                                  ) : t.id.startsWith("new-") ? (
-                                    <span
-                                      className="tboard-client-empty"
-                                      aria-label="Sans client"
-                                    />
                                   ) : (
-                                    <Avatar
-                                      avatar={{ ...t.avatar, alt: clientNameOf(t) }}
-                                      size={28}
-                                    />
+                                    <span
+                                      className="tboard-client-add"
+                                      aria-label="Ajouter un client"
+                                    >
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        width={14}
+                                        height={14}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={2}
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden
+                                      >
+                                        <line x1="12" y1="5" x2="12" y2="19" />
+                                        <line x1="5" y1="12" x2="19" y2="12" />
+                                      </svg>
+                                    </span>
                                   )}
-                                </span>
+                                </button>
 
                                 <span className={`tboard-cell tboard-due tboard-due--${due.tone}`}>
                                   {editCell?.id === t.id && editCell.field === "due" ? (
@@ -898,6 +935,77 @@ export function TasksBoard() {
           })}
         </div>
       )}
+      {clientMenu &&
+        typeof document !== "undefined" &&
+        (() => {
+          const t = displayed.find((x) => x.id === clientMenu.id);
+          if (!t) return null;
+          // Liste « clients » dispo = 1 entrée par clientId (ou par id de conv).
+          const seen = new Map<string, (typeof conversations)[number]>();
+          for (const c of conversations) {
+            const key = c.clientId ?? c.id;
+            if (!seen.has(key)) seen.set(key, c);
+          }
+          const all = [...seen.values()];
+          const current = new Set(
+            t.clientConvIds?.length ? t.clientConvIds : t.conversationId ? [t.conversationId] : []
+          );
+          const W = 240;
+          const H = Math.min(8 + all.length * 40 + 12, 320);
+          const left = Math.max(8, Math.min(window.innerWidth - W - 8, clientMenu.x - W / 2));
+          const top = Math.min(window.innerHeight - H - 8, clientMenu.y);
+          return createPortal(
+            <>
+              <button
+                type="button"
+                className="tprio-scrim"
+                aria-label="Fermer"
+                onClick={() => setClientMenu(null)}
+              />
+              <div
+                className="tclient-menu"
+                role="menu"
+                style={{ position: "fixed", left, top, width: W, maxHeight: H }}
+              >
+                <div className="tclient-menu-head">Clients liés</div>
+                {all.length === 0 && (
+                  <p className="tclient-empty">Aucun client connecté pour l'instant.</p>
+                )}
+                {all.map((c) => {
+                  const on = current.has(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      className={`tclient-opt ${on ? "is-on" : ""}`}
+                      onClick={() => toggleTaskClient(t, c.id)}
+                    >
+                      <Avatar avatar={{ ...c.avatar, alt: c.name }} size={24} />
+                      <span className="tclient-opt-name">{c.name}</span>
+                      <span className={`tclient-check ${on ? "is-on" : ""}`} aria-hidden>
+                        {on && (
+                          <svg
+                            viewBox="0 0 24 24"
+                            width={11}
+                            height={11}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>,
+            document.body
+          );
+        })()}
       {prioMenu &&
         typeof document !== "undefined" &&
         (() => {
