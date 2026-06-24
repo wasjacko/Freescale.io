@@ -111,197 +111,266 @@ export function InboxToolbar() {
   const activeCount = chips.length;
 
   return (
-    <div className="ibx-toolbar-bar">
-      <div className="ibx-tool-wrap">
-        <button
-          type="button"
-          className={`ibx-tool ${sortMenuOpen ? "is-open" : ""}`}
-          aria-expanded={sortMenuOpen}
-          onClick={() => {
-            setFilterMenuOpen(false);
-            setSortMenuOpen((v) => !v);
-          }}
-        >
-          <svg
-            className="ibx-tool-ic"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
+    <div className="ibx-toolbar">
+      <div className="ibx-toolbar-bar">
+        <div className="ibx-tool-wrap">
+          <button
+            type="button"
+            className={`ibx-tool ${sortMenuOpen ? "is-open" : ""}`}
+            aria-expanded={sortMenuOpen}
+            onClick={() => {
+              setFilterMenuOpen(false);
+              setSortMenuOpen((v) => !v);
+            }}
           >
-            <path d="M7 4v16M7 4 4 7M7 4l3 3" />
-            <path d="M17 20V4M17 20l3-3M17 20l-3-3" />
-          </svg>
-          Tri : {sortLabel}
-          <span className="ibx-tool-caret" aria-hidden>
-            ▾
-          </span>
-        </button>
-        {sortMenuOpen && (
-          <>
-            <button
-              type="button"
-              className="ibx-tool-scrim"
-              aria-label="Fermer"
-              onClick={() => setSortMenuOpen(false)}
-            />
-            <div className="ibx-tool-menu" role="menu">
-              {SORTS.map((s) => (
+            <svg
+              className="ibx-tool-ic"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M7 4v16M7 4 4 7M7 4l3 3" />
+              <path d="M17 20V4M17 20l3-3M17 20l-3-3" />
+            </svg>
+            Tri : {sortLabel}
+            <span className="ibx-tool-caret" aria-hidden>
+              ▾
+            </span>
+          </button>
+          {sortMenuOpen && (
+            <>
+              <button
+                type="button"
+                className="ibx-tool-scrim"
+                aria-label="Fermer"
+                onClick={() => setSortMenuOpen(false)}
+              />
+              <div className="ibx-tool-menu" role="menu">
+                {SORTS.map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    className={`ibx-tool-item ${inboxSort === s.key ? "is-active" : ""}`}
+                    onClick={() => {
+                      setInboxSort(s.key);
+                      setSortMenuOpen(false);
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="ibx-tool-wrap">
+          <button
+            type="button"
+            className={`ibx-tool ${filterMenuOpen ? "is-open" : ""} ${activeCount > 0 ? "is-active" : ""}`}
+            aria-expanded={filterMenuOpen}
+            onClick={() => {
+              setSortMenuOpen(false);
+              setFilterMenuOpen((v) => !v);
+            }}
+          >
+            <svg
+              className="ibx-tool-ic"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            Filtre
+            {activeCount > 0 && <span className="ibx-tool-badge">{activeCount}</span>}
+            <span className="ibx-tool-caret" aria-hidden>
+              ▾
+            </span>
+          </button>
+          {filterMenuOpen && (
+            <>
+              <button
+                type="button"
+                className="ibx-tool-scrim"
+                aria-label="Fermer"
+                onClick={() => setFilterMenuOpen(false)}
+              />
+              <div className="ibx-tool-menu ibx-tool-menu--filter" role="menu">
+                <div className="ibx-tool-menu-head">
+                  <span>Filtres</span>
+                  {activeCount > 0 && (
+                    <button
+                      type="button"
+                      className="ibx-tool-clear"
+                      onClick={() => resetInboxFilters()}
+                    >
+                      Tout effacer
+                    </button>
+                  )}
+                </div>
+
+                <div className="ibx-tool-menu-label">Statut</div>
+                {BUCKETS.map((b) => (
+                  <button
+                    key={b.key}
+                    type="button"
+                    className={`ibx-tool-item ${inboxBucket === b.key ? "is-active" : ""}`}
+                    onClick={() => setInboxBucket(b.key)}
+                  >
+                    <span
+                      className={`ibx-radio ${inboxBucket === b.key ? "is-on" : ""}`}
+                      aria-hidden
+                    />
+                    {b.label}
+                  </button>
+                ))}
+
+                <div className="ibx-tool-sep" />
+                <div className="ibx-tool-menu-label">Canaux</div>
+                {channelList.map((c) => (
+                  <button
+                    key={c.kind}
+                    type="button"
+                    className={`ibx-tool-item ${inboxChannels.includes(c.kind) ? "is-active" : ""}`}
+                    onClick={() => toggleInboxChannel(c.kind)}
+                  >
+                    <Check on={inboxChannels.includes(c.kind)} />
+                    {c.label}
+                  </button>
+                ))}
                 <button
-                  key={s.key}
                   type="button"
-                  className={`ibx-tool-item ${inboxSort === s.key ? "is-active" : ""}`}
+                  className="ibx-tool-item ibx-tool-item--add"
                   onClick={() => {
-                    setInboxSort(s.key);
-                    setSortMenuOpen(false);
+                    setFilterMenuOpen(false);
+                    setAddChannelOpen(true);
                   }}
                 >
-                  {s.label}
+                  <span className="ibx-tool-plus" aria-hidden>
+                    +
+                  </span>
+                  Ajouter un canal
                 </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
 
-      <div className="ibx-tool-wrap">
+                {allLabels.length > 0 && (
+                  <>
+                    <div className="ibx-tool-sep" />
+                    <div className="ibx-tool-menu-label">Étiquettes</div>
+                    {allLabels.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`ibx-tool-item ${inboxLabels.includes(t) ? "is-active" : ""}`}
+                        onClick={() => toggleInboxLabel(t)}
+                      >
+                        <Check on={inboxLabels.includes(t)} />
+                        {t}
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                <div className="ibx-tool-sep" />
+                <button
+                  type="button"
+                  className={`ibx-tool-item ibx-tool-item--toggle ${inboxUnreadOnly ? "is-active" : ""}`}
+                  onClick={() => setInboxUnreadOnly(!inboxUnreadOnly)}
+                >
+                  Non lus uniquement
+                  <span className={`ibx-switch ${inboxUnreadOnly ? "is-on" : ""}`} aria-hidden>
+                    <span className="ibx-switch-knob" />
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
+          <AddChannelModal
+            open={addChannelOpen}
+            onClose={() => setAddChannelOpen(false)}
+            connectedKinds={connectedKinds}
+          />
+        </div>
+
+        <div className="ibx-search-wrap">
+          <svg
+            viewBox="0 0 24 24"
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="ibx-search-ic"
+            aria-hidden
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            className="ibx-search-input"
+            placeholder="Rechercher…"
+            value={inboxSearch}
+            onChange={(e) => setInboxSearch(e.target.value)}
+            aria-label="Rechercher dans l'inbox"
+          />
+          {inboxSearch && (
+            <button
+              type="button"
+              className="ibx-search-clear"
+              aria-label="Effacer"
+              onClick={() => setInboxSearch("")}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Nouveau message — à l'opposé des filtres (poussé tout à droite). */}
         <button
           type="button"
-          className={`ibx-tool ${filterMenuOpen ? "is-open" : ""} ${activeCount > 0 ? "is-active" : ""}`}
-          aria-expanded={filterMenuOpen}
-          onClick={() => {
-            setSortMenuOpen(false);
-            setFilterMenuOpen((v) => !v);
-          }}
+          className="ibx-tool ibx-tool-new"
+          title="Nouveau message"
+          onClick={() => setComposeOpen(true)}
         >
           <svg
-            className="ibx-tool-ic"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.8"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            className="ibx-tool-ic"
             aria-hidden
           >
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" />
           </svg>
-          Filtre
-          {activeCount > 0 && <span className="ibx-tool-badge">{activeCount}</span>}
-          <span className="ibx-tool-caret" aria-hidden>
-            ▾
-          </span>
+          Nouveau message
         </button>
-        {filterMenuOpen && (
-          <>
-            <button
-              type="button"
-              className="ibx-tool-scrim"
-              aria-label="Fermer"
-              onClick={() => setFilterMenuOpen(false)}
-            />
-            <div className="ibx-tool-menu ibx-tool-menu--filter" role="menu">
-              <div className="ibx-tool-menu-head">
-                <span>Filtres</span>
-                {activeCount > 0 && (
-                  <button
-                    type="button"
-                    className="ibx-tool-clear"
-                    onClick={() => resetInboxFilters()}
-                  >
-                    Tout effacer
-                  </button>
-                )}
-              </div>
 
-              <div className="ibx-tool-menu-label">Statut</div>
-              {BUCKETS.map((b) => (
-                <button
-                  key={b.key}
-                  type="button"
-                  className={`ibx-tool-item ${inboxBucket === b.key ? "is-active" : ""}`}
-                  onClick={() => setInboxBucket(b.key)}
-                >
-                  <span
-                    className={`ibx-radio ${inboxBucket === b.key ? "is-on" : ""}`}
-                    aria-hidden
-                  />
-                  {b.label}
-                </button>
-              ))}
-
-              <div className="ibx-tool-sep" />
-              <div className="ibx-tool-menu-label">Canaux</div>
-              {channelList.map((c) => (
-                <button
-                  key={c.kind}
-                  type="button"
-                  className={`ibx-tool-item ${inboxChannels.includes(c.kind) ? "is-active" : ""}`}
-                  onClick={() => toggleInboxChannel(c.kind)}
-                >
-                  <Check on={inboxChannels.includes(c.kind)} />
-                  {c.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="ibx-tool-item ibx-tool-item--add"
-                onClick={() => {
-                  setFilterMenuOpen(false);
-                  setAddChannelOpen(true);
-                }}
-              >
-                <span className="ibx-tool-plus" aria-hidden>
-                  +
-                </span>
-                Ajouter un canal
-              </button>
-
-              {allLabels.length > 0 && (
-                <>
-                  <div className="ibx-tool-sep" />
-                  <div className="ibx-tool-menu-label">Étiquettes</div>
-                  {allLabels.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      className={`ibx-tool-item ${inboxLabels.includes(t) ? "is-active" : ""}`}
-                      onClick={() => toggleInboxLabel(t)}
-                    >
-                      <Check on={inboxLabels.includes(t)} />
-                      {t}
-                    </button>
-                  ))}
-                </>
-              )}
-
-              <div className="ibx-tool-sep" />
-              <button
-                type="button"
-                className={`ibx-tool-item ibx-tool-item--toggle ${inboxUnreadOnly ? "is-active" : ""}`}
-                onClick={() => setInboxUnreadOnly(!inboxUnreadOnly)}
-              >
-                Non lus uniquement
-                <span className={`ibx-switch ${inboxUnreadOnly ? "is-on" : ""}`} aria-hidden>
-                  <span className="ibx-switch-knob" />
-                </span>
-              </button>
-            </div>
-          </>
+        {composeOpen && (
+          <NewMessageModal
+            open={composeOpen}
+            onClose={() => setComposeOpen(false)}
+            onCreated={(convId) => setActiveConv(convId)}
+          />
         )}
-        <AddChannelModal
-          open={addChannelOpen}
-          onClose={() => setAddChannelOpen(false)}
-          connectedKinds={connectedKinds}
-        />
       </div>
 
-      {/* Chips de filtres actifs — visibles même menu fermé, supprimables. */}
+      {/* Rangée des filtres actifs — sous la barre, visible menu fermé. */}
       {chips.length > 0 && (
-        <div className="ibx-chips" aria-label="Filtres actifs">
+        <div className="ibx-chips-row" aria-label="Filtres actifs">
           {chips.map((chip) => (
             <span key={chip.id} className="ibx-chip">
               {chip.label}
@@ -319,73 +388,6 @@ export function InboxToolbar() {
             Tout effacer
           </button>
         </div>
-      )}
-
-      <div className="ibx-search-wrap">
-        <svg
-          viewBox="0 0 24 24"
-          width="15"
-          height="15"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="ibx-search-ic"
-          aria-hidden
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input
-          type="text"
-          className="ibx-search-input"
-          placeholder="Rechercher…"
-          value={inboxSearch}
-          onChange={(e) => setInboxSearch(e.target.value)}
-          aria-label="Rechercher dans l'inbox"
-        />
-        {inboxSearch && (
-          <button
-            type="button"
-            className="ibx-search-clear"
-            aria-label="Effacer"
-            onClick={() => setInboxSearch("")}
-          >
-            ✕
-          </button>
-        )}
-      </div>
-
-      {/* Nouveau message — à l'opposé des filtres (poussé tout à droite). */}
-      <button
-        type="button"
-        className="ibx-tool ibx-tool-new"
-        title="Nouveau message"
-        onClick={() => setComposeOpen(true)}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="ibx-tool-ic"
-          aria-hidden
-        >
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" />
-        </svg>
-        Nouveau message
-      </button>
-
-      {composeOpen && (
-        <NewMessageModal
-          open={composeOpen}
-          onClose={() => setComposeOpen(false)}
-          onCreated={(convId) => setActiveConv(convId)}
-        />
       )}
     </div>
   );
