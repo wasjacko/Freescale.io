@@ -12352,6 +12352,88 @@ html {
 }
 
 /* État vide : composer + brief + 3 cartes. */
+/* Hero du panneau (logo fleur + 'Mue' centré) + chips condensés. */
+.mue2-hero {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+}
+.mue2-hero-mark {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  filter: drop-shadow(0 6px 20px rgba(120, 90, 255, 0.18));
+}
+.mue2-hero-title {
+  margin: 0;
+  font-family: "Instrument Serif", serif;
+  font-size: 36px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink, #10131a);
+}
+[data-theme="dark"] .mue2-hero-title {
+  color: var(--ink);
+}
+.mue2-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px 8px;
+}
+.mue2-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease), color 130ms var(--ease);
+}
+.mue2-chip:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--ink, #10131a);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.2);
+}
+.mue2-chip-ic {
+  display: inline-grid;
+  place-items: center;
+}
+.mue2-chip--spark .mue2-chip-ic {
+  color: #f59e0b;
+}
+.mue2-chip--doc .mue2-chip-ic {
+  color: #4f6cf7;
+}
+.mue2-chip--bolt .mue2-chip-ic {
+  color: #8b5cf6;
+}
+.mue2-chip--reply .mue2-chip-ic {
+  color: #16a34a;
+}
+[data-theme="dark"] .mue2-chip {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--body);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .mue2-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
 .mue2-empty {
   flex: 1;
   min-height: 0;

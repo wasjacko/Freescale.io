@@ -6,6 +6,7 @@
 // Implémenté en simple wrapper qui force l'ouverture du MuePanel et le
 // rend dans la zone principale, avec la liste à côté.
 
+import { MueFlower } from "@/components/MueFlower";
 import { askMue } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
 import { MUE_DISCUSSIONS, fmtAgo, groupDiscussions } from "@/lib/mue-discussions";
@@ -39,45 +40,6 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
     />
   </svg>
 );
-
-/** Logo fleur Mue — 5 pétales ronds organiques façon Brain², dégradé pastel. */
-const MueFlower = ({ size = 56 }: { size?: number }) => {
-  // Couleurs ordonnées autour du cercle pour un dégradé fluide.
-  const colors = ["#7aa2ff", "#a98aff", "#d088ec", "#ff8fb0", "#ff9d7a"];
-  return (
-    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
-      <defs>
-        {colors.map((c, i) => (
-          <radialGradient
-            key={c}
-            id={`mfv-pet-${i}`}
-            cx="0.5"
-            cy="0.35"
-            r="0.7"
-            fx="0.5"
-            fy="0.25"
-          >
-            <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
-            <stop offset="55%" stopColor={c} stopOpacity="0.95" />
-            <stop offset="100%" stopColor={c} stopOpacity="1" />
-          </radialGradient>
-        ))}
-      </defs>
-      {/* 5 pétales circulaires arrangés autour du centre (rotation par 72°). */}
-      {colors.map((_, i) => (
-        <circle
-          key={i}
-          cx="32"
-          cy="20"
-          r="13"
-          fill={`url(#mfv-pet-${i})`}
-          transform={`rotate(${i * 72} 32 32)`}
-          style={{ mixBlendMode: "multiply" as const }}
-        />
-      ))}
-    </svg>
-  );
-};
 
 export function MueFullView() {
   const { activeConvId } = useApp();

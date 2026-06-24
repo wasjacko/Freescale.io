@@ -1,0 +1,31 @@
+// Logo fleur Mue — 5 pétales ronds organiques façon Brain², dégradé pastel.
+// Partagé entre le panneau latéral et la page IA dédiée.
+
+export function MueFlower({ size = 56 }: { size?: number }) {
+  // Couleurs ordonnées autour du cercle pour un dégradé fluide.
+  const colors = ["#7aa2ff", "#a98aff", "#d088ec", "#ff8fb0", "#ff9d7a"];
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
+      <defs>
+        {colors.map((c, i) => (
+          <radialGradient key={c} id={`mflw-${i}`} cx="0.5" cy="0.35" r="0.7" fx="0.5" fy="0.25">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+            <stop offset="55%" stopColor={c} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={c} stopOpacity="1" />
+          </radialGradient>
+        ))}
+      </defs>
+      {colors.map((_, i) => (
+        <circle
+          key={i}
+          cx="32"
+          cy="20"
+          r="13"
+          fill={`url(#mflw-${i})`}
+          transform={`rotate(${i * 72} 32 32)`}
+          style={{ mixBlendMode: "multiply" }}
+        />
+      ))}
+    </svg>
+  );
+}

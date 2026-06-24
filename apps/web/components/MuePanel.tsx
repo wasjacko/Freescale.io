@@ -1,5 +1,6 @@
 "use client";
 
+import { MueFlower } from "@/components/MueFlower";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
@@ -553,19 +554,29 @@ export function MuePanel() {
           </p>
         </div>
       ) : !hasChat ? (
-        // ── État vide : composer dégradé + 3 suggestions ──
-        <div className="mue2-empty">
-          {composer}
-          <div className="mue2-cards">
+        // ── État vide : hero logo + Mue + chips condensés + composer en bas ──
+        <>
+          <div className="mue2-hero">
+            <span className="mue2-hero-mark">
+              <MueFlower size={60} />
+            </span>
+            <h2 className="mue2-hero-title">Mue</h2>
+          </div>
+          <div className="mue2-chips" aria-label="Suggestions">
             {suggestions.map((s) => (
-              <button key={s.title} type="button" className="mue2-card" onClick={s.run}>
-                <span className="mue2-card-ic">{cardIcon(s.icon)}</span>
-                <b className="mue2-card-title">{s.title}</b>
-                <small className="mue2-card-sub">{s.sub}</small>
+              <button
+                key={s.title}
+                type="button"
+                className={`mue2-chip mue2-chip--${s.icon}`}
+                onClick={s.run}
+              >
+                <span className="mue2-chip-ic">{cardIcon(s.icon)}</span>
+                {s.title}
               </button>
             ))}
           </div>
-        </div>
+          <div className="mue2-foot">{composer}</div>
+        </>
       ) : (
         // ── Chat pur ──
         <>
