@@ -333,26 +333,28 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
         </header>
       )}
 
-      <div className="ibx-tabs" role="tablist" aria-label="Vue">
-        {(
-          [
-            ["all", "Tout"],
-            ["to-reply", "À répondre"],
-            ["waiting", "En attente"],
-            ["done", "Terminé"],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={inboxBucket === key}
-            className={`ibx-tab ${inboxBucket === key ? "is-active" : ""}`}
-            onClick={() => setInboxBucket(key)}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="ibx-tabs-wrap">
+        <div className="ibx-tabs" role="tablist" aria-label="Vue">
+          {(
+            [
+              ["all", "Tout"],
+              ["to-reply", "À répondre"],
+              ["waiting", "En attente"],
+              ["done", "Terminé"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={inboxBucket === key}
+              className={`ibx-tab ${inboxBucket === key ? "is-active" : ""}`}
+              onClick={() => setInboxBucket(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="conv-list" id="conv-list">

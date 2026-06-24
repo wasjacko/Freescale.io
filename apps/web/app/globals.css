@@ -28149,14 +28149,20 @@ button.sidebar-brand {
   color: #10131a;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
 }
-/* Inbox : les 4 onglets remplissent la colonne à parts égales (fit ~320px),
-   tout en gardant le look standard. */
+/* Inbox : le toggle hugge ses onglets (largeur contenu) et n'est pas collé
+   aux bords. Si ça dépasse la colonne, on scrolle horizontalement. */
+.ibx-tabs-wrap {
+  padding: 8px 12px;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+}
+.ibx-tabs-wrap::-webkit-scrollbar {
+  display: none; /* Chrome/Safari : scroll possible, barre masquée */
+}
 .ibx-tabs {
-  display: flex;
-  width: 100%;
+  display: inline-flex;
+  width: max-content;
 }
 .ibx-tab {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 0 6px;
+  flex: 0 0 auto;
 }
