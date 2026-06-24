@@ -580,9 +580,16 @@ export function MuePanel() {
           Clic → lance une discussion 'Confidentialité' avec vidéo + explication. */}
       {mode === "ask" && !hasChat && (
         <button type="button" className="mue2-privacy-cta" onClick={runPrivacy}>
-          <span className="mue2-privacy-ic" aria-hidden>
-            <svg {...stroke} width={16} height={16}>
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <span className="mue2-privacy-thumb" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width={10}
+              height={10}
+              fill="currentColor"
+              className="mue2-privacy-play"
+              aria-hidden
+            >
+              <polygon points="6 4 20 12 6 20 6 4" />
             </svg>
           </span>
           <span className="mue2-privacy-tx">
