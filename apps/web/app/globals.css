@@ -27939,7 +27939,7 @@ button.sidebar-brand {
   gap: 4px;
   height: 22px;
   padding: 0 8px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
 }
