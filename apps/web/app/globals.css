@@ -59,7 +59,8 @@
   --shadow-floating: 0 10px 40px rgba(88, 92, 255, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
 
   /* === Typography === */
-  --font-sans: "Hanken Grotesk", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: "Hanken Grotesk", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui,
+    sans-serif;
 
   /* === Motion timing (referenced from animation utilities) === */
   --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
@@ -347,7 +348,8 @@
   /* Motion */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --font: "Hanken Grotesk", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font: "Hanken Grotesk", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui,
+    sans-serif;
   /* Serif display — italique élégant haute-contraste (signature de la DA) */
   --font-serif: "Instrument Serif", "Times New Roman", Georgia, serif;
 }
@@ -2651,15 +2653,13 @@ html {
 /* Bouton Agent — INACTIF : fond blanc + liseré dégradé (frame technique). */
 .topbar-actbtn.topbar-mue {
   border: 1.5px solid transparent;
-  background:
-    linear-gradient(#fff, #fff) padding-box,
+  background: linear-gradient(#fff, #fff) padding-box,
     linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%) border-box;
   color: #4f6cf7;
   box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.08);
 }
 .topbar-actbtn.topbar-mue:hover {
-  background:
-    linear-gradient(#fff, #fff) padding-box,
+  background: linear-gradient(#fff, #fff) padding-box,
     linear-gradient(135deg, #4f6cf7 0%, #7c5cff 100%) border-box;
   color: #4f6cf7;
   box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.16);
@@ -4020,9 +4020,7 @@ html {
   padding: 6px;
   border-radius: 14px;
   background: #fff;
-  box-shadow:
-    0 0 0 1px rgba(15, 23, 42, 0.08),
-    0 18px 44px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08), 0 18px 44px rgba(15, 23, 42, 0.2);
   animation: accountMenuIn 0.14s var(--ease);
 }
 @keyframes accountMenuIn {
@@ -11983,17 +11981,8 @@ html {
      même élément que .copilot et écraserait sinon son background.) */
   color: var(--ink, #0a0a0a);
   /* Fond dégradé indigo plus appuyé + grain (noise) bien marqué par-dessus. */
-  background:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/><feColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.16 0 0 0 0 0.34 0 0 0 .5 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")
-      repeat,
-    linear-gradient(
-      180deg,
-      #232a6e 0%,
-      #322c93 30%,
-      #3f389f 58%,
-      #4a42ac 82%,
-      #534ab6 100%
-    );
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/><feColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.16 0 0 0 0 0.34 0 0 0 .5 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")
+    repeat, linear-gradient(180deg, #232a6e 0%, #322c93 30%, #3f389f 58%, #4a42ac 82%, #534ab6 100%);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 10px 30px rgba(79, 108, 247, 0.1), 0 1px
     2px rgba(15, 23, 42, 0.05);
 }
@@ -12162,7 +12151,8 @@ html {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
   text-align: left;
   cursor: pointer;
-  transition: background 130ms var(--ease), box-shadow 130ms var(--ease), transform 130ms var(--ease);
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease), transform 130ms
+    var(--ease);
 }
 .mue2-card:hover {
   background: rgba(255, 255, 255, 0.07);
@@ -12747,8 +12737,8 @@ html {
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 24px rgba(10, 10, 30, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.28), 0
+    8px 24px rgba(10, 10, 30, 0.18);
 }
 .mue-agent-input {
   border: 0;
@@ -18769,8 +18759,8 @@ button:active:not(:disabled):not(.no-press) {
   background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 12px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.96) inset, 0 18px 44px rgba(15, 23, 42, 0.18), 0 4px 12px
-    rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.96) inset, 0 18px 44px rgba(15, 23, 42, 0.18), 0 4px
+    12px rgba(15, 23, 42, 0.08);
   overflow: hidden;
   transform-origin: top right;
   animation: add-sheet-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -27315,10 +27305,7 @@ button.sidebar-brand {
   margin-right: 10px;
   margin-bottom: 0;
   /* Double liseré : trait fin, petit espace blanc, second trait fin, puis ombre. */
-  box-shadow:
-    0 0 0 1px rgba(15, 23, 42, 0.14),
-    0 0 0 3px #ffffff,
-    0 0 0 4px rgba(15, 23, 42, 0.11),
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 0 0 3px #ffffff, 0 0 0 4px rgba(15, 23, 42, 0.11),
     0 12px 28px rgba(15, 23, 42, 0.12);
 }
 .app.view-today .tboard-table {
@@ -27995,8 +27982,8 @@ button.sidebar-brand {
   padding: 7px 10px 7px 14px;
   border-radius: 14px;
   background: #ffffff;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 32px rgba(15, 23, 42, 0.18),
-    0 2px 8px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 32px rgba(15, 23, 42, 0.18), 0 2px 8px
+    rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(15, 23, 42, 0.06);
   animation: dock-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes dock-in {
@@ -28330,13 +28317,7 @@ button.sidebar-brand {
   inset: 0;
   border-radius: inherit;
   padding: 1.5px;
-  background: conic-gradient(
-    from var(--mue-angle),
-    #4f6cf7,
-    #a855f7,
-    #22d3ee,
-    #4f6cf7
-  );
+  background: conic-gradient(from var(--mue-angle), #4f6cf7, #a855f7, #22d3ee, #4f6cf7);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -28508,16 +28489,7 @@ button.sidebar-brand {
   width: 74px;
   height: 74px;
   background: conic-gradient(from 0deg, #34d399, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #34d399);
-  clip-path: polygon(
-    50% 0%,
-    57% 43%,
-    100% 50%,
-    57% 57%,
-    50% 100%,
-    43% 57%,
-    0% 50%,
-    43% 43%
-  );
+  clip-path: polygon(50% 0%, 57% 43%, 100% 50%, 57% 57%, 50% 100%, 43% 57%, 0% 50%, 43% 43%);
   filter: drop-shadow(0 6px 16px rgba(124, 92, 255, 0.45));
   animation: tscanStarSpin 3.4s linear infinite;
 }
@@ -29069,16 +29041,7 @@ button.sidebar-brand {
   width: 18px;
   height: 18px;
   background: conic-gradient(from 0deg, #34d399, #f59e0b, #ef4444, #8b5cf6, #3b82f6, #34d399);
-  clip-path: polygon(
-    50% 0%,
-    57% 43%,
-    100% 50%,
-    57% 57%,
-    50% 100%,
-    43% 57%,
-    0% 50%,
-    43% 43%
-  );
+  clip-path: polygon(50% 0%, 57% 43%, 100% 50%, 57% 57%, 50% 100%, 43% 57%, 0% 50%, 43% 43%);
   animation: tscanStarSpin 3.4s linear infinite;
 }
 
@@ -29140,4 +29103,332 @@ button.sidebar-brand {
   background: #fff;
   color: #10131a;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DARK — couche dédiée aux composants ajoutés récemment (cockpit Santé
+   client, toolbar/filtre inbox, topbar, fiche tâche, nouveau message,
+   menu compte…). Ces composants codaient le clair en dur : on les
+   re-skinne ici avec les tokens sombres. Placé en fin de fichier pour
+   gagner la cascade.
+   ════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* ── Topbar : boutons & avatar ── */
+  & .topbar-connect-cta,
+  & .topbar-avatar {
+    background: #1a1a22;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--body);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  & .topbar-connect-cta:hover,
+  & .topbar-avatar:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    color: var(--ink);
+  }
+  & .topbar-avatar-img {
+    box-shadow: 0 0 0 1.5px #14141a;
+  }
+  & .topbar-avatar-caret {
+    color: var(--muted);
+  }
+  & .topbar-channel {
+    background: #1a1a22;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  /* ── Toolbar inbox : Tri / Filtre / recherche / menus ── */
+  & .ibx-tool {
+    background: #1a1a22;
+    color: var(--body);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  & .ibx-tool:hover,
+  & .ibx-tool.is-open,
+  & .ibx-tool.is-active {
+    background: #232330;
+    color: var(--ink);
+  }
+  & .ibx-search-wrap {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  & .ibx-search-input {
+    color: var(--ink);
+  }
+  & .ibx-search-input::placeholder {
+    color: var(--muted);
+  }
+  & .ibx-tool-menu {
+    background: #1c1c25;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  & .ibx-tool-item {
+    color: var(--body);
+  }
+  & .ibx-tool-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  & .ibx-tool-item.is-active {
+    background: rgba(120, 140, 255, 0.18);
+    color: #c2c9ff;
+  }
+  & .ibx-tool-menu-head {
+    color: var(--ink);
+  }
+  & .ibx-tool-menu-label {
+    color: var(--muted);
+  }
+  & .ibx-tool-sep {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  & .ibx-check,
+  & .ibx-radio {
+    background: #14141a;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.22);
+  }
+  & .ibx-switch {
+    background: rgba(255, 255, 255, 0.16);
+  }
+  & .ibx-chip {
+    background: rgba(120, 140, 255, 0.18);
+    color: #c2c9ff;
+  }
+  & .ibx-chip-x {
+    color: #c2c9ff;
+  }
+  & .ibx-chips-clear {
+    color: var(--body);
+  }
+  & .conv-section {
+    background: transparent;
+    color: var(--muted);
+  }
+
+  /* ── Toggles standard (segmented) ── */
+  & .tboard-viewswitch,
+  & .cal-viewtoggle,
+  & .clients-filters {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  & .tboard-vbtn,
+  & .cal-viewtoggle__btn,
+  & .clients-filter {
+    color: var(--body);
+  }
+  & .tboard-vbtn:hover,
+  & .cal-viewtoggle__btn:hover,
+  & .clients-filter:hover {
+    color: var(--ink);
+  }
+  & .tboard-vbtn.is-on,
+  & .cal-viewtoggle__btn.is-active,
+  & .clients-filter.is-active {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--ink);
+    box-shadow: none;
+  }
+
+  /* ── Page Santé client (cockpit) ── */
+  & .clients-h1 {
+    color: var(--ink);
+  }
+  & .clients-count {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--body);
+  }
+  & .clients-search {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  & .clients-search input {
+    color: var(--ink);
+  }
+  & .clients-disclaimer {
+    color: var(--muted);
+  }
+  & .clients-empty {
+    color: var(--muted);
+  }
+  & .clients-kpi {
+    background: #16161d;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  }
+  & .clients-kpi:hover {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+  & .clients-kpi-val {
+    color: var(--ink);
+  }
+  & .clients-kpi-label {
+    color: var(--muted);
+  }
+  & .client-card {
+    background: #16161d;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  }
+  & .client-card:hover {
+    box-shadow: inset 0 0 0 1px rgba(120, 140, 255, 0.5), 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  & .client-card__name {
+    color: var(--ink);
+  }
+  & .client-card__company,
+  & .client-card__last,
+  & .client-card__rlabel {
+    color: var(--body);
+  }
+  & .client-card__relation,
+  & .client-card__money {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* ── Hub client (fiche) ── */
+  & .client-hub__name {
+    color: var(--ink);
+  }
+  & .client-hub__meta,
+  & .client-hub__email {
+    color: var(--muted);
+  }
+  & .client-hub__tab {
+    color: var(--body);
+  }
+  & .client-hub__tab.is-active {
+    color: var(--ink);
+  }
+  & .hub-stat,
+  & .section-card,
+  & .hub-relation {
+    background: #16161d;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  & .hub-stat__val,
+  & .hub-relation__label {
+    color: var(--ink);
+  }
+  & .hub-stat__label,
+  & .hub-relation__sub,
+  & .hub-facts__src {
+    color: var(--muted);
+  }
+
+  /* ── Fiche tâche (modal) ── */
+  & .tdm-sheet {
+    background: #17171f;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  }
+  & .tdm-head {
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  }
+  & .tdm-list,
+  & .tdm-key,
+  & .tdm-desc {
+    color: var(--muted);
+  }
+  & .tdm-title,
+  & .tdm-val {
+    color: var(--ink);
+  }
+  & .tdm-desc {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  & .tdm-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  & .tdm-btn--ghost {
+    color: var(--body);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  }
+  & .tdm-btn--ghost:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  & .tdm-btn--primary {
+    background: #f4f4f7;
+    color: #10131a;
+  }
+
+  /* ── Nouveau message + autres modales (.add-channel-sheet) ── */
+  & .add-channel-sheet {
+    background: #17171f;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  }
+  & .add-channel-head h2 {
+    color: var(--ink);
+  }
+  & .add-channel-head p {
+    color: var(--muted);
+  }
+  & .nm-result:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  & .nm-result-name {
+    color: var(--ink);
+  }
+  & .nm-selected {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  & .nm-selected-name {
+    color: var(--ink);
+  }
+  & .nm-selected-new {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--body);
+  }
+  & .nm-chan {
+    background: #1f1f29;
+    color: var(--body);
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.14);
+  }
+  & .nm-chan.is-on {
+    background: rgba(120, 140, 255, 0.16);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1.6px #6f8bff;
+  }
+
+  /* ── Menu compte ── */
+  & .account-menu {
+    background: #1c1c25;
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  }
+  & .account-menu-email,
+  & .amc-val {
+    color: var(--ink);
+  }
+  & .account-menu-as,
+  & .amc-label {
+    color: var(--muted);
+  }
+  & .account-menu-sep {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  & .account-menu-item {
+    color: var(--body);
+  }
+  & .account-menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  & .account-menu-theme-id {
+    color: var(--body);
+  }
+  & .account-menu-theme-seg {
+    background: rgba(255, 255, 255, 0.06);
+  }
+  & .amt-opt {
+    color: var(--body);
+  }
+
+  /* ── Hero / vides ── */
+  & .thread-empty-card {
+    background: #16161d;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  }
+}
+
+/* Illustration d'état vide : on l'adoucit en dark (asset à fond clair). */
+[data-theme="dark"] .thread-empty-img {
+  opacity: 0.88;
+  filter: saturate(0.95);
+}
+[data-theme="dark"] .thread-empty-text {
+  color: var(--body);
 }
