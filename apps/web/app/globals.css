@@ -2546,7 +2546,7 @@ html {
 .app {
   /* Rail étroit (icône + label empilés) — cf. bloc « Sidebar RAIL » en fin de fichier. */
   --sidebar-w: 96px;
-  --mue-panel-w: 380px;
+  --mue-panel-w: 570px;
   /* Accent du bouton CTA Mue, réutilisé pour le stroke du panneau. */
   --mue-cta: rgba(79, 108, 247, 0.55);
   --topbar-h: 52px;
@@ -16312,7 +16312,7 @@ button:active:not(:disabled):not(.no-press) {
 /* Narrow desktop: trim column widths */
 @media (min-width: 1101px) and (max-width: 1280px) {
   .app {
-    --mue-panel-w: 340px;
+    --mue-panel-w: 510px;
   }
 }
 
@@ -16331,7 +16331,9 @@ button:active:not(:disabled):not(.no-press) {
     top: var(--topbar-h, 52px);
     right: 10px;
     bottom: 0;
-    width: 380px;
+    /* 1,5× la largeur desktop (380→570), clampée à 92vw pour rester */
+    /* dans la fenêtre sur les tablettes étroites. */
+    width: min(570px, 92vw);
     z-index: 50;
     transform: translateX(calc(100% + 32px));
     transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
