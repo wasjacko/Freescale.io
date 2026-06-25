@@ -31251,3 +31251,161 @@ button.sidebar-brand {
 [data-theme="dark"] .tact-sep {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* ════════════ Mue v3 — exemples défilants + 7 actions + composer enrichi ════════════ */
+/* Exemples défilants juste sous le titre "Votre Mue". */
+.mfv-examples {
+  display: inline-flex;
+  gap: 28px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #9aa0aa;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.mfv-examples > span {
+  animation: mfv-marquee 22s linear infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+@keyframes mfv-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+[data-theme="dark"] .mfv-examples {
+  color: var(--muted);
+}
+
+/* 7 actions en pills (Trouver · Rechercher · Créer · Modifier · Analyser · Prioriser · Planifier). */
+.mfv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 22px 6px;
+}
+.mfv-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink, #10131a);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease), transform 130ms
+    var(--ease);
+}
+.mfv-act:hover {
+  background: rgba(15, 23, 42, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.22);
+  transform: translateY(-1px);
+}
+.mfv-act-ic {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+}
+.mfv-act--find .mfv-act-ic {
+  color: #4f6cf7;
+  background: rgba(79, 108, 247, 0.12);
+}
+.mfv-act--search .mfv-act-ic {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.12);
+}
+.mfv-act--create .mfv-act-ic {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.14);
+}
+.mfv-act--edit .mfv-act-ic {
+  color: #db2777;
+  background: rgba(219, 39, 119, 0.12);
+}
+.mfv-act--analyze .mfv-act-ic {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.14);
+}
+.mfv-act--prioritize .mfv-act-ic {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.12);
+}
+.mfv-act--plan .mfv-act-ic {
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.14);
+}
+[data-theme="dark"] .mfv-act {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+[data-theme="dark"] .mfv-act:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .mfv-act-ic {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Composer enrichi : + · sparkle · spacer · Max ▾ · 🎤 · envoyer */
+.mfv-cbtn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 130ms var(--ease), color 130ms var(--ease);
+}
+.mfv-cbtn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--ink, #10131a);
+}
+[data-theme="dark"] .mfv-cbtn {
+  color: var(--body);
+}
+[data-theme="dark"] .mfv-cbtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+}
+.mfv-spacer {
+  flex: 1;
+}
+button.mfv-model {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+button.mfv-model:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] button.mfv-model {
+  color: #c9cee0;
+}
+[data-theme="dark"] button.mfv-model:hover {
+  background: rgba(255, 255, 255, 0.08);
+}

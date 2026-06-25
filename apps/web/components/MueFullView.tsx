@@ -148,7 +148,15 @@ export function MueFullView() {
             <span className="mfv-hero-mark">
               <MueFlower size={64} />
             </span>
-            <h2 className="mfv-hero-title">Mue</h2>
+            <h2 className="mfv-hero-title">Votre Mue</h2>
+            {/* Exemples défilants — donnent une idée immédiate de ce qu'on peut faire. */}
+            <div className="mfv-examples" aria-hidden>
+              <span>📄 Document</span>
+              <span>● Résumé rapide</span>
+              <span>👓 Super agent client</span>
+              <span>✦ Recherche approfondie</span>
+              <span>🗓 Planifier ma semaine</span>
+            </div>
           </div>
         ) : (
           <div className="mfv-chat" ref={logRef}>
@@ -181,66 +189,105 @@ export function MueFullView() {
           </div>
         )}
 
-        {/* Suggestions condensées (chips) juste au-dessus du composer. */}
+        {/* 7 actions — au-dessus du composer (Trouver · Rechercher · Créer …). */}
         {messages.length === 0 && (
-          <div className="mfv-chips" aria-label="Suggestions">
+          <div className="mfv-actions" aria-label="Actions">
             {(
               [
                 {
-                  label: "Recherche approfondie",
-                  q: "Fais une recherche approfondie sur mes clients récents",
+                  label: "Trouver",
+                  q: "Trouve ",
+                  cls: "find",
                   icon: (
                     <svg {...stroke} width={14} height={14}>
                       <circle cx="11" cy="11" r="7" />
                       <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
                   ),
-                  cls: "purple",
                 },
                 {
-                  label: "Tâche",
-                  q: "Crée une tâche pour demain",
+                  label: "Rechercher",
+                  q: "Fais une recherche approfondie sur ",
+                  cls: "search",
                   icon: (
                     <svg {...stroke} width={14} height={14}>
-                      <polyline points="20 6 9 17 4 12" />
+                      <path d="M9 11l-4 9 9-4" />
+                      <path d="M14 6l4 4" />
+                      <path d="M21 3l-7 7-1 5 5-1 7-7-4-4z" />
                     </svg>
                   ),
-                  cls: "green",
                 },
                 {
-                  label: "Résumer ma journée",
-                  q: "Résume ma journée",
+                  label: "Créer",
+                  q: "Crée ",
+                  cls: "create",
                   icon: (
                     <svg {...stroke} width={14} height={14}>
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
+                      <circle cx="12" cy="12" r="9" />
+                      <line x1="12" y1="8" x2="12" y2="16" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
                     </svg>
                   ),
-                  cls: "blue",
                 },
                 {
-                  label: "Suggérer des tâches",
-                  q: "Suggère des tâches depuis mes messages",
+                  label: "Modifier",
+                  q: "Modifie ",
+                  cls: "edit",
                   icon: (
-                    <svg viewBox="0 0 24 24" width={14} height={14} fill="currentColor" aria-hidden>
-                      <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
+                    <svg {...stroke} width={14} height={14}>
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                     </svg>
                   ),
-                  cls: "orange",
+                },
+                {
+                  label: "Analyser",
+                  q: "Analyse ",
+                  cls: "analyze",
+                  icon: (
+                    <svg {...stroke} width={14} height={14}>
+                      <polyline points="3 13 7 9 11 13 17 7" />
+                      <polyline points="13 7 17 7 17 11" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: "Prioriser",
+                  q: "Aide-moi à prioriser ",
+                  cls: "prioritize",
+                  icon: (
+                    <svg {...stroke} width={14} height={14}>
+                      <line x1="5" y1="22" x2="5" y2="4" />
+                      <path d="M5 4h12l-2 4 2 4H5" />
+                    </svg>
+                  ),
+                },
+                {
+                  label: "Planifier",
+                  q: "Planifie ",
+                  cls: "plan",
+                  icon: (
+                    <svg {...stroke} width={14} height={14}>
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                      <line x1="8" y1="3" x2="8" y2="7" />
+                      <line x1="16" y1="3" x2="16" y2="7" />
+                    </svg>
+                  ),
                 },
               ] as const
-            ).map((c) => (
+            ).map((a) => (
               <button
-                key={c.label}
+                key={a.label}
                 type="button"
-                className={`mfv-chip mfv-chip--${c.cls}`}
+                className={`mfv-act mfv-act--${a.cls}`}
                 onClick={() => {
-                  setInput(c.q);
+                  setInput(a.q);
                   requestAnimationFrame(() => inputRef.current?.focus());
                 }}
               >
-                <span className="mfv-chip-ic">{c.icon}</span>
-                {c.label}
+                <span className="mfv-act-ic">{a.icon}</span>
+                {a.label}
               </button>
             ))}
           </div>
@@ -257,7 +304,7 @@ export function MueFullView() {
             ref={inputRef}
             className="mfv-input"
             rows={2}
-            placeholder="Pose une question, recherche ou crée…"
+            placeholder="Pose une question, crée, recherche, @ pour mentionner…"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -269,9 +316,32 @@ export function MueFullView() {
             disabled={pending}
           />
           <div className="mfv-composer-row">
-            <span className="mfv-model">
+            <button type="button" className="mfv-cbtn" aria-label="Joindre">
+              <svg {...stroke} width={16} height={16}>
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+            <button type="button" className="mfv-cbtn" aria-label="Modèle / template">
+              <svg {...stroke} width={16} height={16}>
+                <rect x="3" y="4" width="14" height="14" rx="2" />
+                <path d="M19 8.5l1.6.6.6 1.6.6-1.6 1.6-.6-1.6-.6-.6-1.6-.6 1.6z" />
+              </svg>
+            </button>
+            <span className="mfv-spacer" />
+            <button type="button" className="mfv-model">
               <MueMark size={15} /> Max
-            </span>
+              <svg {...stroke} width={12} height={12}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            <button type="button" className="mfv-cbtn" aria-label="Dicter">
+              <svg {...stroke} width={16} height={16}>
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path d="M5 11a7 7 0 0 0 14 0" />
+                <line x1="12" y1="18" x2="12" y2="21" />
+              </svg>
+            </button>
             <button
               type="submit"
               className="mfv-send"
