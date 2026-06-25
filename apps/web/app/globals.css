@@ -4843,12 +4843,14 @@ html {
 }
 /* ── Colonne dossiers — extrême gauche du bloc Inbox ──────────────── */
 .ibx-folders {
-  flex: 0 0 188px;
-  width: 188px;
+  flex: 0 0 198px;
+  width: 198px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 14px 10px;
+  /* Inset gauche aligné sur --page-pad-x (20px) — cohérent avec toolbar
+     d'Inbox et avec les autres pages (Tâches, Calendar, Santé client). */
+  padding: 14px 20px 14px 20px;
   overflow-y: auto;
   box-shadow: inset -1.5px 0 0 rgba(10, 10, 10, 0.08);
 }
