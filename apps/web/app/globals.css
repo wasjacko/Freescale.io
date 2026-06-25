@@ -31642,7 +31642,6 @@ button.mfv-model:hover {
    + 2 insights. Tout est encapsulé dans .clients-view--v2.
    ═════════════════════════════════════════════════════════════════════ */
 .clients-view--v2 {
-  display: flex;
   flex-direction: column;
   gap: 22px;
 }
@@ -32071,8 +32070,10 @@ button.mfv-model:hover {
   --csv-toggle-bg: rgba(255, 255, 255, 0.06);
 }
 
+/* Pas de `display: …` ici — on laisse le gating .app.view-clients
+   géré plus haut décider de la visibilité (sinon la page s'affiche
+   sous les autres vues). On définit uniquement gap + flex-direction. */
 .clients-view--v3 {
-  display: flex;
   flex-direction: column;
   gap: 22px;
 }
