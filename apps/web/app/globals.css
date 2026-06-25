@@ -682,6 +682,49 @@ button:not(:disabled):active,
   color: #0b0b10;
   box-shadow: 0 0 0 2px #0b0b10;
 }
+
+/* ── DARK : textes secondaires du panneau Inbox boostés en luminosité ──
+   Les classes ci-dessous étaient en gris hardcodé (#5b6475, #6b7280…) :
+   illisibles sur #0b0b10. On les remonte en clair franc. */
+[data-theme="dark"] .ibx-folder {
+  color: #d8dce6;
+}
+[data-theme="dark"] .ibx-folder:hover {
+  color: #fff;
+}
+[data-theme="dark"] .ibx-folder.active {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0a0a0a;
+}
+[data-theme="dark"] .ibx-folder-count {
+  color: #b5bac5;
+}
+[data-theme="dark"] .ibx-folder.active .ibx-folder-count {
+  color: #5b6475;
+}
+[data-theme="dark"] .ibx-folders-head {
+  color: #b5bac5;
+}
+[data-theme="dark"] .ibx-folders-add,
+[data-theme="dark"] .ibx-folder-add {
+  color: #b5bac5;
+}
+
+/* Liste de conversations : preview + time + nom passent en clair franc. */
+[data-theme="dark"] .conv-preview {
+  color: #c8ccd6;
+}
+[data-theme="dark"] .conv-time {
+  color: #b5bac5;
+}
+[data-theme="dark"] .conv-name {
+  color: #f4f4f7;
+}
+/* État « non lu » → blanc pur pour ressortir. */
+[data-theme="dark"] .conv.is-unread .conv-name,
+[data-theme="dark"] .conv.is-unread .conv-preview {
+  color: #fff;
+}
 [data-theme="dark"] .account {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.05);
