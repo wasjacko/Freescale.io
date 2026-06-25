@@ -471,51 +471,31 @@ button:not(:disabled):active,
   background: #0b0b10;
 }
 
-/* Cards & panels */
+/* Cards & panels — TOUT sur #0b0b10 (couleur du body). Plus de panels
+   en #14141a/#15151c qui créaient un effet « page dans la page » avec
+   borders blanchâtres. Layout monolithique. */
 [data-theme="dark"] .sidebar {
-  background: linear-gradient(#14141a, #14141a) padding-box,
-    linear-gradient(
-      180deg,
-      #2a2a35 0%,
-      #1e1e28 8%,
-      #181821 22%,
-      #22222d 40%,
-      #2a2a35 55%,
-      #1a1a24 72%,
-      #1e1e28 88%,
-      #2a2a35 100%
-    )
-    border-box;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 18px rgba(0, 0, 0, 0.4);
+  background: #0b0b10;
+  border: 0;
+  box-shadow: none;
 }
 [data-theme="dark"] .conv-shell {
-  background: linear-gradient(#0f0f14, #0f0f14) padding-box,
-    linear-gradient(
-      180deg,
-      #2a2a35 0%,
-      #1e1e28 8%,
-      #181821 22%,
-      #22222d 40%,
-      #2a2a35 55%,
-      #1a1a24 72%,
-      #1e1e28 88%,
-      #2a2a35 100%
-    )
-    border-box;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: #0b0b10;
+  border: 0;
+  box-shadow: none;
 }
 [data-theme="dark"] .inbox,
 [data-theme="dark"] .thread {
-  background: #15151c;
-  border-color: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  background: #0b0b10;
+  border-color: transparent;
+  box-shadow: none;
 }
 [data-theme="dark"] .tasks-view,
 [data-theme="dark"] .calendar-view,
 [data-theme="dark"] .ai-view {
-  background: linear-gradient(#14141a, #14141a) padding-box,
-    linear-gradient(180deg, #2a2a35 0%, #1e1e28 50%, #2a2a35 100%) border-box;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.4);
+  background: #0b0b10;
+  border: 0;
+  box-shadow: none;
 }
 [data-theme="dark"] .copilot {
   background: radial-gradient(circle at 12% 0%, rgba(180, 110, 60, 0.28), transparent 52%),
@@ -32100,10 +32080,10 @@ button.mfv-model:hover {
   --csv-toggle-bg: rgba(255, 255, 255, 0.06);
 }
 
-/* Fond de la page Santé client en dark — sinon fond blanc dégueulasse. */
+/* Fond de la page Santé client en dark — uniforme avec le body. */
 [data-theme="dark"] .clients-view {
-  background: #15151c;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: #0b0b10;
+  box-shadow: none;
 }
 [data-theme="dark"] .csv3-search {
   background: rgba(255, 255, 255, 0.05);
