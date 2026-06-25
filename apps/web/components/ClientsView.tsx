@@ -124,15 +124,9 @@ export function ClientsView() {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
 
-  // ─ KPI dérivés (honnêtes : pas de delta sur n<10) ────────────────
+  // ─ KPI dérivés pour le score de santé ─────────────────────────────
   const total = MOCK_CLIENTS.length;
-  const dues = MOCK_CLIENTS.reduce((s, c) => s + moneySignal(c).dues, 0);
   const toReplyCount = MOCK_CLIENTS.filter((c) => relationHealth(c).state === "owe").length;
-  const atRiskCount = MOCK_CLIENTS.filter((c) => {
-    const st = relationHealth(c).state;
-    return st === "silent" || st === "awaiting" || c.stage === "dormant";
-  }).length;
-  const showDeltas = total >= 10;
 
   // ─ SCORE DE SANTÉ — 4 indicateurs composent une note 0–100 ────────
   // Source de vérité : on ne MESURE que ce qu'on observe dans l'inbox.
@@ -278,8 +272,6 @@ export function ClientsView() {
     );
   }
 
-  const periodLabel = PERIODS.find(([k]) => k === period)?.[1] ?? "";
-
   return (
     <section className="clients-view clients-view--v3" aria-label="Pilotage clients">
       {/* ── En-tête : juste les outils (recherche + période) ── */}
@@ -349,66 +341,6 @@ export function ClientsView() {
           ))}
         </ul>
       </section>
-
-      {/* ── 4 KPI cards — l'argent en premier (wedge value) ── */}
-      <div className="csv3-kpis">
-        <KpiCard
-          accent="money"
-          label="Argent à suivre"
-          hint="Montants évoqués dans tes échanges, non réglés"
-          value={eur(dues)}
-          mue
-          icon={
-            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <line x1="12" y1="2" x2="12" y2="22" />
-              <path d="M17 5.5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          }
-        />
-        <KpiCard
-          accent="reply"
-          label="Réponses dues"
-          hint="Clients qui attendent une réponse de toi"
-          value={toReplyCount}
-          icon={
-            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-            </svg>
-          }
-        />
-        <KpiCard
-          accent="neutral"
-          label="En veille"
-          hint="Relations dormantes ou en attente prolongée"
-          value={atRiskCount}
-          icon={
-            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
-          }
-        />
-        <KpiCard
-          accent="neutral"
-          label="Clients suivis"
-          hint={`Tous canaux confondus (${periodLabel.toLowerCase()})`}
-          value={total}
-          icon={
-            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="9" cy="8" r="3.5" />
-              <circle cx="17" cy="9" r="2.6" />
-              <path d="M3 19c.6-3.4 3-5 6-5s5.4 1.6 6 5" />
-              <path d="M14 18c.4-2 1.7-3.2 3.5-3.2s3 1.2 3.5 3.2" />
-            </svg>
-          }
-        />
-      </div>
-      {!showDeltas && (
-        <p className="csv3-honest">
-          Les deltas vs période précédente apparaîtront à partir de 10 clients suivis — pas de
-          chiffres trompeurs sur un petit échantillon.
-        </p>
-      )}
-
 
       {/* ── 2 visualisations : donut stade + barre canal (le bon type de chart) ── */}
       <div className="csv3-charts">
@@ -530,40 +462,6 @@ export function ClientsView() {
 }
 
 // ── Petits composants ──────────────────────────────────────────────────
-
-function KpiCard({
-  label,
-  hint,
-  value,
-  icon,
-  accent,
-  mue,
-}: {
-  label: string;
-  hint?: string;
-  value: number | string;
-  icon: React.ReactNode;
-  accent: "money" | "reply" | "risk" | "neutral";
-  mue?: boolean;
-}) {
-  return (
-    <article className={`csv3-kpi csv3-kpi--${accent}`}>
-      <header className="csv3-kpi__head">
-        <span className="csv3-kpi__ic">{icon}</span>
-        <span className="csv3-kpi__label">
-          {label}
-          {mue && (
-            <span className="csv3-mue-tag csv3-mue-tag--inline" title="Estimé par Mue">
-              <MueSparkSmall /> Mue
-            </span>
-          )}
-        </span>
-      </header>
-      <div className="csv3-kpi__val">{value}</div>
-      {hint && <p className="csv3-kpi__hint">{hint}</p>}
-    </article>
-  );
-}
 
 function MueSparkSmall() {
   return (
