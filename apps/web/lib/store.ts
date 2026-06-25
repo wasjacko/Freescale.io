@@ -26,9 +26,9 @@ type State = {
   mueOpen: boolean;
   mueView: MueView;
   suggestTasksOpen: boolean;
-  /** Thème de l'interface : « system » suit l'OS, « light »/« dark » forcent. */
-  theme: "system" | "light" | "dark";
-  setTheme: (t: "system" | "light" | "dark") => void;
+  /** Thème de l'interface : « system » suit l'OS, « light » force le clair. */
+  theme: "system" | "light";
+  setTheme: (t: "system" | "light") => void;
   // Filtres/tri de l'Inbox — remontés au store pour que la barre d'outils
   // (pleine largeur, au-dessus des deux colonnes) et la liste les partagent.
   inboxSort: InboxSort;
@@ -142,7 +142,7 @@ export const useApp = create<State>()(
     }),
     {
       name: "fs:app",
-      version: 8,
+      version: 9,
       migrate: (persistedState, version) => {
         const stored = persistedState as Partial<State>;
         let next = stored;
@@ -174,11 +174,15 @@ export const useApp = create<State>()(
           next = { ...next, inboxFolders: DEFAULT_FOLDERS, activeFolderId: null };
         }
         if (version < 8) {
-          // Le thème par défaut suit l'OS. Les valeurs « light »/« dark »
-          // forcées par le user restent valides ; on bascule juste un
-          // « light » historique en « system » si l'utilisateur n'avait
-          // jamais touché au toggle (heuristique).
+          // Le thème par défaut suit l'OS.
           if (!(next as Partial<State>).theme) {
+            next = { ...next, theme: "system" };
+          }
+        }
+        if (version < 9) {
+          // L'option « dark » forcée a été retirée. On rebascule en « system »
+          // — ceux qui veulent du sombre l'auront via leur OS.
+          if ((next as { theme?: string }).theme === "dark") {
             next = { ...next, theme: "system" };
           }
         }

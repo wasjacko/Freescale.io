@@ -195,18 +195,6 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
               </svg>
               Clair
             </button>
-            <button
-              type="button"
-              className={`amt-opt ${theme === "dark" ? "is-on" : ""}`}
-              aria-pressed={theme === "dark"}
-              onClick={() => setTheme("dark")}
-              title="Force le thème sombre"
-            >
-              <svg {...stroke} width={15} height={15}>
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-              </svg>
-              Sombre
-            </button>
           </div>
         </div>
         <button
