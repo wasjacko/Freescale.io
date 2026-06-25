@@ -480,18 +480,18 @@ button:not(:disabled):active,
   box-shadow: none;
 }
 
-/* Bloc principal — surface liftée + bordure dégradée blanche subtile
-   (équivalent dark du linear-gradient(#fff,#fff) padding-box,
-   var(--stroke-grad) border-box du light mode). */
+/* Bloc principal — surface clairement différenciée du body : ton plus
+   chaud/lifté (#2c2c38 ≠ body #1a1a22) avec bordure dégradée blanche
+   subtile (équivalent dark de var(--stroke-grad) du light mode). */
 [data-theme="dark"] .conv-shell,
 [data-theme="dark"] .tasks-view,
 [data-theme="dark"] .calendar-view,
 [data-theme="dark"] .ai-view,
 [data-theme="dark"] .clients-view {
-  background: linear-gradient(#22222d, #22222d) padding-box,
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06)) border-box;
+  background: linear-gradient(#2c2c38, #2c2c38) padding-box,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06)) border-box;
   border: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.35),
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.35),
     0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
