@@ -216,19 +216,18 @@ export function ClientsView() {
 
   return (
     <section className="clients-view clients-view--v3" aria-label="Pilotage clients">
-      {/* ── En-tête : titre + sous-titre actionnable ── */}
+      {/* ── En-tête : titre + sous-titre observationnel (page de consultation) ── */}
       <header className="csv3-head">
         <div>
-          <h1 className="csv3-title">Pilotage clients</h1>
+          <h1 className="csv3-title">Santé client</h1>
           <p className="csv3-sub">
-            <strong>{total}</strong> clients suivis ·{" "}
-            {toReplyCount > 0 ? (
+            Vue d'ensemble de tes relations — <strong>{total}</strong> clients suivis
+            {atRiskCount > 0 ? (
               <>
-                Mue détecte <strong>{toReplyCount}</strong> réponses à envoyer
+                , dont <strong>{atRiskCount}</strong> en tension
               </>
-            ) : (
-              <>Aucune réponse en attente — Mue veille</>
-            )}
+            ) : null}
+            .
           </p>
         </div>
         <div className="csv3-head__tools">
@@ -287,8 +286,8 @@ export function ClientsView() {
         />
         <KpiCard
           accent="reply"
-          label="À recontacter"
-          hint="Tu leur dois une réponse"
+          label="Réponses dues"
+          hint="Clients qui attendent une réponse de toi"
           value={toReplyCount}
           icon={
             <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -331,15 +330,17 @@ export function ClientsView() {
         </p>
       )}
 
-      {/* ── Mue priorise — section actionnable (ce que la page DOIT faire en plus) ── */}
-      <section className="csv3-priority" aria-label="Mue priorise">
+      {/* ── Relations les plus tendues — observation, pas action ──
+           Les cartes restent cliquables pour consulter la fiche (drill-down),
+           mais pas de CTA explicite : on est dans la consultation, pas l'agir. */}
+      <section className="csv3-priority" aria-label="Relations les plus tendues">
         <header className="csv3-priority__head">
           <span className="csv3-priority__mark" aria-hidden>
             <MueSparkSmall />
           </span>
           <div>
-            <h2>Mue priorise pour toi</h2>
-            <p>3 clients qui méritent ton attention aujourd'hui — par ordre d'urgence</p>
+            <h2>Relations les plus tendues</h2>
+            <p>Top 3 selon le score d'attention calculé par Mue — clique pour consulter</p>
           </div>
         </header>
         <div className="csv3-priority__list">
@@ -347,7 +348,12 @@ export function ClientsView() {
             const h = relationHealth(c);
             const m = moneySignal(c);
             return (
-              <article key={c.id} className="csv3-prio">
+              <button
+                key={c.id}
+                type="button"
+                className="csv3-prio csv3-prio--btn"
+                onClick={() => setActiveClientId(c.id)}
+              >
                 <span className="csv3-prio__rank">#{i + 1}</span>
                 <Avatar avatar={{ ...c.avatar, alt: c.name }} size={36} />
                 <div className="csv3-prio__id">
@@ -358,14 +364,12 @@ export function ClientsView() {
                     <span className={`csv3-prio__rel csv3-prio__rel--${h.state}`}>{h.label}</span>
                   </span>
                 </div>
-                <button
-                  type="button"
-                  className="csv3-prio__act"
-                  onClick={() => setActiveClientId(c.id)}
-                >
-                  Ouvrir le fil →
-                </button>
-              </article>
+                <span className="csv3-prio__chev" aria-hidden>
+                  <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </span>
+              </button>
             );
           })}
         </div>
@@ -459,7 +463,7 @@ export function ClientsView() {
         </div>
       )}
 
-      {/* ── Insights Mue NOMINATIFS (nomme les clients, sinon ça ne sert à rien) ── */}
+      {/* ── Insights Mue : observations (pas de CTA, on est en consultation) ── */}
       <div className="csv3-insights">
         <article className="csv3-insight">
           <span className="csv3-insight__ic" aria-hidden>
@@ -468,31 +472,21 @@ export function ClientsView() {
           <p>
             {silentLeader ? (
               <>
-                <strong>{silentLeader.name}</strong> n'a pas répondu depuis{" "}
-                <strong>{silentLeader.silentDays ?? 0}&nbsp;j</strong> — Mue te propose une relance
-                personnalisée.
+                Silence le plus long observé : <strong>{silentLeader.name}</strong> —{" "}
+                <strong>{silentLeader.silentDays ?? 0}&nbsp;j</strong> sans réponse.
               </>
             ) : (
-              <>Toutes tes relations sont à jour.</>
+              <>Aucun silence supérieur à 10 jours détecté sur tes relations.</>
             )}
           </p>
-          {silentLeader && (
-            <button
-              type="button"
-              className="csv3-insight__cta"
-              onClick={() => setActiveClientId(silentLeader.id)}
-            >
-              Ouvrir →
-            </button>
-          )}
         </article>
         <article className="csv3-insight">
           <span className="csv3-insight__ic csv3-insight__ic--warn" aria-hidden>
             <MueSparkSmall />
           </span>
           <p>
-            Tes clients t'écrivent en moyenne sur <strong>{avgChannels}&nbsp;canaux</strong>.
-            L'inbox unifiée Freescale leur épargne ce zapping — et te le fait gagner.
+            Tes clients t'écrivent en moyenne sur <strong>{avgChannels}&nbsp;canaux</strong> —
+            une mesure de la dispersion de tes échanges.
           </p>
         </article>
       </div>

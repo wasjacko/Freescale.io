@@ -32325,21 +32325,24 @@ button.mfv-model:hover {
 .csv3-prio__rel--awaiting {
   color: #2563eb;
 }
-.csv3-prio__act {
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 7px;
+.csv3-prio--btn {
   border: 0;
-  background: var(--csv-text-strong);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
+  width: 100%;
+  text-align: left;
   cursor: pointer;
-  transition: opacity 130ms var(--ease);
-  flex: none;
+  transition: box-shadow 130ms var(--ease), transform 130ms var(--ease);
 }
-.csv3-prio__act:hover {
-  opacity: 0.88;
+.csv3-prio--btn:hover {
+  box-shadow: inset 0 0 0 1px var(--csv-card-stroke-hover);
+  transform: translateY(-1px);
+}
+.csv3-prio__chev {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: var(--csv-text-muted);
+  flex: none;
 }
 
 /* ── Charts v3 ── */
