@@ -149,10 +149,6 @@ export function ClientsView() {
   return (
     <section className="clients-view" aria-label="Santé client">
       <header className="clients-head">
-        <div className="clients-head__title">
-          <h1 className="clients-h1">Santé client</h1>
-          <span className="clients-count">{MOCK_CLIENTS.length}</span>
-        </div>
         <div className="clients-head__tools">
           <label className="clients-search">
             <svg
