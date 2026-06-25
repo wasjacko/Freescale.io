@@ -207,15 +207,8 @@ export function ClientsView() {
 
   return (
     <section className="clients-view clients-view--v3" aria-label="Pilotage clients">
-      {/* ── En-tête : titre + sous-titre observationnel (page de consultation) ── */}
-      <header className="csv3-head">
-        <div>
-          <h1 className="csv3-title">Santé client</h1>
-          <p className="csv3-sub">
-            Vue d'ensemble de tes relations — <strong>{total}</strong> clients suivis sur{" "}
-            <strong>{channelDist.length}</strong> canaux.
-          </p>
-        </div>
+      {/* ── En-tête : juste les outils (recherche + période) ── */}
+      <header className="csv3-head csv3-head--bare">
         <div className="csv3-head__tools">
           <label className="csv3-search">
             <svg
