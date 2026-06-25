@@ -2552,7 +2552,9 @@ html {
   --topbar-h: 52px;
   /* Espacement de page unifié (toutes les vues : Tâches, Inbox, Clients…). */
   --page-pad-x: 20px;
-  --page-pad-top: 18px;
+  /* Inset vertical du contenu de page — aligné sur l'Inbox (14px) pour
+     une cohérence stricte entre toutes les pages. */
+  --page-pad-top: 14px;
   --page-pad-bottom: 20px;
   --page-gap: 16px;
   /* Look 100% flat : plus aucune stroke. On neutralise les hairlines à la
