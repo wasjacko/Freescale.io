@@ -726,6 +726,26 @@ button:not(:disabled):active,
 [data-theme="dark"] .conv.is-unread .conv-preview {
   color: #fff;
 }
+
+/* ── DARK : bouton Agent (Mue) — fond sombre, texte blanc + ring conique
+   inchangé. Au repos : fond translucide blanc 6 % + liseré subtil. */
+[data-theme="dark"] .topbar-actbtn,
+[data-theme="dark"] .topbar-actbtn.topbar-mue {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4f4f7;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .topbar-actbtn:hover,
+[data-theme="dark"] .topbar-actbtn.topbar-mue:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+[data-theme="dark"] .topbar-actbtn.topbar-mue.is-active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
 [data-theme="dark"] .account {
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(255, 255, 255, 0.05);
