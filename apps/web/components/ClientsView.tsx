@@ -135,19 +135,15 @@ export function ClientsView() {
   const showDeltas = total >= 10;
 
   // ─ SCORE DE SANTÉ — 4 indicateurs composent une note 0–100 ────────
-  // Source de vérité : on ne MESURE que ce qu'on observe dans l'inbox,
-  // pas ce qu'on imagine. Chaque indicateur est un % « bon / total ».
+  // Source de vérité : on ne MESURE que ce qu'on observe dans l'inbox.
+  // Wordings à la 2e personne + chiffre concret pour rendre ça humain.
   const health = useMemo(() => {
     const n = Math.max(1, total);
-    // Réactivité : tu réponds à temps → 1 − (clients qui attendent ta réponse / total)
     const reactivite = Math.round((1 - toReplyCount / n) * 100);
-    // Régularité : tes relations sont vivantes → % de stade « actif »
     const actifs = MOCK_CLIENTS.filter((c) => c.stage === "active").length;
     const regularite = Math.round((actifs / n) * 100);
-    // Engagement : pas de silence prolongé → 1 − (silents > 10j / total)
     const silents = MOCK_CLIENTS.filter((c) => (c.silentDays ?? 0) >= 10).length;
     const engagement = Math.round((1 - silents / n) * 100);
-    // Paiements : factures à jour
     const invoices = MOCK_CLIENTS.flatMap((c) => c.invoices ?? []);
     const lateInv = invoices.filter((i) => i.status === "late").length;
     const paiements =
@@ -156,18 +152,63 @@ export function ClientsView() {
     const score = Math.round((reactivite + regularite + engagement + paiements) / 4);
     const verdict =
       score >= 80
-        ? { label: "Bonne", tone: "good" as const }
+        ? {
+            label: "Belle dynamique",
+            tagline: "Tes clients sont bien suivis — continue sur cette lancée.",
+            tone: "good" as const,
+          }
         : score >= 60
-          ? { label: "Correcte", tone: "fair" as const }
-          : { label: "À surveiller", tone: "warn" as const };
+          ? {
+              label: "Bonne base",
+              tagline: "L'essentiel est tenu, quelques fils méritent ton attention.",
+              tone: "fair" as const,
+            }
+          : {
+              label: "Quelques fils à reprendre",
+              tagline: "Pas de panique — voici ce qui pèse sur le score.",
+              tone: "warn" as const,
+            };
     return {
       score,
       verdict,
       items: [
-        { key: "reactivite", label: "Réactivité", hint: "Tes clients reçoivent une réponse", value: reactivite },
-        { key: "regularite", label: "Régularité", hint: "Tes relations restent vivantes", value: regularite },
-        { key: "engagement", label: "Engagement", hint: "Pas de silence prolongé", value: engagement },
-        { key: "paiements", label: "Paiements", hint: "Factures à jour", value: paiements },
+        {
+          key: "reactivite",
+          label: "Tu réponds vite",
+          hint:
+            toReplyCount === 0
+              ? "Personne n'attend ta réponse"
+              : `${toReplyCount} ${toReplyCount > 1 ? "réponses dues" : "réponse due"} en ce moment`,
+          value: reactivite,
+          ic: "↩",
+        },
+        {
+          key: "regularite",
+          label: "Tes relations vivent",
+          hint: `${actifs} client${actifs > 1 ? "s" : ""} actif${actifs > 1 ? "s" : ""} sur ${n}`,
+          value: regularite,
+          ic: "↻",
+        },
+        {
+          key: "engagement",
+          label: "Tu es présent",
+          hint:
+            silents === 0
+              ? "Aucun fil en silence prolongé"
+              : `${silents} fil${silents > 1 ? "s" : ""} à réveiller (>10j sans nouvelle)`,
+          value: engagement,
+          ic: "◐",
+        },
+        {
+          key: "paiements",
+          label: "Trésorerie saine",
+          hint:
+            invoices.length === 0
+              ? "Aucune facture suivie"
+              : `${lateInv} sur ${invoices.length} facture${invoices.length > 1 ? "s" : ""} en retard`,
+          value: paiements,
+          ic: "€",
+        },
       ],
     };
   }, [total, toReplyCount]);
@@ -293,18 +334,22 @@ export function ClientsView() {
         <div className="csv3-score__head">
           <ScoreRing value={health.score} tone={health.verdict.tone} />
           <div className="csv3-score__id">
-            <span className="csv3-score__verdict">Santé {health.verdict.label.toLowerCase()}</span>
-            <span className="csv3-score__sub">
-              Note composite sur 100 — moyenne des 4 indicateurs ci-dessous
-            </span>
+            <span className="csv3-score__verdict">{health.verdict.label}</span>
+            <span className="csv3-score__tagline">{health.verdict.tagline}</span>
           </div>
-          <span className="csv3-mue-tag csv3-mue-tag--inline" title="Score calculé par Mue à partir de tes échanges">
-            <MueSparkSmall /> Mue
+          <span className="csv3-mue-tag csv3-mue-tag--inline" title="Calculé par Mue à partir de 4 signaux dans tes échanges">
+            <MueSparkSmall /> Calculé par Mue
           </span>
         </div>
         <ul className="csv3-score__items">
           {health.items.map((it) => (
-            <HealthBar key={it.key} label={it.label} hint={it.hint} value={it.value} />
+            <HealthBar
+              key={it.key}
+              label={it.label}
+              hint={it.hint}
+              value={it.value}
+              ic={it.ic}
+            />
           ))}
         </ul>
       </section>
@@ -656,12 +701,25 @@ function ScoreRing({ value, tone }: { value: number; tone: "good" | "fair" | "wa
   );
 }
 
-// ── Barre d'indicateur (libellé + valeur + jauge calme) ───────────────
-function HealthBar({ label, hint, value }: { label: string; hint: string; value: number }) {
+// ── Barre d'indicateur (pictogramme + libellé + valeur + jauge) ───────
+function HealthBar({
+  label,
+  hint,
+  value,
+  ic,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  ic: string;
+}) {
   const tone = value >= 80 ? "good" : value >= 60 ? "fair" : "warn";
   return (
-    <li className="csv3-hbar">
+    <li className={`csv3-hbar csv3-hbar--${tone}`}>
       <div className="csv3-hbar__head">
+        <span className="csv3-hbar__ic" aria-hidden>
+          {ic}
+        </span>
         <span className="csv3-hbar__label">{label}</span>
         <span className={`csv3-hbar__val csv3-hbar__val--${tone}`}>{value}%</span>
       </div>
