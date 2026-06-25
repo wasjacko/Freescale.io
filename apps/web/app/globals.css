@@ -2550,10 +2550,10 @@ html {
   /* Accent du bouton CTA Mue, réutilisé pour le stroke du panneau. */
   --mue-cta: rgba(79, 108, 247, 0.55);
   --topbar-h: 52px;
-  /* Espacement de page unifié (toutes les vues : Tâches, Inbox, Clients…). */
-  --page-pad-x: 20px;
-  /* Inset vertical du contenu de page — aligné sur l'Inbox (14px) pour
-     une cohérence stricte entre toutes les pages. */
+  /* Espacement de page unifié — top = left = 14px (équilibre parfait).
+     Le bouton/contenu se cale ainsi à la même distance du bord haut ET
+     du bord gauche de la carte. Bottom garde 20 (respiration en bas). */
+  --page-pad-x: 14px;
   --page-pad-top: 14px;
   --page-pad-bottom: 20px;
   --page-gap: 16px;
@@ -4845,14 +4845,14 @@ html {
 }
 /* ── Colonne dossiers — extrême gauche du bloc Inbox ──────────────── */
 .ibx-folders {
-  flex: 0 0 198px;
-  width: 198px;
+  flex: 0 0 186px;
+  width: 186px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  /* Inset gauche aligné sur --page-pad-x (20px) — cohérent avec toolbar
-     d'Inbox et avec les autres pages (Tâches, Calendar, Santé client). */
-  padding: 14px 20px 14px 20px;
+  /* Inset top + left = 14px (--page-pad-top/x) — équilibre parfait
+     et cohérent avec toutes les pages. */
+  padding: var(--page-pad-top) var(--page-pad-x);
   overflow-y: auto;
   box-shadow: inset -1.5px 0 0 rgba(10, 10, 10, 0.08);
 }
