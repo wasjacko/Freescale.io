@@ -487,7 +487,10 @@ button:not(:disabled):active,
 [data-theme="dark"] .tasks-view,
 [data-theme="dark"] .calendar-view,
 [data-theme="dark"] .ai-view,
-[data-theme="dark"] .clients-view {
+[data-theme="dark"] .clients-view,
+[data-theme="dark"] .today-view,
+[data-theme="dark"] .recap-view,
+[data-theme="dark"] .mfv {
   background: linear-gradient(#2c2c38, #2c2c38) padding-box,
     linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06)) border-box;
   border: 1px solid transparent;
@@ -986,14 +989,7 @@ button:not(:disabled):active,
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* AI Knowledge */
-[data-theme="dark"] .ai-view {
-  background: radial-gradient(circle at 18% 12%, rgba(180, 100, 130, 0.28), transparent 50%),
-    radial-gradient(circle at 85% 14%, rgba(80, 100, 180, 0.32), transparent 50%),
-    radial-gradient(circle at 50% 95%, rgba(110, 80, 180, 0.28), transparent 55%),
-    linear-gradient(#16161d, #14141a) padding-box,
-    linear-gradient(180deg, #2a2a35 0%, #1e1e28 50%, #2a2a35 100%) border-box;
-}
+/* AI Knowledge — couleur centralisée plus haut. Pas de surcharge ici. */
 [data-theme="dark"] .ai-input-box {
   background: #101015;
   border-color: rgba(255, 255, 255, 0.08);
@@ -5589,11 +5585,8 @@ html {
     display: inline-flex;
   }
 }
-[data-theme="dark"] .conv-shell {
-  background: #101015;
-  border-color: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
+/* Couleur centralisée dans la règle .conv-shell/.tasks-view/… en haut
+   du fichier. Pas de surcharge ici (sinon doublon de teinte). */
 
 /* ====== AI KNOWLEDGE VIEW ====== */
 .ai-view {
@@ -23292,8 +23285,8 @@ button:active:not(:disabled):not(.no-press) {
 }
 [data-theme="dark"] .today-view,
 [data-theme="dark"] .today-summary {
-  background: #14141a;
-  border-color: rgba(255, 255, 255, 0.06);
+  background: #2c2c38;
+  border-color: rgba(255, 255, 255, 0.08);
 }
 [data-theme="dark"] .today-refresh,
 [data-theme="dark"] .today-create,
@@ -30263,8 +30256,11 @@ button.sidebar-brand {
   grid-template-columns: 1fr;
 }
 [data-theme="dark"] .mfv {
-  background: #14141a;
-  border-color: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(#2c2c38, #2c2c38) padding-box,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06)) border-box;
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .mfv-side {
   display: flex;
