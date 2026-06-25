@@ -668,7 +668,14 @@ button:not(:disabled):active,
   color: #f4f4f7;
 }
 
-/* Sidebar items */
+/* Sidebar items — texte + icônes en blanc en dark (au repos comme actif). */
+[data-theme="dark"] .nav-item,
+[data-theme="dark"] .nav-item .nav-text,
+[data-theme="dark"] .nav-item .nav-label,
+[data-theme="dark"] .nav-item .icon,
+[data-theme="dark"] .nav-item svg {
+  color: #f4f4f7;
+}
 [data-theme="dark"] .nav-item:hover {
   background: rgba(255, 255, 255, 0.04);
 }
