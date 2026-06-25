@@ -451,7 +451,7 @@ button:not(:disabled):active,
 [data-theme="dark"] {
   color-scheme: dark;
   --canvas: #14141a;
-  --bg: #0b0b10;
+  --bg: #1a1a22;
   --bg-soft: #14141a;
   --bg-tint: #1a1a22;
   --ink: #f4f4f7;
@@ -464,36 +464,36 @@ button:not(:disabled):active,
 }
 
 [data-theme="dark"] body {
-  background: #0b0b10;
+  background: #1a1a22;
   color: #f4f4f7;
 }
 [data-theme="dark"] .app {
-  background: #0b0b10;
+  background: #1a1a22;
 }
 
-/* Cards & panels — TOUT sur #0b0b10 (couleur du body). Plus de panels
+/* Cards & panels — TOUT sur #1a1a22 (couleur du body). Plus de panels
    en #14141a/#15151c qui créaient un effet « page dans la page » avec
    borders blanchâtres. Layout monolithique. */
 [data-theme="dark"] .sidebar {
-  background: #0b0b10;
+  background: #1a1a22;
   border: 0;
   box-shadow: none;
 }
 [data-theme="dark"] .conv-shell {
-  background: #0b0b10;
+  background: #1a1a22;
   border: 0;
   box-shadow: none;
 }
 [data-theme="dark"] .inbox,
 [data-theme="dark"] .thread {
-  background: #0b0b10;
+  background: #1a1a22;
   border-color: transparent;
   box-shadow: none;
 }
 [data-theme="dark"] .tasks-view,
 [data-theme="dark"] .calendar-view,
 [data-theme="dark"] .ai-view {
-  background: #0b0b10;
+  background: #1a1a22;
   border: 0;
   box-shadow: none;
 }
@@ -679,13 +679,13 @@ button:not(:disabled):active,
    et fond bleu vif pour pop sur le fond. */
 [data-theme="dark"] .sidebar .nav-ico .nav-badge {
   background: #7aa2ff;
-  color: #0b0b10;
-  box-shadow: 0 0 0 2px #0b0b10;
+  color: #1a1a22;
+  box-shadow: 0 0 0 2px #1a1a22;
 }
 
 /* ── DARK : textes secondaires du panneau Inbox boostés en luminosité ──
    Les classes ci-dessous étaient en gris hardcodé (#5b6475, #6b7280…) :
-   illisibles sur #0b0b10. On les remonte en clair franc. */
+   illisibles sur #1a1a22. On les remonte en clair franc. */
 [data-theme="dark"] .ibx-folder {
   color: #d8dce6;
 }
@@ -32146,7 +32146,7 @@ button.mfv-model:hover {
 
 /* Fond de la page Santé client en dark — uniforme avec le body. */
 [data-theme="dark"] .clients-view {
-  background: #0b0b10;
+  background: #1a1a22;
   box-shadow: none;
 }
 [data-theme="dark"] .csv3-search {
