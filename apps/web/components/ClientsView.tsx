@@ -180,14 +180,12 @@ export function ClientsView() {
               ? "Personne n'attend ta réponse"
               : `${toReplyCount} ${toReplyCount > 1 ? "réponses dues" : "réponse due"} en ce moment`,
           value: reactivite,
-          ic: "↩",
         },
         {
           key: "regularite",
           label: "Tes relations vivent",
           hint: `${actifs} client${actifs > 1 ? "s" : ""} actif${actifs > 1 ? "s" : ""} sur ${n}`,
           value: regularite,
-          ic: "↻",
         },
         {
           key: "engagement",
@@ -197,7 +195,6 @@ export function ClientsView() {
               ? "Aucun fil en silence prolongé"
               : `${silents} fil${silents > 1 ? "s" : ""} à réveiller (>10j sans nouvelle)`,
           value: engagement,
-          ic: "◐",
         },
         {
           key: "paiements",
@@ -207,7 +204,6 @@ export function ClientsView() {
               ? "Aucune facture suivie"
               : `${lateInv} sur ${invoices.length} facture${invoices.length > 1 ? "s" : ""} en retard`,
           value: paiements,
-          ic: "€",
         },
       ],
     };
@@ -348,7 +344,7 @@ export function ClientsView() {
               label={it.label}
               hint={it.hint}
               value={it.value}
-              ic={it.ic}
+              icon={HEALTH_ICONS[it.key as keyof typeof HEALTH_ICONS]}
             />
           ))}
         </ul>
@@ -675,50 +671,102 @@ function MiniClientCard({ client, onOpen }: { client: Client; onOpen: () => void
   );
 }
 
-// ── Anneau de score (SVG natif, sans lib) ─────────────────────────────
+// ── Icônes SVG cohérentes avec le reste de l'app (stroke 1.8) ─────────
+const ICON_STROKE = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+const HEALTH_ICONS = {
+  reactivite: (
+    <svg viewBox="0 0 24 24" width={16} height={16} {...ICON_STROKE}>
+      <polyline points="9 14 4 9 9 4" />
+      <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+    </svg>
+  ),
+  regularite: (
+    <svg viewBox="0 0 24 24" width={16} height={16} {...ICON_STROKE}>
+      <path d="M21 12a9 9 0 1 1-3-6.7" />
+      <polyline points="21 4 21 9 16 9" />
+    </svg>
+  ),
+  engagement: (
+    <svg viewBox="0 0 24 24" width={16} height={16} {...ICON_STROKE}>
+      <path d="M3 12h3l3-7 4 14 3-7h5" />
+    </svg>
+  ),
+  paiements: (
+    <svg viewBox="0 0 24 24" width={16} height={16} {...ICON_STROKE}>
+      <path d="M17.5 6a6.5 6.5 0 1 0 0 12" />
+      <line x1="6" y1="10" x2="14" y2="10" />
+      <line x1="6" y1="14" x2="14" y2="14" />
+    </svg>
+  ),
+} as const;
+
+// ── Anneau de score — plus grand, gradient subtil + suffixe /100 ──────
 function ScoreRing({ value, tone }: { value: number; tone: "good" | "fair" | "warn" }) {
-  const r = 28;
+  const r = 42;
   const C = 2 * Math.PI * r;
   const dash = (Math.max(0, Math.min(100, value)) / 100) * C;
+  const gradId = `csv3-grad-${tone}`;
   return (
-    <svg viewBox="0 0 72 72" width={72} height={72} className={`csv3-ring csv3-ring--${tone}`} aria-hidden>
-      <circle cx="36" cy="36" r={r} stroke="var(--csv-track)" strokeWidth={7} fill="none" />
+    <svg viewBox="0 0 104 104" width={104} height={104} className={`csv3-ring csv3-ring--${tone}`} aria-hidden>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+          <stop
+            offset="0%"
+            stopColor={tone === "good" ? "#22b06e" : tone === "fair" ? "#7aa2ff" : "#f59e0b"}
+          />
+          <stop
+            offset="100%"
+            stopColor={tone === "good" ? "#148a5a" : tone === "fair" ? "#4f6cf7" : "#d97706"}
+          />
+        </linearGradient>
+      </defs>
+      <circle cx="52" cy="52" r={r} stroke="var(--csv-track)" strokeWidth={9} fill="none" />
       <circle
-        cx="36"
-        cy="36"
+        cx="52"
+        cy="52"
         r={r}
-        stroke="currentColor"
-        strokeWidth={7}
+        stroke={`url(#${gradId})`}
+        strokeWidth={9}
         fill="none"
         strokeDasharray={`${dash} ${C}`}
         strokeLinecap="round"
-        transform="rotate(-90 36 36)"
+        transform="rotate(-90 52 52)"
       />
-      <text x="36" y="41" textAnchor="middle" className="csv3-ring__val">
+      <text x="52" y="55" textAnchor="middle" className="csv3-ring__val">
         {value}
+      </text>
+      <text x="52" y="70" textAnchor="middle" className="csv3-ring__unit">
+        / 100
       </text>
     </svg>
   );
 }
 
-// ── Barre d'indicateur (pictogramme + libellé + valeur + jauge) ───────
+// ── Carte d'indicateur (icône SVG + libellé + valeur + jauge généreuse) ─
 function HealthBar({
   label,
   hint,
   value,
-  ic,
+  icon,
 }: {
   label: string;
   hint: string;
   value: number;
-  ic: string;
+  icon: React.ReactNode;
 }) {
   const tone = value >= 80 ? "good" : value >= 60 ? "fair" : "warn";
   return (
     <li className={`csv3-hbar csv3-hbar--${tone}`}>
       <div className="csv3-hbar__head">
         <span className="csv3-hbar__ic" aria-hidden>
-          {ic}
+          {icon}
         </span>
         <span className="csv3-hbar__label">{label}</span>
         <span className={`csv3-hbar__val csv3-hbar__val--${tone}`}>{value}%</span>

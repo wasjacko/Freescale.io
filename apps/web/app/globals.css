@@ -32546,71 +32546,92 @@ button.mfv-model:hover {
    doux. Pas de rouge alarmiste.
    ═════════════════════════════════════════════════════════════════════ */
 .csv3-score {
-  padding: 18px 20px 20px;
-  border-radius: 16px;
+  position: relative;
+  padding: 22px 24px 24px;
+  border-radius: 18px;
   background: var(--csv-card-bg);
-  box-shadow: inset 0 0 0 1px var(--csv-card-stroke);
+  box-shadow: inset 0 0 0 1px var(--csv-card-stroke), 0 1px 2px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  flex-shrink: 0; /* sinon le parent flex column le réduit à la taille du padding */
 }
-.csv3-score--good {
-  background: linear-gradient(140deg, rgba(20, 138, 90, 0.05), rgba(20, 138, 90, 0.02));
+.csv3-score::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background: radial-gradient(120% 80% at 0% 0%, rgba(122, 162, 255, 0.08), transparent 60%);
 }
-.csv3-score--fair {
-  background: linear-gradient(140deg, rgba(79, 108, 247, 0.05), rgba(79, 108, 247, 0.02));
+.csv3-score--good::before {
+  background: radial-gradient(120% 80% at 0% 0%, rgba(34, 176, 110, 0.1), transparent 60%);
 }
-.csv3-score--warn {
-  background: linear-gradient(140deg, rgba(217, 119, 6, 0.06), rgba(217, 119, 6, 0.02));
+.csv3-score--warn::before {
+  background: radial-gradient(120% 80% at 0% 0%, rgba(245, 158, 11, 0.1), transparent 60%);
+}
+.csv3-score > * {
+  position: relative;
 }
 .csv3-score__head {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+  padding-bottom: 18px;
   margin-bottom: 18px;
+  border-bottom: 1px dashed var(--csv-card-stroke);
 }
 .csv3-score__id {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 .csv3-score__verdict {
-  font-size: 17px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: var(--csv-text-strong);
+  line-height: 1.1;
 }
+.csv3-score--good .csv3-score__verdict { color: #148a5a; }
+.csv3-score--fair .csv3-score__verdict { color: #4f6cf7; }
+.csv3-score--warn .csv3-score__verdict { color: #b4630a; }
 .csv3-score__sub {
   font-size: 12px;
   color: var(--csv-text-soft);
 }
 .csv3-score__tagline {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--csv-text-soft);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Anneau du score */
+/* Anneau du score — plus présent, avec gradient */
 .csv3-ring {
   flex: none;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.05));
 }
-.csv3-ring--good { color: #148a5a; }
-.csv3-ring--fair { color: #4f6cf7; }
-.csv3-ring--warn { color: #d97706; }
 .csv3-ring__val {
   fill: var(--csv-text-strong);
-  font-size: 18px;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
+}
+.csv3-ring__unit {
+  fill: var(--csv-text-muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
-/* Indicateurs */
+/* Indicateurs — cartes individuelles, plus aérées */
 .csv3-score__items {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 @media (max-width: 880px) {
   .csv3-score__items {
@@ -32620,21 +32641,28 @@ button.mfv-model:hover {
 .csv3-hbar {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--csv-card-bg);
+  box-shadow: inset 0 0 0 1px var(--csv-card-stroke);
+  transition: box-shadow 130ms var(--ease), transform 130ms var(--ease);
+}
+.csv3-hbar:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px var(--csv-card-stroke), 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 .csv3-hbar__head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 .csv3-hbar__ic {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
   background: var(--csv-soft-bg);
   color: var(--csv-text-soft);
   flex: none;
@@ -32652,22 +32680,24 @@ button.mfv-model:hover {
   color: #b4630a;
 }
 .csv3-hbar__label {
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 650;
   color: var(--csv-text-strong);
   flex: 1;
   min-width: 0;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 .csv3-hbar__val {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 .csv3-hbar__val--good { color: #148a5a; }
 .csv3-hbar__val--fair { color: #4f6cf7; }
 .csv3-hbar__val--warn { color: #b4630a; }
 .csv3-hbar__track {
-  height: 6px;
+  height: 8px;
   border-radius: 999px;
   background: var(--csv-track);
   overflow: hidden;
@@ -32676,15 +32706,21 @@ button.mfv-model:hover {
   display: block;
   height: 100%;
   border-radius: 999px;
-  transition: width 240ms var(--ease);
+  transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-.csv3-hbar__fill--good { background: #148a5a; }
-.csv3-hbar__fill--fair { background: #4f6cf7; }
-.csv3-hbar__fill--warn { background: #d97706; }
+.csv3-hbar__fill--good {
+  background: linear-gradient(90deg, #22b06e, #148a5a);
+}
+.csv3-hbar__fill--fair {
+  background: linear-gradient(90deg, #7aa2ff, #4f6cf7);
+}
+.csv3-hbar__fill--warn {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
 .csv3-hbar__hint {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--csv-text-muted);
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 
