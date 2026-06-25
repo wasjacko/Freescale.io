@@ -26,9 +26,9 @@ type State = {
   mueOpen: boolean;
   mueView: MueView;
   suggestTasksOpen: boolean;
-  /** Thème de l'interface (clair / sombre). */
-  theme: "light" | "dark";
-  setTheme: (t: "light" | "dark") => void;
+  /** Thème de l'interface : « system » suit l'OS, « light »/« dark » forcent. */
+  theme: "system" | "light" | "dark";
+  setTheme: (t: "system" | "light" | "dark") => void;
   // Filtres/tri de l'Inbox — remontés au store pour que la barre d'outils
   // (pleine largeur, au-dessus des deux colonnes) et la liste les partagent.
   inboxSort: InboxSort;
@@ -95,7 +95,7 @@ export const useApp = create<State>()(
       setInboxSearch: (inboxSearch) => set({ inboxSearch }),
       inboxBucket: "all",
       setInboxBucket: (inboxBucket) => set({ inboxBucket }),
-      theme: "light",
+      theme: "system",
       setTheme: (theme) => set({ theme }),
       clientConfirm: { open: false, channel: "gmail" },
       openClientConfirm: (channel) => set({ clientConfirm: { open: true, channel } }),
@@ -142,7 +142,7 @@ export const useApp = create<State>()(
     }),
     {
       name: "fs:app",
-      version: 7,
+      version: 8,
       migrate: (persistedState, version) => {
         const stored = persistedState as Partial<State>;
         let next = stored;
@@ -172,6 +172,15 @@ export const useApp = create<State>()(
         if (version < 7) {
           // Dossiers de conversations : on (re)sème les défauts.
           next = { ...next, inboxFolders: DEFAULT_FOLDERS, activeFolderId: null };
+        }
+        if (version < 8) {
+          // Le thème par défaut suit l'OS. Les valeurs « light »/« dark »
+          // forcées par le user restent valides ; on bascule juste un
+          // « light » historique en « system » si l'utilisateur n'avait
+          // jamais touché au toggle (heuristique).
+          if (!(next as Partial<State>).theme) {
+            next = { ...next, theme: "system" };
+          }
         }
         return next as State;
       },

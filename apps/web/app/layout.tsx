@@ -8,21 +8,49 @@ export const metadata: Metadata = {
 };
 
 /**
- * Dark mode retiré : l'app suit à fond la DA claire éditoriale ("Complete AI").
+ * Thème : mode « Système » par défaut, surchargeable en Clair/Sombre.
  *
- * On verrouille <html data-theme="light"> côté serveur, donc les ~463 règles
- * [data-theme="dark"] de globals.css (laissées dormantes) ne s'activent jamais.
- * Plus besoin du cookie fs-theme, du client-hint, ni du script d'init FOUC :
- * il n'y a plus de flash possible puisque le thème est constant.
+ * Le serveur ne sait pas quel thème servir (cookie absent volontairement —
+ * on garde le persist côté client uniquement). On évite le FOUC en
+ * injectant un petit script bloquant dans <head> qui détermine le bon
+ * data-theme avant le premier paint :
+ *
+ *   1) lit fs:app dans localStorage → state.theme (system | light | dark)
+ *   2) si « system » ou absent, suit prefers-color-scheme
+ *   3) pose <html data-theme="…"> + style.colorScheme avant que la page
+ *      ne soit peinte → pas de flash, même sur un OS sombre
  */
+const themeInitScript = `
+(function(){
+  try {
+    var t = 'system';
+    var raw = localStorage.getItem('fs:app');
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      var v = parsed && parsed.state && parsed.state.theme;
+      if (v === 'light' || v === 'dark' || v === 'system') t = v;
+    }
+    var effective = t;
+    if (t === 'system') {
+      effective = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    var r = document.documentElement;
+    r.setAttribute('data-theme', effective);
+    r.style.colorScheme = effective;
+  } catch (e) {}
+})();
+`.trim();
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // Fond clair + color-scheme posés en inline sur <html> : appliqués dès le
-    // parsing du HTML, AVANT le chargement de globals.css et des fonts. Sans ça,
-    // sur un OS en dark mode le canvas racine (html, fond transparent) flashe
-    // sombre quelques ms le temps que le CSS externe peigne le fond du body.
-    <html lang="fr" data-theme="light" style={{ backgroundColor: "#f8f9fa", colorScheme: "light" }}>
+    <html lang="fr">
       <head>
+        {/* Anti-FOUC : doit s'exécuter AVANT le rendu pour poser data-theme. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {/* Tell the browser to follow the system → scrollbars / native controls
+            auto-adapt. Le data-theme posé par le script ci-dessus surcharge si
+            l'utilisateur a forcé clair/sombre. */}
+        <meta name="color-scheme" content="light dark" />
         {/* Display serif for the art direction — elegant high-contrast italic
             used on prominent headings (Mue, empty states, panel titles). */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -37,9 +65,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        {/* App is light-only now — tell the browser so native controls,
-            scrollbars and the initial canvas never render dark. */}
-        <meta name="color-scheme" content="light" />
       </head>
       <body>{children}</body>
     </html>

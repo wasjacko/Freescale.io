@@ -170,10 +170,24 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
           <div className="account-menu-theme-seg" role="group" aria-label="Thème">
             <button
               type="button"
+              className={`amt-opt ${theme === "system" ? "is-on" : ""}`}
+              aria-pressed={theme === "system"}
+              onClick={() => setTheme("system")}
+              title="Suit le réglage de ton système"
+            >
+              <svg {...stroke} width={15} height={15}>
+                <rect x="3" y="4" width="18" height="13" rx="2" />
+                <line x1="8" y1="20" x2="16" y2="20" />
+                <line x1="12" y1="17" x2="12" y2="20" />
+              </svg>
+              Système
+            </button>
+            <button
+              type="button"
               className={`amt-opt ${theme === "light" ? "is-on" : ""}`}
               aria-pressed={theme === "light"}
               onClick={() => setTheme("light")}
-              title="Clair"
+              title="Force le thème clair"
             >
               <svg {...stroke} width={15} height={15}>
                 <circle cx="12" cy="12" r="4.5" />
@@ -186,7 +200,7 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
               className={`amt-opt ${theme === "dark" ? "is-on" : ""}`}
               aria-pressed={theme === "dark"}
               onClick={() => setTheme("dark")}
-              title="Sombre"
+              title="Force le thème sombre"
             >
               <svg {...stroke} width={15} height={15}>
                 <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />

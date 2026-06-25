@@ -4203,13 +4203,14 @@ html {
   font-size: 12px;
   color: #8b93a4;
 }
-/* Sélecteur de thème (Clair / Sombre) dans le menu compte. */
+/* Sélecteur de thème (Système / Clair / Sombre) dans le menu compte.
+   Passé en colonne pour absorber 3 options sans déborder. */
 .account-menu-theme {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 6px 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 10px;
 }
 .account-menu-theme-id {
   display: inline-flex;
@@ -4225,7 +4226,8 @@ html {
   color: #6b7280;
 }
 .account-menu-theme-seg {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 2px;
   padding: 2px;
   border-radius: 8px;
@@ -4234,14 +4236,20 @@ html {
 .amt-opt {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 6px;
   border-radius: 6px;
   font-size: 11.5px;
   font-weight: 600;
   color: #5b6475;
   cursor: pointer;
   transition: background 130ms var(--ease), color 130ms var(--ease);
+  border: 0;
+  background: transparent;
+}
+.amt-opt svg {
+  flex: none;
 }
 .amt-opt.is-on {
   background: #fff;

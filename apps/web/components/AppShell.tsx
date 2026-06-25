@@ -90,12 +90,23 @@ export function AppShell({
     );
   }, []);
 
-  // Thème : on (dé)verrouille les ~477 règles [data-theme="dark"] dormantes
-  // en basculant l'attribut sur <html> au runtime (le serveur pose "light").
+  // Thème : « system » suit prefers-color-scheme et réagit aux changements OS.
+  // « light »/« dark » forcent. On bascule data-theme sur <html> pour activer
+  // les ~477 règles [data-theme="dark"] dormantes.
   useEffect(() => {
     const root = document.documentElement;
-    root.dataset.theme = theme;
-    root.style.colorScheme = theme;
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const effective = theme === "system" ? (mql.matches ? "dark" : "light") : theme;
+      root.dataset.theme = effective;
+      root.style.colorScheme = effective;
+    };
+    apply();
+    if (theme === "system") {
+      mql.addEventListener("change", apply);
+      return () => mql.removeEventListener("change", apply);
+    }
+    return undefined;
   }, [theme]);
 
   // Document title with unread count
