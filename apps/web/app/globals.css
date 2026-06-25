@@ -31409,3 +31409,221 @@ button.mfv-model:hover {
 [data-theme="dark"] button.mfv-model:hover {
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   DESIGN GUIDELINES — couche canonique d'unification (référence: page Inbox)
+   ════════════════════════════════════════════════════════════════════════
+   Tokens de la référence Inbox :
+   - Radius : 5 (btns), 6 (badge canal), 7 (item liste), 8 (input/search), 9 (tools), 14 (carte), 999 (rond)
+   - Hauteurs : btn 32, item-liste 34
+   - Padding btn : 0 12px · gap interne 6px
+   - Font : Hanken Grotesk · échelle 10.5 / 11 / 12 / 12.5 / 13 / 14 · weights 400/500/600/700
+   - Couleurs : ink #0a0a0a, sub #344054, secondary #475569, muted #9aa0aa
+   - Ombre carte : 0 1px 2px rgba(15,23,42,.08) ; double liseré pour les blocs majeurs
+   - Bg input : rgba(15,23,42,.05) — radius 8
+   - Section heading : 10.5/700 uppercase letter-spacing 0.04em color #9aa0aa
+   - Row name : 14/700 ink ; Row preview : 12.5/400 #475569
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── Variables canoniques (consommables dans les composants) ──────────── */
+:root {
+  --r-btn: 5px;
+  --r-input: 8px;
+  --r-item: 7px;
+  --r-tool: 9px;
+  --r-card: 14px;
+  --r-pill: 999px;
+  --h-btn: 32px;
+  --h-item: 34px;
+  --pad-btn-x: 12px;
+  --gap-btn: 6px;
+  --ink-color: #0a0a0a;
+  --sub-color: #344054;
+  --secondary-color: #475569;
+  --muted-color: #9aa0aa;
+  --bg-input: rgba(15, 23, 42, 0.05);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 1px 1px rgba(15, 23, 42, 0.04);
+  --card-shadow-hover: 0 4px 14px rgba(15, 23, 42, 0.07);
+  --btn-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 1px 1px rgba(15, 23, 42, 0.04);
+}
+
+/* ── BOUTONS ───────────────────────────────────────────────────────────
+   Cible large : tous les boutons « ghost » / « secondary » qui n'ont pas
+   d'identité propre (CTA, primary, dangerous) restent indépendants. */
+.clients-filter,
+.cal-btn,
+.tdetail-quick,
+.tdm-btn,
+.cal-viewtoggle__btn,
+.tboard-vbtn {
+  height: var(--h-btn);
+  padding: 0 var(--pad-btn-x);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  gap: var(--gap-btn);
+  border-radius: var(--r-btn);
+}
+
+/* Boutons de toolbar (Tri, Filtre, Nouveau message) — référence Inbox. */
+.ibx-tool,
+.ibx-tool-new {
+  height: var(--h-btn);
+  padding: 0 var(--pad-btn-x);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--sub-color);
+  border-radius: var(--r-btn);
+  box-shadow: var(--btn-shadow);
+  background: #fff;
+  gap: var(--gap-btn);
+}
+
+/* Boutons d'icône (32x32) cohérents avec le système. */
+.ibx-iconbtn,
+.cal-nav__btn,
+.tdm-close,
+.mmd-close {
+  width: var(--h-btn);
+  height: var(--h-btn);
+  border-radius: var(--r-btn);
+}
+
+/* ── INPUTS / RECHERCHES ───────────────────────────────────────────────
+   Toutes les recherches utilisent le même fond + radius 8 + 12.5/400. */
+.ibx-search-input,
+.clients-search input,
+.mmd-search input,
+.tdm-search input,
+.mfv-search input,
+.mue2-disc-search input {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ink-color);
+}
+.clients-search,
+.mmd-search,
+.mfv-search {
+  height: var(--h-btn);
+  border-radius: var(--r-input);
+  background: var(--bg-input);
+}
+
+/* ── CARTES (cards de contenu) ─────────────────────────────────────────
+   Tous les blocs « carte de contenu » partagent la même esthétique :
+   fond blanc, radius 14, ombre légère, hover qui se lève subtilement. */
+.client-card,
+.clients-kpi,
+.recap-kpi,
+.mue2-card,
+.mfv-card,
+.section-card,
+.hub-stat,
+.hub-relation {
+  border-radius: var(--r-card);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.09), var(--card-shadow);
+  transition: box-shadow 140ms var(--ease), transform 140ms var(--ease);
+}
+.client-card:hover,
+.clients-kpi:hover,
+.mue2-card:hover {
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.16), var(--card-shadow-hover);
+  transform: translateY(-1px);
+}
+
+/* ── ITEMS DE LISTE (sidebar / menus / discussions) ─────────────────── */
+.ibx-folder,
+.mfv-item,
+.mue2-disc-item,
+.tdetail-item,
+.tact-opt,
+.tprio-opt,
+.tclient-opt,
+.ibx-tool-item,
+.account-menu-item {
+  height: var(--h-item);
+  border-radius: var(--r-item);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── HEADINGS DE SECTION ───────────────────────────────────────────────
+   Uniformise tous les en-têtes secondaires en majuscules : DOSSIERS,
+   LABELS, AUJOURD'HUI, CETTE SEMAINE, STATUT, CANAUX, etc. */
+.ibx-folders-head,
+.ibx-folders__sec h3,
+.conv-section,
+.mfv-group-label,
+.mue2-disc-group-label,
+.tclient-menu-head,
+.tact-menu-label,
+.ibx-tool-menu-label,
+.tdm-list,
+.mmd-section-sub + .mmd-section-sub,
+.mfv-head h1 {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-color);
+}
+.mfv-head h1 {
+  /* Le titre de discussion garde la casse normale mais l'échelle est égalée. */
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink-color);
+}
+
+/* ── ÉCHELLE TYPO ROW NAME / PREVIEW ───────────────────────────────────
+   Reproduit la hiérarchie nom 14/700 + aperçu 12.5/400 dans toutes les
+   listes (clients, tâches, discussions, fils). */
+.conv-name,
+.client-card__name,
+.mfv-item-title,
+.mue2-disc-item-title,
+.tdetail-name,
+.mmd-client-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-color);
+}
+.conv-preview,
+.client-card__company,
+.mfv-item-time,
+.mue2-disc-item-time,
+.tdetail-subj,
+.mmd-client-co {
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  color: var(--secondary-color);
+}
+
+/* ── PILLS / BADGES uniformisés ─────────────────────────────────────── */
+.client-card__stage,
+.tsource,
+.tdetail-meta,
+.tdm-status,
+.clients-count {
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* ── DARK : reprend les mêmes tokens via [data-theme=dark] override ──── */
+[data-theme="dark"] {
+  --ink-color: #f4f4f7;
+  --sub-color: #a8aeba;
+  --secondary-color: #c9cee0;
+  --muted-color: #71747f;
+  --bg-input: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(0, 0, 0, 0.4);
+  --card-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.55);
+  --btn-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.3);
+}
