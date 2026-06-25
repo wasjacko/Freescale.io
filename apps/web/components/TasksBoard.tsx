@@ -45,7 +45,8 @@ function dueMeta(iso: string | null | undefined, fallback: string) {
 }
 
 export function TasksBoard() {
-  const { tasks, conversations, messagesByConv, setTaskStatus, addTask, patchTask } = useData();
+  const { tasks, conversations, messagesByConv, setTaskStatus, addTask, patchTask, removeTask } =
+    useData();
   const { setView, setActiveConv } = useApp();
   const [collapsed, setCollapsed] = useState<Set<GroupKey>>(() => new Set());
   // Bascule Tableau ↔ Kanban.
@@ -182,6 +183,28 @@ export function TasksBoard() {
     }
     const r = e.currentTarget.getBoundingClientRect();
     setPrioMenu({ id, x: r.left + r.width / 2, y: r.bottom + 4 });
+  };
+  // Télécommande : popover qui s'ouvre au clic sur la case d'une tâche.
+  // Permet d'agir sur la tâche (changer le statut, ouvrir le fil, dupliquer,
+  // supprimer) — la case N'est PAS une simple validation.
+  const [actMenu, setActMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const openActMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (actMenu?.id === id) {
+      setActMenu(null);
+      return;
+    }
+    const r = e.currentTarget.getBoundingClientRect();
+    setActMenu({ id, x: r.right + 4, y: r.top });
+  };
+  // Menu d'édition du statut (clic sur la pill Statut).
+  const [statusMenu, setStatusMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const openStatusMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (statusMenu?.id === id) {
+      setStatusMenu(null);
+      return;
+    }
+    const r = e.currentTarget.getBoundingClientRect();
+    setStatusMenu({ id, x: r.left + r.width / 2, y: r.bottom + 4 });
   };
   // Menu d'édition des clients liés (multi-sélection, popover via portal).
   const [clientMenu, setClientMenu] = useState<{ id: string; x: number; y: number } | null>(null);
@@ -462,6 +485,7 @@ export function TasksBoard() {
             <div className="tboard-row tboard-row--head">
               <span className="tboard-head-task">Tâche</span>
               <span>Client</span>
+              <span>Statut</span>
               <span>Échéance</span>
               <span>Priorité</span>
               <span>Source</span>
@@ -545,24 +569,38 @@ export function TasksBoard() {
                                   <button
                                     type="button"
                                     className={`tcheck ${t.status === "done" ? "is-done" : ""}`}
-                                    aria-label={t.status === "done" ? "Rouvrir" : "Marquer terminé"}
-                                    onClick={() =>
-                                      setTaskStatus(t.id, t.status === "done" ? "todo" : "done")
-                                    }
+                                    aria-label="Actions de la tâche"
+                                    aria-haspopup="menu"
+                                    aria-expanded={actMenu?.id === t.id}
+                                    onClick={(e) => openActMenu(t.id, e)}
                                   >
-                                    <svg
-                                      viewBox="0 0 24 24"
-                                      width={12}
-                                      height={12}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth={3}
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      aria-hidden
-                                    >
-                                      <polyline points="20 6 9 17 4 12" />
-                                    </svg>
+                                    {t.status === "done" ? (
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        width={12}
+                                        height={12}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={3}
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden
+                                      >
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        width={10}
+                                        height={10}
+                                        fill="currentColor"
+                                        aria-hidden
+                                      >
+                                        <circle cx="5" cy="12" r="2" />
+                                        <circle cx="12" cy="12" r="2" />
+                                        <circle cx="19" cy="12" r="2" />
+                                      </svg>
+                                    )}
                                   </button>
                                 </span>
 
@@ -660,6 +698,27 @@ export function TasksBoard() {
                                     </span>
                                   )}
                                 </button>
+
+                                <span className="tboard-cell tboard-status">
+                                  <button
+                                    type="button"
+                                    className={`tstatus tstatus--${t.status}`}
+                                    aria-haspopup="menu"
+                                    aria-expanded={statusMenu?.id === t.id}
+                                    onClick={(e) => openStatusMenu(t.id, e)}
+                                  >
+                                    <span className="tstatus-dot" />
+                                    {t.status === "to-scope"
+                                      ? "À cadrer"
+                                      : t.status === "todo"
+                                        ? "À faire"
+                                        : t.status === "in-progress"
+                                          ? "En cours"
+                                          : t.status === "awaiting-reply"
+                                            ? "En attente"
+                                            : "Terminé"}
+                                  </button>
+                                </span>
 
                                 <span className={`tboard-cell tboard-due tboard-due--${due.tone}`}>
                                   {editCell?.id === t.id && editCell.field === "due" ? (
@@ -1047,6 +1106,186 @@ export function TasksBoard() {
                   >
                     <span className="tprio-dot" />
                     {label}
+                  </button>
+                ))}
+              </div>
+            </>,
+            document.body
+          );
+        })()}
+
+      {/* Télécommande de la tâche (clic sur la case) */}
+      {actMenu &&
+        typeof document !== "undefined" &&
+        (() => {
+          const t = displayed.find((x) => x.id === actMenu.id);
+          if (!t) return null;
+          const W = 200;
+          const H = 280;
+          const left = Math.max(8, Math.min(window.innerWidth - W - 8, actMenu.x));
+          const top = Math.min(window.innerHeight - H - 8, actMenu.y);
+          const STATUSES: { k: Task["status"]; lbl: string }[] = [
+            { k: "to-scope", lbl: "À cadrer" },
+            { k: "todo", lbl: "À faire" },
+            { k: "in-progress", lbl: "En cours" },
+            { k: "awaiting-reply", lbl: "En attente" },
+            { k: "done", lbl: "Terminé" },
+          ];
+          return createPortal(
+            <>
+              <button
+                type="button"
+                className="tprio-scrim"
+                aria-label="Fermer"
+                onClick={() => setActMenu(null)}
+              />
+              <div
+                className="tact-menu"
+                role="menu"
+                style={{ position: "fixed", left, top, width: W }}
+              >
+                <div className="tact-menu-label">Changer le statut</div>
+                {STATUSES.map((s) => (
+                  <button
+                    key={s.k}
+                    type="button"
+                    className={`tact-opt tact-opt--status tstatus--${s.k} ${t.status === s.k ? "is-active" : ""}`}
+                    onClick={() => {
+                      setTaskStatus(t.id, s.k);
+                      setActMenu(null);
+                    }}
+                  >
+                    <span className="tstatus-dot" />
+                    {s.lbl}
+                  </button>
+                ))}
+                <div className="tact-sep" />
+                {t.conversationId && (
+                  <button
+                    type="button"
+                    className="tact-opt"
+                    onClick={() => {
+                      openTask(t);
+                      setActMenu(null);
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width={14}
+                      height={14}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    Ouvrir le fil
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="tact-opt"
+                  onClick={() => {
+                    addTask({
+                      ...t,
+                      id: `dup-${Date.now()}`,
+                      title: `${t.title} (copie)`,
+                      sortableIndex: Date.now(),
+                    });
+                    setActMenu(null);
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width={14}
+                    height={14}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <rect x="9" y="9" width="12" height="12" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  Dupliquer
+                </button>
+                <button
+                  type="button"
+                  className="tact-opt tact-opt--danger"
+                  onClick={() => {
+                    removeTask(t.id);
+                    setActMenu(null);
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width={14}
+                    height={14}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  </svg>
+                  Supprimer
+                </button>
+              </div>
+            </>,
+            document.body
+          );
+        })()}
+
+      {/* Menu Statut (clic sur la pill Statut) */}
+      {statusMenu &&
+        typeof document !== "undefined" &&
+        (() => {
+          const t = displayed.find((x) => x.id === statusMenu.id);
+          if (!t) return null;
+          const W = 160;
+          const H = 200;
+          const left = Math.max(8, Math.min(window.innerWidth - W - 8, statusMenu.x - W / 2));
+          const top = Math.min(window.innerHeight - H - 8, statusMenu.y);
+          const STATUSES: { k: Task["status"]; lbl: string }[] = [
+            { k: "to-scope", lbl: "À cadrer" },
+            { k: "todo", lbl: "À faire" },
+            { k: "in-progress", lbl: "En cours" },
+            { k: "awaiting-reply", lbl: "En attente" },
+            { k: "done", lbl: "Terminé" },
+          ];
+          return createPortal(
+            <>
+              <button
+                type="button"
+                className="tprio-scrim"
+                aria-label="Fermer"
+                onClick={() => setStatusMenu(null)}
+              />
+              <div
+                className="tact-menu"
+                role="menu"
+                style={{ position: "fixed", left, top, width: W }}
+              >
+                {STATUSES.map((s) => (
+                  <button
+                    key={s.k}
+                    type="button"
+                    className={`tact-opt tact-opt--status tstatus--${s.k} ${t.status === s.k ? "is-active" : ""}`}
+                    onClick={() => {
+                      setTaskStatus(t.id, s.k);
+                      setStatusMenu(null);
+                    }}
+                  >
+                    <span className="tstatus-dot" />
+                    {s.lbl}
                   </button>
                 ))}
               </div>

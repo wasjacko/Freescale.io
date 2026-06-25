@@ -27998,7 +27998,7 @@ button.sidebar-brand {
 }
 .tboard-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 104px 124px 112px 96px;
+  grid-template-columns: 44px minmax(0, 1fr) 104px 116px 124px 112px 96px;
   align-items: stretch;
   min-height: 44px;
   box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.16);
@@ -31103,4 +31103,151 @@ button.sidebar-brand {
 }
 [data-theme="dark"] .mue2-video-bullets li {
   color: var(--body);
+}
+
+/* ════════════ Colonne Statut + télécommande des tâches ════════════ */
+.tboard-status {
+  justify-content: center;
+}
+.tstatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: filter 130ms var(--ease);
+}
+.tstatus:hover {
+  filter: brightness(0.96);
+}
+.tstatus-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.85;
+}
+.tstatus--to-scope {
+  background: rgba(139, 92, 246, 0.14);
+  color: #6d28d9;
+}
+.tstatus--todo {
+  background: rgba(79, 108, 247, 0.14);
+  color: #4f6cf7;
+}
+.tstatus--in-progress {
+  background: rgba(217, 119, 6, 0.16);
+  color: #b4630a;
+}
+.tstatus--awaiting-reply {
+  background: rgba(8, 145, 178, 0.16);
+  color: #0891b2;
+}
+.tstatus--done {
+  background: rgba(22, 163, 74, 0.16);
+  color: #16a34a;
+}
+[data-theme="dark"] .tstatus--to-scope {
+  background: rgba(139, 92, 246, 0.22);
+  color: #c4b5fd;
+}
+[data-theme="dark"] .tstatus--todo {
+  background: rgba(120, 140, 255, 0.22);
+  color: #c2c9ff;
+}
+[data-theme="dark"] .tstatus--in-progress {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fbbf24;
+}
+[data-theme="dark"] .tstatus--awaiting-reply {
+  background: rgba(8, 145, 178, 0.28);
+  color: #67e8f9;
+}
+[data-theme="dark"] .tstatus--done {
+  background: rgba(22, 163, 74, 0.24);
+  color: #86efac;
+}
+
+/* Menu télécommande (clic case) + menu Statut */
+.tact-menu {
+  z-index: 131;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.18), inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+}
+[data-theme="dark"] .tact-menu {
+  background: #1c1c25;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.tact-menu-label {
+  padding: 6px 9px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9aa0aa;
+}
+.tact-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #344054;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms var(--ease);
+}
+.tact-opt:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .tact-opt {
+  color: var(--body);
+}
+[data-theme="dark"] .tact-opt:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.tact-opt svg {
+  flex: none;
+  color: #6b7280;
+}
+.tact-opt--status {
+  font-weight: 700;
+}
+.tact-opt--status.is-active {
+  background: rgba(15, 23, 42, 0.04);
+}
+[data-theme="dark"] .tact-opt--status.is-active {
+  background: rgba(255, 255, 255, 0.07);
+}
+.tact-opt--danger {
+  color: #dc2626;
+}
+.tact-opt--danger svg {
+  color: #dc2626;
+}
+.tact-opt--danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+}
+.tact-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: rgba(15, 23, 42, 0.08);
+}
+[data-theme="dark"] .tact-sep {
+  background: rgba(255, 255, 255, 0.1);
 }
