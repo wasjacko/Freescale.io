@@ -169,12 +169,6 @@ export function ClientsView() {
       }));
   }, []);
 
-  // ─ Top 3 « Mue priorise » (les plus urgents) ─────────────────────
-  const muePriority = useMemo(
-    () => [...MOCK_CLIENTS].sort((a, b) => attentionScore(b) - attentionScore(a)).slice(0, 3),
-    []
-  );
-
   // ─ Grille filtrée ────────────────────────────────────────────────
   const clients = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -194,14 +188,11 @@ export function ClientsView() {
       .sort((a, b) => attentionScore(b) - attentionScore(a));
   }, [filter, query]);
 
-  // ─ Insight Mue nominatif (pas un chiffre générique abstrait) ─────
-  const silentLeader = useMemo(
-    () => [...MOCK_CLIENTS].sort((a, b) => (b.silentDays ?? 0) - (a.silentDays ?? 0))[0],
-    []
-  );
+  // ─ Insights observationnels neutres ──────────────────────────────
   const avgChannels = (
     MOCK_CLIENTS.reduce((s, c) => s + c.channels.length, 0) / Math.max(1, MOCK_CLIENTS.length)
   ).toFixed(1);
+  const topChannel = channelDist[0];
 
   const openClient = MOCK_CLIENTS.find((c) => c.id === activeClientId) ?? null;
   if (openClient) {
@@ -221,13 +212,8 @@ export function ClientsView() {
         <div>
           <h1 className="csv3-title">Santé client</h1>
           <p className="csv3-sub">
-            Vue d'ensemble de tes relations — <strong>{total}</strong> clients suivis
-            {atRiskCount > 0 ? (
-              <>
-                , dont <strong>{atRiskCount}</strong> en tension
-              </>
-            ) : null}
-            .
+            Vue d'ensemble de tes relations — <strong>{total}</strong> clients suivis sur{" "}
+            <strong>{channelDist.length}</strong> canaux.
           </p>
         </div>
         <div className="csv3-head__tools">
@@ -296,15 +282,13 @@ export function ClientsView() {
           }
         />
         <KpiCard
-          accent="risk"
-          label="Relations à risque"
-          hint="Silence, attente trop longue, ou stade dormant"
+          accent="neutral"
+          label="En veille"
+          hint="Relations dormantes ou en attente prolongée"
           value={atRiskCount}
           icon={
             <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12" y2="17" />
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
             </svg>
           }
         />
@@ -330,50 +314,6 @@ export function ClientsView() {
         </p>
       )}
 
-      {/* ── Relations les plus tendues — observation, pas action ──
-           Les cartes restent cliquables pour consulter la fiche (drill-down),
-           mais pas de CTA explicite : on est dans la consultation, pas l'agir. */}
-      <section className="csv3-priority" aria-label="Relations les plus tendues">
-        <header className="csv3-priority__head">
-          <span className="csv3-priority__mark" aria-hidden>
-            <MueSparkSmall />
-          </span>
-          <div>
-            <h2>Relations les plus tendues</h2>
-            <p>Top 3 selon le score d'attention calculé par Mue — clique pour consulter</p>
-          </div>
-        </header>
-        <div className="csv3-priority__list">
-          {muePriority.map((c, i) => {
-            const h = relationHealth(c);
-            const m = moneySignal(c);
-            return (
-              <button
-                key={c.id}
-                type="button"
-                className="csv3-prio csv3-prio--btn"
-                onClick={() => setActiveClientId(c.id)}
-              >
-                <span className="csv3-prio__rank">#{i + 1}</span>
-                <Avatar avatar={{ ...c.avatar, alt: c.name }} size={36} />
-                <div className="csv3-prio__id">
-                  <span className="csv3-prio__name">{c.name}</span>
-                  <span className="csv3-prio__reason">
-                    {m.label ? <span className="csv3-prio__money">{m.label}</span> : null}
-                    {m.label && h.state !== "ok" ? <span className="csv3-prio__sep">·</span> : null}
-                    <span className={`csv3-prio__rel csv3-prio__rel--${h.state}`}>{h.label}</span>
-                  </span>
-                </div>
-                <span className="csv3-prio__chev" aria-hidden>
-                  <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
 
       {/* ── 2 visualisations : donut stade + barre canal (le bon type de chart) ── */}
       <div className="csv3-charts">
@@ -463,30 +403,30 @@ export function ClientsView() {
         </div>
       )}
 
-      {/* ── Insights Mue : observations (pas de CTA, on est en consultation) ── */}
+      {/* ── Insights Mue : observations neutres sur le portefeuille ── */}
       <div className="csv3-insights">
         <article className="csv3-insight">
           <span className="csv3-insight__ic" aria-hidden>
             <MueSparkSmall />
           </span>
           <p>
-            {silentLeader ? (
+            {topChannel ? (
               <>
-                Silence le plus long observé : <strong>{silentLeader.name}</strong> —{" "}
-                <strong>{silentLeader.silentDays ?? 0}&nbsp;j</strong> sans réponse.
+                Ton canal principal est <strong>{topChannel.label}</strong> —{" "}
+                <strong>{topChannel.pct}&nbsp;%</strong> de tes échanges y passent.
               </>
             ) : (
-              <>Aucun silence supérieur à 10 jours détecté sur tes relations.</>
+              <>Aucun canal connecté pour l'instant.</>
             )}
           </p>
         </article>
         <article className="csv3-insight">
-          <span className="csv3-insight__ic csv3-insight__ic--warn" aria-hidden>
+          <span className="csv3-insight__ic" aria-hidden>
             <MueSparkSmall />
           </span>
           <p>
             Tes clients t'écrivent en moyenne sur <strong>{avgChannels}&nbsp;canaux</strong> —
-            une mesure de la dispersion de tes échanges.
+            Freescale les regroupe tous en un seul endroit.
           </p>
         </article>
       </div>
