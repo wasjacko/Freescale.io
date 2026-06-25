@@ -5336,33 +5336,35 @@ html {
   padding-left: 30px;
   color: #6b7280;
 }
+/* Items de la sidebar Inbox — strictement alignés sur le toggle Tableau/
+   Kanban (h32, radius 5, font 12.5/500, gap 6, padding 0 12, color #5b6475).
+   Inactif = transparent ; actif = fond blanc + ombre douce (comme is-on). */
 .ibx-folder {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
   width: 100%;
   min-width: 0;
-  height: 34px;
-  padding: 0 9px;
+  height: 32px;
+  padding: 0 12px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 5px;
   background: transparent;
   color: #5b6475;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
   transition: background 140ms var(--ease), color 140ms var(--ease);
 }
 .ibx-folder:hover {
-  background: rgba(15, 23, 42, 0.045);
   color: var(--ink, #10131a);
 }
 .ibx-folder.active {
-  background: rgba(10, 10, 10, 0.09);
+  background: #fff;
   color: var(--ink, #10131a);
-  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
 }
 .ibx-folder-ic {
   width: 16px;
@@ -31537,8 +31539,10 @@ button.mfv-model:hover {
   transform: translateY(-1px);
 }
 
-/* ── ITEMS DE LISTE (sidebar / menus / discussions) ─────────────────── */
-.ibx-folder,
+/* ── ITEMS DE LISTE (sidebar / menus / discussions) ───────────────────
+   Note : .ibx-folder est volontairement EXCLU — il suit le style du
+   toggle Tableau/Kanban (h32 / radius 5 / font 12.5/500) pour une
+   cohérence stricte de toute l'app. Voir .ibx-folder ci-dessus. */
 .mfv-item,
 .mue2-disc-item,
 .tdetail-item,
