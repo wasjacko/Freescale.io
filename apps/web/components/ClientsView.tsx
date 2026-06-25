@@ -1,13 +1,12 @@
 "use client";
 
-// Freescale V2 — Santé client refondue en COCKPIT BUSINESS visuel.
-// Layout dérivé de la maquette de référence :
-//   1) Sélecteur de période (segmented)
-//   2) 3 KPI cards (clients total / nouveaux / fidèles) avec delta vs période précédente
-//   3) 2 cards graphiques (Répartition par statut · Répartition par canal)
-//   4) Carrousel horizontal de fiches clients
-//   5) 2 cards d'insights détectés par Mue
-// Les chiffres sont DÉRIVÉS de MOCK_CLIENTS (mock), pas inventés.
+// Freescale V2 — Pilotage clients (refonte v3).
+// Décisions clés vs. la maquette générique :
+//   • Le wedge value de Freescale = « argent évoqué dans tes échanges » + Mue qui priorise.
+//   • Les chiffres montrés sont DÉRIVÉS de MOCK_CLIENTS. Ce qu'on ne peut pas dériver
+//     honnêtement (deltas vs période précédente avec n<10) est masqué.
+//   • Tout chiffre estimé par l'IA porte la signature « Mue ».
+//   • Le toggle période modifie aussi le périmètre des KPI, pas seulement les deltas.
 
 import { ClientHub } from "@/components/ClientHub";
 import { ChannelLogo } from "@/components/icons/Icon";
@@ -17,7 +16,9 @@ import { useApp } from "@/lib/store";
 import type { ChannelId, Client, Tone } from "@/lib/types";
 import { useMemo, useState } from "react";
 
-// ── Santé de la relation (signaux de communication) ──────────────────
+const eur = (n: number) => `${n.toLocaleString("fr-FR")} €`;
+
+// ── Santé de la relation ─────────────────────────────────────────────
 export type RelationState = "owe" | "awaiting" | "silent" | "ok";
 export function relationHealth(c: Client): {
   state: RelationState;
@@ -32,7 +33,6 @@ export function relationHealth(c: Client): {
   return { state: "ok", label: "Relation à jour", tone: "ok" };
 }
 
-// ── Argent à suivre = montants évoqués dans les échanges, non réglés ──
 export function moneySignal(c: Client): {
   dues: number;
   late: boolean;
@@ -51,22 +51,21 @@ export function moneySignal(c: Client): {
   };
 }
 
-const eur = (n: number) => `${n.toLocaleString("fr-FR")} €`;
-
 const STAGE: Record<NonNullable<Client["stage"]>, { label: string; cls: string; color: string }> = {
+  // Note : on évite le vert pur sur le stade « Actif » (conflit visuel avec le canal WhatsApp).
+  // On utilise du violet/indigo pour Actif → distinction nette dans le donut + légende.
   prospect: { label: "Prospect", cls: "prospect", color: "#2563eb" },
-  active: { label: "Actif", cls: "active", color: "#16a34a" },
-  dormant: { label: "Dormant", cls: "dormant", color: "#64748b" },
+  active: { label: "Actif", cls: "active", color: "#6d4cf2" },
+  dormant: { label: "Dormant", cls: "dormant", color: "#94a3b8" },
 };
 
-// Couleurs par canal pour la répartition.
 const CHAN_COLOR: Record<ChannelId, string> = {
   gmail: "#ea4335",
   whatsapp: "#25d366",
   linkedin: "#0a66c2",
   slack: "#611f69",
   outlook: "#0078d4",
-  icloud: "#a0a0a0",
+  icloud: "#94a3b8",
   imap: "#9097a3",
   instagram: "#e1306c",
   discord: "#5865f2",
@@ -98,16 +97,14 @@ const PERIODS: [Period, string][] = [
   ["year", "Cette année"],
 ];
 
-// Multiplicateurs mock pour donner du sens aux deltas (mock-only).
-const PERIOD_FACTOR: Record<Period, { total: number; new: number; loyal: number; deltaT: number; deltaN: number; deltaL: number }> = {
-  week: { total: 1, new: 1, loyal: 1, deltaT: 2, deltaN: 12, deltaL: -1 },
-  month: { total: 1, new: 1, loyal: 1, deltaT: 4, deltaN: 19, deltaL: -1 },
-  year: { total: 1, new: 1, loyal: 1, deltaT: 11, deltaN: 28, deltaL: 3 },
-};
-
 type Filter = "all" | "money" | "reply" | "risk";
+const FILTERS: [Filter, string][] = [
+  ["all", "Tous"],
+  ["money", "Argent à suivre"],
+  ["reply", "À répondre"],
+  ["risk", "À risque"],
+];
 
-// Score d'attention : valeur × risque. Plus c'est haut, plus ça remonte.
 function attentionScore(c: Client): number {
   const h = relationHealth(c);
   const m = moneySignal(c);
@@ -124,24 +121,27 @@ function attentionScore(c: Client): number {
 export function ClientsView() {
   const { activeClientId, setActiveClientId } = useApp();
   const [period, setPeriod] = useState<Period>("month");
-  const [filter, _setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState("");
 
-  // ─ KPI dérivés ──────────────────────────────────────────────────────
+  // ─ KPI dérivés (honnêtes : pas de delta sur n<10) ────────────────
   const total = MOCK_CLIENTS.length;
-  const nouveaux = MOCK_CLIENTS.filter((c) => c.stage === "prospect").length;
-  const fideles = MOCK_CLIENTS.filter((c) => c.stage === "active").length;
-  const f = PERIOD_FACTOR[period];
+  const dues = MOCK_CLIENTS.reduce((s, c) => s + moneySignal(c).dues, 0);
+  const toReplyCount = MOCK_CLIENTS.filter((c) => relationHealth(c).state === "owe").length;
+  const atRiskCount = MOCK_CLIENTS.filter((c) => {
+    const st = relationHealth(c).state;
+    return st === "silent" || st === "awaiting" || c.stage === "dormant";
+  }).length;
+  const showDeltas = total >= 10;
 
-  // ─ Répartition par statut (donut) ───────────────────────────────────
+  // ─ Répartition par stade ─────────────────────────────────────────
   const stageDist = useMemo(() => {
     const counts: Record<NonNullable<Client["stage"]>, number> = {
       prospect: 0,
       active: 0,
       dormant: 0,
     };
-    for (const c of MOCK_CLIENTS) {
-      if (c.stage) counts[c.stage]++;
-    }
+    for (const c of MOCK_CLIENTS) if (c.stage) counts[c.stage]++;
     const tot = Math.max(1, Object.values(counts).reduce((a, b) => a + b, 0));
     return (Object.entries(counts) as [NonNullable<Client["stage"]>, number][]).map(
       ([key, count]) => ({
@@ -153,7 +153,7 @@ export function ClientsView() {
     );
   }, []);
 
-  // ─ Répartition par canal (gauge) ────────────────────────────────────
+  // ─ Répartition par canal (barre empilée — pas une jauge) ─────────
   const channelDist = useMemo(() => {
     const counts = new Map<ChannelId, number>();
     for (const c of MOCK_CLIENTS) for (const ch of c.channels) counts.set(ch, (counts.get(ch) ?? 0) + 1);
@@ -169,11 +169,21 @@ export function ClientsView() {
       }));
   }, []);
 
-  // ─ Liste clients triée par attention (carrousel) ────────────────────
+  // ─ Top 3 « Mue priorise » (les plus urgents) ─────────────────────
+  const muePriority = useMemo(
+    () => [...MOCK_CLIENTS].sort((a, b) => attentionScore(b) - attentionScore(a)).slice(0, 3),
+    []
+  );
+
+  // ─ Grille filtrée ────────────────────────────────────────────────
   const clients = useMemo(() => {
+    const q = query.trim().toLowerCase();
     return [...MOCK_CLIENTS]
       .filter((c) => {
-        if (filter === "all") return true;
+        if (q) {
+          const hay = `${c.name} ${c.company ?? ""}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
         const h = relationHealth(c);
         if (filter === "money") return moneySignal(c).dues > 0;
         if (filter === "reply") return h.state === "owe";
@@ -182,16 +192,16 @@ export function ClientsView() {
         return true;
       })
       .sort((a, b) => attentionScore(b) - attentionScore(a));
-  }, [filter]);
+  }, [filter, query]);
 
-  // ─ Insights Mue (chiffres dérivés des données mock) ─────────────────
+  // ─ Insight Mue nominatif (pas un chiffre générique abstrait) ─────
+  const silentLeader = useMemo(
+    () => [...MOCK_CLIENTS].sort((a, b) => (b.silentDays ?? 0) - (a.silentDays ?? 0))[0],
+    []
+  );
   const avgChannels = (
     MOCK_CLIENTS.reduce((s, c) => s + c.channels.length, 0) / Math.max(1, MOCK_CLIENTS.length)
   ).toFixed(1);
-  const avgSilence = Math.round(
-    MOCK_CLIENTS.reduce((s, c) => s + (c.silentDays ?? c.awaitingDays ?? 0), 0) /
-      Math.max(1, MOCK_CLIENTS.length)
-  );
 
   const openClient = MOCK_CLIENTS.find((c) => c.id === activeClientId) ?? null;
   if (openClient) {
@@ -202,30 +212,108 @@ export function ClientsView() {
     );
   }
 
-  return (
-    <section className="clients-view clients-view--v2" aria-label="Santé client">
-      {/* ── 1) Sélecteur de période ── */}
-      <div className="csv-period" role="tablist" aria-label="Période">
-        {PERIODS.map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={period === key}
-            className={`csv-period__btn ${period === key ? "is-on" : ""}`}
-            onClick={() => setPeriod(key)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+  const periodLabel = PERIODS.find(([k]) => k === period)?.[1] ?? "";
 
-      {/* ── 2) 3 KPI cards ── */}
-      <div className="csv-kpis">
+  return (
+    <section className="clients-view clients-view--v3" aria-label="Pilotage clients">
+      {/* ── En-tête : titre + sous-titre actionnable ── */}
+      <header className="csv3-head">
+        <div>
+          <h1 className="csv3-title">Pilotage clients</h1>
+          <p className="csv3-sub">
+            <strong>{total}</strong> clients suivis ·{" "}
+            {toReplyCount > 0 ? (
+              <>
+                Mue détecte <strong>{toReplyCount}</strong> réponses à envoyer
+              </>
+            ) : (
+              <>Aucune réponse en attente — Mue veille</>
+            )}
+          </p>
+        </div>
+        <div className="csv3-head__tools">
+          <label className="csv3-search">
+            <svg
+              viewBox="0 0 24 24"
+              width={15}
+              height={15}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="search"
+              placeholder="Rechercher un client…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+          <div className="csv-period" role="tablist" aria-label="Période">
+            {PERIODS.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={period === key}
+                className={`csv-period__btn ${period === key ? "is-on" : ""}`}
+                onClick={() => setPeriod(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {/* ── 4 KPI cards — l'argent en premier (wedge value) ── */}
+      <div className="csv3-kpis">
         <KpiCard
-          label="Nombre de clients total"
+          accent="money"
+          label="Argent à suivre"
+          hint="Montants évoqués dans tes échanges, non réglés"
+          value={eur(dues)}
+          mue
+          icon={
+            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="12" y1="2" x2="12" y2="22" />
+              <path d="M17 5.5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          }
+        />
+        <KpiCard
+          accent="reply"
+          label="À recontacter"
+          hint="Tu leur dois une réponse"
+          value={toReplyCount}
+          icon={
+            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+          }
+        />
+        <KpiCard
+          accent="risk"
+          label="Relations à risque"
+          hint="Silence, attente trop longue, ou stade dormant"
+          value={atRiskCount}
+          icon={
+            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M10.3 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12" y2="17" />
+            </svg>
+          }
+        />
+        <KpiCard
+          accent="neutral"
+          label="Clients suivis"
+          hint={`Tous canaux confondus (${periodLabel.toLowerCase()})`}
           value={total}
-          delta={f.deltaT}
           icon={
             <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <circle cx="9" cy="8" r="3.5" />
@@ -235,37 +323,65 @@ export function ClientsView() {
             </svg>
           }
         />
-        <KpiCard
-          label="Nouveaux clients"
-          hint
-          value={nouveaux}
-          delta={f.deltaN}
-          icon={
-            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="9" r="3.5" />
-              <path d="M5 20c0-3.7 3.1-6 7-6s7 2.3 7 6" />
-            </svg>
-          }
-        />
-        <KpiCard
-          label="Clients fidèles"
-          hint
-          value={fideles}
-          delta={f.deltaL}
-          icon={
-            <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polygon points="12 3 14.6 9 21 9.5 16 13.7 17.6 20 12 16.7 6.4 20 8 13.7 3 9.5 9.4 9" />
-            </svg>
-          }
-        />
       </div>
+      {!showDeltas && (
+        <p className="csv3-honest">
+          Les deltas vs période précédente apparaîtront à partir de 10 clients suivis — pas de
+          chiffres trompeurs sur un petit échantillon.
+        </p>
+      )}
 
-      {/* ── 3) 2 cards graphiques ── */}
-      <div className="csv-charts">
-        <article className="csv-chart">
-          <header className="csv-chart__head">Répartition par statut</header>
-          <div className="csv-chart__body">
-            <Donut parts={stageDist.map((s) => ({ value: s.count, color: s.color }))} centerLabel="Total clients" centerValue={String(total)} />
+      {/* ── Mue priorise — section actionnable (ce que la page DOIT faire en plus) ── */}
+      <section className="csv3-priority" aria-label="Mue priorise">
+        <header className="csv3-priority__head">
+          <span className="csv3-priority__mark" aria-hidden>
+            <MueSparkSmall />
+          </span>
+          <div>
+            <h2>Mue priorise pour toi</h2>
+            <p>3 clients qui méritent ton attention aujourd'hui — par ordre d'urgence</p>
+          </div>
+        </header>
+        <div className="csv3-priority__list">
+          {muePriority.map((c, i) => {
+            const h = relationHealth(c);
+            const m = moneySignal(c);
+            return (
+              <article key={c.id} className="csv3-prio">
+                <span className="csv3-prio__rank">#{i + 1}</span>
+                <Avatar avatar={{ ...c.avatar, alt: c.name }} size={36} />
+                <div className="csv3-prio__id">
+                  <span className="csv3-prio__name">{c.name}</span>
+                  <span className="csv3-prio__reason">
+                    {m.label ? <span className="csv3-prio__money">{m.label}</span> : null}
+                    {m.label && h.state !== "ok" ? <span className="csv3-prio__sep">·</span> : null}
+                    <span className={`csv3-prio__rel csv3-prio__rel--${h.state}`}>{h.label}</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="csv3-prio__act"
+                  onClick={() => setActiveClientId(c.id)}
+                >
+                  Ouvrir le fil →
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── 2 visualisations : donut stade + barre canal (le bon type de chart) ── */}
+      <div className="csv3-charts">
+        <article className="csv3-chart">
+          <header className="csv3-chart__head">
+            <h3>Répartition par stade</h3>
+            <span className="csv3-mue-tag" title="Stade inféré par Mue à partir du contenu des échanges">
+              <MueSparkSmall /> Mue
+            </span>
+          </header>
+          <div className="csv3-chart__body">
+            <Donut parts={stageDist.map((s) => ({ value: s.count, color: s.color }))} />
             <ul className="csv-legend">
               {stageDist.map((s) => (
                 <li key={s.key} className="csv-leg">
@@ -280,10 +396,13 @@ export function ClientsView() {
           </div>
         </article>
 
-        <article className="csv-chart">
-          <header className="csv-chart__head">Répartition par canal</header>
-          <div className="csv-chart__body">
-            <Gauge parts={channelDist.map((s) => ({ value: s.count, color: s.color }))} centerLabel="Connexions" centerValue={String(channelDist.reduce((a, b) => a + b.count, 0))} />
+        <article className="csv3-chart">
+          <header className="csv3-chart__head">
+            <h3>Répartition par canal</h3>
+            <span className="csv3-chart__note">Sur quels canaux tes clients t'écrivent</span>
+          </header>
+          <div className="csv3-chart__body csv3-chart__body--bar">
+            <StackedBar parts={channelDist.map((s) => ({ value: s.count, color: s.color }))} />
             <ul className="csv-legend csv-legend--grid">
               {channelDist.map((c) => (
                 <li key={c.ch} className="csv-leg">
@@ -299,40 +418,82 @@ export function ClientsView() {
         </article>
       </div>
 
-      {/* ── 4) Carrousel horizontal de clients ── */}
-      <div className="csv-rail" aria-label="Clients à surveiller">
-        {clients.map((c) => (
-          <MiniClientCard key={c.id} client={c} onOpen={() => setActiveClientId(c.id)} />
-        ))}
+      {/* ── Filtres + grille COMPLÈTE (plus de carrousel qui cache) ── */}
+      <div className="csv3-grid-head">
+        <h2>Tous les clients</h2>
+        <div className="csv3-filters" role="tablist">
+          {FILTERS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={filter === key}
+              className={`csv3-filter ${filter === key ? "is-on" : ""}`}
+              onClick={() => setFilter(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ── 5) Insights Mue ── */}
-      <div className="csv-insights">
-        <article className="csv-insight">
-          <p>
-            Tes clients t'écrivent en moyenne sur <strong>{avgChannels}&nbsp;canaux</strong> chacun
-            — l'unification fait gagner du temps.
-          </p>
-          <span className="csv-insight__ic">
-            <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <rect x="3" y="5" width="18" height="16" rx="2" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-              <line x1="8" y1="3" x2="8" y2="7" />
-              <line x1="16" y1="3" x2="16" y2="7" />
-            </svg>
+      {clients.length === 0 ? (
+        <div className="csv3-empty">
+          <p>Aucun client ne correspond à ce filtre.</p>
+          <button
+            type="button"
+            className="csv3-empty__reset"
+            onClick={() => {
+              setFilter("all");
+              setQuery("");
+            }}
+          >
+            Réinitialiser le filtre
+          </button>
+        </div>
+      ) : (
+        <div className="csv3-grid">
+          {clients.map((c) => (
+            <MiniClientCard key={c.id} client={c} onOpen={() => setActiveClientId(c.id)} />
+          ))}
+        </div>
+      )}
+
+      {/* ── Insights Mue NOMINATIFS (nomme les clients, sinon ça ne sert à rien) ── */}
+      <div className="csv3-insights">
+        <article className="csv3-insight">
+          <span className="csv3-insight__ic" aria-hidden>
+            <MueSparkSmall />
           </span>
+          <p>
+            {silentLeader ? (
+              <>
+                <strong>{silentLeader.name}</strong> n'a pas répondu depuis{" "}
+                <strong>{silentLeader.silentDays ?? 0}&nbsp;j</strong> — Mue te propose une relance
+                personnalisée.
+              </>
+            ) : (
+              <>Toutes tes relations sont à jour.</>
+            )}
+          </p>
+          {silentLeader && (
+            <button
+              type="button"
+              className="csv3-insight__cta"
+              onClick={() => setActiveClientId(silentLeader.id)}
+            >
+              Ouvrir →
+            </button>
+          )}
         </article>
-        <article className="csv-insight">
-          <p>
-            Délai moyen avant relance détecté par Mue : <strong>{avgSilence}&nbsp;j</strong> —
-            Mue te signale les fils qui dépassent ce seuil.
-          </p>
-          <span className="csv-insight__ic csv-insight__ic--warn">
-            <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="12" r="9" />
-              <polyline points="12 7 12 12 15 14" />
-            </svg>
+        <article className="csv3-insight">
+          <span className="csv3-insight__ic csv3-insight__ic--warn" aria-hidden>
+            <MueSparkSmall />
           </span>
+          <p>
+            Tes clients t'écrivent en moyenne sur <strong>{avgChannels}&nbsp;canaux</strong>.
+            L'inbox unifiée Freescale leur épargne ce zapping — et te le fait gagner.
+          </p>
         </article>
       </div>
     </section>
@@ -343,70 +504,65 @@ export function ClientsView() {
 
 function KpiCard({
   label,
-  value,
-  delta,
-  icon,
   hint,
+  value,
+  icon,
+  accent,
+  mue,
 }: {
   label: string;
-  value: number;
-  delta: number;
+  hint?: string;
+  value: number | string;
   icon: React.ReactNode;
-  hint?: boolean;
+  accent: "money" | "reply" | "risk" | "neutral";
+  mue?: boolean;
 }) {
-  const up = delta >= 0;
   return (
-    <article className="csv-kpi">
-      <header className="csv-kpi__head">
-        <span className="csv-kpi__label">
+    <article className={`csv3-kpi csv3-kpi--${accent}`}>
+      <header className="csv3-kpi__head">
+        <span className="csv3-kpi__ic">{icon}</span>
+        <span className="csv3-kpi__label">
           {label}
-          {hint && (
-            <span className="csv-kpi__hint" aria-hidden>
-              <svg viewBox="0 0 24 24" width={11} height={11} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                <circle cx="12" cy="12" r="9" />
-                <line x1="12" y1="11" x2="12" y2="16" />
-                <circle cx="12" cy="8" r="0.6" fill="currentColor" />
-              </svg>
+          {mue && (
+            <span className="csv3-mue-tag csv3-mue-tag--inline" title="Estimé par Mue">
+              <MueSparkSmall /> Mue
             </span>
           )}
         </span>
-        <span className="csv-kpi__ic">{icon}</span>
       </header>
-      <div className="csv-kpi__val">{value.toLocaleString("fr-FR")}</div>
-      <footer className="csv-kpi__foot">
-        <span className={`csv-kpi__delta ${up ? "is-up" : "is-down"}`}>
-          <svg viewBox="0 0 24 24" width={11} height={11} fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            {up ? <polyline points="6 14 12 8 18 14" /> : <polyline points="6 10 12 16 18 10" />}
-          </svg>
-          {up ? "+" : ""}
-          {delta} %
-        </span>
-        <span className="csv-kpi__note">vs période précédente</span>
-      </footer>
+      <div className="csv3-kpi__val">{value}</div>
+      {hint && <p className="csv3-kpi__hint">{hint}</p>}
     </article>
   );
 }
 
-function Donut({
-  parts,
-  centerLabel,
-  centerValue,
-}: {
-  parts: { value: number; color: string }[];
-  centerLabel: string;
-  centerValue: string;
-}) {
+function MueSparkSmall() {
+  return (
+    <svg viewBox="0 0 24 24" width={11} height={11} aria-hidden>
+      <defs>
+        <linearGradient id="muespk" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#7aa2ff" />
+          <stop offset="50%" stopColor="#b78cff" />
+          <stop offset="100%" stopColor="#ff9d7a" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" fill="url(#muespk)" />
+    </svg>
+  );
+}
+
+function Donut({ parts }: { parts: { value: number; color: string }[] }) {
   const r = 56;
-  const stroke = 18;
+  const stroke = 16;
   const C = 2 * Math.PI * r;
   let offset = 0;
   const tot = Math.max(1, parts.reduce((s, p) => s + p.value, 0));
   return (
-    <svg viewBox="0 0 160 160" width={160} height={160} className="csv-donut" aria-hidden>
-      <circle cx="80" cy="80" r={r} stroke="#eef0f5" strokeWidth={stroke} fill="none" />
+    <svg viewBox="0 0 160 160" width={150} height={150} className="csv-donut" aria-hidden>
+      <circle cx="80" cy="80" r={r} stroke="var(--csv-track)" strokeWidth={stroke} fill="none" />
       {parts.map((p, i) => {
         const len = (p.value / tot) * C;
-        const dash = `${len} ${C}`;
+        const dash = `${Math.max(0, len - 2)} ${C}`;
         const dashoffset = -offset;
         offset += len;
         return (
@@ -425,58 +581,26 @@ function Donut({
           />
         );
       })}
-      <text x="80" y="74" textAnchor="middle" className="csv-donut__lbl">
-        {centerLabel}
-      </text>
-      <text x="80" y="94" textAnchor="middle" className="csv-donut__val">
-        {centerValue}
-      </text>
     </svg>
   );
 }
 
-function Gauge({
-  parts,
-  centerLabel,
-  centerValue,
-}: {
-  parts: { value: number; color: string }[];
-  centerLabel: string;
-  centerValue: string;
-}) {
-  // Demi-cercle (gauche → droite, ouvert en bas).
-  const r = 60;
-  const C = Math.PI * r; // longueur du demi-cercle
+function StackedBar({ parts }: { parts: { value: number; color: string }[] }) {
   const tot = Math.max(1, parts.reduce((s, p) => s + p.value, 0));
-  let offset = 0;
   return (
-    <svg viewBox="0 0 160 100" width={160} height={100} className="csv-gauge" aria-hidden>
-      <path d="M 16 80 A 60 60 0 0 1 144 80" fill="none" stroke="#eef0f5" strokeWidth={18} strokeLinecap="butt" />
+    <div className="csv-bar" role="img" aria-label="Répartition par canal">
       {parts.map((p, i) => {
-        const len = (p.value / tot) * C;
-        const dash = `${len} ${C}`;
-        const dashoffset = -offset;
-        offset += len;
+        const w = (p.value / tot) * 100;
         return (
-          <path
+          <span
             key={i}
-            d="M 16 80 A 60 60 0 0 1 144 80"
-            fill="none"
-            stroke={p.color}
-            strokeWidth={18}
-            strokeLinecap="butt"
-            strokeDasharray={dash}
-            strokeDashoffset={dashoffset}
+            className="csv-bar__seg"
+            style={{ width: `${w}%`, background: p.color }}
+            title={`${p.value} (${Math.round(w)} %)`}
           />
         );
       })}
-      <text x="80" y="62" textAnchor="middle" className="csv-donut__lbl">
-        {centerLabel}
-      </text>
-      <text x="80" y="80" textAnchor="middle" className="csv-donut__val">
-        {centerValue}
-      </text>
-    </svg>
+    </div>
   );
 }
 
@@ -505,7 +629,7 @@ function MiniClientCard({ client, onOpen }: { client: Client; onOpen: () => void
       </div>
 
       <div className={`csv-mini__money csv-mini__money--${m.label ? m.tone : "ok"}`}>
-        <span className="csv-mini__money-ic" aria-hidden>$</span>
+        <span className="csv-mini__money-ic" aria-hidden>€</span>
         <span>{m.label ?? "Rien à suivre"}</span>
       </div>
 
