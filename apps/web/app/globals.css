@@ -693,14 +693,15 @@ button:not(:disabled):active,
   color: #fff;
 }
 [data-theme="dark"] .ibx-folder.active {
-  background: rgba(255, 255, 255, 0.95);
-  color: #0a0a0a;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 [data-theme="dark"] .ibx-folder-count {
   color: #b5bac5;
 }
 [data-theme="dark"] .ibx-folder.active .ibx-folder-count {
-  color: #5b6475;
+  color: #e5e8ef;
 }
 [data-theme="dark"] .ibx-folders-head {
   color: #b5bac5;
