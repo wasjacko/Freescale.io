@@ -43,7 +43,7 @@ const themeInitScript = `
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <head>
         {/* Anti-FOUC : doit s'exécuter AVANT le rendu pour poser data-theme. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
