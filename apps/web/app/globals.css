@@ -24047,18 +24047,22 @@ button:active:not(:disabled):not(.no-press) {
   border-radius: 12px;
   box-shadow: none;
 }
-/* Badge canal sur l'avatar : d'où vient le message (plateforme). */
+/* Badge canal sur l'avatar : d'où vient le message (plateforme).
+   Stroke 1px (au lieu de 2px) — plus fine, plus moderne. */
 .conv-channel {
   position: absolute;
-  right: -3px;
-  bottom: -3px;
+  right: -2px;
+  bottom: -2px;
   width: 19px;
   height: 19px;
   display: grid;
   place-items: center;
   border-radius: 6px;
   background: #fff;
-  box-shadow: 0 0 0 2px #fff, 0 1px 2px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 0 0 1px #fff, 0 1px 2px rgba(15, 23, 42, 0.15);
+}
+[data-theme="dark"] .conv-channel {
+  box-shadow: 0 0 0 1px #1c1d27, 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .conv-channel :where(svg, img) {
   width: 14px;
