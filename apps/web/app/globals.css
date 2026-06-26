@@ -34481,3 +34481,43 @@ button.mfv-model:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #f4f4f7;
 }
+
+/* Mini logo Mue animé (remplace le spinner basique du bloc thinking) */
+.mue2-loader {
+  flex: none;
+  overflow: visible;
+}
+/* Halo coloré qui respire en arrière-plan */
+.mue2-loader-halo {
+  transform-origin: 12px 12px;
+  animation: mue2-loader-halo 2.2s ease-in-out infinite;
+}
+@keyframes mue2-loader-halo {
+  0%, 100% { transform: scale(0.85); opacity: 0.6; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+/* Étincelle principale : pulse (scale + opacité) */
+.mue2-loader-spark-main {
+  transform-origin: 12px 9px;
+  animation: mue2-loader-pulse 1.4s ease-in-out infinite;
+}
+@keyframes mue2-loader-pulse {
+  0%, 100% { transform: scale(0.92); }
+  50% { transform: scale(1.08); }
+}
+/* Petite étincelle qui orbite autour du centre du logo */
+.mue2-loader-spark-orbit {
+  transform-origin: 12px 12px;
+  animation: mue2-loader-orbit 2.4s linear infinite;
+}
+@keyframes mue2-loader-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-loader-halo,
+  .mue2-loader-spark-main,
+  .mue2-loader-spark-orbit {
+    animation: none;
+  }
+}

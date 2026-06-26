@@ -405,6 +405,44 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
+// Mini logo Mue ANIMÉ — remplace le spinner basique du bloc thinking.
+// - Étincelle centrale qui pulse (scale + opacity)
+// - Petite étincelle qui orbite autour
+// - Léger halo coloré
+// Tout en CSS — léger, signé Mue, plus engageant qu'un cercle qui tourne.
+const MueLoader = ({ size = 18 }: { size?: number }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    aria-hidden
+    className="mue2-loader"
+  >
+    <defs>
+      <linearGradient id="mue2loadgrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#7aa2ff" />
+        <stop offset="50%" stopColor="#b78cff" />
+        <stop offset="100%" stopColor="#ff9d7a" />
+      </linearGradient>
+      <radialGradient id="mue2loadhalo" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0%" stopColor="#b78cff" stopOpacity="0.35" />
+        <stop offset="100%" stopColor="#b78cff" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="12" cy="12" r="11" fill="url(#mue2loadhalo)" className="mue2-loader-halo" />
+    <path
+      d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z"
+      fill="url(#mue2loadgrad)"
+      className="mue2-loader-spark-main"
+    />
+    <path
+      d="M18.5 16l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9.9-2.4z"
+      fill="url(#mue2loadgrad)"
+      className="mue2-loader-spark-orbit"
+    />
+  </svg>
+);
+
 // Titre du bloc thinking : cycle entre 3 états (Réfléchit → Comprend → Conçoit)
 // toutes les ~850ms. Reste figé sur le dernier label jusqu'à la fin du thinking.
 // Défini HORS de MuePanel pour ne pas être recréé à chaque render (sinon
@@ -1042,17 +1080,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     return (
       <div className="mue-thinking-container is-active">
         <div className="mue-thinking-summary">
-          <svg
-            className="mue-thinking-spinner"
-            width={16}
-            height={16}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={3}
-          >
-            <circle cx="12" cy="12" r="10" strokeDasharray="42 20" strokeLinecap="round" />
-          </svg>
+          <MueLoader size={18} />
           <ThinkingTitle />
         </div>
         <div className="mue-thinking-steps">
