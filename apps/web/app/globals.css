@@ -33161,3 +33161,78 @@ button.mfv-model:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #f4f4f7;
 }
+
+/* Carte objet « bloc » (réponse informative) + liste de sources — P3 */
+.mue2-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mue2-objcard {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--csv-soft-bg, rgba(15, 23, 42, 0.035));
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07);
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms var(--ease), box-shadow 130ms var(--ease);
+}
+.mue2-objcard:hover {
+  background: rgba(79, 108, 247, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.4);
+}
+.mue2-objcard-ic {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--bg-input, rgba(15, 23, 42, 0.05));
+  color: #6b7280;
+}
+.mue2-objcard-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mue2-objcard-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink, #10131a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mue2-objcard-meta {
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="dark"] .mue2-objcard {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .mue2-objcard:hover {
+  box-shadow: inset 0 0 0 1px rgba(122, 162, 255, 0.45);
+}
+[data-theme="dark"] .mue2-objcard-ic {
+  background: rgba(255, 255, 255, 0.08);
+  color: #c8ccd6;
+}
+[data-theme="dark"] .mue2-objcard-title {
+  color: #f4f4f7;
+}
+[data-theme="dark"] .mue2-objcard-meta {
+  color: #c8ccd6;
+}

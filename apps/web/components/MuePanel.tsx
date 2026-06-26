@@ -13,7 +13,13 @@ import type { Priority } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MueTaskScanner } from "./SuggestTasksModal";
 
-type ActionRef = { entity: "task"; id: string; title: string };
+type ActionRef = {
+  entity: "task" | "conversation" | "client" | "event" | "document";
+  id: string;
+  title: string;
+  meta?: string;
+  badge?: string;
+};
 /** Tâche proposée par Mue avant création (étape de prévisualisation). */
 type ProposedTask = {
   title: string;
@@ -38,6 +44,8 @@ type AskMessage = {
   progress?: { label: string; total: number; current: number };
   /** kind="result" — objets réellement créés (liens cliquables). */
   created?: ActionRef[];
+  /** Objets cités par Mue (réponse informative) — cliquables, ouvrent le canvas. */
+  sources?: ActionRef[];
 };
 
 type Mode = "ask" | "agents";
@@ -86,6 +94,14 @@ function parseTaskRequest(
   });
   const dueLabel = `${dayLabel} · ${hour}h`;
   return { title, dueLabel, dueAtIso: due.toISOString() };
+}
+
+/** Détecte une demande de PRIORISATION / focus (réponse informative, Niveau 1→2). */
+function isFocusRequest(msg: string): boolean {
+  const l = msg.toLowerCase();
+  return /(sur quoi.*(?:concentr|focus)|me concentr|mes? priorit|qui me doit|qui attend|à r[ée]pondre|que faire|quoi faire|par quoi commenc)/.test(
+    l
+  );
 }
 
 /** Détecte une demande de création MULTIPLE (« toutes mes tâches de la semaine »). */
@@ -163,7 +179,16 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
  * Le scan de tâches se joue INLINE dans le chat (skeleton pastel → tâches).
  */
 export function MuePanel() {
-  const { activeConvId, mueOpen, setMueOpen, suggestTasksOpen, setSuggestTasksOpen } = useApp();
+  const {
+    activeConvId,
+    mueOpen,
+    setMueOpen,
+    suggestTasksOpen,
+    setSuggestTasksOpen,
+    setActiveConv,
+    setActiveClientId,
+    setView,
+  } = useApp();
   const { conversations, addTask } = useData();
   const push = useToast((s) => s.push);
 
@@ -188,9 +213,17 @@ export function MuePanel() {
     [conversations, activeConvId]
   );
 
+  // P3 — quand Mue ouvre un objet (clic carte), on navigue le canvas SANS
+  // recharger/écraser le fil en cours. Ce flag dit à l'effet de sauter le reload.
+  const skipReload = useRef(false);
+
   // Recharge l'historique quand la conversation active change.
   useEffect(() => {
     if (activeConvId === undefined) return;
+    if (skipReload.current) {
+      skipReload.current = false;
+      return;
+    }
     setAskInput("");
     let cancelled = false;
     setAskHistoryLoading(true);
@@ -415,10 +448,85 @@ export function MuePanel() {
     setExecuting(false);
   };
 
+  // ── P3 · Ouvre un objet cité dans le canvas SANS fermer Mue ──
+  const openObject = (ref: ActionRef) => {
+    switch (ref.entity) {
+      case "task":
+        setDetailTaskId(ref.id);
+        break;
+      case "conversation":
+        skipReload.current = true;
+        setActiveConv(ref.id);
+        setView("inbox");
+        break;
+      case "client":
+        setActiveClientId(ref.id);
+        setView("clients");
+        break;
+      case "event":
+        setView("calendar");
+        break;
+      case "document":
+        push({ kind: "info", text: "Ouverture du document — bientôt." });
+        break;
+    }
+  };
+
+  // ── P3 · Réponse informative (Niveau 1→2) : cite des objets cliquables,
+  // ne modifie RIEN, propose des suites. Ancré sur les vrais fils/clients. */
+  const runFocus = (raw: string) => {
+    const sources: ActionRef[] = [
+      {
+        entity: "conversation",
+        id: "c2",
+        title: "Thomas Aubry",
+        meta: "Contrat à envoyer · en attente 2 j",
+        badge: "À répondre",
+      },
+      {
+        entity: "conversation",
+        id: "c9",
+        title: "David Kim",
+        meta: "Silence 12 j · 6 500 € à suivre",
+        badge: "À relancer",
+      },
+      {
+        entity: "conversation",
+        id: "c7",
+        title: "Alexandre Dupont",
+        meta: "Attend ton retour sur les livrables",
+        badge: "En cours",
+      },
+    ];
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
+      {
+        id: `focus-${Date.now()}`,
+        role: "mue",
+        kind: "text",
+        content:
+          "Rien en retard côté tâches. Mais 3 fils clients te réclament, par ordre d'urgence :",
+        sources,
+        improvements: [
+          "Rédige une relance pour David Kim",
+          "Crée mes tâches de la semaine",
+          "Bloque du temps pour le contrat de Thomas",
+        ],
+      },
+    ]);
+    setAskInput("");
+  };
+
   // Aiguillage : action (tâche) si l'intention est détectée, sinon question.
   const submit = (raw: string) => {
     const text = raw.trim();
     if (!text || askPending || executing) return;
+    // Priorisation / focus → réponse informative (Niveau 1→2), aucune mutation.
+    if (isFocusRequest(text)) {
+      runFocus(text);
+      return;
+    }
     // Multi-tâches → prévisualisation (Niveau 3) AVANT toute création.
     if (isMultiTaskRequest(text)) {
       runMultiTaskPreview(text);
@@ -982,11 +1090,7 @@ export function MuePanel() {
                   {m.created && m.created.length > 0 && (
                     <div className="mue2-result-list">
                       {m.created.map((c) => (
-                        <MueObjectCard
-                          key={c.id}
-                          title={c.title}
-                          onOpen={() => setDetailTaskId(c.id)}
-                        />
+                        <MueObjectCard key={c.id} title={c.title} onOpen={() => openObject(c)} />
                       ))}
                     </div>
                   )}
@@ -1005,10 +1109,24 @@ export function MuePanel() {
                     {m.action && (
                       <MueObjectCard
                         title={m.action.title}
-                        onOpen={() => setDetailTaskId(m.action?.id ?? null)}
+                        onOpen={() => m.action && openObject(m.action)}
                       />
                     )}
                   </div>
+                  {m.sources && m.sources.length > 0 && (
+                    <div className="mue2-sources">
+                      {m.sources.map((s) => (
+                        <MueObjectCard
+                          key={s.id}
+                          title={s.title}
+                          entity={s.entity}
+                          meta={s.meta}
+                          badge={s.badge}
+                          onOpen={() => openObject(s)}
+                        />
+                      ))}
+                    </div>
+                  )}
                   <MueSuggestions
                     label="Améliorations"
                     items={m.improvements ?? []}

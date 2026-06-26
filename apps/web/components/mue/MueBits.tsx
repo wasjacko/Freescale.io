@@ -34,16 +34,67 @@ export function MueBadge(
   return <span className="mue2-ref-badge">{props.value}</span>;
 }
 
-/** Carte objet cliquable — ouvre l'objet dans le canvas sans fermer Mue. */
+const ENTITY_ICON: Record<string, React.ReactNode> = {
+  task: (
+    <svg {...stroke} width={14} height={14}>
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  ),
+  conversation: (
+    <svg {...stroke} width={14} height={14}>
+      <path d="M21 11.5a8.4 8.4 0 0 1-9.3 8.4L3 21l1.1-3.7A8.4 8.4 0 1 1 21 11.5z" />
+    </svg>
+  ),
+  client: (
+    <svg {...stroke} width={14} height={14}>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c0-3.7 3.1-6 7-6s7 2.3 7 6" />
+    </svg>
+  ),
+  event: (
+    <svg {...stroke} width={14} height={14}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </svg>
+  ),
+  document: (
+    <svg {...stroke} width={14} height={14}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+    </svg>
+  ),
+};
+
+/** Carte objet cliquable — ouvre l'objet dans le canvas sans fermer Mue.
+ *  Forme « pilule » (sans meta) ou « bloc » (avec meta) selon le contexte. */
 export function MueObjectCard({
   title,
   badge = "TO DO",
+  meta,
+  entity = "task",
   onOpen,
 }: {
   title: string;
-  badge?: string;
+  badge?: string | undefined;
+  meta?: string | undefined;
+  entity?: "task" | "conversation" | "client" | "event" | "document" | undefined;
   onOpen: () => void;
 }) {
+  if (meta) {
+    return (
+      <button type="button" className="mue2-objcard" onClick={onOpen} title="Ouvrir dans le canvas">
+        <span className="mue2-objcard-ic" aria-hidden>
+          {ENTITY_ICON[entity] ?? ENTITY_ICON.task}
+        </span>
+        <span className="mue2-objcard-main">
+          <span className="mue2-objcard-title">{title}</span>
+          <span className="mue2-objcard-meta">{meta}</span>
+        </span>
+        {badge ? <span className="mue2-ref-badge">{badge}</span> : null}
+      </button>
+    );
+  }
   return (
     <button type="button" className="mue2-ref" onClick={onOpen} title="Ouvrir la fiche">
       <span className="mue2-ref-dot" aria-hidden />
