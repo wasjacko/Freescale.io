@@ -12676,6 +12676,9 @@ html {
   color: var(--ink, #10131a);
   font-size: 13.5px;
   line-height: 1.45;
+  /* Marge d'ancrage : quand on scrolle ce message en haut du fil (scrollIntoView
+     block:start), il reste à 24px du bord → toujours bien visible. */
+  scroll-margin-top: 24px;
 }
 .mue2-msg.is-mue {
   align-self: stretch;

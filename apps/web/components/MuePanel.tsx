@@ -491,11 +491,16 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     const userCount = askMessages.filter((m) => m.role === "user").length;
     if (userCount > lastUserCountRef.current) {
       lastUserCountRef.current = userCount;
-      requestAnimationFrame(() => {
-        const users = el.querySelectorAll<HTMLElement>(".mue2-msg.is-user");
-        const last = users[users.length - 1];
-        if (last) el.scrollTop = last.offsetTop - 12;
-      });
+      // Double rAF : on attend que le DOM (bulle + réponse en cours) soit posé
+      // avant d'ancrer. scrollIntoView + scroll-margin-top (CSS) laissent une
+      // marge confortable au-dessus du message → toujours bien visible.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const users = el.querySelectorAll<HTMLElement>(".mue2-msg.is-user");
+          const last = users[users.length - 1];
+          if (last) last.scrollIntoView({ block: "start", behavior: "smooth" });
+        })
+      );
     } else if (userCount < lastUserCountRef.current) {
       lastUserCountRef.current = userCount; // reset (nouveau fil / clear)
     }
