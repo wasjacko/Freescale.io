@@ -3,6 +3,11 @@
 // Surface document (mock) — ouvre un devis généré par Mue dans une modale
 // par-dessus le canvas. Structure complète façon vrai devis (en-tête, client,
 // prestataire, prestations, total, conditions). Le panneau Mue reste à droite.
+// Rendu via PORTAL sur document.body : sinon le position:fixed serait scopé au
+// panneau .copilot (qui a un transform) → fiche mal positionnée + bande grise.
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type DevisDoc = {
   id: string;
@@ -21,7 +26,10 @@ export type DevisDoc = {
 const eur = (n: number) => `${n.toLocaleString("fr-FR")} €`;
 
 export function MueDocModal({ doc, onClose }: { doc: DevisDoc; onClose: () => void }) {
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return createPortal(
     <div
       className="muedoc-overlay"
       role="dialog"
@@ -135,6 +143,7 @@ export function MueDocModal({ doc, onClose }: { doc: DevisDoc; onClose: () => vo
           <span className="muedoc-hint">Brouillon — adapte-le directement dans le document.</span>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

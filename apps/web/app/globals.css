@@ -12867,8 +12867,9 @@ html {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(8, 10, 16, 0.55);
-  backdrop-filter: blur(3px);
+  /* Pas d'assombrissement : la fiche s'ouvre DANS le canvas (façon ClickUp),
+     pas en modale qui dim. Aucune bande grise sur le canvas. */
+  background: transparent;
   animation: tdm-fade 150ms var(--ease);
 }
 @keyframes tdm-fade {
@@ -33405,7 +33406,10 @@ button.mfv-model:hover {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(15, 23, 42, 0.4);
+  /* Pas d'assombrissement : le devis s'ouvre DANS le canvas comme une page
+     (façon ClickUp), pas en modale qui dim. Le scrim reste cliquable pour
+     fermer mais transparent → aucune bande grise sur le canvas. */
+  background: transparent;
   cursor: default;
 }
 .muedoc-sheet {
@@ -33818,20 +33822,30 @@ button.mfv-model:hover {
   color: #c8ccd6;
 }
 
-/* Les modales d'objet (fiche tâche, devis) s'ouvrent sur le CANVAS principal,
-   pas par-dessus le panneau Mue : on réserve sa largeur à droite quand il est
-   ouvert. (La modale « Arrêter de générer ? » reste sur le panneau, elle.) */
-.app.mue-open .tdm-overlay,
-.app.mue-open .muedoc-overlay {
+/* Les modales d'objet (fiche tâche, devis) sont rendues via PORTAL sur
+   document.body (hors .app, car .copilot a un transform). Elles ne s'affichent
+   que lorsque Mue est ouvert, donc on réserve TOUJOURS la largeur du panneau à
+   droite → la fiche s'ouvre sur le CANVAS, jamais sur le panneau.
+   --mue-panel-w est exposé sur :root pour être lisible depuis body. */
+:root {
+  --mue-panel-w: 570px;
+}
+@media (min-width: 1101px) and (max-width: 1280px) {
+  :root {
+    --mue-panel-w: 510px;
+  }
+}
+.tdm-overlay,
+.muedoc-overlay {
   right: calc(var(--mue-panel-w) + 10px);
 }
 
 /* Sur viewport étroit, le canvas à gauche du panneau est trop fin : réserver
-   sa largeur ne laisse qu'une lamelle sombre (bande). On repasse l'overlay en
-   pleine largeur → vraie modale centrée, plus de bande parasite. */
+   sa largeur ne laisse qu'une lamelle. On repasse l'overlay en pleine largeur
+   → vraie modale centrée. */
 @media (max-width: 900px) {
-  .app.mue-open .tdm-overlay,
-  .app.mue-open .muedoc-overlay {
+  .tdm-overlay,
+  .muedoc-overlay {
     right: 0;
   }
 }
