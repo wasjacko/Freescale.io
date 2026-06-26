@@ -2,7 +2,13 @@
 
 import { MueFlower } from "@/components/MueFlower";
 import { MueMemory } from "@/components/MueMemoryDrawer";
-import { MueBadge, MueMsgActions, MueObjectCard, MueSuggestions } from "@/components/mue/MueBits";
+import {
+  MueBadge,
+  MueInlineRef,
+  MueMsgActions,
+  MueObjectCard,
+  MueSuggestions,
+} from "@/components/mue/MueBits";
 import { type DevisDoc, MueDocModal } from "@/components/mue/MueDocModal";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
@@ -60,6 +66,8 @@ type AskMessage = {
   created?: ActionRef[];
   /** Objets cités par Mue (réponse informative) — cliquables, ouvrent le canvas. */
   sources?: ActionRef[];
+  /** Réfs inline dans le contenu (tokens {{r:KEY}}) — liens cliquables dans la prose. */
+  inlineRefs?: Record<string, ActionRef>;
 };
 
 type Mode = "ask" | "agents";
@@ -449,10 +457,26 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     };
   }, [activeConvId]);
 
+  // Scroll « façon chat IA » : à chaque NOUVEAU message utilisateur, on ancre
+  // ce message en HAUT du fil (la réponse se déroule en dessous, on scrolle
+  // pour revoir les échanges précédents). Sur les mises à jour de la réponse,
+  // on ne re-scrolle pas (l'utilisateur lit depuis le haut).
   const logRef = useRef<HTMLDivElement>(null);
+  const lastUserCountRef = useRef(0);
   useEffect(() => {
     const el = logRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (!el) return;
+    const userCount = askMessages.filter((m) => m.role === "user").length;
+    if (userCount > lastUserCountRef.current) {
+      lastUserCountRef.current = userCount;
+      requestAnimationFrame(() => {
+        const users = el.querySelectorAll<HTMLElement>(".mue2-msg.is-user");
+        const last = users[users.length - 1];
+        if (last) el.scrollTop = last.offsetTop - 12;
+      });
+    } else if (userCount < lastUserCountRef.current) {
+      lastUserCountRef.current = userCount; // reset (nouveau fil / clear)
+    }
   }, [askMessages, askPending]);
 
   const runScan = () => {
@@ -689,6 +713,40 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     }
   };
 
+  // Rend une prose Mue avec liens objets INLINE (tokens {{r:KEY}}) + paragraphes.
+  const renderRich = (content: string, refs?: Record<string, ActionRef>) => {
+    return content.split("\n\n").map((para, pi) => {
+      const parts = para.split(/(\{\{r:\w+\}\})/g);
+      return (
+        // biome-ignore lint/suspicious/noArrayIndexKey: contenu statique mock
+        <p key={pi} className="mue2-rich-p">
+          {parts.map((part, i) => {
+            const tok = part.match(/^\{\{r:(\w+)\}\}$/);
+            const ref = tok ? refs?.[tok[1] ?? ""] : undefined;
+            if (ref) {
+              return (
+                <MueInlineRef
+                  // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+                  key={i}
+                  label={ref.title}
+                  badge={ref.badge}
+                  onOpen={() => openObject(ref)}
+                />
+              );
+            }
+            // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+            return <span key={i}>{part}</span>;
+          })}
+        </p>
+      );
+    });
+  };
+  // Contenu « propre » (tokens remplacés par les noms) pour le bouton Copier.
+  const cleanContent = (m: AskMessage) =>
+    m.inlineRefs
+      ? m.content.replace(/\{\{r:(\w+)\}\}/g, (_, k) => m.inlineRefs?.[k]?.title ?? "")
+      : m.content;
+
   // ── P4 · Création de DOCUMENT (devis) — demande claire → création directe
   // (Niveau 4). Le document s'ouvre dans une surface par-dessus le canvas. */
   const runDocument = (raw: string) => {
@@ -777,29 +835,12 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   // ── P3 · Réponse informative (Niveau 1→2) : cite des objets cliquables,
   // ne modifie RIEN, propose des suites. Ancré sur les vrais fils/clients. */
   const runFocus = (raw: string) => {
-    const sources: ActionRef[] = [
-      {
-        entity: "conversation",
-        id: "c2",
-        title: "Thomas Aubry",
-        meta: "Contrat à envoyer · en attente 2 j",
-        badge: "À répondre",
-      },
-      {
-        entity: "conversation",
-        id: "c9",
-        title: "David Kim",
-        meta: "Silence 12 j · 6 500 € à suivre",
-        badge: "À relancer",
-      },
-      {
-        entity: "conversation",
-        id: "c7",
-        title: "Alexandre Dupont",
-        meta: "Attend ton retour sur les livrables",
-        badge: "En cours",
-      },
-    ];
+    // Réfs cliquables EMBARQUÉES dans la prose (tokens {{r:KEY}}) — façon Brain.
+    const inlineRefs: Record<string, ActionRef> = {
+      thomas: { entity: "conversation", id: "c2", title: "Thomas Aubry", badge: "À répondre" },
+      david: { entity: "conversation", id: "c9", title: "David Kim", badge: "À relancer" },
+      alex: { entity: "conversation", id: "c7", title: "Alexandre Dupont", badge: "En cours" },
+    };
     setAskMessages((prev) => [
       ...prev,
       { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
@@ -808,8 +849,12 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         role: "mue",
         kind: "text",
         content:
-          "Rien en retard côté tâches. Mais 3 fils clients te réclament, par ordre d'urgence :",
-        sources,
+          "Rien en retard côté tâches, c'est bon signe. Mais 3 fils clients te réclament, par ordre d'urgence.\n\n" +
+          "Je commencerais par {{r:thomas}} — il attend le contrat signé depuis 2 jours. " +
+          "Ensuite {{r:david}}, silencieux depuis 12 jours avec 6 500 € à suivre. " +
+          "Puis {{r:alex}}, qui attend ton retour sur les livrables.\n\n" +
+          "Tu veux que je traite ces 3 fils dans cet ordre ?",
+        inlineRefs,
         improvements: [
           "Rédige une relance pour David Kim",
           "Crée mes tâches de la semaine",
@@ -1566,7 +1611,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     <MueMark size={16} /> Mue
                   </div>
                   <div className="mue2-msg-body">
-                    {m.content}
+                    {m.inlineRefs ? renderRich(m.content, m.inlineRefs) : m.content}
                     {m.action && (
                       <MueObjectCard
                         title={m.action.title}
@@ -1595,7 +1640,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   />
                   {m.tone !== "error" && (
                     <MueMsgActions
-                      onCopy={() => copyText(m.content)}
+                      onCopy={() => copyText(cleanContent(m))}
                       onRetry={() => retryFromIndex(mi)}
                       onFeedback={feedback}
                     />

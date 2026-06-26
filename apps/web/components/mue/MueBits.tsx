@@ -104,6 +104,24 @@ export function MueObjectCard({
   );
 }
 
+/** Lien objet INLINE (dans la prose) — nom + badge, cliquable. */
+export function MueInlineRef({
+  label,
+  badge,
+  onOpen,
+}: {
+  label: string;
+  badge?: string | undefined;
+  onOpen: () => void;
+}) {
+  return (
+    <button type="button" className="mue2-inlineref" onClick={onOpen} title="Ouvrir">
+      {label}
+      {badge ? <span className="mue2-inlineref-badge">{badge}</span> : null}
+    </button>
+  );
+}
+
 /** Rangée de suggestions de suite (contextuelles). */
 export function MueSuggestions({
   label,
