@@ -7539,16 +7539,19 @@ html {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 14px;
-  padding: 14px 14px;
-  margin-bottom: 4px;
-  border-radius: 11px;
+  padding: 12px 14px;
+  margin-bottom: 2px;
+  border-radius: 12px;
   text-align: left;
   border: 1px solid transparent;
   transition: background 180ms var(--ease), border-color 180ms var(--ease), box-shadow 180ms
-    var(--ease);
+    var(--ease), transform 180ms var(--ease);
 }
 .conv:hover {
-  background: rgba(15, 23, 42, 0.02);
+  background: rgba(15, 23, 42, 0.035);
+}
+[data-theme="dark"] .conv:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 .conv.active {
   background: #fff;
@@ -7678,24 +7681,9 @@ html {
   box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.16);
 }
 
-/* Accent latéral : seulement quand le fil n'est pas déjà ouvert
-   (l'état actif garde sa barre indigo via .conv.active::before). */
-.conv.is-awaiting:not(.active)::before,
-.conv.is-relance:not(.active)::before {
-  content: "";
-  position: absolute;
-  left: -1px;
-  top: 12px;
-  bottom: 12px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-}
-.conv.is-awaiting:not(.active)::before {
-  background: #f59e0b;
-}
-.conv.is-relance:not(.active)::before {
-  background: var(--accent, #0a0a0a);
-}
+/* Barres latérales colorées retirées — donnaient un look 'ticketing system'
+   trop rigide. L'info passe déjà par les pastilles d'état + le label
+   'En attente …j' sous la conversation. */
 
 /* Actions au survol — Répondre / Tâche / Archiver (signature clavier visible).
    Apparaissent à droite au survol/focus, façon Superhuman. */
@@ -24135,13 +24123,9 @@ button:active:not(:disabled):not(.no-press) {
   color: #4f6cf7;
   font-weight: 700;
 }
-/* Marqueur "balle dans ton camp" : accent gauche sur la ligne. */
-.conv--toreply {
-  box-shadow: inset 3px 0 0 #ef4444, inset 0 -1.5px 0 rgba(10, 10, 10, 0.07);
-}
-.conv--waiting {
-  box-shadow: inset 3px 0 0 #d97706, inset 0 -1.5px 0 rgba(10, 10, 10, 0.07);
-}
+/* Marqueurs d'état : barres latérales colorées + filet horizontal retirés
+   (faisaient un look 'ticketing system' rigide). L'état passe par les
+   pastilles de statut (puce bleue 'non lu', label 'En attente …j', etc.). */
 /* Indicateur multi-canaux d'un client (Gmail + WhatsApp…) à droite de la ligne. */
 .conv-channels {
   display: inline-flex;
