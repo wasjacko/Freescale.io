@@ -33504,10 +33504,13 @@ button.mfv-model:hover {
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  opacity: 1;
+  transition: opacity 160ms var(--ease);
 }
 /* Pills masquées quand une intention est dépliée — on GARDE leur hauteur pour
    que le hero ne bouge pas (le popover s'affiche au-dessus, hors flux). */
 .mue2-intents.is-hidden {
+  opacity: 0;
   visibility: hidden;
 }
 .mue2-intents::-webkit-scrollbar {
@@ -33564,6 +33567,50 @@ button.mfv-model:hover {
   border-radius: 12px;
   background: var(--csv-card-bg, #fff);
   box-shadow: 0 8px 28px rgba(15, 23, 42, 0.14), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  transform-origin: bottom center;
+  /* Animation apparition/disparition : fade + léger slide/scale. */
+  opacity: 0;
+  transform: translateY(8px) scale(0.985);
+  transition: opacity 180ms var(--ease), transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mue2-intentpanel.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.mue2-intentpanel .mue2-intentsugg,
+.mue2-intentpanel .mue2-intentpanel-head {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 200ms var(--ease), transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mue2-intentpanel.is-open .mue2-intentpanel-head {
+  opacity: 1;
+  transform: none;
+  transition-delay: 20ms;
+}
+/* Cascade légère des suggestions à l'ouverture. */
+.mue2-intentpanel.is-open .mue2-intentsugg {
+  opacity: 1;
+  transform: none;
+}
+.mue2-intentpanel.is-open .mue2-intentsugg:nth-child(2) {
+  transition-delay: 40ms;
+}
+.mue2-intentpanel.is-open .mue2-intentsugg:nth-child(3) {
+  transition-delay: 70ms;
+}
+.mue2-intentpanel.is-open .mue2-intentsugg:nth-child(4) {
+  transition-delay: 100ms;
+}
+.mue2-intentpanel.is-open .mue2-intentsugg:nth-child(5) {
+  transition-delay: 130ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-intentpanel,
+  .mue2-intentpanel .mue2-intentsugg,
+  .mue2-intentpanel .mue2-intentpanel-head {
+    transition: none;
+  }
 }
 [data-theme="dark"] .mue2-intentpanel {
   background: #20232f;

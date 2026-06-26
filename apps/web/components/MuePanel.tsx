@@ -411,6 +411,17 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const docsRef = useRef<Record<string, DevisDoc>>({});
   // Raccourci d'intention déplié (façon ClickUp Brain) — null = pills affichées.
   const [activeIntent, setActiveIntent] = useState<string | null>(null);
+  // Intention RENDUE : suit activeIntent mais persiste ~200ms à la fermeture
+  // pour laisser jouer l'animation de sortie du popover.
+  const [displayIntent, setDisplayIntent] = useState<string | null>(null);
+  useEffect(() => {
+    if (activeIntent) {
+      setDisplayIntent(activeIntent);
+      return;
+    }
+    const t = setTimeout(() => setDisplayIntent(null), 200);
+    return () => clearTimeout(t);
+  }, [activeIntent]);
 
   const firstName = (userName ?? "").trim().split(/\s+/)[0] || "toi";
   // Tâche ouverte en détail (modal) suite à une action de Mue.
@@ -1369,12 +1380,12 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     </button>
                   ))}
                 </div>
-                {activeIntent &&
+                {displayIntent &&
                   (() => {
-                    const it = INTENTIONS.find((x) => x.key === activeIntent);
+                    const it = INTENTIONS.find((x) => x.key === displayIntent);
                     if (!it) return null;
                     return (
-                      <div className="mue2-intentpanel">
+                      <div className={`mue2-intentpanel ${activeIntent ? "is-open" : ""}`}>
                         <div className="mue2-intentpanel-head">
                           <span className="mue2-intentpanel-title">
                             {intentIcon(it.icon)} {it.label}
