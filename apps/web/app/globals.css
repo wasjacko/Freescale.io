@@ -25523,10 +25523,10 @@ button.sidebar-brand {
   background: rgba(10, 10, 10, 0.06);
   color: var(--ink, #10131a);
 }
-/* L'item actif garde son carré indigo, même au survol. */
+/* L'item actif garde son carré gris discret, même au survol. */
 .sidebar .nav-item.active:hover .nav-ico {
-  background: rgba(79, 108, 247, 0.13);
-  color: var(--rail-accent);
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--ink, #10131a);
 }
 .sidebar .nav-ico .icon {
   width: 22px;
@@ -25538,18 +25538,19 @@ button.sidebar-brand {
   letter-spacing: -0.01em;
   white-space: normal;
 }
-/* État actif : carré indigo doux + icône & label accentués (façon réf.). */
+/* État actif : carré gris discret + icône en encre (au lieu de l'indigo
+   trop tape-à-l'œil). */
 .sidebar .nav-item.active {
   background: transparent;
   color: var(--ink, #10131a);
   font-weight: 600;
 }
 .sidebar .nav-item.active .nav-ico {
-  background: rgba(79, 108, 247, 0.13);
-  color: var(--rail-accent);
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--ink, #10131a);
 }
 .sidebar .nav-item.active .nav-ico .icon {
-  color: var(--rail-accent);
+  color: var(--ink, #10131a);
 }
 /* Badge compteur sur le coin de l'icône. */
 .sidebar .nav-ico .nav-badge {
