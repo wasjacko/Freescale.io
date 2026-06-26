@@ -880,39 +880,75 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   };
 
   // Rend une prose Mue avec liens objets INLINE (tokens {{r:KEY}}) + paragraphes.
+  // Rend les segments inline d'un paragraphe : tokens {{r:KEY}} (pillule objet),
+  // **gras**, et texte brut. Utilisé pour paragraphes ET items de liste.
+  const renderInline = (text: string, refs?: Record<string, ActionRef>) => {
+    const parts = text.split(/(\{\{r:\w+\}\}|\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      const tok = part.match(/^\{\{r:(\w+)\}\}$/);
+      const ref = tok ? refs?.[tok[1] ?? ""] : undefined;
+      if (ref) {
+        return (
+          <MueInlineRef
+            // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+            key={i}
+            label={ref.title}
+            badge={ref.badge}
+            entity={ref.entity}
+            onOpen={() => openObject(ref)}
+          />
+        );
+      }
+      const bold = part.match(/^\*\*([^*]+)\*\*$/);
+      if (bold) {
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+          <strong key={i}>{renderInline(bold[1] ?? "", refs)}</strong>
+        );
+      }
+      // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+      return <span key={i}>{part}</span>;
+    });
+  };
   const renderRich = (content: string, refs?: Record<string, ActionRef>) => {
     return content.split("\n\n").map((para, pi) => {
-      const parts = para.split(/(\{\{r:\w+\}\})/g);
+      // Liste numérotée : paragraphe qui commence par "1. " et dont chaque
+      // ligne suivante est "N. <texte>". Rendu avec compteur perso + retrait.
+      if (/^\d+\.\s/.test(para)) {
+        const items = para.split(/\n(?=\d+\.\s)/).map((line) => {
+          const m = line.match(/^(\d+)\.\s+([\s\S]*)$/);
+          return m ? { num: m[1] ?? "", body: m[2] ?? "" } : { num: "", body: line };
+        });
+        return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: contenu statique mock
+          <ol key={pi} className="mue2-rich-ol">
+            {items.map((it, ii) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+              <li key={ii} className="mue2-rich-ol-item">
+                <span className="mue2-rich-ol-num">{it.num}.</span>
+                <span className="mue2-rich-ol-body">{renderInline(it.body, refs)}</span>
+              </li>
+            ))}
+          </ol>
+        );
+      }
       return (
         // biome-ignore lint/suspicious/noArrayIndexKey: contenu statique mock
         <p key={pi} className="mue2-rich-p">
-          {parts.map((part, i) => {
-            const tok = part.match(/^\{\{r:(\w+)\}\}$/);
-            const ref = tok ? refs?.[tok[1] ?? ""] : undefined;
-            if (ref) {
-              return (
-                <MueInlineRef
-                  // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
-                  key={i}
-                  label={ref.title}
-                  badge={ref.badge}
-                  entity={ref.entity}
-                  onOpen={() => openObject(ref)}
-                />
-              );
-            }
-            // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
-            return <span key={i}>{part}</span>;
-          })}
+          {renderInline(para, refs)}
         </p>
       );
     });
   };
-  // Contenu « propre » (tokens remplacés par les noms) pour le bouton Copier.
-  const cleanContent = (m: AskMessage) =>
-    m.inlineRefs
+  // Contenu « propre » pour le bouton Copier : tokens remplacés par les noms,
+  // **gras** dépouillé.
+  const cleanContent = (m: AskMessage) => {
+    let out = m.inlineRefs
       ? m.content.replace(/\{\{r:(\w+)\}\}/g, (_, k) => m.inlineRefs?.[k]?.title ?? "")
       : m.content;
+    out = out.replace(/\*\*([^*]+)\*\*/g, "$1");
+    return out;
+  };
 
   // ── P4 · Création de DOCUMENT (devis) — demande claire → création directe
   // (Niveau 4). Le document s'ouvre dans une surface par-dessus le canvas. */
@@ -1037,22 +1073,32 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   // ── P3 · Réponse informative (Niveau 1→2) : cite des objets cliquables,
   // ne modifie RIEN, propose des suites. Ancré sur les vrais fils/clients. */
   const runFocus = (_raw: string) => {
-    // Réfs cliquables EMBARQUÉES dans la prose (tokens {{r:KEY}}) — façon Brain.
     const inlineRefs: Record<string, ActionRef> = {
       thomas: { entity: "conversation", id: "c2", title: "Thomas Aubry", badge: "À répondre" },
       david: { entity: "conversation", id: "c9", title: "David Kim", badge: "À relancer" },
       alex: { entity: "conversation", id: "c7", title: "Alexandre Dupont", badge: "En cours" },
     };
+    const firstName = userName ? userName.split(/\s+/)[0] : null;
+    const greeting = firstName ? `OK ${firstName}` : "OK";
+    // Ton ClickUp Brain : salutation perso → diagnostic → priorités numérotées
+    // → section « le reste » → question CTA finale. Plus narratif, plus humain.
+    const content =
+      `${greeting}, voilà le topo : rien en retard côté tâches, ton agenda est clair, ` +
+      `mais **3 fils clients te réclament**. Voilà comment je les classerais.\n\n` +
+      `1. **Réponds à {{r:thomas}}** — il attend le contrat signé depuis 2 jours, ` +
+      `c'est ce qui débloque le reste.\n` +
+      `2. **Relance {{r:david}}** — silencieux depuis 12 jours avec 6 500 € à suivre, ` +
+      `un mot suffit pour rouvrir la discussion.\n` +
+      `3. **Réponds à {{r:alex}}** — il attend ton retour sur les livrables, ` +
+      `pas urgent mais ça flotte depuis hier.\n\n` +
+      `Le reste (facturation, prospection, admin) peut attendre lundi. ` +
+      `Concentre-toi là où l'énergie compte.\n\n` +
+      `Tu veux que je traite ces 3 fils dans cet ordre ?`;
     return {
       id: `focus-${Date.now()}`,
       role: "mue" as const,
       kind: "text" as const,
-      content:
-        "Rien en retard côté tâches, c'est bon signe. Mais 3 fils clients te réclament, par ordre d'urgence.\n\n" +
-        "Je commencerais par {{r:thomas}} — il attend le contrat signé depuis 2 jours. " +
-        "Ensuite {{r:david}}, silencieux depuis 12 jours avec 6 500 € à suivre. " +
-        "Puis {{r:alex}}, qui attend ton retour sur les livrables.\n\n" +
-        "Tu veux que je traite ces 3 fils dans cet ordre ?",
+      content,
       inlineRefs,
       improvements: [
         "Rédige une relance pour David Kim",

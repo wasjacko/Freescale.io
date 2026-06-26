@@ -34569,3 +34569,40 @@ button.mfv-model:hover {
 @media (prefers-reduced-motion: reduce) {
   .mue2-inlineref { animation: none; }
 }
+
+/* Liste numérotée dans la prose Mue (façon ClickUp Brain) :
+   numéro discret + retrait + lignes aérées. */
+.mue2-rich-ol {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mue2-rich-ol-item {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  line-height: 1.55;
+}
+.mue2-rich-ol-num {
+  flex: none;
+  min-width: 18px;
+  color: var(--csv-text-soft, #5b6475);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+[data-theme="dark"] .mue2-rich-ol-num {
+  color: #c8ccd6;
+}
+.mue2-rich-ol-body { flex: 1; }
+.mue2-rich-ol-body strong,
+.mue2-rich-p strong {
+  font-weight: 600;
+  color: var(--ink, #10131a);
+}
+[data-theme="dark"] .mue2-rich-ol-body strong,
+[data-theme="dark"] .mue2-rich-p strong {
+  color: #f4f4f7;
+}
