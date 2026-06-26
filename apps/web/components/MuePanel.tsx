@@ -763,6 +763,45 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     }
   };
 
+  // ── Streaming texte façon « vraie IA » ──
+  // Une fois un message Mue affiché en entier, son id va dans streamedIdsRef →
+  // au re-render (scroll, autre message…) il s'affiche d'un coup, pas de
+  // réanimation. Branchement futur sur un vrai stream : remplacer le rAF par
+  // l'arrivée des chunks et appeler streamedIdsRef.current.add(id) à la fin.
+  const streamedIdsRef = useRef<Set<string>>(new Set());
+  const StreamingText = ({
+    id,
+    text,
+    refs,
+  }: {
+    id: string;
+    text: string;
+    refs?: Record<string, ActionRef> | undefined;
+  }) => {
+    const already = streamedIdsRef.current.has(id);
+    const [visible, setVisible] = useState(already ? text : "");
+    useEffect(() => {
+      if (already) {
+        setVisible(text);
+        return;
+      }
+      let i = 0;
+      let raf = 0;
+      const tick = () => {
+        // Vitesse : ~2 caractères / frame ≈ 120 char/s, lecture confortable.
+        i = Math.min(i + 2, text.length);
+        setVisible(text.slice(0, i));
+        if (i < text.length) raf = requestAnimationFrame(tick);
+        else streamedIdsRef.current.add(id);
+      };
+      raf = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(raf);
+      // text + id sont la clé : si content change (re-stream) ou nouveau msg.
+    }, [text, id, already]);
+    if (refs) return <>{renderRich(visible, refs)}</>;
+    return <>{visible}</>;
+  };
+
   // Rend une prose Mue avec liens objets INLINE (tokens {{r:KEY}}) + paragraphes.
   const renderRich = (content: string, refs?: Record<string, ActionRef>) => {
     return content.split("\n\n").map((para, pi) => {
@@ -1902,7 +1941,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </span>
-                    {m.content}
+                    <StreamingText id={m.id} text={m.content} />
                   </div>
                   {m.created && m.created.length > 0 && (
                     <div className="mue2-result-list">
@@ -1929,7 +1968,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   </div>
                   {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">
-                    {m.inlineRefs ? renderRich(m.content, m.inlineRefs) : m.content}
+                    <StreamingText id={m.id} text={m.content} refs={m.inlineRefs} />
                     {m.action && (
                       <MueObjectCard
                         title={m.action.title}
