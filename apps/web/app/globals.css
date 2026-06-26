@@ -496,6 +496,13 @@ button:not(:disabled):active,
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+/* La barre d'outils Inbox a une ombre interne noire 11 % qui dessine
+   un trait plus sombre sous elle. Invisible en light mode, mais sur
+   un panel sombre #1c1d27 ça crée une ligne foncée parasite. */
+[data-theme="dark"] .ibx-toolbar-wrap {
+  box-shadow: none;
+}
+
 /* Inbox / thread internes au conv-shell — fond hérité du parent. */
 [data-theme="dark"] .inbox,
 [data-theme="dark"] .thread {
