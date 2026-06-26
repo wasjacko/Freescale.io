@@ -1,7 +1,7 @@
 "use client";
 
 import { MueFlower } from "@/components/MueFlower";
-import { MueMemoryDrawer } from "@/components/MueMemoryDrawer";
+import { MueMemory } from "@/components/MueMemoryDrawer";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
@@ -522,13 +522,15 @@ export function MuePanel() {
               </svg>
             </button>
           )}
-          {/* Mémoire collée à droite, juste avant le chevron de fermeture. */}
+          {/* Mémoire — toggle inline (la vue Mémoire s'affiche dans le panel
+              au lieu d'ouvrir un drawer séparé). */}
           <button
             type="button"
-            className="mue2-mem-btn"
-            title="Mémoire de Mue"
+            className={`mue2-mem-btn ${memoryOpen ? "is-on" : ""}`}
+            title={memoryOpen ? "Fermer la mémoire" : "Mémoire de Mue"}
             aria-label="Mémoire de Mue"
-            onClick={() => setMemoryOpen(true)}
+            aria-pressed={memoryOpen}
+            onClick={() => setMemoryOpen((v) => !v)}
           >
             <svg {...stroke} width={15} height={15}>
               <rect x="3" y="5" width="18" height="5" rx="2" />
@@ -553,9 +555,9 @@ export function MuePanel() {
         </div>
       </header>
 
-      {/* CTA RGPD — sous l'en-tête, visible uniquement quand le chat est vide.
-          Clic → lance une discussion 'Confidentialité' avec vidéo + explication. */}
-      {mode === "ask" && !hasChat && (
+      {/* CTA RGPD — sous l'en-tête, visible uniquement quand le chat est vide
+          ET que la mémoire n'est pas ouverte. */}
+      {mode === "ask" && !hasChat && !memoryOpen && (
         <button type="button" className="mue2-privacy-cta" onClick={runPrivacy}>
           <span className="mue2-privacy-thumb" aria-hidden>
             <svg
@@ -579,7 +581,11 @@ export function MuePanel() {
         </button>
       )}
 
-      {mode === "agents" ? (
+      {memoryOpen ? (
+        <div className="mue2-memory-wrap">
+          <MueMemory />
+        </div>
+      ) : mode === "agents" ? (
         <div className="mue2-agents">
           <span className="mue2-agents-orb">
             <svg {...stroke} width={26} height={26}>
@@ -758,7 +764,6 @@ export function MuePanel() {
         <TaskDetailModal taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
       )}
 
-      <MueMemoryDrawer open={memoryOpen} onClose={() => setMemoryOpen(false)} />
     </aside>
   );
 }

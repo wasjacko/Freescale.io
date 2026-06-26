@@ -30686,14 +30686,29 @@ button.sidebar-brand {
   align-items: center;
   justify-content: space-between;
 }
-.mmd-head h2 {
+.mmd-head h2,
+.mmd-title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
   color: var(--ink, #10131a);
 }
-[data-theme="dark"] .mmd-head h2 {
+[data-theme="dark"] .mmd-head h2,
+[data-theme="dark"] .mmd-title {
   color: var(--ink);
+}
+
+/* Vue Mémoire rendue INLINE dans le panneau Mue (plus de drawer). */
+.mue2-memory-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 14px 16px;
+}
+.mmd-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 .mmd-close {
   width: 32px;
