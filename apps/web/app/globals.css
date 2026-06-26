@@ -24169,12 +24169,16 @@ button:active:not(:disabled):not(.no-press) {
   color: #9aa0aa;
 }
 .conv:hover {
-  background: #f7f8fa;
+  background: rgba(15, 23, 42, 0.035);
 }
 .conv.active {
-  background: #f5f7fa;
-  box-shadow: inset 0 -1px 0 rgba(10, 10, 10, 0.06);
-  border-radius: 0;
+  background: rgba(15, 23, 42, 0.06);
+  box-shadow: none;
+  /* border-radius hérité de la base (.conv = 12px) — pas d'override
+     square ici, sinon ça casse la cartouche arrondie. */
+}
+[data-theme="dark"] .conv.active {
+  background: rgba(255, 255, 255, 0.06);
 }
 .conv .conv-avatar {
   width: 38px;
