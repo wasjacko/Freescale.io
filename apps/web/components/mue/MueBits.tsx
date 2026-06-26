@@ -194,7 +194,6 @@ export function MuePrevRow({
   if (!ready) {
     return (
       <div className="mue2-prev-row mue2-prev-row--skeleton" aria-busy="true" aria-label="…">
-        <span className="mue2-prev-ic mue2-skel-block" aria-hidden />
         <span className="mue2-prev-main">
           <span className="mue2-skel-line mue2-skel-line--title" aria-hidden />
           <span className="mue2-skel-line mue2-skel-line--meta" aria-hidden />

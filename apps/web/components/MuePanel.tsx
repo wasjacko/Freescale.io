@@ -2139,11 +2139,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       const key = `${t.title}-${t.dueAtIso}-${i}`;
                       return (
                         <MuePrevRow key={key} revealId={`${m.id}:${key}`} index={i}>
-                          <span className="mue2-prev-ic" aria-hidden>
-                            <svg {...stroke} width={14} height={14}>
-                              <rect x="4" y="4" width="16" height="16" rx="4" />
-                            </svg>
-                          </span>
                           <span className="mue2-prev-main">
                             <span className="mue2-prev-title">{t.title}</span>
                             <span className="mue2-prev-meta">
