@@ -8,19 +8,35 @@ import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { MUE_DISCUSSIONS, fmtAgo, groupDiscussions } from "@/lib/mue-discussions";
 import { useApp } from "@/lib/store";
+import type { Priority } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MueTaskScanner } from "./SuggestTasksModal";
 
 type ActionRef = { entity: "task"; id: string; title: string };
+/** Tâche proposée par Mue avant création (étape de prévisualisation). */
+type ProposedTask = {
+  title: string;
+  client: string | null;
+  priority: Priority;
+  dueLabel: string;
+  dueAtIso: string;
+};
+
 type AskMessage = {
   id: string;
   role: "user" | "mue";
-  kind?: "text" | "scan" | "action" | "privacy";
+  kind?: "text" | "scan" | "action" | "privacy" | "preview" | "progress" | "result";
   content: string;
   tone?: "normal" | "error";
   action?: ActionRef;
   /** Suggestions de suivi (« Améliorations »). */
   improvements?: string[];
+  /** kind="preview" — liste prévisualisée + destination, en attente de validation. */
+  preview?: { tasks: ProposedTask[]; destination: string; done?: boolean };
+  /** kind="progress" — exécution en cours, élément par élément. */
+  progress?: { label: string; total: number; current: number };
+  /** kind="result" — objets réellement créés (liens cliquables). */
+  created?: ActionRef[];
 };
 
 type Mode = "ask" | "agents";
@@ -71,6 +87,46 @@ function parseTaskRequest(
   return { title, dueLabel, dueAtIso: due.toISOString() };
 }
 
+/** Détecte une demande de création MULTIPLE (« toutes mes tâches de la semaine »). */
+function isMultiTaskRequest(msg: string): boolean {
+  const l = msg.toLowerCase();
+  return /(toutes?\s+(?:mes\s+)?t[aâ]ches|mes\s+t[aâ]ches\s+(?:de\s+la\s+semaine|pour\s+la\s+semaine|de\s+cette\s+semaine)|plusieurs\s+t[aâ]ches|liste\s+de\s+t[aâ]ches|planifie\s+ma\s+semaine)/.test(
+    l
+  );
+}
+
+/** Échéance étalée sur les N prochains jours ouvrés (mock). */
+function dueInDays(offset: number): { dueLabel: string; dueAtIso: string } {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let added = 0;
+  while (added < offset) {
+    d.setDate(d.getDate() + 1);
+    const wd = d.getDay();
+    if (wd !== 0 && wd !== 6) added++;
+  }
+  d.setHours(9, 0, 0, 0);
+  const dayLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  return { dueLabel: dayLabel, dueAtIso: d.toISOString() };
+}
+
+/** Liste de tâches proposée par Mue (mock), ancrée sur les vrais clients. */
+function proposeWeekTasks(): ProposedTask[] {
+  const defs: { title: string; client: string | null; priority: Priority }[] = [
+    { title: "Envoyer le contrat signé", client: "Thomas Aubry", priority: "high" },
+    { title: "Relancer le devis", client: "David Kim", priority: "medium" },
+    { title: "Préparer la proposition commerciale", client: "Alexandre Dupont", priority: "medium" },
+    { title: "Réserver le coworking", client: null, priority: "low" },
+    { title: "Mettre à jour le portfolio", client: null, priority: "low" },
+  ];
+  return defs.map((def, i) => {
+    const due = dueInDays(i + 1);
+    return { ...def, dueLabel: due.dueLabel, dueAtIso: due.dueAtIso };
+  });
+}
+
+const PRIORITY_LABEL: Record<Priority, string> = { high: "Haute", medium: "Moyenne", low: "Basse" };
+
 const stroke = {
   fill: "none",
   stroke: "currentColor",
@@ -116,6 +172,8 @@ export function MuePanel() {
   const [askPending, setAskPending] = useState(false);
   const [askHistoryLoading, setAskHistoryLoading] = useState(false);
   const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
+  // Exécution agentique en cours (création multiple en cours, élément par élément).
+  const [executing, setExecuting] = useState(false);
   // Tâche ouverte en détail (modal) suite à une action de Mue.
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   // Sélecteur de discussions (popover) : ouverture + recherche.
@@ -268,10 +326,104 @@ export function MuePanel() {
     setAskInput("");
   };
 
+  // ── P2 · Création MULTIPLE : preview → confirmation → exécution → résultat ──
+  // Étape 1 — prévisualisation (Niveau 3). Mue ne crée RIEN encore.
+  const runMultiTaskPreview = (raw: string) => {
+    const tasks = proposeWeekTasks();
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
+      {
+        id: `prev-${Date.now()}`,
+        role: "mue",
+        kind: "preview",
+        content: `Voici ce que je propose — ${tasks.length} tâches dans ta liste perso :`,
+        preview: { tasks, destination: "Ma liste perso" },
+      },
+    ]);
+    setAskInput("");
+  };
+
+  // Étape 2 — exécution réelle (Niveau 4), élément par élément, après validation.
+  const executeMultiTask = async (previewId: string, tasks: ProposedTask[]) => {
+    if (executing) return;
+    setExecuting(true);
+    // Verrouille la carte de preview (boutons désactivés).
+    setAskMessages((prev) =>
+      prev.map((m) =>
+        m.id === previewId && m.preview ? { ...m, preview: { ...m.preview, done: true } } : m
+      )
+    );
+    const progId = `prog-${Date.now()}`;
+    setAskMessages((prev) => [
+      ...prev,
+      {
+        id: progId,
+        role: "mue",
+        kind: "progress",
+        content: "",
+        progress: { label: "Création des tâches", total: tasks.length, current: 0 },
+      },
+    ]);
+    const created: ActionRef[] = [];
+    for (let i = 0; i < tasks.length; i++) {
+      await new Promise((r) => setTimeout(r, 420));
+      const t = tasks[i];
+      if (!t) continue;
+      const id = `mue-${Date.now()}-${i}`;
+      addTask({
+        id,
+        title: t.title,
+        priority: t.priority,
+        dueLabel: t.dueLabel,
+        status: "todo",
+        avatar: { kind: "initials", text: "WA", bg: "#4f46e5" },
+        channel: "gmail",
+        sortableIndex: Date.now() + i,
+        fromAI: true,
+        conversationId: null,
+        dueAtIso: t.dueAtIso,
+        createdAtIso: new Date().toISOString(),
+      });
+      created.push({ entity: "task", id, title: t.title });
+      setAskMessages((prev) =>
+        prev.map((m) =>
+          m.id === progId && m.progress ? { ...m, progress: { ...m.progress, current: i + 1 } } : m
+        )
+      );
+    }
+    await new Promise((r) => setTimeout(r, 280));
+    // Remplace le tracker par le résultat (liens cliquables + suggestions).
+    setAskMessages((prev) =>
+      prev
+        .filter((m) => m.id !== progId)
+        .concat([
+          {
+            id: `res-${Date.now()}`,
+            role: "mue",
+            kind: "result",
+            content: `C'est fait — ${tasks.length} tâches créées dans Ma liste perso.`,
+            created,
+            improvements: [
+              "Bloque du temps dans mon calendrier pour ces tâches",
+              "Priorise-les selon leur urgence",
+              "Crée un agent qui me relance le lundi",
+            ],
+          },
+        ])
+    );
+    setExecuting(false);
+  };
+
   // Aiguillage : action (tâche) si l'intention est détectée, sinon question.
   const submit = (raw: string) => {
     const text = raw.trim();
-    if (!text || askPending) return;
+    if (!text || askPending || executing) return;
+    // Multi-tâches → prévisualisation (Niveau 3) AVANT toute création.
+    if (isMultiTaskRequest(text)) {
+      runMultiTaskPreview(text);
+      return;
+    }
     const parsed = parseTaskRequest(text);
     if (parsed) {
       runTaskAction(text, parsed);
@@ -307,7 +459,7 @@ export function MuePanel() {
 
   if (!mueOpen) return null;
 
-  const hasChat = askMessages.length > 0 || askPending || askHistoryLoading;
+  const hasChat = askMessages.length > 0 || askPending || askHistoryLoading || executing;
 
   // 3 suggestions (cartes). « Suggérer des tâches » lance le scan inline.
   const suggestions = conv
@@ -382,7 +534,13 @@ export function MuePanel() {
       <textarea
         ref={askInputRef}
         className="mue2-input"
-        placeholder="Besoin d'aide ? Pose une question, recherche ou crée."
+        placeholder={
+          askPending || executing
+            ? "J'y travaille…"
+            : askMessages.length > 0
+              ? "Dis à Mue ce qu'elle doit faire ensuite"
+              : "Besoin d'aide ? Pose une question, recherche ou crée."
+        }
         value={askInput}
         onChange={(e) => setAskInput(e.target.value)}
         onKeyDown={(e) => {
@@ -392,7 +550,7 @@ export function MuePanel() {
           }
         }}
         rows={2}
-        disabled={askPending}
+        disabled={askPending || executing}
         aria-label="Demander à Mue"
       />
       <div className="mue2-composer-row">
@@ -401,14 +559,20 @@ export function MuePanel() {
         </span>
         <button
           type="submit"
-          className="mue2-send"
-          aria-label="Envoyer"
-          disabled={!askInput.trim() || askPending}
+          className={`mue2-send ${askPending || executing ? "is-stop" : ""}`}
+          aria-label={askPending || executing ? "Arrêter" : "Envoyer"}
+          disabled={askPending || executing ? false : !askInput.trim()}
         >
-          <svg {...stroke}>
-            <line x1="12" y1="19" x2="12" y2="5" />
-            <polyline points="6 11 12 5 18 11" />
-          </svg>
+          {askPending || executing ? (
+            <svg {...stroke}>
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+          ) : (
+            <svg {...stroke}>
+              <line x1="12" y1="19" x2="12" y2="5" />
+              <polyline points="6 11 12 5 18 11" />
+            </svg>
+          )}
         </button>
       </div>
     </form>
@@ -698,6 +862,143 @@ export function MuePanel() {
                     </ul>
                   </div>
                   <div className="mue2-msg-body">{m.content}</div>
+                </div>
+              ) : m.kind === "preview" && m.preview ? (
+                <div key={m.id} className="mue2-msg is-mue">
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue
+                  </div>
+                  <div className="mue2-msg-body">{m.content}</div>
+                  <div className="mue2-prev">
+                    {m.preview.tasks.map((t, i) => (
+                      <div key={i} className="mue2-prev-row">
+                        <span className="mue2-prev-ic" aria-hidden>
+                          <svg {...stroke} width={14} height={14}>
+                            <rect x="4" y="4" width="16" height="16" rx="4" />
+                          </svg>
+                        </span>
+                        <span className="mue2-prev-main">
+                          <span className="mue2-prev-title">{t.title}</span>
+                          <span className="mue2-prev-meta">
+                            {t.dueLabel}
+                            {t.client ? ` · ${t.client}` : ""}
+                          </span>
+                        </span>
+                        <span className={`mue2-prio mue2-prio--${t.priority}`}>
+                          {PRIORITY_LABEL[t.priority]}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="mue2-prev-dest">
+                      <svg {...stroke} width={13} height={13}>
+                        <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                      </svg>
+                      Destination : <strong>{m.preview.destination}</strong>
+                    </div>
+                  </div>
+                  <div className="mue2-cfm">
+                    <button
+                      type="button"
+                      className="mue2-cfm-btn is-primary"
+                      disabled={m.preview.done}
+                      onClick={() => void executeMultiTask(m.id, m.preview!.tasks)}
+                    >
+                      {m.preview.done ? "✓ En cours…" : "Oui, crée-les dans ma liste"}
+                    </button>
+                    <button
+                      type="button"
+                      className="mue2-cfm-btn"
+                      disabled={m.preview.done}
+                      onClick={() =>
+                        push({ kind: "info", text: "Choix d'une autre liste — bientôt." })
+                      }
+                    >
+                      Choisir une autre liste
+                    </button>
+                    <button
+                      type="button"
+                      className="mue2-cfm-btn"
+                      disabled={m.preview.done}
+                      onClick={() =>
+                        push({ kind: "info", text: "Édition avant création — bientôt." })
+                      }
+                    >
+                      Modifier avant création
+                    </button>
+                  </div>
+                </div>
+              ) : m.kind === "progress" && m.progress ? (
+                <div key={m.id} className="mue2-msg is-mue">
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue · au travail
+                  </div>
+                  <div className="mue2-prog">
+                    <div className="mue2-prog-line">
+                      <span className="mue2-prog-spin" aria-hidden>
+                        <svg {...stroke} width={14} height={14}>
+                          <path d="M12 3a9 9 0 1 0 9 9" />
+                        </svg>
+                      </span>
+                      {m.progress.label} {m.progress.current}/{m.progress.total}
+                    </div>
+                    <div className="mue2-prog-track" aria-hidden>
+                      <span
+                        className="mue2-prog-fill"
+                        style={{
+                          width: `${Math.round((m.progress.current / m.progress.total) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : m.kind === "result" ? (
+                <div key={m.id} className="mue2-msg is-mue">
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue
+                  </div>
+                  <div className="mue2-msg-body">
+                    <span className="mue2-result-check" aria-hidden>
+                      <svg {...stroke} width={15} height={15}>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
+                    {m.content}
+                  </div>
+                  {m.created && m.created.length > 0 && (
+                    <div className="mue2-result-list">
+                      {m.created.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          className="mue2-ref"
+                          onClick={() => setDetailTaskId(c.id)}
+                          title="Ouvrir la fiche"
+                        >
+                          <span className="mue2-ref-dot" aria-hidden />
+                          {c.title}
+                          <span className="mue2-ref-badge">TO DO</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {m.improvements && m.improvements.length > 0 && (
+                    <div className="mue2-improve">
+                      <span className="mue2-improve-label">Et ensuite</span>
+                      {m.improvements.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className="mue2-improve-chip"
+                          onClick={() => submit(s)}
+                        >
+                          <span className="mue2-improve-arrow" aria-hidden>
+                            ↳
+                          </span>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div
