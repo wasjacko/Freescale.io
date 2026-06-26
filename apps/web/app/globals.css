@@ -12132,12 +12132,21 @@ html {
 .mue-pane.mue2 {
   padding: 0;
   color: var(--ink, #0a0a0a);
-  background: radial-gradient(130% 90% at 50% 0%, #ffffff 0%, #f4f6f9 62%);
+  /* Gradient « cool » avec du blanc : blanc en haut → bleu → lavande → cyan
+     doux. Assez clair pour que le texte sombre reste lisible. */
+  background: linear-gradient(
+    160deg,
+    #ffffff 0%,
+    #eef2ff 32%,
+    #f1ecff 62%,
+    #e9f4ff 100%
+  );
   box-shadow: 0 10px 34px rgba(15, 23, 42, 0.1), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 [data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
-  background: radial-gradient(130% 90% at 50% 0%, #1b1d26 0%, #0e0f14 62%);
+  /* Version sombre : même esprit cool (bleu→violet profond) sans blanc. */
+  background: linear-gradient(160deg, #16213a 0%, #181a32 45%, #1d172e 75%, #121c30 100%);
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.34);
 }
 .mue2-head {
