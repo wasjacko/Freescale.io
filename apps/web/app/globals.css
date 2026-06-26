@@ -34521,3 +34521,33 @@ button.mfv-model:hover {
     animation: none;
   }
 }
+
+/* Suggestions « Et ensuite » / « Améliorations » : apparaissent après le
+   streaming du texte, slide-in fluide pour bien marquer la séquence. */
+.mue2-after-stream {
+  animation: mue2-after-stream-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes mue2-after-stream-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-after-stream { animation: none; }
+}
+
+/* Pillule objet inline : pop-in subtil quand le token {{r:KEY}} est révélé
+   par le streaming → donne le ressenti « l'objet vient d'être créé ». */
+.mue2-inlineref {
+  animation: mue2-inlineref-pop 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes mue2-inlineref-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-inlineref { animation: none; }
+}

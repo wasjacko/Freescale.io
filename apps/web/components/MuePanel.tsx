@@ -836,6 +836,11 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   // réanimation. Branchement futur sur un vrai stream : remplacer le rAF par
   // l'arrivée des chunks et appeler streamedIdsRef.current.add(id) à la fin.
   const streamedIdsRef = useRef<Set<string>>(new Set());
+  // État qui force un re-render quand un message finit son streaming, pour
+  // pouvoir révéler les suggestions « Et ensuite » dans la foulée.
+  const [doneStreamingIds, setDoneStreamingIds] = useState<Set<string>>(new Set());
+  const markStreamingDone = (id: string) =>
+    setDoneStreamingIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
   const StreamingText = ({
     id,
     text,
@@ -850,6 +855,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     useEffect(() => {
       if (already) {
         setVisible(text);
+        markStreamingDone(id);
         return;
       }
       let i = 0;
@@ -860,7 +866,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         i = Math.min(i + 1, text.length);
         setVisible(text.slice(0, i));
         if (i < text.length) raf = requestAnimationFrame(tick);
-        else streamedIdsRef.current.add(id);
+        else {
+          streamedIdsRef.current.add(id);
+          markStreamingDone(id);
+        }
       };
       raf = requestAnimationFrame(tick);
       return () => cancelAnimationFrame(raf);
@@ -2167,7 +2176,15 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       ))}
                     </div>
                   )}
-                  <MueSuggestions label="Et ensuite" items={m.improvements ?? []} onPick={submit} />
+                  {doneStreamingIds.has(m.id) && (
+                    <div className="mue2-after-stream">
+                      <MueSuggestions
+                        label="Et ensuite"
+                        items={m.improvements ?? []}
+                        onPick={submit}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div
@@ -2201,11 +2218,15 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       ))}
                     </div>
                   )}
-                  <MueSuggestions
-                    label="Améliorations"
-                    items={m.improvements ?? []}
-                    onPick={submit}
-                  />
+                  {doneStreamingIds.has(m.id) && (
+                    <div className="mue2-after-stream">
+                      <MueSuggestions
+                        label="Améliorations"
+                        items={m.improvements ?? []}
+                        onPick={submit}
+                      />
+                    </div>
+                  )}
                   {m.tone !== "error" && (
                     <MueMsgActions
                       onCopy={() => copyText(cleanContent(m))}
