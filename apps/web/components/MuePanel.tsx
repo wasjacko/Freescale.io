@@ -1345,8 +1345,12 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             </div>
           )}
           <div className="mue2-foot">
-            {/* Zone d'intention (façon ClickUp Brain) : pills ↔ suggestions. */}
-            {activeIntent
+            {/* Zone d'intention (façon ClickUp Brain) : pills ↔ suggestions.
+                Dès que le composer contient du texte (suggestion choisie ou
+                saisie manuelle), on masque pills + suggestions pour se concentrer
+                sur le chat. Elles reviennent quand le champ est vidé. */}
+            {!askInput.trim() &&
+              (activeIntent
               ? (() => {
                   const it = INTENTIONS.find((x) => x.key === activeIntent);
                   if (!it) return null;
@@ -1400,7 +1404,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       </button>
                     ))}
                   </div>
-                )}
+                ))}
             {composer}
           </div>
         </>
