@@ -1239,16 +1239,24 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             "Extraction des points clés et décisions...",
             "Synthèse du brief en 3 points...",
           ];
+        } else if (lowerText.includes("relance") || lowerText.includes("relanc")) {
+          steps = [
+            "Identification du client à relancer...",
+            "Lecture du dernier échange et du contexte...",
+            "Évaluation de l'enjeu — ferme ou courtois ?",
+            "Rédaction d'une relance prête à envoyer...",
+          ];
         } else if (
           lowerText.includes("répons") ||
           lowerText.includes("ecris") ||
-          lowerText.includes("rédige")
+          lowerText.includes("rédige") ||
+          lowerText.includes("écris")
         ) {
           steps = [
-            "Analyse du contexte de l'email...",
-            "Consultation de ta voix et de ton profil de style...",
-            "Rédaction de suggestions de réponses adaptées...",
-            "Polissage des formulations pour rester naturel...",
+            "Lecture du fil avec le client...",
+            "Identification de la demande et du ton attendu...",
+            "Rédaction d'une réponse personnalisée...",
+            "Vérification de la cohérence avec ton style...",
           ];
         } else {
           steps = [
@@ -1263,9 +1271,13 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
 
     clearActiveTimers();
 
-    // 3. Ajouter le message de réflexion inline
+    // 3. Ajouter le message de réflexion inline.
+    // Étape initiale CONTEXTUELLE : on prend steps[0] si dispo (chaque intent
+    // a sa propre première étape signée) plutôt qu'un générique « Prend en
+    // compte… ». Fallback uniquement si aucun intent n'a matché.
     const thinkingId = `thinking-${Date.now()}`;
-    const initialStep = "Prend en compte...";
+    const initialStep = steps[0] ?? "Prend en compte...";
+    const stepsAfterFirst = steps.slice(1);
     setAskMessages((prev) => [
       ...prev,
       {
@@ -1300,14 +1312,16 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       const timeoutId = setTimeout(() => {
         if (Date.now() - startTime >= T) return;
 
-        let nextStepText = steps[stepIdx];
+        // On a déjà affiché steps[0] comme étape initiale, on enchaîne donc
+        // sur stepsAfterFirst (= steps.slice(1)).
+        let nextStepText = stepsAfterFirst[stepIdx];
         if (!nextStepText) {
           const fallbacks = [
             "Analyse finale...",
             "Mise en forme des données...",
             "Préparation de la réponse...",
           ];
-          nextStepText = fallbacks[stepIdx - steps.length] || "Finalisation...";
+          nextStepText = fallbacks[stepIdx - stepsAfterFirst.length] || "Finalisation...";
         }
 
         currentSteps.push(nextStepText);
