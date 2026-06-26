@@ -192,6 +192,153 @@ function proposeWeekTasks(): ProposedTask[] {
 }
 
 
+// Raccourcis d'intention (façon ClickUp Brain) — chaque pill ouvre une liste
+// de suggestions adaptées à Freescale ; le clic PRÉREMPLIT le composer (pas d'envoi).
+type Intent = { key: string; label: string; icon: string; suggestions: string[] };
+const INTENTIONS: Intent[] = [
+  {
+    key: "find",
+    label: "Trouver",
+    icon: "search",
+    suggestions: [
+      "Retrouve le dernier message de Sarah Lemoine",
+      "Trouve les devis envoyés ce mois",
+      "Où en est le projet Refonte produit V2 ?",
+    ],
+  },
+  {
+    key: "research",
+    label: "Rechercher",
+    icon: "compass",
+    suggestions: [
+      "Cherche les fils où on parle de paiement en retard",
+      "Liste les relances en attente",
+      "Trouve les clients silencieux depuis 10 jours",
+    ],
+  },
+  {
+    key: "create",
+    label: "Créer",
+    icon: "plus",
+    suggestions: [
+      "Crée un devis pour Jean-Pierre",
+      "Crée une tâche : envoyer le contrat à Thomas",
+      "Rédige une relance pour David Kim",
+    ],
+  },
+  {
+    key: "edit",
+    label: "Modifier",
+    icon: "pencil",
+    suggestions: [
+      "Reformule ce brouillon en plus chaleureux",
+      "Change l'échéance de cette tâche à lundi",
+      "Passe cette tâche en Terminé",
+    ],
+  },
+  {
+    key: "analyze",
+    label: "Analyser",
+    icon: "chart",
+    suggestions: [
+      "Quels clients me doivent une réponse ?",
+      "Analyse ma santé client cette semaine",
+      "Quel client rapporte le plus ?",
+    ],
+  },
+  {
+    key: "prioritize",
+    label: "Prioriser",
+    icon: "flag",
+    suggestions: [
+      "Sur quoi je me concentre maintenant ?",
+      "Organise ma file selon ce qui compte",
+      "Quel client relancer en premier ?",
+      "Trie mes nouvelles tâches entrantes",
+    ],
+  },
+  {
+    key: "plan",
+    label: "Planifier",
+    icon: "calendar",
+    suggestions: [
+      "Bloque un créneau pour le call découverte",
+      "Planifie ma semaine à partir de mes tâches",
+      "Trouve un moment pour rappeler David Kim",
+    ],
+  },
+];
+
+function intentIcon(k: string) {
+  const s = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    viewBox: "0 0 24 24",
+    width: 14,
+    height: 14,
+  };
+  switch (k) {
+    case "search":
+      return (
+        <svg {...s}>
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      );
+    case "compass":
+      return (
+        <svg {...s}>
+          <circle cx="12" cy="12" r="9" />
+          <polygon points="16 8 14 14 8 16 10 10 16 8" />
+        </svg>
+      );
+    case "plus":
+      return (
+        <svg {...s}>
+          <circle cx="12" cy="12" r="9" />
+          <line x1="12" y1="8" x2="12" y2="16" />
+          <line x1="8" y1="12" x2="16" y2="12" />
+        </svg>
+      );
+    case "pencil":
+      return (
+        <svg {...s}>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+        </svg>
+      );
+    case "chart":
+      return (
+        <svg {...s}>
+          <polyline points="3 13 7 9 11 13 17 7" />
+          <polyline points="13 7 17 7 17 11" />
+        </svg>
+      );
+    case "flag":
+      return (
+        <svg {...s}>
+          <line x1="5" y1="22" x2="5" y2="4" />
+          <path d="M5 4h12l-2 4 2 4H5" />
+        </svg>
+      );
+    case "calendar":
+      return (
+        <svg {...s}>
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+          <line x1="8" y1="3" x2="8" y2="7" />
+          <line x1="16" y1="3" x2="16" y2="7" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
 const stroke = {
   fill: "none",
   stroke: "currentColor",
@@ -227,7 +374,7 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
  * un composer à liseré dégradé, 3 suggestions, et une surface de chat pur.
  * Le scan de tâches se joue INLINE dans le chat (skeleton pastel → tâches).
  */
-export function MuePanel() {
+export function MuePanel({ userName = null }: { userName?: string | null }) {
   const {
     activeConvId,
     mueOpen,
@@ -254,6 +401,10 @@ export function MuePanel() {
   // P4 — document (devis) ouvert dans une surface par-dessus le canvas.
   const [openDoc, setOpenDoc] = useState<DevisDoc | null>(null);
   const docsRef = useRef<Record<string, DevisDoc>>({});
+  // Raccourci d'intention déplié (façon ClickUp Brain) — null = pills affichées.
+  const [activeIntent, setActiveIntent] = useState<string | null>(null);
+
+  const firstName = (userName ?? "").trim().split(/\s+/)[0] || "toi";
   // Tâche ouverte en détail (modal) suite à une action de Mue.
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   // Sélecteur de discussions (popover) : ouverture + recherche.
@@ -1083,13 +1234,13 @@ export function MuePanel() {
           </p>
         </div>
       ) : !hasChat ? (
-        // ── État vide : hero logo + Mue + chips condensés + composer en bas ──
+        // ── État vide : hero personnalisé + chips rapides + pills d'intention ──
         <>
           <div className="mue2-hero">
             <span className="mue2-hero-mark">
               <MueFlower size={60} />
             </span>
-            <h2 className="mue2-hero-title">Mue</h2>
+            <h2 className="mue2-hero-title">À votre service, {firstName}</h2>
           </div>
           <div className="mue2-chips" aria-label="Suggestions">
             {suggestions.map((s) => (
@@ -1104,7 +1255,65 @@ export function MuePanel() {
               </button>
             ))}
           </div>
-          <div className="mue2-foot">{composer}</div>
+          <div className="mue2-foot">
+            {/* Zone d'intention (façon ClickUp Brain) : pills ↔ suggestions. */}
+            {activeIntent
+              ? (() => {
+                  const it = INTENTIONS.find((x) => x.key === activeIntent);
+                  if (!it) return null;
+                  return (
+                    <div className="mue2-intentpanel">
+                      <div className="mue2-intentpanel-head">
+                        <span className="mue2-intentpanel-title">
+                          {intentIcon(it.icon)} {it.label}
+                        </span>
+                        <button
+                          type="button"
+                          className="mue2-intentpanel-close"
+                          aria-label="Fermer"
+                          onClick={() => setActiveIntent(null)}
+                        >
+                          <svg {...stroke} width={14} height={14}>
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                          </svg>
+                        </button>
+                      </div>
+                      {it.suggestions.map((sg) => (
+                        <button
+                          key={sg}
+                          type="button"
+                          className="mue2-intentsugg"
+                          onClick={() => {
+                            setAskInput(sg);
+                            setActiveIntent(null);
+                            requestAnimationFrame(() => askInputRef.current?.focus());
+                          }}
+                        >
+                          {intentIcon(it.icon)}
+                          {sg}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()
+              : (
+                  <div className="mue2-intents" aria-label="Raccourcis d'intention">
+                    {INTENTIONS.map((it) => (
+                      <button
+                        key={it.key}
+                        type="button"
+                        className="mue2-intent"
+                        onClick={() => setActiveIntent(it.key)}
+                      >
+                        {intentIcon(it.icon)}
+                        {it.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+            {composer}
+          </div>
         </>
       ) : (
         // ── Chat pur ──

@@ -356,7 +356,7 @@ export function AppShell({
         {/* Mue — rail compagnon repliable, 3e colonne de .app : même
             endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).
             Le lanceur vit dans le bouton « Agent » de la topbar. */}
-        <MuePanel />
+        <MuePanel userName={user?.name ?? null} />
       </div>
 
       <ClientConfirmModal />
