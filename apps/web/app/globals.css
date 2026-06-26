@@ -687,11 +687,10 @@ button:not(:disabled):active,
   color: #fff;
 }
 
-/* Badge en dark — ring sombre (au lieu du ring blanc qui jurait),
-   et fond bleu vif pour pop sur le fond. */
+/* Badge en dark — rouge vif, ring sombre matchant le body. */
 [data-theme="dark"] .sidebar .nav-ico .nav-badge {
-  background: #7aa2ff;
-  color: #101015;
+  background: #ef4444;
+  color: #fff;
   box-shadow: 0 0 0 2px #101015;
 }
 
@@ -25555,7 +25554,8 @@ button.sidebar-brand {
 .sidebar .nav-item.active .nav-ico .icon {
   color: #fff;
 }
-/* Badge compteur sur le coin de l'icône. */
+/* Badge compteur sur le coin de l'icône — rouge classique notif, pour
+   ne pas dupliquer la teinte indigo de l'état actif. */
 .sidebar .nav-ico .nav-badge {
   position: absolute;
   top: -4px;
@@ -25566,7 +25566,7 @@ button.sidebar-brand {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: var(--rail-accent);
+  background: #ef4444;
   color: #fff;
   font-size: 9.5px;
   font-weight: 700;
