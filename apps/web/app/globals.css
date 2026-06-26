@@ -673,12 +673,12 @@ button:not(:disabled):active,
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Item actif en dark — même indigo plein qu'en light. */
+/* Item actif en dark — même gradient indigo foncé qu'en light. */
 [data-theme="dark"] .sidebar .nav-item.active .nav-ico,
 [data-theme="dark"] .sidebar .nav-item.active:hover .nav-ico {
-  background: #4f6cf7;
+  background: linear-gradient(140deg, #4360e0 0%, #2a3fb3 100%);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(79, 108, 247, 0.45);
+  box-shadow: none;
 }
 [data-theme="dark"] .sidebar .nav-item.active .nav-ico .icon {
   color: #fff;
@@ -25526,9 +25526,9 @@ button.sidebar-brand {
   background: rgba(10, 10, 10, 0.06);
   color: var(--ink, #10131a);
 }
-/* L'item actif garde son carré indigo plein, même au survol. */
+/* L'item actif garde son carré indigo dégradé, même au survol. */
 .sidebar .nav-item.active:hover .nav-ico {
-  background: #4f6cf7;
+  background: linear-gradient(140deg, #4360e0 0%, #2a3fb3 100%);
   color: #fff;
 }
 .sidebar .nav-ico .icon {
@@ -25541,17 +25541,17 @@ button.sidebar-brand {
   letter-spacing: -0.01em;
   white-space: normal;
 }
-/* État actif : carré indigo PLEIN + icône blanche + label gras encre.
-   Vraiment visible — on doit comprendre instantanément où on est. */
+/* État actif : carré indigo dégradé foncé + icône blanche + label gras.
+   Pas de drop shadow — le contraste du bleu suffit. */
 .sidebar .nav-item.active {
   background: transparent;
   color: var(--ink, #10131a);
   font-weight: 700;
 }
 .sidebar .nav-item.active .nav-ico {
-  background: #4f6cf7;
+  background: linear-gradient(140deg, #4360e0 0%, #2a3fb3 100%);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(79, 108, 247, 0.35);
+  box-shadow: none;
 }
 .sidebar .nav-item.active .nav-ico .icon {
   color: #fff;
