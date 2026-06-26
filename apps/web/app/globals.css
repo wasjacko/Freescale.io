@@ -34938,3 +34938,47 @@ button.mfv-model:hover {
     animation: none;
   }
 }
+
+/* Étape active du bloc thinking : un gradient gris→blanc→gris qui traverse
+   le texte par vague de gauche à droite — donne le sentiment que Mue est
+   en train d'écrire/de réfléchir en temps réel. */
+.mue-thinking-step.is-current .mue-step-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--ink, #10131a) 0%,
+    var(--ink, #10131a) 35%,
+    rgba(220, 220, 230, 1) 50%,
+    var(--ink, #10131a) 65%,
+    var(--ink, #10131a) 100%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: mue-thinking-shimmer 2.2s linear infinite;
+}
+[data-theme="dark"] .mue-thinking-step.is-current .mue-step-text {
+  background-image: linear-gradient(
+    90deg,
+    #f4f4f7 0%,
+    #f4f4f7 35%,
+    rgba(120, 120, 132, 1) 50%,
+    #f4f4f7 65%,
+    #f4f4f7 100%
+  );
+}
+@keyframes mue-thinking-shimmer {
+  /* Vague qui traverse le texte de GAUCHE à DROITE — la bande claire est
+     au milieu du gradient, on décale la background-position de gauche
+     vers droite pour la faire avancer dans le sens de lecture. */
+  0%   { background-position: -120% 0; }
+  100% { background-position: 120% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue-thinking-step.is-current .mue-step-text {
+    animation: none;
+    color: var(--ink, #10131a);
+    -webkit-text-fill-color: var(--ink, #10131a);
+  }
+}
