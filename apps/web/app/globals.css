@@ -33236,3 +33236,113 @@ button.mfv-model:hover {
 [data-theme="dark"] .mue2-objcard-meta {
   color: #c8ccd6;
 }
+
+/* P5 — refus gracieux + modale « Arrêter de générer ? » */
+.mue2-refusal {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 0 10px 10px 0;
+  border-left: 3px solid #ef4444;
+  background: var(--csv-soft-bg, rgba(15, 23, 42, 0.035));
+}
+.mue2-refusal-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink, #10131a);
+  line-height: 1.45;
+}
+.mue2-refusal-ic {
+  flex: none;
+  color: #c0271f;
+  margin-top: 1px;
+}
+.mue2-refusal-alt {
+  margin: 6px 0 10px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.45;
+}
+[data-theme="dark"] .mue2-refusal {
+  background: rgba(255, 255, 255, 0.04);
+}
+[data-theme="dark"] .mue2-refusal-reason {
+  color: #f4f4f7;
+}
+[data-theme="dark"] .mue2-refusal-ic {
+  color: #f09595;
+}
+[data-theme="dark"] .mue2-refusal-alt {
+  color: #c8ccd6;
+}
+
+/* Modale de confirmation de fermeture — overlay interne au panneau */
+.mue2-closeconfirm {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: inherit;
+}
+.mue2-cc-card {
+  width: 100%;
+  max-width: 300px;
+  background: var(--csv-card-bg, #fff);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+}
+.mue2-cc-card h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #10131a);
+}
+.mue2-cc-card p {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+.mue2-cc-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.mue2-cc-btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-input, rgba(15, 23, 42, 0.05));
+  color: var(--ink, #10131a);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+}
+.mue2-cc-btn.is-danger {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: none;
+}
+[data-theme="dark"] .mue2-cc-card {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+[data-theme="dark"] .mue2-cc-card h4 {
+  color: #f4f4f7;
+}
+[data-theme="dark"] .mue2-cc-card p {
+  color: #c8ccd6;
+}
+[data-theme="dark"] .mue2-cc-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f4f7;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}

@@ -9,7 +9,7 @@ import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { MUE_DISCUSSIONS, fmtAgo, groupDiscussions } from "@/lib/mue-discussions";
 import { useApp } from "@/lib/store";
-import type { Priority } from "@/lib/types";
+import type { Priority, ViewId } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MueTaskScanner } from "./SuggestTasksModal";
 
@@ -32,12 +32,14 @@ type ProposedTask = {
 type AskMessage = {
   id: string;
   role: "user" | "mue";
-  kind?: "text" | "scan" | "action" | "privacy" | "preview" | "progress" | "result";
+  kind?: "text" | "scan" | "action" | "privacy" | "preview" | "progress" | "result" | "refusal";
   content: string;
   tone?: "normal" | "error";
   action?: ActionRef;
   /** Suggestions de suivi (« Améliorations »). */
   improvements?: string[];
+  /** kind="refusal" — limite expliquée + alternative manuelle (CTA optionnel). */
+  refusal?: { alternative: string; cta?: { label: string; view: ViewId } };
   /** kind="preview" — liste prévisualisée + destination, en attente de validation. */
   preview?: { tasks: ProposedTask[]; destination: string; done?: boolean };
   /** kind="progress" — exécution en cours, élément par élément. */
@@ -94,6 +96,14 @@ function parseTaskRequest(
   });
   const dueLabel = `${dayLabel} · ${hour}h`;
   return { title, dueLabel, dueAtIso: due.toISOString() };
+}
+
+/** Détecte une action DESTRUCTIVE / de masse que Mue doit refuser. */
+function isDestructiveRequest(msg: string): boolean {
+  const l = msg.toLowerCase();
+  return /(supprime|efface|vide|retire|delete).*(tout|toutes|mes\s+t[aâ]ches|corbeille|conversations?|clients?)/.test(
+    l
+  );
 }
 
 /** Détecte une demande de PRIORISATION / focus (réponse informative, Niveau 1→2). */
@@ -199,6 +209,9 @@ export function MuePanel() {
   const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
   // Exécution agentique en cours (création multiple en cours, élément par élément).
   const [executing, setExecuting] = useState(false);
+  // P5 — modale « Arrêter de générer ? » + annulation de l'exécution en cours.
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
+  const cancelRef = useRef(false);
   // Tâche ouverte en détail (modal) suite à une action de Mue.
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   // Sélecteur de discussions (popover) : ouverture + recherche.
@@ -380,6 +393,7 @@ export function MuePanel() {
   // Étape 2 — exécution réelle (Niveau 4), élément par élément, après validation.
   const executeMultiTask = async (previewId: string, tasks: ProposedTask[]) => {
     if (executing) return;
+    cancelRef.current = false;
     setExecuting(true);
     // Verrouille la carte de preview (boutons désactivés).
     setAskMessages((prev) =>
@@ -401,6 +415,7 @@ export function MuePanel() {
     const created: ActionRef[] = [];
     for (let i = 0; i < tasks.length; i++) {
       await new Promise((r) => setTimeout(r, 420));
+      if (cancelRef.current) break; // P5 — exécution annulée (fermeture pendant génération)
       const t = tasks[i];
       if (!t) continue;
       const id = `mue-${Date.now()}-${i}`;
@@ -426,6 +441,8 @@ export function MuePanel() {
       );
     }
     await new Promise((r) => setTimeout(r, 280));
+    const cancelled = cancelRef.current;
+    const n = created.length;
     // Remplace le tracker par le résultat (liens cliquables + suggestions).
     setAskMessages((prev) =>
       prev
@@ -435,16 +452,21 @@ export function MuePanel() {
             id: `res-${Date.now()}`,
             role: "mue",
             kind: "result",
-            content: `C'est fait — ${tasks.length} tâches créées dans Ma liste perso.`,
+            content: cancelled
+              ? `Arrêté — ${n} ${n > 1 ? "tâches créées" : "tâche créée"} avant l'interruption.`
+              : `C'est fait — ${n} tâches créées dans Ma liste perso.`,
             created,
-            improvements: [
-              "Bloque du temps dans mon calendrier pour ces tâches",
-              "Priorise-les selon leur urgence",
-              "Crée un agent qui me relance le lundi",
-            ],
+            improvements: cancelled
+              ? ["Reprends la création des tâches restantes", "Montre-moi ce qui a été créé"]
+              : [
+                  "Bloque du temps dans mon calendrier pour ces tâches",
+                  "Priorise-les selon leur urgence",
+                  "Crée un agent qui me relance le lundi",
+                ],
           },
         ])
     );
+    cancelRef.current = false;
     setExecuting(false);
   };
 
@@ -518,10 +540,37 @@ export function MuePanel() {
     setAskInput("");
   };
 
+  // ── P5 · Refus gracieux d'une action destructive + alternative manuelle ──
+  const runRefusal = (raw: string) => {
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
+      {
+        id: `ref-${Date.now()}`,
+        role: "mue",
+        kind: "refusal",
+        content:
+          "Je ne peux pas supprimer en masse — c'est une action sensible et irréversible.",
+        refusal: {
+          alternative:
+            "Sélectionne les éléments dans le Tableau, puis envoie-les à la Corbeille d'un clic.",
+          cta: { label: "Ouvrir le Tableau", view: "tasks" },
+        },
+        improvements: ["Archive les tâches terminées", "Montre-moi les tâches en retard"],
+      },
+    ]);
+    setAskInput("");
+  };
+
   // Aiguillage : action (tâche) si l'intention est détectée, sinon question.
   const submit = (raw: string) => {
     const text = raw.trim();
     if (!text || askPending || executing) return;
+    // Destructif → refus (Niveau 0), AVANT toute autre intention.
+    if (isDestructiveRequest(text)) {
+      runRefusal(text);
+      return;
+    }
     // Priorisation / focus → réponse informative (Niveau 1→2), aucune mutation.
     if (isFocusRequest(text)) {
       runFocus(text);
@@ -832,7 +881,11 @@ export function MuePanel() {
           <button
             type="button"
             className="mue-agent-iconbtn"
-            onClick={() => setMueOpen(false)}
+            onClick={() => {
+              // P5 — ne jamais interrompre silencieusement : confirmer si occupé.
+              if (askPending || executing) setConfirmCloseOpen(true);
+              else setMueOpen(false);
+            }}
             aria-label="Replier Mue"
             title="Replier"
           >
@@ -1074,6 +1127,38 @@ export function MuePanel() {
                     </div>
                   </div>
                 </div>
+              ) : m.kind === "refusal" && m.refusal ? (
+                <div key={m.id} className="mue2-msg is-mue">
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue
+                  </div>
+                  <div className="mue2-refusal">
+                    <div className="mue2-refusal-reason">
+                      <span className="mue2-refusal-ic" aria-hidden>
+                        <svg {...stroke} width={15} height={15}>
+                          <path d="M12 9v4M12 17h.01" />
+                          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                        </svg>
+                      </span>
+                      {m.content}
+                    </div>
+                    <div className="mue2-refusal-alt">{m.refusal.alternative}</div>
+                    {m.refusal.cta && (
+                      <button
+                        type="button"
+                        className="mue2-cfm-btn"
+                        onClick={() => m.refusal?.cta && setView(m.refusal.cta.view)}
+                      >
+                        {m.refusal.cta.label}
+                      </button>
+                    )}
+                  </div>
+                  <MueSuggestions
+                    label="À la place"
+                    items={m.improvements ?? []}
+                    onPick={submit}
+                  />
+                </div>
               ) : m.kind === "result" ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
@@ -1163,6 +1248,36 @@ export function MuePanel() {
         <TaskDetailModal taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
       )}
 
+      {/* P5 — confirmation avant fermeture pendant une génération en cours. */}
+      {confirmCloseOpen && (
+        <div className="mue2-closeconfirm" role="dialog" aria-modal="true">
+          <div className="mue2-cc-card">
+            <h4>Arrêter de générer ?</h4>
+            <p>La fermeture annulera la réponse en cours.</p>
+            <div className="mue2-cc-row">
+              <button
+                type="button"
+                className="mue2-cc-btn"
+                onClick={() => setConfirmCloseOpen(false)}
+              >
+                Laisser ouvert
+              </button>
+              <button
+                type="button"
+                className="mue2-cc-btn is-danger"
+                onClick={() => {
+                  cancelRef.current = true;
+                  setExecuting(false);
+                  setConfirmCloseOpen(false);
+                  setMueOpen(false);
+                }}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
