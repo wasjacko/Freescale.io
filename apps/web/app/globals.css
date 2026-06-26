@@ -33536,11 +33536,15 @@ button.mfv-model:hover {
 .muedoc-sheet {
   position: relative;
   width: 100%;
-  max-width: 460px;
+  /* Le devis EST un document (client + prestataire + tableau de prestations
+     + totaux + conditions) → il a besoin de plus d'espace que la fiche
+     tâche. max-height pour qu'il scrolle si le contenu dépasse. */
+  max-width: 680px;
+  max-height: calc(100vh - 80px);
   background: var(--csv-card-bg, #fff);
   border-radius: 16px;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
-  overflow: hidden;
+  overflow: auto;
 }
 .muedoc-head {
   display: flex;
