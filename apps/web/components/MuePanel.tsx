@@ -405,6 +405,21 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
   </svg>
 );
 
+// Titre du bloc thinking : cycle entre 3 états (Réfléchit → Comprend → Conçoit)
+// toutes les ~850ms. Reste figé sur le dernier label jusqu'à la fin du thinking.
+// Défini HORS de MuePanel pour ne pas être recréé à chaque render (sinon
+// useState reset à chaque mount).
+const THINKING_LABELS = ["Réfléchit", "Comprend", "Conçoit"] as const;
+function ThinkingTitle() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (idx >= THINKING_LABELS.length - 1) return;
+    const t = setTimeout(() => setIdx((i) => Math.min(i + 1, THINKING_LABELS.length - 1)), 850);
+    return () => clearTimeout(t);
+  }, [idx]);
+  return <span className="mue-thinking-title">{THINKING_LABELS[idx]}</span>;
+}
+
 /**
  * MuePanel — copilote Mue façon « Brain » : deux modes (Demander / Agents),
  * un composer à liseré dégradé, 3 suggestions, et une surface de chat pur.
@@ -1038,7 +1053,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
           >
             <circle cx="12" cy="12" r="10" strokeDasharray="42 20" strokeLinecap="round" />
           </svg>
-          <span className="mue-thinking-title">Handling</span>
+          <ThinkingTitle />
         </div>
         <div className="mue-thinking-steps">
           <div className="mue-thinking-step is-current">
