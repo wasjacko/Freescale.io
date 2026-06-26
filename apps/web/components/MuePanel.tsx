@@ -17,7 +17,7 @@ import { useToast } from "@/lib/hooks/useToast";
 import { MUE_DISCUSSIONS, fmtAgo, groupDiscussions } from "@/lib/mue-discussions";
 import { useApp } from "@/lib/store";
 import type { Priority, ViewId } from "@/lib/types";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MueTaskScanner } from "./SuggestTasksModal";
 
 type ActionRef = {
@@ -522,7 +522,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     setActiveClientId,
     setView,
   } = useApp();
-  const { conversations, addTask, createEvent } = useData();
+  const { addTask, createEvent } = useData();
   const push = useToast((s) => s.push);
 
   const [mode, setMode] = useState<Mode>("ask");
@@ -592,10 +592,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [discQuery, setDiscQuery] = useState("");
   const [currentDisc, setCurrentDisc] = useState<{ id: string; title: string } | null>(null);
 
-  const conv = useMemo(
-    () => conversations.find((c) => c.id === activeConvId) ?? null,
-    [conversations, activeConvId]
-  );
 
   // P3 — quand Mue ouvre un objet (clic carte), on navigue le canvas SANS
   // recharger/écraser le fil en cours. Ce flag dit à l'effet de sauter le reload.
@@ -1517,74 +1513,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   // existe vraiment, il peuple askMessages et bascule alors sur le chat.
   const hasChat = askMessages.length > 0 || askPending || executing;
 
-  // 3 suggestions (cartes). « Suggérer des tâches » lance le scan inline.
-  const suggestions = conv
-    ? [
-        {
-          title: "Résumer ce fil",
-          sub: "L'essentiel en 3 points",
-          icon: "doc",
-          run: () => submit("Résume ce fil"),
-        },
-        {
-          title: "Proposer une réponse",
-          sub: "Mue rédige pour toi",
-          icon: "reply",
-          run: () => submit("Propose une réponse à ce fil"),
-        },
-        { title: "Suggérer des tâches", sub: "Mue scanne ce client", icon: "spark", run: runScan },
-      ]
-    : [
-        {
-          title: "Suggérer des tâches",
-          sub: "Mue scanne tes messages",
-          icon: "spark",
-          run: runScan,
-        },
-        {
-          title: "Résumer ma journée",
-          sub: "Ce qui compte aujourd'hui",
-          icon: "doc",
-          run: () => submit("Résume ma journée"),
-        },
-        {
-          title: "Prioriser cette semaine",
-          sub: "Mue ordonne tes tâches",
-          icon: "bolt",
-          run: () => submit("Aide-moi à prioriser cette semaine"),
-        },
-      ];
-
-  const cardIcon = (k: string) => {
-    if (k === "doc")
-      return (
-        <svg {...stroke}>
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="8" y1="13" x2="16" y2="13" />
-          <line x1="8" y1="17" x2="13" y2="17" />
-        </svg>
-      );
-    if (k === "reply")
-      return (
-        <svg {...stroke}>
-          <polyline points="9 17 4 12 9 7" />
-          <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-        </svg>
-      );
-    if (k === "bolt")
-      return (
-        <svg {...stroke}>
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-      );
-    return (
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-        <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
-      </svg>
-    );
-  };
-
   const composer = (
     <form className="mue2-composer" onSubmit={handleAsk}>
       <textarea
@@ -2019,23 +1947,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             </span>
             <h2 className="mue2-hero-title">Muee</h2>
           </div>
-          {/* Actions rapides : uniquement en contexte conversation (résumer ce
-              fil, proposer une réponse…). Hors fil, on s'appuie sur les pills. */}
-          {conv && (
-            <div className="mue2-chips" aria-label="Suggestions">
-              {suggestions.map((s) => (
-                <button
-                  key={s.title}
-                  type="button"
-                  className={`mue2-chip mue2-chip--${s.icon}`}
-                  onClick={s.run}
-                >
-                  <span className="mue2-chip-ic">{cardIcon(s.icon)}</span>
-                  {s.title}
-                </button>
-              ))}
-            </div>
-          )}
           <div className="mue2-foot">
             {/* Zone d'intention (façon ClickUp Brain). La rangée de pills garde
                 TOUJOURS sa hauteur ; quand on déplie une intention, ses
