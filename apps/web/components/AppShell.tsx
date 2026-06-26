@@ -13,7 +13,6 @@ import { InboxFolders } from "@/components/InboxFolders";
 import { InboxToolbar } from "@/components/InboxToolbar";
 import { MueFullView } from "@/components/MueFullView";
 import { MuePanel } from "@/components/MuePanel";
-import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { Sidebar } from "@/components/Sidebar";
 import { TasksBoard } from "@/components/TasksBoard";
@@ -305,7 +304,7 @@ export function AppShell({
         Skip to content
       </a>
       <Sprite />
-      <OfflineIndicator />
+      {/* OfflineIndicator masqué — bannière dev qui s'affichait en mode mock. */}
       {mueOpen && (
         <button
           type="button"
