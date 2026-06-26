@@ -417,21 +417,6 @@ export function MuePanel() {
   return (
     <aside className="copilot mue-pane mue2 is-open" aria-label="Mue copilot">
       <header className="mue2-head">
-        <button
-          type="button"
-          className="mue2-mem-btn"
-          title="Mémoire de Mue"
-          aria-label="Mémoire de Mue"
-          onClick={() => setMemoryOpen(true)}
-        >
-          <svg {...stroke} width={15} height={15}>
-            <rect x="3" y="5" width="18" height="5" rx="2" />
-            <rect x="3" y="14" width="18" height="5" rx="2" />
-            <line x1="7" y1="7.5" x2="7.01" y2="7.5" />
-            <line x1="7" y1="16.5" x2="7.01" y2="16.5" />
-          </svg>
-          Mémoire
-        </button>
         <div className="mue2-disc-wrap">
           <button
             type="button"
@@ -537,6 +522,22 @@ export function MuePanel() {
               </svg>
             </button>
           )}
+          {/* Mémoire collée à droite, juste avant le chevron de fermeture. */}
+          <button
+            type="button"
+            className="mue2-mem-btn"
+            title="Mémoire de Mue"
+            aria-label="Mémoire de Mue"
+            onClick={() => setMemoryOpen(true)}
+          >
+            <svg {...stroke} width={15} height={15}>
+              <rect x="3" y="5" width="18" height="5" rx="2" />
+              <rect x="3" y="14" width="18" height="5" rx="2" />
+              <line x1="7" y1="7.5" x2="7.01" y2="7.5" />
+              <line x1="7" y1="16.5" x2="7.01" y2="16.5" />
+            </svg>
+            Mémoire
+          </button>
           <button
             type="button"
             className="mue-agent-iconbtn"
