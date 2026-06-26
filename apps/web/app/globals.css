@@ -34304,3 +34304,157 @@ button.mfv-model:hover {
     transform: rotate(360deg);
   }
 }
+
+/* Sélecteur de modèle dans le composer (façon ClickUp) */
+.mue2-model-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.mue2-model {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 9px 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--ink, #10131a);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+.mue2-model:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+.mue2-model-ic {
+  display: inline-grid;
+  place-items: center;
+  color: var(--csv-text-soft, #5b6475);
+}
+[data-theme="dark"] .mue2-model {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f4f7;
+}
+[data-theme="dark"] .mue2-model:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.mue2-model-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+.mue2-model-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 81;
+  min-width: 240px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--csv-card-bg, #fff);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.18), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .mue2-model-menu {
+  background: #1f222d;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.mue2-model-menu-head {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--csv-text-muted, #9097a3);
+}
+.mue2-model-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink, #10131a);
+  cursor: pointer;
+  text-align: left;
+}
+.mue2-model-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+[data-theme="dark"] .mue2-model-item {
+  color: #f4f4f7;
+}
+[data-theme="dark"] .mue2-model-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.mue2-model-item-ic {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+}
+.mue2-model-item-label {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.mue2-model-item-badge {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(122, 90, 248, 0.14);
+  color: #6b40d8;
+  font-size: 11px;
+  font-weight: 600;
+}
+[data-theme="dark"] .mue2-model-item-badge {
+  background: rgba(170, 140, 255, 0.18);
+  color: #cdb6ff;
+}
+.mue2-model-item-check {
+  color: var(--ink, #10131a);
+  flex: none;
+}
+[data-theme="dark"] .mue2-model-item-check {
+  color: #f4f4f7;
+}
+.mue2-model-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: rgba(15, 23, 42, 0.08);
+}
+[data-theme="dark"] .mue2-model-menu-sep {
+  background: rgba(255, 255, 255, 0.08);
+}
+.mue2-model-more {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--csv-text-soft, #5b6475);
+  cursor: pointer;
+  text-align: left;
+}
+.mue2-model-more:hover {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--ink, #10131a);
+}
+[data-theme="dark"] .mue2-model-more {
+  color: #c8ccd6;
+}
+[data-theme="dark"] .mue2-model-more:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4f4f7;
+}

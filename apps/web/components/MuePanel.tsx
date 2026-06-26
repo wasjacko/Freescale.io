@@ -461,6 +461,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   // frame SUIVANTE → la transition d'apparition se joue vraiment.
   const [displayIntent, setDisplayIntent] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  // Sélecteur de modèle dans le composer (façon ClickUp).
+  const [modelPickerOpen, setModelPickerOpen] = useState(false);
+  const [currentModel, setCurrentModel] = useState<string>("mue-max");
   useEffect(() => {
     if (activeIntent) {
       setDisplayIntent(activeIntent);
@@ -1388,9 +1391,161 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         aria-label="Demander à Mue"
       />
       <div className="mue2-composer-row">
-        <span className="mue2-model">
-          <MueMark size={15} /> Max
-        </span>
+        <div className="mue2-model-wrap">
+          <button
+            type="button"
+            className="mue2-model"
+            aria-haspopup="menu"
+            aria-expanded={modelPickerOpen}
+            onClick={(e) => {
+              e.stopPropagation();
+              setModelPickerOpen((v) => !v);
+            }}
+          >
+            {currentModel === "mue-max" ? (
+              <>
+                <MueMark size={15} /> Max
+              </>
+            ) : currentModel === "gpt" ? (
+              <>
+                <span className="mue2-model-ic" aria-hidden>
+                  <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor" aria-hidden>
+                    <path d="M22 9.4a5.5 5.5 0 0 0-.5-4.5 5.6 5.6 0 0 0-6-2.6 5.5 5.5 0 0 0-9.3 2 5.5 5.5 0 0 0-3.7 2.7 5.6 5.6 0 0 0 .7 6.6 5.5 5.5 0 0 0 .5 4.5 5.6 5.6 0 0 0 6 2.6 5.5 5.5 0 0 0 4.2 1.9 5.6 5.6 0 0 0 5.1-3.9 5.5 5.5 0 0 0 3.7-2.7 5.6 5.6 0 0 0-.7-6.6zm-8.3 11.6a4.1 4.1 0 0 1-2.6-1l.1-.1 4.4-2.5a.7.7 0 0 0 .4-.6V11l1.9 1v5a4.1 4.1 0 0 1-4.2 4zm-9-3.9a4.1 4.1 0 0 1-.5-2.7l.2.1 4.4 2.6c.2.1.5.1.8 0L15 14v2.2c0 .1 0 .2-.1.3L10.4 19a4.1 4.1 0 0 1-5.7-1.9zM3.5 9.4a4.1 4.1 0 0 1 2.1-1.8v5.1c0 .3.1.5.4.7l5.3 3-1.8 1.1c-.1 0-.2 0-.3 0L4.7 14.8a4.1 4.1 0 0 1-1.2-5.4zm15.2 3.5l-5.3-3.1 1.8-1c.1 0 .2 0 .3 0l4.5 2.6a4.1 4.1 0 0 1-.6 7.4v-5.2c0-.3-.2-.5-.7-.7zm1.9-2.8l-.2-.2-4.4-2.5a.7.7 0 0 0-.7 0L10 10.5V8.3c0-.1 0-.2.1-.3L14.6 5a4.1 4.1 0 0 1 6 4.3zm-9.8 3.8L9 12.8v-2.3l4-2.3 4 2.3v2.3l-4 2.3z" />
+                  </svg>
+                </span>
+                GPT-5.5
+              </>
+            ) : currentModel === "claude" ? (
+              <>
+                <span className="mue2-model-ic" aria-hidden style={{ color: "#d97757" }}>
+                  <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor">
+                    <path d="M12 2v8M12 14v8M2 12h8M14 12h8M4.93 4.93l5.66 5.66M13.41 13.41l5.66 5.66M4.93 19.07l5.66-5.66M13.41 10.59l5.66-5.66" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+                  </svg>
+                </span>
+                Claude Opus 4.8
+              </>
+            ) : (
+              <>
+                <span className="mue2-model-ic" aria-hidden>
+                  <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2L13.5 9.5L21 11L13.5 12.5L12 20L10.5 12.5L3 11L10.5 9.5L12 2Z" fill="url(#gem-grad)" />
+                    <defs>
+                      <linearGradient id="gem-grad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stopColor="#4285f4" />
+                        <stop offset="1" stopColor="#34a853" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </span>
+                Gemini 3.1 Pro
+              </>
+            )}
+            <svg
+              viewBox="0 0 24 24"
+              width={11}
+              height={11}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {modelPickerOpen && (
+            <>
+              <button
+                type="button"
+                className="mue2-model-scrim"
+                aria-label="Fermer"
+                onClick={() => setModelPickerOpen(false)}
+              />
+              <div className="mue2-model-menu" role="menu">
+                <div className="mue2-model-menu-head">Meilleurs modèles</div>
+                {[
+                  { id: "mue-max", label: "Mue", suffix: "Max", icon: "mue" },
+                  { id: "gpt", label: "GPT-5.5", icon: "gpt" },
+                  { id: "claude", label: "Claude Opus 4.8", icon: "claude" },
+                  { id: "gemini", label: "Gemini 3.1 Pro", icon: "gemini" },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`mue2-model-item ${currentModel === m.id ? "is-on" : ""}`}
+                    onClick={() => {
+                      setCurrentModel(m.id);
+                      setModelPickerOpen(false);
+                    }}
+                  >
+                    <span className="mue2-model-item-ic" aria-hidden>
+                      {m.icon === "mue" ? (
+                        <MueMark size={16} />
+                      ) : m.icon === "gpt" ? (
+                        <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor" aria-hidden>
+                          <path d="M22 9.4a5.5 5.5 0 0 0-.5-4.5 5.6 5.6 0 0 0-6-2.6 5.5 5.5 0 0 0-9.3 2 5.5 5.5 0 0 0-3.7 2.7 5.6 5.6 0 0 0 .7 6.6 5.5 5.5 0 0 0 .5 4.5 5.6 5.6 0 0 0 6 2.6 5.5 5.5 0 0 0 4.2 1.9 5.6 5.6 0 0 0 5.1-3.9 5.5 5.5 0 0 0 3.7-2.7 5.6 5.6 0 0 0-.7-6.6zm-8.3 11.6a4.1 4.1 0 0 1-2.6-1l.1-.1 4.4-2.5a.7.7 0 0 0 .4-.6V11l1.9 1v5a4.1 4.1 0 0 1-4.2 4zm-9-3.9a4.1 4.1 0 0 1-.5-2.7l.2.1 4.4 2.6c.2.1.5.1.8 0L15 14v2.2c0 .1 0 .2-.1.3L10.4 19a4.1 4.1 0 0 1-5.7-1.9zM3.5 9.4a4.1 4.1 0 0 1 2.1-1.8v5.1c0 .3.1.5.4.7l5.3 3-1.8 1.1c-.1 0-.2 0-.3 0L4.7 14.8a4.1 4.1 0 0 1-1.2-5.4zm15.2 3.5l-5.3-3.1 1.8-1c.1 0 .2 0 .3 0l4.5 2.6a4.1 4.1 0 0 1-.6 7.4v-5.2c0-.3-.2-.5-.7-.7zm1.9-2.8l-.2-.2-4.4-2.5a.7.7 0 0 0-.7 0L10 10.5V8.3c0-.1 0-.2.1-.3L14.6 5a4.1 4.1 0 0 1 6 4.3zm-9.8 3.8L9 12.8v-2.3l4-2.3 4 2.3v2.3l-4 2.3z" />
+                        </svg>
+                      ) : m.icon === "claude" ? (
+                        <svg viewBox="0 0 24 24" width={16} height={16} fill="#d97757" aria-hidden>
+                          <circle cx="12" cy="12" r="9" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" width={16} height={16} fill="none" aria-hidden>
+                          <defs>
+                            <linearGradient id={`gem-grad-mi-${m.id}`} x1="0" y1="0" x2="1" y2="1">
+                              <stop offset="0" stopColor="#4285f4" />
+                              <stop offset="1" stopColor="#34a853" />
+                            </linearGradient>
+                          </defs>
+                          <path d="M12 2L13.5 9.5L21 11L13.5 12.5L12 20L10.5 12.5L3 11L10.5 9.5L12 2Z" fill={`url(#gem-grad-mi-${m.id})`} />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="mue2-model-item-label">
+                      {m.label}
+                      {m.suffix && <span className="mue2-model-item-badge">{m.suffix}</span>}
+                    </span>
+                    {currentModel === m.id && (
+                      <svg
+                        className="mue2-model-item-check"
+                        viewBox="0 0 24 24"
+                        width={14}
+                        height={14}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+                <div className="mue2-model-menu-sep" />
+                <button type="button" className="mue2-model-more">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width={13}
+                    height={13}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <polyline points="7 13 12 18 17 13" />
+                    <polyline points="7 6 12 11 17 6" />
+                  </svg>
+                  Afficher plus
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button
           type="submit"
           className={`mue2-send ${askPending || executing ? "is-stop" : ""}`}
