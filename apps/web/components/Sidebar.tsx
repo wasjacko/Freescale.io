@@ -3,6 +3,7 @@
 import { FreescaleMark } from "@/components/brand/FreescaleMark";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
+import { Fragment } from "react";
 
 type NavId =
   | "today"
@@ -149,23 +150,27 @@ export function Sidebar() {
       <nav className="nav-section">
         {NAV_ITEMS.map((item) => {
           const count = counts[item.id];
+          // Séparateur juste AVANT Mue → isole l'agent du rail Inbox/Tâches/Clients/Calendar.
+          const beforeMue = item.id === "ai-knowledge";
           return (
-            <button
-              key={item.id}
-              type="button"
-              className={`nav-item ${view === item.id ? "active" : ""}`}
-              aria-label={item.label}
-              onClick={() => {
-                setView(item.id);
-                if (item.id === "inbox") setActiveConv("");
-              }}
-            >
-              <span className="nav-ico">
-                <NavIcon id={item.id} />
-                {count != null && count > 0 && <span className="nav-badge">{count}</span>}
-              </span>
-              <span className="nav-text">{item.label}</span>
-            </button>
+            <Fragment key={item.id}>
+              {beforeMue && <div className="nav-divider" aria-hidden />}
+              <button
+                type="button"
+                className={`nav-item ${view === item.id ? "active" : ""}`}
+                aria-label={item.label}
+                onClick={() => {
+                  setView(item.id);
+                  if (item.id === "inbox") setActiveConv("");
+                }}
+              >
+                <span className="nav-ico">
+                  <NavIcon id={item.id} />
+                  {count != null && count > 0 && <span className="nav-badge">{count}</span>}
+                </span>
+                <span className="nav-text">{item.label}</span>
+              </button>
+            </Fragment>
           );
         })}
       </nav>
