@@ -33731,3 +33731,11 @@ button.mfv-model:hover {
 [data-theme="dark"] .muedoc-totals > div {
   color: #c8ccd6;
 }
+
+/* Les modales d'objet (fiche tâche, devis) s'ouvrent sur le CANVAS principal,
+   pas par-dessus le panneau Mue : on réserve sa largeur à droite quand il est
+   ouvert. (La modale « Arrêter de générer ? » reste sur le panneau, elle.) */
+.app.mue-open .tdm-overlay,
+.app.mue-open .muedoc-overlay {
+  right: calc(var(--mue-panel-w) + 10px);
+}
