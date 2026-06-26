@@ -378,6 +378,35 @@ export function MuePanel() {
   };
 
   const composer = (
+    <div className="mue2-composer-wrap">
+      {/* Tabs Demander / Agents — attachées au sommet du composer
+          (au lieu de flotter en haut de l'en-tête). */}
+      <div className="mue2-tabs" role="tablist" aria-label="Mode">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "ask"}
+          className={`mue2-tab ${mode === "ask" ? "is-on" : ""}`}
+          onClick={() => setMode("ask")}
+        >
+          <MueMark size={15} /> Demander
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "agents"}
+          className={`mue2-tab ${mode === "agents" ? "is-on" : ""}`}
+          onClick={() => setMode("agents")}
+        >
+          <svg {...stroke} width={15} height={15}>
+            <rect x="3" y="8" width="18" height="11" rx="3" />
+            <circle cx="8.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
+            <circle cx="15.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
+            <path d="M12 4v4" />
+          </svg>
+          Agents
+        </button>
+      </div>
     <form className="mue2-composer" onSubmit={handleAsk}>
       <textarea
         ref={askInputRef}
@@ -412,6 +441,7 @@ export function MuePanel() {
         </button>
       </div>
     </form>
+    </div>
   );
 
   return (
@@ -520,32 +550,8 @@ export function MuePanel() {
             </>
           )}
         </div>
-        <div className="mue2-tabs" role="tablist" aria-label="Mode">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "ask"}
-            className={`mue2-tab ${mode === "ask" ? "is-on" : ""}`}
-            onClick={() => setMode("ask")}
-          >
-            <MueMark size={15} /> Demander
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "agents"}
-            className={`mue2-tab ${mode === "agents" ? "is-on" : ""}`}
-            onClick={() => setMode("agents")}
-          >
-            <svg {...stroke} width={15} height={15}>
-              <rect x="3" y="8" width="18" height="11" rx="3" />
-              <circle cx="8.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
-              <circle cx="15.5" cy="13.5" r="1.6" fill="currentColor" stroke="none" />
-              <path d="M12 4v4" />
-            </svg>
-            Agents
-          </button>
-        </div>
+        {/* Tabs (Demander / Agents) déplacées au-dessus du composer
+            pour qu'elles soient visuellement attachées au chat. */}
         <div className="mue2-head-actions">
           {askMessages.length > 0 && mode === "ask" && (
             <button

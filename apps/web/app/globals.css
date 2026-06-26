@@ -12319,21 +12319,33 @@ html {
 [data-theme="dark"] .mue2-disc-item-title {
   color: var(--ink);
 }
+/* Wrapper autour des tabs + composer : groupe visuel attaché. */
+.mue2-composer-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 .mue2-tabs {
   display: inline-flex;
-  gap: 4px;
+  gap: 2px;
+  padding: 0 4px;
+  /* Pousse les tabs SUR le composer pour qu'elles paraissent intégrées. */
+  margin-bottom: -10px;
+  position: relative;
+  z-index: 1;
 }
 .mue2-tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 8px 14px 18px;
   border-radius: 10px 10px 0 0;
   font-size: 13px;
   font-weight: 600;
   color: #6b7280;
   cursor: pointer;
   transition: background 130ms var(--ease), color 130ms var(--ease);
+  background: #fff;
 }
 .mue2-tab.is-on {
   color: #4f6cf7;
@@ -12341,6 +12353,7 @@ html {
 }
 [data-theme="dark"] .mue2-tab {
   color: #8a90a2;
+  background: #15171d;
 }
 [data-theme="dark"] .mue2-tab.is-on {
   color: #cdd3ff;

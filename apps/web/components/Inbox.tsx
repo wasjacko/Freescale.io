@@ -391,7 +391,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
           // Séparateurs de section temporels (uniquement en tri par date) :
           // « Aujourd'hui / Hier / Cette semaine… » pour casser le mur de lignes.
           let lastSection = "";
-          return clientRows.map(({ rep: c, channels }) => {
+          return clientRows.map(({ rep: c }) => {
             const isActive = c.id === activeConvId;
             const unread = isUnread(c.id, c.unread);
             const ball = archived.has(c.id) ? null : ballInCourt(c) ? "toreply" : "waiting";
