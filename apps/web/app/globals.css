@@ -12143,10 +12143,10 @@ html {
 .mue2-head {
   flex: none;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 12px 12px 0;
+  padding: 14px 12px 12px;
   flex-wrap: wrap;
 }
 /* Sélecteur de discussions (haut gauche). */
@@ -31065,7 +31065,7 @@ button.sidebar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 6px 12px 0;
+  margin: 16px 12px 0;
   padding: 9px 12px;
   border-radius: 11px;
   background: linear-gradient(135deg, rgba(22, 163, 74, 0.08), rgba(79, 108, 247, 0.08));
