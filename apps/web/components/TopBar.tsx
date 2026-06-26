@@ -17,7 +17,10 @@ import { useState } from "react";
  */
 export function TopBar({ user }: { user: CurrentUser | null }) {
   const data = useData();
-  const { mueOpen, setMueOpen } = useApp();
+  const { mueOpen, setMueOpen, view } = useApp();
+  // Sur la page Mue plein-écran, le bouton 'Agent' n'a aucun sens — l'utilisateur
+  // EST déjà dans Mue. On masque alors le bouton dans la topbar.
+  const onMueView = view === "ai-knowledge";
   const [addOpen, setAddOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const initials =
@@ -81,6 +84,7 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
             connectedKinds={connectedKinds}
           />
         </div>
+        {!onMueView && (
         <button
           type="button"
           className={`topbar-actbtn topbar-mue ${mueOpen ? "is-active" : ""}`}
@@ -107,6 +111,7 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
           </svg>
           <span className="topbar-actbtn-label">Agent</span>
         </button>
+        )}
 
         {/* Compte — avatar en haut à droite ; clic = panneau flottant. */}
         <div className="topbar-account">
