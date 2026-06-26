@@ -140,7 +140,6 @@ export function InboxFolders() {
         );
       })}
 
-      <div className="ibx-folders-sep" />
 
       {/* Dossiers */}
       <div className="ibx-folders-head">
@@ -191,8 +190,7 @@ export function InboxFolders() {
 
       {labels.length > 0 && (
         <>
-          <div className="ibx-folders-sep" />
-          <div className="ibx-folders-head">
+              <div className="ibx-folders-head">
             <span>Labels</span>
           </div>
           {labels.map((l) => (
@@ -211,7 +209,6 @@ export function InboxFolders() {
       )}
 
       {/* Zone « Autres » repliée — non-clients (promos, notifs). */}
-      <div className="ibx-folders-sep" />
       <button
         type="button"
         className="ibx-folder ibx-folder-others"
