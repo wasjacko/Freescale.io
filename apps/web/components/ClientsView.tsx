@@ -211,7 +211,10 @@ export function ClientsView() {
       dormant: 0,
     };
     for (const c of MOCK_CLIENTS) if (c.stage) counts[c.stage]++;
-    const tot = Math.max(1, Object.values(counts).reduce((a, b) => a + b, 0));
+    const tot = Math.max(
+      1,
+      Object.values(counts).reduce((a, b) => a + b, 0)
+    );
     return (Object.entries(counts) as [NonNullable<Client["stage"]>, number][]).map(
       ([key, count]) => ({
         key,
@@ -225,8 +228,12 @@ export function ClientsView() {
   // ─ Répartition par canal (barre empilée — pas une jauge) ─────────
   const channelDist = useMemo(() => {
     const counts = new Map<ChannelId, number>();
-    for (const c of MOCK_CLIENTS) for (const ch of c.channels) counts.set(ch, (counts.get(ch) ?? 0) + 1);
-    const tot = Math.max(1, Array.from(counts.values()).reduce((a, b) => a + b, 0));
+    for (const c of MOCK_CLIENTS)
+      for (const ch of c.channels) counts.set(ch, (counts.get(ch) ?? 0) + 1);
+    const tot = Math.max(
+      1,
+      Array.from(counts.values()).reduce((a, b) => a + b, 0)
+    );
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([ch, count]) => ({
@@ -318,14 +325,20 @@ export function ClientsView() {
       {/* ── HERO : score de santé global + ses 4 indicateurs ────────────
            Le score répond à « est-ce que ma santé client est bonne ? ».
            Chaque indicateur explique POURQUOI — pas de boîte noire. */}
-      <section className={`csv3-score csv3-score--${health.verdict.tone}`} aria-label="Score de santé">
+      <section
+        className={`csv3-score csv3-score--${health.verdict.tone}`}
+        aria-label="Score de santé"
+      >
         <div className="csv3-score__head">
           <ScoreRing value={health.score} tone={health.verdict.tone} />
           <div className="csv3-score__id">
             <span className="csv3-score__verdict">{health.verdict.label}</span>
             <span className="csv3-score__tagline">{health.verdict.tagline}</span>
           </div>
-          <span className="csv3-mue-tag csv3-mue-tag--inline" title="Calculé par Mue à partir de 4 signaux dans tes échanges">
+          <span
+            className="csv3-mue-tag csv3-mue-tag--inline"
+            title="Calculé par Mue à partir de 4 signaux dans tes échanges"
+          >
             <MueSparkSmall /> Calculé par Mue
           </span>
         </div>
@@ -347,7 +360,10 @@ export function ClientsView() {
         <article className="csv3-chart">
           <header className="csv3-chart__head">
             <h3>Répartition par stade</h3>
-            <span className="csv3-mue-tag" title="Stade inféré par Mue à partir du contenu des échanges">
+            <span
+              className="csv3-mue-tag"
+              title="Stade inféré par Mue à partir du contenu des échanges"
+            >
               <MueSparkSmall /> Mue
             </span>
           </header>
@@ -473,7 +489,10 @@ function MueSparkSmall() {
           <stop offset="100%" stopColor="#ff9d7a" />
         </linearGradient>
       </defs>
-      <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" fill="url(#muespk)" />
+      <path
+        d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z"
+        fill="url(#muespk)"
+      />
     </svg>
   );
 }
@@ -483,7 +502,10 @@ function Donut({ parts }: { parts: { value: number; color: string }[] }) {
   const stroke = 16;
   const C = 2 * Math.PI * r;
   let offset = 0;
-  const tot = Math.max(1, parts.reduce((s, p) => s + p.value, 0));
+  const tot = Math.max(
+    1,
+    parts.reduce((s, p) => s + p.value, 0)
+  );
   return (
     <svg viewBox="0 0 160 160" width={150} height={150} className="csv-donut" aria-hidden>
       <circle cx="80" cy="80" r={r} stroke="var(--csv-track)" strokeWidth={stroke} fill="none" />
@@ -513,7 +535,10 @@ function Donut({ parts }: { parts: { value: number; color: string }[] }) {
 }
 
 function StackedBar({ parts }: { parts: { value: number; color: string }[] }) {
-  const tot = Math.max(1, parts.reduce((s, p) => s + p.value, 0));
+  const tot = Math.max(
+    1,
+    parts.reduce((s, p) => s + p.value, 0)
+  );
   return (
     <div className="csv-bar" role="img" aria-label="Répartition par canal">
       {parts.map((p, i) => {
@@ -556,14 +581,18 @@ function MiniClientCard({ client, onOpen }: { client: Client; onOpen: () => void
       </div>
 
       <div className={`csv-mini__money csv-mini__money--${m.label ? m.tone : "ok"}`}>
-        <span className="csv-mini__money-ic" aria-hidden>€</span>
+        <span className="csv-mini__money-ic" aria-hidden>
+          €
+        </span>
         <span>{m.label ?? "Rien à suivre"}</span>
       </div>
 
       <div className={`csv-mini__rel csv-mini__rel--${h.state}`}>
         <span className="csv-mini__dot" aria-hidden />
         <span className="csv-mini__rlbl">{h.label}</span>
-        {client.lastContactLabel && <span className="csv-mini__last">{client.lastContactLabel}</span>}
+        {client.lastContactLabel && (
+          <span className="csv-mini__last">{client.lastContactLabel}</span>
+        )}
       </div>
     </button>
   );
@@ -612,7 +641,13 @@ function ScoreRing({ value, tone }: { value: number; tone: "good" | "fair" | "wa
   const dash = (Math.max(0, Math.min(100, value)) / 100) * C;
   const gradId = `csv3-grad-${tone}`;
   return (
-    <svg viewBox="0 0 104 104" width={104} height={104} className={`csv3-ring csv3-ring--${tone}`} aria-hidden>
+    <svg
+      viewBox="0 0 104 104"
+      width={104}
+      height={104}
+      className={`csv3-ring csv3-ring--${tone}`}
+      aria-hidden
+    >
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
           <stop
@@ -670,7 +705,10 @@ function HealthBar({
         <span className={`csv3-hbar__val csv3-hbar__val--${tone}`}>{value}%</span>
       </div>
       <div className="csv3-hbar__track">
-        <span className={`csv3-hbar__fill csv3-hbar__fill--${tone}`} style={{ width: `${value}%` }} />
+        <span
+          className={`csv3-hbar__fill csv3-hbar__fill--${tone}`}
+          style={{ width: `${value}%` }}
+        />
       </div>
       <span className="csv3-hbar__hint">{hint}</span>
     </li>

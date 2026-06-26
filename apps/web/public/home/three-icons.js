@@ -44,8 +44,12 @@ function createStage(container, camZ, lookY) {
 
   let visible = true;
   if (typeof IntersectionObserver !== "undefined") {
-    new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; }, { rootMargin: "120px" })
-      .observe(container);
+    new IntersectionObserver(
+      function (entries) {
+        visible = entries[0].isIntersecting;
+      },
+      { rootMargin: "120px" }
+    ).observe(container);
   }
   const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -58,7 +62,7 @@ function createStage(container, camZ, lookY) {
       renderer.render(scene, camera);
     }
     requestAnimationFrame(tick);
-    renderer.render(scene, camera);   // immediate first frame (rAF can be frozen in previews)
+    renderer.render(scene, camera); // immediate first frame (rAF can be frozen in previews)
   }
 
   return { renderer, scene, camera, runLoop };
@@ -72,7 +76,7 @@ function initBubble(container) {
   const { scene, runLoop } = createStage(container, 11.4, -0.32);
 
   const blueGlass = new THREE.MeshPhysicalMaterial({
-    color: 0x3c89f3,              // saturated azure, opaque (transmission washed it out)
+    color: 0x3c89f3, // saturated azure, opaque (transmission washed it out)
     roughness: 0.24,
     metalness: 0,
     clearcoat: 1,
@@ -140,7 +144,14 @@ function initBubble(container) {
   tailShape.quadraticCurveTo(-0.01, -0.74, -0.12, -0.62);
   tailShape.quadraticCurveTo(-0.28, -0.2, -0.3, 0.5);
   const tail = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(tailShape, { depth: 0.38, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.06, bevelSegments: 5, curveSegments: 28 }),
+    new THREE.ExtrudeGeometry(tailShape, {
+      depth: 0.38,
+      bevelEnabled: true,
+      bevelSize: 0.06,
+      bevelThickness: 0.06,
+      bevelSegments: 5,
+      curveSegments: 28,
+    }),
     blueGlass
   );
   tail.position.set(-1.18, -1.52, -0.26);
@@ -182,7 +193,9 @@ function initSparkle(container) {
   const { scene, runLoop } = createStage(container, 11.0, 0);
 
   // 4-point sparkle outline — vertical points longer, concave sides
-  const TIP_Y = 2.05, TIP_X = 1.5, PULL = 0.21;
+  const TIP_Y = 2.05,
+    TIP_X = 1.5,
+    PULL = 0.21;
   const s = new THREE.Shape();
   s.moveTo(0, TIP_Y);
   s.quadraticCurveTo(PULL, PULL, TIP_X, 0);
@@ -208,11 +221,14 @@ function initSparkle(container) {
   const pos = geo.attributes.position;
   const colors = new Float32Array(pos.count * 3);
   const tmp = new THREE.Color();
-  const RX = TIP_X + 0.18, RY = TIP_Y + 0.18;     // elliptic normalisation → all tips reach deep blue
+  const RX = TIP_X + 0.18,
+    RY = TIP_Y + 0.18; // elliptic normalisation → all tips reach deep blue
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), y = pos.getY(i);
+    const x = pos.getX(i),
+      y = pos.getY(i);
     const r = Math.min(1, Math.hypot(x / RX, y / RY) * 1.18);
-    if (r < 0.34) tmp.lerpColors(cCore, cIce, Math.pow(r / 0.34, 0.8));  // wider, whiter core
+    if (r < 0.34)
+      tmp.lerpColors(cCore, cIce, Math.pow(r / 0.34, 0.8)); // wider, whiter core
     else if (r < 0.62) tmp.lerpColors(cIce, cAzure, (r - 0.34) / 0.28);
     else tmp.lerpColors(cAzure, cDeep, (r - 0.62) / 0.38);
     colors[i * 3] = tmp.r;
@@ -227,7 +243,7 @@ function initSparkle(container) {
     metalness: 0,
     clearcoat: 1,
     clearcoatRoughness: 0.1,
-    envMapIntensity: 0.38,         // let the vivid vertex colours read through (less wash-out)
+    envMapIntensity: 0.38, // let the vivid vertex colours read through (less wash-out)
   });
 
   const sparkle = new THREE.Mesh(geo, mat);
@@ -236,7 +252,7 @@ function initSparkle(container) {
   scene.add(g);
 
   runLoop(function (t) {
-    g.rotation.y = Math.sin(t * 0.5) * 0.38;       // slow swivel shows the bevel depth
+    g.rotation.y = Math.sin(t * 0.5) * 0.38; // slow swivel shows the bevel depth
     g.rotation.z = Math.sin(t * 0.35) * 0.05;
     g.position.y = Math.sin(t * 0.85) * 0.08;
   });

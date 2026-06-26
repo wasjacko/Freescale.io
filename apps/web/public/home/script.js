@@ -6,13 +6,12 @@ const links = document.querySelector(".nav__links");
 (function () {
   const collage = document.querySelector(".screen-collage");
   if (!collage) return;
-  const reduce =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce) return;
 
   let ticking = false;
-  let mx = 0, my = 0;
+  let mx = 0,
+    my = 0;
   function apply() {
     const x = (window.innerWidth / 2 - mx) / 55;
     const y = (window.innerHeight / 2 - my) / 55;
@@ -36,9 +35,7 @@ const links = document.querySelector(".nav__links");
 (function () {
   const visual = document.querySelector(".hero__visual");
   if (!visual) return;
-  const reduce =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (reduce) return;
 
   let ticking = false;
@@ -89,12 +86,12 @@ if (burger) {
   }
 
   let lastY = window.scrollY;
-  let accum = 0;                 // scroll distance accumulated in the current direction
+  let accum = 0; // scroll distance accumulated in the current direction
   let ticking = false;
-  let armed = false;            // grace period so we don't race the dropIn animation
-  const HIDE_AT = 8;            // cumulative px scrolled DOWN before hiding
-  const SHOW_AT = 6;            // cumulative px scrolled UP before revealing (eager)
-  const TOP_LOCK = 80;          // always visible near top
+  let armed = false; // grace period so we don't race the dropIn animation
+  const HIDE_AT = 8; // cumulative px scrolled DOWN before hiding
+  const SHOW_AT = 6; // cumulative px scrolled UP before revealing (eager)
+  const TOP_LOCK = 80; // always visible near top
 
   function update() {
     const y = Math.max(0, window.scrollY); // clamp negative (rubber-band)
@@ -102,14 +99,15 @@ if (burger) {
     lastY = y;
     ticking = false;
 
-    if (y < TOP_LOCK) {           // always show near the top
+    if (y < TOP_LOCK) {
+      // always show near the top
       setHidden(false);
       accum = 0;
       return;
     }
     if (delta === 0) return;
     // reset the accumulator the moment direction flips → instant response
-    if ((delta > 0) !== (accum > 0)) accum = 0;
+    if (delta > 0 !== accum > 0) accum = 0;
     accum += delta;
 
     if (accum > HIDE_AT) {
@@ -168,9 +166,7 @@ if (burger) {
   ];
 
   const intervalMs = 5000;
-  const reduce =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const dateEl = tm.querySelector(".tm__date");
   const quoteEl = tm.querySelector(".tm__quote");
@@ -268,7 +264,10 @@ if (burger) {
       const serif = node.nodeType === 1; // an <em> → serif-italic accent words
       node.textContent.split(/(\s+)/).forEach(function (chunk) {
         if (chunk === "") return;
-        if (/^\s+$/.test(chunk)) { textEl.appendChild(document.createTextNode(chunk)); return; }
+        if (/^\s+$/.test(chunk)) {
+          textEl.appendChild(document.createTextNode(chunk));
+          return;
+        }
         const s = document.createElement("span");
         s.className = "statement__word" + (serif ? " statement__word--serif" : "");
         s.textContent = chunk;
@@ -281,14 +280,21 @@ if (burger) {
   // sequence the wave LINE BY LINE (the phrase wraps, so lines = words sharing an offsetTop):
   // each rendered line's first word waits until the previous line is almost finished.
   function assignLineDelays() {
-    const STAGGER = 0.07, GAP = 0.42; // seconds (GAP ≈ how "almost finished" the prev line is)
-    let base = 0, wi = 0, lineTop = null, maxD = 0;
+    const STAGGER = 0.07,
+      GAP = 0.42; // seconds (GAP ≈ how "almost finished" the prev line is)
+    let base = 0,
+      wi = 0,
+      lineTop = null,
+      maxD = 0;
     spans.forEach(function (s) {
       const top = s.offsetTop;
-      if (lineTop === null) { lineTop = top; }
-      else if (Math.abs(top - lineTop) > 12) {       // wrapped to a new visual line (12px ignores serif/sans baseline jitter)
+      if (lineTop === null) {
+        lineTop = top;
+      } else if (Math.abs(top - lineTop) > 12) {
+        // wrapped to a new visual line (12px ignores serif/sans baseline jitter)
         base += Math.max(0, wi - 1) * STAGGER + GAP; // wait out the previous line
-        lineTop = top; wi = 0;
+        lineTop = top;
+        wi = 0;
       }
       const d = base + wi * STAGGER;
       if (d > maxD) maxD = d;
@@ -302,10 +308,11 @@ if (burger) {
   // make the CTA gradient span the WHOLE phrase (not per-word): each word gets the
   // full text-block-sized gradient, shifted to the word's own position → one continuous slice
   function sliceGradient() {
-    const tw = textEl.clientWidth, th = textEl.clientHeight;
+    const tw = textEl.clientWidth,
+      th = textEl.clientHeight;
     spans.forEach(function (s) {
       s.style.backgroundSize = tw + "px " + th + "px";
-      s.style.backgroundPosition = (-s.offsetLeft) + "px " + (-s.offsetTop) + "px";
+      s.style.backgroundPosition = -s.offsetLeft + "px " + -s.offsetTop + "px";
     });
     assignLineDelays();
   }
@@ -341,7 +348,9 @@ if (burger) {
   // sequencing the wave LINE BY LINE: each line's first word waits until the previous
   // line is almost finished (base += that line's sweep + GAP) — the wave never jumps to
   // the next line before the current one has (nearly) resolved.
-  const STAGGER = 0.07, GAP = 0.42, INIT = 0.1; // seconds (GAP ≈ how "almost finished" the prev line is)
+  const STAGGER = 0.07,
+    GAP = 0.42,
+    INIT = 0.1; // seconds (GAP ≈ how "almost finished" the prev line is)
   const spans = [];
   let base = INIT;
   lines.forEach(function (line) {
@@ -350,7 +359,10 @@ if (burger) {
     const lineWords = [];
     text.split(/(\s+)/).forEach(function (chunk) {
       if (chunk === "") return;
-      if (/^\s+$/.test(chunk)) { line.appendChild(document.createTextNode(chunk)); return; }
+      if (/^\s+$/.test(chunk)) {
+        line.appendChild(document.createTextNode(chunk));
+        return;
+      }
       const s = document.createElement("span");
       s.className = "hl-word";
       s.textContent = chunk;
@@ -366,10 +378,11 @@ if (burger) {
 
   // continuous CTA gradient across the WHOLE headline (each word carries a slice)
   function sliceGradient() {
-    const tw = headline.clientWidth, th = headline.clientHeight;
+    const tw = headline.clientWidth,
+      th = headline.clientHeight;
     spans.forEach(function (s) {
       s.style.backgroundSize = tw + "px " + th + "px";
-      s.style.backgroundPosition = (-s.offsetLeft) + "px " + (-s.offsetTop) + "px";
+      s.style.backgroundPosition = -s.offsetLeft + "px " + -s.offsetTop + "px";
     });
   }
   sliceGradient();
@@ -384,9 +397,15 @@ if (burger) {
     headline.classList.add("is-in");
   }
   if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(function () { sliceGradient(); requestAnimationFrame(start); });
+    document.fonts.ready.then(function () {
+      sliceGradient();
+      requestAnimationFrame(start);
+    });
   }
-  window.addEventListener("load", function () { sliceGradient(); start(); });
+  window.addEventListener("load", function () {
+    sliceGradient();
+    start();
+  });
   setTimeout(start, 600); // hard fallback so the title never stays invisible
 })();
 
@@ -400,13 +419,12 @@ if (burger) {
   const visual = section.querySelector(".mue__visual");
   const png = visual ? visual.querySelector("img") : null;
   const pill = section.querySelector(".mue__pill");
-  const lines = Array.prototype.slice.call(
-    section.querySelectorAll(".mue__text, .mue__list li")
-  );
+  const lines = Array.prototype.slice.call(section.querySelectorAll(".mue__text, .mue__list li"));
 
   // how far to shift the image LEFT so it sits dead-centre of the viewport during phase 1.
   // measured from its natural grid slot (right column); horizontal → scroll-independent.
-  let centerShift = 0, lastW = 0;
+  let centerShift = 0,
+    lastW = 0;
   function measure() {
     if (!visual) return;
     const prev = visual.style.transform;
@@ -449,29 +467,48 @@ if (burger) {
   }
 
   const N = spans.length;
-  const SPREAD = 5, A_START = 0.18, A_END = 1;
+  const SPREAD = 5,
+    A_START = 0.18,
+    A_END = 1;
   function paint(p) {
     for (let i = 0; i < N; i++) {
       const t = Math.max(0, Math.min(1, (p * (N + SPREAD) - i) / SPREAD));
-      spans[i].style.color = "rgba(21, 23, 29, " + (A_START + (A_END - A_START) * t).toFixed(3) + ")";
+      spans[i].style.color =
+        "rgba(21, 23, 29, " + (A_START + (A_END - A_START) * t).toFixed(3) + ")";
     }
   }
-  function sm(q) { q = Math.max(0, Math.min(1, q)); return q * q * (3 - 2 * q); } // smoothstep
+  function sm(q) {
+    q = Math.max(0, Math.min(1, q));
+    return q * q * (3 - 2 * q);
+  } // smoothstep
 
   function finalState() {
     paint(1);
     if (copyEl) copyEl.style.opacity = "1";
-    if (eyebrowEl) { eyebrowEl.style.opacity = "1"; eyebrowEl.style.transform = "none"; }
-    lines.forEach(function (l) { l.style.opacity = "1"; l.style.transform = "none"; });
-    if (visual) { visual.style.opacity = "1"; visual.style.transform = "none"; }
+    if (eyebrowEl) {
+      eyebrowEl.style.opacity = "1";
+      eyebrowEl.style.transform = "none";
+    }
+    lines.forEach(function (l) {
+      l.style.opacity = "1";
+      l.style.transform = "none";
+    });
+    if (visual) {
+      visual.style.opacity = "1";
+      visual.style.transform = "none";
+    }
     if (png) png.style.transform = "none";
-    if (pill) { pill.style.opacity = "1"; pill.style.transform = "none"; }
+    if (pill) {
+      pill.style.opacity = "1";
+      pill.style.transform = "none";
+    }
   }
 
-  const reduce =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) { finalState(); return; }
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) {
+    finalState();
+    return;
+  }
 
   let ticking = false;
   function onScroll() {
@@ -480,7 +517,10 @@ if (burger) {
     requestAnimationFrame(function () {
       ticking = false;
       // stacked mobile layout → everything visible, no transforms
-      if (window.innerWidth < 900) { finalState(); return; }
+      if (window.innerWidth < 900) {
+        finalState();
+        return;
+      }
 
       const rect = section.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
@@ -493,7 +533,7 @@ if (burger) {
 
       // PHASE 1 — the IMAGE is simply PRESENT and CENTERED (no fade / scale apparition).
       // PHASE 2 — it slides from the centre to its right slot while the copy reveals left.
-      const move = sm((prog - 0.46) / 0.40);  // 0→1 : centre → right slot
+      const move = sm((prog - 0.46) / 0.4); // 0→1 : centre → right slot
       if (visual) {
         visual.style.transform = "translateX(" + (centerShift * (1 - move)).toFixed(1) + "px)";
       }
@@ -514,7 +554,11 @@ if (burger) {
         const e = sm((prog - 0.6) / 0.34 - i * 0.1);
         l.style.opacity = e.toFixed(3);
         l.style.transform =
-          "translateX(" + (-(1 - e) * 44).toFixed(1) + "px) translateY(" + ((1 - e) * 14).toFixed(1) + "px)";
+          "translateX(" +
+          (-(1 - e) * 44).toFixed(1) +
+          "px) translateY(" +
+          ((1 - e) * 14).toFixed(1) +
+          "px)";
       });
 
       // pill "Mue a rédigé une réponse" — fades in at the very end
@@ -535,13 +579,14 @@ if (burger) {
 (function () {
   const screen = document.querySelector(".inbox");
   if (!screen) return;
-  const reduce =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let ticking = false;
   function apply() {
     ticking = false;
-    if (window.innerWidth < 820) { screen.style.transform = ""; return; } // stacked → flat
+    if (window.innerWidth < 820) {
+      screen.style.transform = "";
+      return;
+    } // stacked → flat
     const rect = screen.getBoundingClientRect();
     const vh = window.innerHeight || document.documentElement.clientHeight;
     // very subtle upward parallax + a constant MINI 3D tilt (top leans back a touch)
@@ -554,7 +599,10 @@ if (burger) {
     ticking = true;
     requestAnimationFrame(apply);
   }
-  if (reduce) { screen.style.transform = ""; return; }
+  if (reduce) {
+    screen.style.transform = "";
+    return;
+  }
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
   apply();
@@ -587,15 +635,18 @@ if (burger) {
   const path = section && section.querySelector(".steps__arc path");
   if (!path) return;
   // amplitude stays NEGATIVE the whole time → the arc never flips: it just flattens.
-  const EDGE = 72, START = -68, END = -5; // pronounced convex → almost straight (still convex)
+  const EDGE = 72,
+    START = -68,
+    END = -5; // pronounced convex → almost straight (still convex)
   function draw(amp) {
     const cy = (EDGE + 2 * amp).toFixed(1);
     path.setAttribute("d", "M0 0 H1200 V" + EDGE + " Q600 " + cy + " 0 " + EDGE + " Z");
   }
-  const reduce =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) { draw(START); return; }
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) {
+    draw(START);
+    return;
+  }
   let ticking = false;
   function apply() {
     ticking = false;
@@ -606,7 +657,11 @@ if (burger) {
     p = Math.max(0, Math.min(1, p));
     draw(START + p * (END - START)); // stretches from curved → almost flat, same direction
   }
-  function onScroll() { if (ticking) return; ticking = true; requestAnimationFrame(apply); }
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(apply);
+  }
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
   apply();
@@ -621,9 +676,13 @@ if (burger) {
   if (!spin || steps.length < 2 || icons.length !== steps.length) return;
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  var shown = 0, target = 0, animating = false;
+  var shown = 0,
+    target = 0,
+    animating = false;
   function face(i) {
-    icons.forEach(function (ic, k) { ic.classList.toggle("is-active", k === i); });
+    icons.forEach(function (ic, k) {
+      ic.classList.toggle("is-active", k === i);
+    });
   }
   face(0);
 
@@ -632,15 +691,19 @@ if (burger) {
   // front-facing — reads as "the object turns on itself and transforms".
   function flip() {
     if (animating || target === shown) return;
-    if (reduce) { shown = target; face(shown); return; }
+    if (reduce) {
+      shown = target;
+      face(shown);
+      return;
+    }
     animating = true;
     var next = target;
-    var dir = next > shown ? 1 : -1;        // scroll down → spin one way, up → the other
+    var dir = next > shown ? 1 : -1; // scroll down → spin one way, up → the other
     spin.style.transition = "transform .85s cubic-bezier(.5, .05, .15, 1)";
-    void spin.offsetWidth;                  // commit the transition before the transform
+    void spin.offsetWidth; // commit the transition before the transform
     spin.style.transform = "rotateY(" + dir * 180 + "deg)";
     setTimeout(function () {
-      icons[next].style.transform = "rotateY(180deg)";  // counter-rotate the incoming face
+      icons[next].style.transform = "rotateY(180deg)"; // counter-rotate the incoming face
       face(next);
     }, 425);
     var fired = false;
@@ -653,27 +716,40 @@ if (burger) {
       spin.style.transform = "rotateY(0deg)";
       icons[next].style.transform = "";
       shown = next;
-      requestAnimationFrame(function () { requestAnimationFrame(function () { animating = false; flip(); }); });
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          animating = false;
+          flip();
+        });
+      });
     };
     spin.addEventListener("transitionend", done);
-    setTimeout(done, 1000);                 // safety: transitionend can be missed in hidden tabs
+    setTimeout(done, 1000); // safety: transitionend can be missed in hidden tabs
   }
 
   var ticking = false;
   function update() {
     ticking = false;
     var mid = (window.innerHeight || document.documentElement.clientHeight) / 2;
-    var best = 0, bestDist = Infinity;
+    var best = 0,
+      bestDist = Infinity;
     for (var i = 0; i < steps.length; i++) {
       var r = steps[i].getBoundingClientRect();
       var c = r.top + r.height / 2;
       var d = Math.abs(c - mid);
-      if (d < bestDist) { bestDist = d; best = i; }
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
     }
     target = best;
     flip();
   }
-  function onScroll() { if (ticking) return; ticking = true; requestAnimationFrame(update); }
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
   update();
@@ -687,7 +763,8 @@ if (burger) {
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // build a REAL extruded 3D tile per icon: the face + darkened slabs stacked behind in Z
-  var DEPTH = 7, STEP = 1.15;
+  var DEPTH = 7,
+    STEP = 1.15;
   flies.forEach(function (el) {
     var face = el.querySelector("img");
     if (!face || el.querySelector(".fly__tile")) return;
@@ -695,7 +772,8 @@ if (burger) {
     face.style.transform = "translateZ(.5px)";
     var tile = document.createElement("span");
     tile.className = "fly__tile";
-    for (var k = DEPTH; k >= 1; k--) {                 // back → front so the face ends on top
+    for (var k = DEPTH; k >= 1; k--) {
+      // back → front so the face ends on top
       var edge = face.cloneNode(false);
       edge.className = "fly__edge";
       edge.removeAttribute("alt");
@@ -710,8 +788,9 @@ if (burger) {
   var chans = document.querySelector(".appbar__chans");
   var data = [];
   function measure() {
-    var vw = window.innerWidth, vh = window.innerHeight;
-    var sr = screen.getBoundingClientRect();           // .screen is NOT transformed (anchor frame)
+    var vw = window.innerWidth,
+      vh = window.innerHeight;
+    var sr = screen.getBoundingClientRect(); // .screen is NOT transformed (anchor frame)
     data = flies.map(function (el) {
       var slot = chans.querySelector('[data-chan="' + el.dataset.target + '"]');
       var tr = slot.getBoundingClientRect();
@@ -728,12 +807,12 @@ if (burger) {
       return {
         el: el,
         tile: el.querySelector(".fly__tile"),
-        rx: parseFloat(el.dataset.rx) || 0,            // hero 3D tilt (straightens on scroll)
+        rx: parseFloat(el.dataset.rx) || 0, // hero 3D tilt (straightens on scroll)
         ry: parseFloat(el.dataset.ry) || 0,
         rz: parseFloat(el.dataset.rz) || 0,
-        dx: hx - cx,                                   // hero spot − docked slot (x)
-        dy: hy - cy,                                   // hero spot − docked slot (y)
-        scale: (parseFloat(el.dataset.hs) || HERO_SIZE) / w   // per-icon hero size
+        dx: hx - cx, // hero spot − docked slot (x)
+        dy: hy - cy, // hero spot − docked slot (y)
+        scale: (parseFloat(el.dataset.hs) || HERO_SIZE) / w, // per-icon hero size
       };
     });
   }
@@ -742,28 +821,62 @@ if (burger) {
     for (var i = 0; i < data.length; i++) {
       var d = data[i];
       d.el.style.transform =
-        "translate(" + (d.dx * q).toFixed(1) + "px," + (d.dy * q).toFixed(1) + "px) scale(" +
-        (1 + (d.scale - 1) * q).toFixed(3) + ")";
+        "translate(" +
+        (d.dx * q).toFixed(1) +
+        "px," +
+        (d.dy * q).toFixed(1) +
+        "px) scale(" +
+        (1 + (d.scale - 1) * q).toFixed(3) +
+        ")";
       // 3D tilt is full in the hero (q=1) and straightens to flat as it docks (q→0)
-      if (d.tile) d.tile.style.transform =
-        "rotateX(" + (d.rx * q).toFixed(2) + "deg) rotateY(" + (d.ry * q).toFixed(2) +
-        "deg) rotateZ(" + (d.rz * q).toFixed(2) + "deg)";
+      if (d.tile)
+        d.tile.style.transform =
+          "rotateX(" +
+          (d.rx * q).toFixed(2) +
+          "deg) rotateY(" +
+          (d.ry * q).toFixed(2) +
+          "deg) rotateZ(" +
+          (d.rz * q).toFixed(2) +
+          "deg)";
     }
   }
-  var ticking = false, lastW = -1;
+  var ticking = false,
+    lastW = -1;
   function apply() {
     ticking = false;
-    if (window.innerWidth < 820) { flies.forEach(function (el) { el.style.transform = "none"; var t = el.querySelector(".fly__tile"); if (t) t.style.transform = "none"; }); return; }
-    if (window.innerWidth !== lastW) { lastW = window.innerWidth; measure(); }
+    if (window.innerWidth < 820) {
+      flies.forEach(function (el) {
+        el.style.transform = "none";
+        var t = el.querySelector(".fly__tile");
+        if (t) t.style.transform = "none";
+      });
+      return;
+    }
+    if (window.innerWidth !== lastW) {
+      lastW = window.innerWidth;
+      measure();
+    }
     var vh = window.innerHeight || 800;
     var p = Math.max(0, Math.min(1, window.scrollY / (vh * 0.72)));
     paint(p * p * (3 - 2 * p)); // smoothstep
   }
-  function onScroll() { if (ticking) return; ticking = true; requestAnimationFrame(apply); }
-  if (reduce) { flies.forEach(function (el) { el.style.transform = "none"; }); return; }
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(apply);
+  }
+  if (reduce) {
+    flies.forEach(function (el) {
+      el.style.transform = "none";
+    });
+    return;
+  }
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
-  window.addEventListener("load", function () { lastW = -1; apply(); });
+  window.addEventListener("load", function () {
+    lastW = -1;
+    apply();
+  });
   apply();
 })();
 
@@ -776,24 +889,35 @@ if (burger) {
   if (!tabs.length || !items.length) return;
 
   function show(cat) {
-    tabs.forEach(function (t) { t.classList.toggle("is-on", t.dataset.cat === cat); });
+    tabs.forEach(function (t) {
+      t.classList.toggle("is-on", t.dataset.cat === cat);
+    });
     var first = true;
     items.forEach(function (it) {
       var on = it.dataset.cat === cat;
       it.hidden = !on;
-      if (on) { it.open = first; first = false; }   // open the first item of the tab
-      else { it.open = false; }
+      if (on) {
+        it.open = first;
+        first = false;
+      } // open the first item of the tab
+      else {
+        it.open = false;
+      }
     });
   }
   tabs.forEach(function (t) {
-    t.addEventListener("click", function () { show(t.dataset.cat); });
+    t.addEventListener("click", function () {
+      show(t.dataset.cat);
+    });
   });
 
   // single-open: opening one closes the others
   items.forEach(function (it) {
     it.addEventListener("toggle", function () {
       if (!it.open) return;
-      items.forEach(function (o) { if (o !== it && o.open) o.open = false; });
+      items.forEach(function (o) {
+        if (o !== it && o.open) o.open = false;
+      });
     });
   });
 
@@ -802,11 +926,13 @@ if (burger) {
 
 /* ── WAVE reveal for every section title (same effect as the hero/statement) ── */
 (function () {
-  var titles = document.querySelectorAll(".why__title, .pricing__title, .faq__title, .closer__title");
+  var titles = document.querySelectorAll(
+    ".why__title, .pricing__title, .faq__title, .closer__title"
+  );
   if (!titles.length) return;
 
   Array.prototype.forEach.call(titles, function (el) {
-    el.style.position = "relative";   // offsetParent for the continuous gradient slicing
+    el.style.position = "relative"; // offsetParent for the continuous gradient slicing
 
     // split into word spans, preserving <em> accents as serif-italic words
     var spans = [];
@@ -816,7 +942,10 @@ if (burger) {
       var serif = node.nodeType === 1;
       node.textContent.split(/(\s+)/).forEach(function (chunk) {
         if (chunk === "") return;
-        if (/^\s+$/.test(chunk)) { el.appendChild(document.createTextNode(chunk)); return; }
+        if (/^\s+$/.test(chunk)) {
+          el.appendChild(document.createTextNode(chunk));
+          return;
+        }
         var s = document.createElement("span");
         s.className = "wv-word" + (serif ? " wv-word--serif" : "");
         s.textContent = chunk;
@@ -827,14 +956,19 @@ if (burger) {
 
     // line-by-line sequencing (rendered lines = words sharing an offsetTop)
     function assignLineDelays() {
-      var STAGGER = 0.07, GAP = 0.42;
-      var base = 0, wi = 0, lineTop = null;
+      var STAGGER = 0.07,
+        GAP = 0.42;
+      var base = 0,
+        wi = 0,
+        lineTop = null;
       spans.forEach(function (s) {
         var top = s.offsetTop;
-        if (lineTop === null) { lineTop = top; }
-        else if (Math.abs(top - lineTop) > 12) {
+        if (lineTop === null) {
+          lineTop = top;
+        } else if (Math.abs(top - lineTop) > 12) {
           base += Math.max(0, wi - 1) * STAGGER + GAP;
-          lineTop = top; wi = 0;
+          lineTop = top;
+          wi = 0;
         }
         s.style.setProperty("--d", (base + wi * STAGGER).toFixed(3) + "s");
         wi++;
@@ -842,10 +976,11 @@ if (burger) {
     }
     // one continuous gradient across the whole title
     function sliceGradient() {
-      var tw = el.clientWidth, th = el.clientHeight;
+      var tw = el.clientWidth,
+        th = el.clientHeight;
       spans.forEach(function (s) {
         s.style.backgroundSize = tw + "px " + th + "px";
-        s.style.backgroundPosition = (-s.offsetLeft) + "px " + (-s.offsetTop) + "px";
+        s.style.backgroundPosition = -s.offsetLeft + "px " + -s.offsetTop + "px";
       });
       assignLineDelays();
     }
@@ -879,9 +1014,13 @@ if (burger) {
   if (!spin || steps.length < 2 || icons.length !== steps.length) return;
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  var shown = 0, target = 0, animating = false;
+  var shown = 0,
+    target = 0,
+    animating = false;
   function face(i) {
-    icons.forEach(function (ic, k) { ic.classList.toggle("is-active", k === i); });
+    icons.forEach(function (ic, k) {
+      ic.classList.toggle("is-active", k === i);
+    });
   }
   face(0);
 
@@ -890,15 +1029,19 @@ if (burger) {
   // front-facing — reads as "the object turns on itself and transforms".
   function flip() {
     if (animating || target === shown) return;
-    if (reduce) { shown = target; face(shown); return; }
+    if (reduce) {
+      shown = target;
+      face(shown);
+      return;
+    }
     animating = true;
     var next = target;
-    var dir = next > shown ? 1 : -1;        // scroll down → spin one way, up → the other
+    var dir = next > shown ? 1 : -1; // scroll down → spin one way, up → the other
     spin.style.transition = "transform .85s cubic-bezier(.5, .05, .15, 1)";
-    void spin.offsetWidth;                  // commit the transition before the transform
+    void spin.offsetWidth; // commit the transition before the transform
     spin.style.transform = "rotateY(" + dir * 180 + "deg)";
     setTimeout(function () {
-      icons[next].style.transform = "rotateY(180deg)";  // counter-rotate the incoming face
+      icons[next].style.transform = "rotateY(180deg)"; // counter-rotate the incoming face
       face(next);
     }, 425);
     var fired = false;
@@ -911,29 +1054,42 @@ if (burger) {
       spin.style.transform = "rotateY(0deg)";
       icons[next].style.transform = "";
       shown = next;
-      requestAnimationFrame(function () { requestAnimationFrame(function () { animating = false; flip(); }); });
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          animating = false;
+          flip();
+        });
+      });
     };
     spin.addEventListener("transitionend", done);
-    setTimeout(done, 1000);                 // safety: transitionend can be missed in hidden tabs
+    setTimeout(done, 1000); // safety: transitionend can be missed in hidden tabs
   }
 
   var ticking = false;
   function update() {
     ticking = false;
     var mid = (window.innerHeight || document.documentElement.clientHeight) / 2;
-    var best = 0, bestDist = Infinity;
+    var best = 0,
+      bestDist = Infinity;
     for (var i = 0; i < steps.length; i++) {
       var r = steps[i].getBoundingClientRect();
       var c = r.top + r.height / 2;
       var d = Math.abs(c - mid);
-      if (d < bestDist) { bestDist = d; best = i; }
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
     }
     target = best;
     flip();
   }
-  function onScroll() { if (ticking) return; ticking = true; requestAnimationFrame(update); }
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
-  window.addEventListener("load", update);   // re-detect once images/layout settle
+  window.addEventListener("load", update); // re-detect once images/layout settle
   update();
 })();

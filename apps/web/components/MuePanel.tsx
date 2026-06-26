@@ -2,6 +2,7 @@
 
 import { MueFlower } from "@/components/MueFlower";
 import { MueMemory } from "@/components/MueMemoryDrawer";
+import { TaskDetailModal } from "@/components/TaskDetailModal";
 import {
   MueBadge,
   MueInlineRef,
@@ -10,14 +11,13 @@ import {
   MueSuggestions,
 } from "@/components/mue/MueBits";
 import { type DevisDoc, MueDocModal } from "@/components/mue/MueDocModal";
-import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { MUE_DISCUSSIONS, fmtAgo, groupDiscussions } from "@/lib/mue-discussions";
 import { useApp } from "@/lib/store";
 import type { Priority, ViewId } from "@/lib/types";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MueTaskScanner } from "./SuggestTasksModal";
 
 type ActionRef = {
@@ -48,7 +48,9 @@ type AskMessage = {
     | "progress"
     | "result"
     | "refusal"
-    | "slots";
+    | "slots"
+    | "thinking"
+    | "skeleton";
   content: string;
   tone?: "normal" | "error";
   action?: ActionRef;
@@ -68,6 +70,14 @@ type AskMessage = {
   sources?: ActionRef[];
   /** Réfs inline dans le contenu (tokens {{r:KEY}}) — liens cliquables dans la prose. */
   inlineRefs?: Record<string, ActionRef>;
+  /** Étapes de réflexion de Mue affichées dynamiquement. */
+  thinkingSteps?: string[];
+  /** Étape active en cours de réflexion. */
+  activeThinkingStep?: string;
+  /** Durée finale de la réflexion en secondes. */
+  thinkingDuration?: number;
+  /** Temps écoulé pendant la réflexion en secondes. */
+  thinkingElapsed?: number;
 };
 
 type Mode = "ask" | "agents";
@@ -121,13 +131,19 @@ function parseTaskRequest(
 /** Détecte une demande de DOCUMENT (devis/facture/présentation/contrat). */
 function isDocRequest(msg: string): boolean {
   const l = msg.toLowerCase();
-  return /(devis|facture|présentation|presentation|contrat)/.test(l) && /(cr[ée]e|génér|fais|rédige|prépare|prepare)/.test(l);
+  return (
+    /(devis|facture|présentation|presentation|contrat)/.test(l) &&
+    /(cr[ée]e|génér|fais|rédige|prépare|prepare)/.test(l)
+  );
 }
 
 /** Détecte une demande de PLANIFICATION d'un créneau (agenda). */
 function isScheduleRequest(msg: string): boolean {
   const l = msg.toLowerCase();
-  return /(cr[ée]neau|rendez-vous|\brdv\b|call|réunion|reunion|appel)/.test(l) && /(bloque|r[ée]serve|cale|planifie|trouve|pose|prends)/.test(l);
+  return (
+    /(cr[ée]neau|rendez-vous|\brdv\b|call|réunion|reunion|appel)/.test(l) &&
+    /(bloque|r[ée]serve|cale|planifie|trouve|pose|prends)/.test(l)
+  );
 }
 
 /** Extrait un prénom/nom après « pour » (« un devis pour Jean-Pierre »). */
@@ -180,7 +196,11 @@ function dueInDays(offset: number): { dueLabel: string; dueAtIso: string } {
     if (wd !== 0 && wd !== 6) added++;
   }
   d.setHours(9, 0, 0, 0);
-  const dayLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  const dayLabel = d.toLocaleDateString("fr-FR", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
   return { dueLabel: dayLabel, dueAtIso: d.toISOString() };
 }
 
@@ -189,7 +209,11 @@ function proposeWeekTasks(): ProposedTask[] {
   const defs: { title: string; client: string | null; priority: Priority }[] = [
     { title: "Envoyer le contrat signé", client: "Thomas Aubry", priority: "high" },
     { title: "Relancer le devis", client: "David Kim", priority: "medium" },
-    { title: "Préparer la proposition commerciale", client: "Alexandre Dupont", priority: "medium" },
+    {
+      title: "Préparer la proposition commerciale",
+      client: "Alexandre Dupont",
+      priority: "medium",
+    },
     { title: "Réserver le coworking", client: null, priority: "low" },
     { title: "Mettre à jour le portfolio", client: null, priority: "low" },
   ];
@@ -198,7 +222,6 @@ function proposeWeekTasks(): ProposedTask[] {
     return { ...def, dueLabel: due.dueLabel, dueAtIso: due.dueAtIso };
   });
 }
-
 
 // Raccourcis d'intention (façon ClickUp Brain) — chaque pill ouvre une liste
 // de suggestions adaptées à Freescale ; le clic PRÉREMPLIT le composer (pas d'envoi).
@@ -414,6 +437,22 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   // P4 — document (devis) ouvert dans une surface par-dessus le canvas.
   const [openDoc, setOpenDoc] = useState<DevisDoc | null>(null);
   const docsRef = useRef<Record<string, DevisDoc>>({});
+
+  // Réflexion Mue : gestion des timers (étapes animées pendant le thinking).
+  // Pas d'état d'expansion : une fois la réflexion finie, le bloc disparaît.
+  const activeTimersRef = useRef<(NodeJS.Timeout | number)[]>([]);
+  const clearActiveTimers = useCallback(() => {
+    for (const t of activeTimersRef.current) {
+      clearTimeout(t);
+      clearInterval(t);
+    }
+    activeTimersRef.current = [];
+  }, []);
+  useEffect(() => {
+    return () => {
+      clearActiveTimers();
+    };
+  }, [clearActiveTimers]);
   // Raccourci d'intention déplié (façon ClickUp Brain) — null = pills affichées.
   const [activeIntent, setActiveIntent] = useState<string | null>(null);
   // Intention RENDUE : suit activeIntent mais persiste à la fermeture pour
@@ -509,15 +548,15 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     } else if (userCount < lastUserCountRef.current) {
       lastUserCountRef.current = userCount; // reset (nouveau fil / clear)
     }
-  }, [askMessages, askPending]);
+  }, [askMessages]);
 
-  const runScan = () => {
+  const runScan = useCallback(() => {
     setAskMessages((prev) => [
       ...prev,
       { id: `user-${Date.now()}`, role: "user", content: "Suggérer des tâches" },
       { id: `scan-${Date.now()}`, role: "mue", kind: "scan", content: "" },
     ]);
-  };
+  }, []);
 
   // Lance une discussion « Confidentialité » avec un message Mue vidéo +
   // l'explication RGPD (zéro entraînement, stockage chiffré non exploitable).
@@ -546,47 +585,36 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       runScan();
       setSuggestTasksOpen(false);
     }
-  }, [suggestTasksOpen, setSuggestTasksOpen]);
+  }, [suggestTasksOpen, setSuggestTasksOpen, runScan]);
 
   const runAsk = async (raw: string) => {
     const question = raw.trim();
-    if (!question || askPending) return;
-    setAskMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: "user", content: question },
-    ]);
-    setAskInput("");
-    setAskPending(true);
+    if (!question) return;
     try {
       const res = await askMue({ conversationId: activeConvId ?? null, question });
       const answer = res.answer ?? res.error ?? "Mue n'a pas pu répondre.";
-      setAskMessages((prev) => [
-        ...prev,
-        {
-          id: `mue-${Date.now()}`,
-          role: "mue",
-          content: answer,
-          tone: res.error ? "error" : "normal",
-        },
-      ]);
+      return {
+        id: `mue-${Date.now()}`,
+        role: "mue" as const,
+        content: answer,
+        tone: res.error ? ("error" as const) : ("normal" as const),
+      };
     } catch (err) {
-      setAskMessages((prev) => [
-        ...prev,
-        {
-          id: `mue-${Date.now()}`,
-          role: "mue",
-          content: err instanceof Error ? err.message : "Mue n'a pas pu répondre.",
-          tone: "error",
-        },
-      ]);
-    } finally {
-      setAskPending(false);
+      return {
+        id: `mue-${Date.now()}`,
+        role: "mue" as const,
+        content: err instanceof Error ? err.message : "Mue n'a pas pu répondre.",
+        tone: "error" as const,
+      };
     }
   };
 
   // Action « créer une tâche » : Mue agit puis renvoie une chose CLIQUABLE
   // (ouvre la fiche détaillée). Suggestions de suivi façon « Améliorations ».
-  const runTaskAction = (raw: string, parsed: NonNullable<ReturnType<typeof parseTaskRequest>>) => {
+  const runTaskAction = (
+    _raw: string,
+    parsed: NonNullable<ReturnType<typeof parseTaskRequest>>
+  ) => {
     const taskId = `mue-${Date.now()}`;
     addTask({
       id: taskId,
@@ -602,41 +630,31 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       dueAtIso: parsed.dueAtIso,
       createdAtIso: new Date().toISOString(),
     });
-    setAskMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
-      {
-        id: `act-${Date.now()}`,
-        role: "mue",
-        kind: "action",
-        content: `C'est fait — j'ai créé la tâche avec échéance ${parsed.dueLabel} dans ta liste perso. Tu es bon 👍`,
-        action: { entity: "task", id: taskId, title: parsed.title },
-        improvements: [
-          `Bloque 1h sur mon agenda pour ${parsed.title}`,
-          "Crée un agent qui me rappelle mes tâches chaque matin",
-          "Montre-moi mes tâches en retard cette semaine",
-        ],
-      },
-    ]);
-    setAskInput("");
+    return {
+      id: `act-${Date.now()}`,
+      role: "mue" as const,
+      kind: "action" as const,
+      content: `C'est fait — j'ai créé la tâche avec échéance ${parsed.dueLabel} dans ta liste perso. Tu es bon 👍`,
+      action: { entity: "task" as const, id: taskId, title: parsed.title },
+      improvements: [
+        `Bloque 1h sur mon agenda pour ${parsed.title}`,
+        "Crée un agent qui me rappelle mes tâches chaque matin",
+        "Montre-moi mes tâches en retard cette semaine",
+      ],
+    };
   };
 
   // ── P2 · Création MULTIPLE : preview → confirmation → exécution → résultat ──
   // Étape 1 — prévisualisation (Niveau 3). Mue ne crée RIEN encore.
-  const runMultiTaskPreview = (raw: string) => {
+  const runMultiTaskPreview = (_raw: string) => {
     const tasks = proposeWeekTasks();
-    setAskMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
-      {
-        id: `prev-${Date.now()}`,
-        role: "mue",
-        kind: "preview",
-        content: `Voici ce que je propose — ${tasks.length} tâches dans ta liste perso :`,
-        preview: { tasks, destination: "Ma liste perso" },
-      },
-    ]);
-    setAskInput("");
+    return {
+      id: `prev-${Date.now()}`,
+      role: "mue" as const,
+      kind: "preview" as const,
+      content: `Voici ce que je propose — ${tasks.length} tâches dans ta liste perso :`,
+      preview: { tasks, destination: "Ma liste perso" },
+    };
   };
 
   // Étape 2 — exécution réelle (Niveau 4), élément par élément, après validation.
@@ -826,52 +844,49 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       subtotal,
       vat,
       total,
-      terms: "Conditions de paiement : 40 % à la commande, 60 % à la livraison · Délai 3–4 semaines.",
+      terms:
+        "Conditions de paiement : 40 % à la commande, 60 % à la livraison · Délai 3–4 semaines.",
     };
     docsRef.current[id] = doc;
     setOpenDoc(doc);
-    setAskMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
-      {
-        id: `res-${Date.now()}`,
-        role: "mue",
-        kind: "result",
-        content:
-          `Done, voici ton devis fictif. J'ai simulé ${client} (${company}) avec un pack branding ` +
-          `classique — logo, charte, carte de visite, templates réseaux — pour ${total.toLocaleString("fr-FR")} € TTC. ` +
-          `Conditions 40/60, délai 3–4 semaines. Tu peux l'adapter directement dans le document.`,
-        created: [{ entity: "document", id, title: `Devis ${doc.ref} — ${client}`, badge: "Brouillon" }],
-        improvements: [
-          "Transforme ce devis en présentation slides",
-          "Bloque un créneau lundi pour le call découverte",
-          "Sauvegarde mes tarifs en mémoire pour les prochains devis",
-        ],
-      },
-    ]);
-    setAskInput("");
+    return {
+      id: `res-${Date.now()}`,
+      role: "mue" as const,
+      kind: "result" as const,
+      content: `Done, voici ton devis fictif. J'ai simulé ${client} (${company}) avec un pack branding classique — logo, charte, carte de visite, templates réseaux — pour ${total.toLocaleString("fr-FR")} € TTC. Conditions 40/60, délai 3–4 semaines. Tu peux l'adapter directement dans le document.`,
+      created: [
+        {
+          entity: "document" as const,
+          id,
+          title: `Devis ${doc.ref} — ${client}`,
+          badge: "Brouillon",
+        },
+      ],
+      improvements: [
+        "Transforme ce devis en présentation slides",
+        "Bloque un créneau lundi pour le call découverte",
+        "Sauvegarde mes tarifs en mémoire pour les prochains devis",
+      ],
+    };
   };
 
   // ── P4 · Planification — Mue lit les dispos, propose des créneaux (kind=slots),
   // crée l'événement seulement APRÈS le choix de l'utilisateur. */
-  const runSlots = (raw: string) => {
-    setAskMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
-      {
-        id: `slots-${Date.now()}`,
-        role: "mue",
-        kind: "slots",
-        content: "Tu es libre dès 10h lundi. Choisis un créneau :",
-        slots: { options: ["10h", "10h30", "11h", "11h30", "12h"], dayLabel: "lundi", day: 1 },
-      },
-    ]);
-    setAskInput("");
+  const runSlots = (_raw: string) => {
+    return {
+      id: `slots-${Date.now()}`,
+      role: "mue" as const,
+      kind: "slots" as const,
+      content: "Tu es libre dès 10h lundi. Choisis un créneau :",
+      slots: { options: ["10h", "10h30", "11h", "11h30", "12h"], dayLabel: "lundi", day: 1 },
+    };
   };
 
   const confirmSlot = async (slotsId: string, slot: string, day: number, dayLabel: string) => {
     setAskMessages((prev) =>
-      prev.map((m) => (m.id === slotsId && m.slots ? { ...m, slots: { ...m.slots, done: true } } : m))
+      prev.map((m) =>
+        m.id === slotsId && m.slots ? { ...m, slots: { ...m.slots, done: true } } : m
+      )
     );
     const start = slotToStartMinutes(slot);
     const duration = 45;
@@ -894,7 +909,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         role: "mue",
         kind: "result",
         content: `C'est posé : ${dayLabel}, ${fmt(start)}–${fmt(start + duration)} (Europe/Paris), lien Meet inclus.`,
-        created: [{ entity: "event", id: `ev-${Date.now()}`, title: "Call découverte", badge: "Agenda" }],
+        created: [
+          { entity: "event", id: `ev-${Date.now()}`, title: "Call découverte", badge: "Agenda" },
+        ],
         improvements: ["Prépare l'ordre du jour du call", "Crée une note de réunion"],
       },
     ]);
@@ -902,94 +919,288 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
 
   // ── P3 · Réponse informative (Niveau 1→2) : cite des objets cliquables,
   // ne modifie RIEN, propose des suites. Ancré sur les vrais fils/clients. */
-  const runFocus = (raw: string) => {
+  const runFocus = (_raw: string) => {
     // Réfs cliquables EMBARQUÉES dans la prose (tokens {{r:KEY}}) — façon Brain.
     const inlineRefs: Record<string, ActionRef> = {
       thomas: { entity: "conversation", id: "c2", title: "Thomas Aubry", badge: "À répondre" },
       david: { entity: "conversation", id: "c9", title: "David Kim", badge: "À relancer" },
       alex: { entity: "conversation", id: "c7", title: "Alexandre Dupont", badge: "En cours" },
     };
-    setAskMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
-      {
-        id: `focus-${Date.now()}`,
-        role: "mue",
-        kind: "text",
-        content:
-          "Rien en retard côté tâches, c'est bon signe. Mais 3 fils clients te réclament, par ordre d'urgence.\n\n" +
-          "Je commencerais par {{r:thomas}} — il attend le contrat signé depuis 2 jours. " +
-          "Ensuite {{r:david}}, silencieux depuis 12 jours avec 6 500 € à suivre. " +
-          "Puis {{r:alex}}, qui attend ton retour sur les livrables.\n\n" +
-          "Tu veux que je traite ces 3 fils dans cet ordre ?",
-        inlineRefs,
-        improvements: [
-          "Rédige une relance pour David Kim",
-          "Crée mes tâches de la semaine",
-          "Bloque du temps pour le contrat de Thomas",
-        ],
-      },
-    ]);
-    setAskInput("");
+    return {
+      id: `focus-${Date.now()}`,
+      role: "mue" as const,
+      kind: "text" as const,
+      content:
+        "Rien en retard côté tâches, c'est bon signe. Mais 3 fils clients te réclament, par ordre d'urgence.\n\n" +
+        "Je commencerais par {{r:thomas}} — il attend le contrat signé depuis 2 jours. " +
+        "Ensuite {{r:david}}, silencieux depuis 12 jours avec 6 500 € à suivre. " +
+        "Puis {{r:alex}}, qui attend ton retour sur les livrables.\n\n" +
+        "Tu veux que je traite ces 3 fils dans cet ordre ?",
+      inlineRefs,
+      improvements: [
+        "Rédige une relance pour David Kim",
+        "Crée mes tâches de la semaine",
+        "Bloque du temps pour le contrat de Thomas",
+      ],
+    };
   };
 
   // ── P5 · Refus gracieux d'une action destructive + alternative manuelle ──
-  const runRefusal = (raw: string) => {
-    setAskMessages((prev) => [
-      ...prev,
-      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
-      {
-        id: `ref-${Date.now()}`,
-        role: "mue",
-        kind: "refusal",
-        content:
-          "Je ne peux pas supprimer en masse — c'est une action sensible et irréversible.",
-        refusal: {
-          alternative:
-            "Sélectionne les éléments dans le Tableau, puis envoie-les à la Corbeille d'un clic.",
-          cta: { label: "Ouvrir le Tableau", view: "tasks" },
-        },
-        improvements: ["Archive les tâches terminées", "Montre-moi les tâches en retard"],
+  const runRefusal = (_raw: string) => {
+    return {
+      id: `ref-${Date.now()}`,
+      role: "mue" as const,
+      kind: "refusal" as const,
+      content: "Je ne peux pas supprimer en masse — c'est une action sensible et irréversible.",
+      refusal: {
+        alternative:
+          "Sélectionne les éléments dans le Tableau, puis envoie-les à la Corbeille d'un clic.",
+        cta: { label: "Ouvrir le Tableau", view: "tasks" as ViewId },
       },
-    ]);
-    setAskInput("");
+      improvements: ["Archive les tâches terminées", "Montre-moi les tâches en retard"],
+    };
+  };
+
+  const renderThinkingBlock = (m: AskMessage) => {
+    const steps = m.thinkingSteps;
+    if (!steps || steps.length === 0) return null;
+
+    // Une fois la réflexion terminée, on ne garde RIEN à l'écran (pas de
+    // toggle « Pensée de Mue » repliée) : seule la réponse finale reste.
+    if (m.kind !== "thinking") return null;
+
+    return (
+      <div className="mue-thinking-container is-active">
+        <div className="mue-thinking-summary">
+          <svg
+            className="mue-thinking-spinner"
+            width={16}
+            height={16}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+          >
+            <circle cx="12" cy="12" r="10" strokeDasharray="42 20" strokeLinecap="round" />
+          </svg>
+          <span className="mue-thinking-title">Handling</span>
+        </div>
+        <div className="mue-thinking-steps">
+          <div className="mue-thinking-step is-current">
+            <span className="mue-step-bullet">
+              <span className="mue-step-bullet-dot" />
+            </span>
+            <span className="mue-step-text">{m.activeThinkingStep || "Prend en compte..."}</span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Aiguillage : action (tâche) si l'intention est détectée, sinon question.
   const submit = (raw: string) => {
     const text = raw.trim();
     if (!text || askPending || executing) return;
-    // Destructif → refus (Niveau 0), AVANT toute autre intention.
+
+    // 1. Ajouter le message utilisateur
+    const userMsgId = `user-${Date.now()}`;
+    setAskMessages((prev) => [...prev, { id: userMsgId, role: "user", content: text }]);
+    setAskInput("");
+    setAskPending(true);
+
+    // 2. Déterminer l'action et les étapes
+    let getResult: () => Promise<AskMessage> | AskMessage;
+    let steps: string[];
+
     if (isDestructiveRequest(text)) {
-      runRefusal(text);
-      return;
+      getResult = () => runRefusal(text);
+      steps = [
+        "Analyse de l'impact de la requête...",
+        "Vérification des règles de sécurité...",
+        "Interdiction des suppressions globales...",
+      ];
+    } else if (isDocRequest(text)) {
+      getResult = () => runDocument(text);
+      steps = [
+        "Extraction du nom du client...",
+        "Calcul des prestations standard...",
+        "Valorisation HT / TVA / TTC...",
+        "Génération du document de facturation...",
+      ];
+    } else if (isScheduleRequest(text)) {
+      getResult = () => runSlots(text);
+      steps = [
+        "Interrogation de ton planning...",
+        "Détection des conflits d'horaires...",
+        "Calcul des meilleurs créneaux de réunion...",
+      ];
+    } else if (isFocusRequest(text)) {
+      getResult = () => runFocus(text);
+      steps = [
+        "Lecture de tes fils de discussion...",
+        "Calcul des temps de réponse moyens...",
+        "Priorisation par niveau d'urgence client...",
+      ];
+    } else if (isMultiTaskRequest(text)) {
+      getResult = () => runMultiTaskPreview(text);
+      steps = [
+        "Scan de ta boîte de réception...",
+        "Extraction des engagements clients...",
+        "Préparation de la liste d'actions...",
+      ];
+    } else {
+      const parsed = parseTaskRequest(text);
+      if (parsed) {
+        getResult = () => runTaskAction(text, parsed);
+        steps = [
+          "Analyse de l'action à créer...",
+          "Calcul de l'échéance intelligente...",
+          "Ajout de la tâche dans ta liste...",
+        ];
+      } else {
+        // Direct question: starts LLM call in the background immediately
+        const askPromise = runAsk(text).then(
+          (msg) =>
+            msg || {
+              id: `mue-${Date.now()}`,
+              role: "mue" as const,
+              content: "Désolé, je n'ai pas pu générer de réponse.",
+            }
+        );
+        getResult = () => askPromise;
+        const lowerText = text.toLowerCase();
+        if (lowerText.includes("résume") || lowerText.includes("resum")) {
+          steps = [
+            "Analyse du fil de discussion en cours...",
+            "Identification des principaux interlocuteurs...",
+            "Extraction des points clés et décisions...",
+            "Synthèse du brief en 3 points...",
+          ];
+        } else if (
+          lowerText.includes("répons") ||
+          lowerText.includes("ecris") ||
+          lowerText.includes("rédige")
+        ) {
+          steps = [
+            "Analyse du contexte de l'email...",
+            "Consultation de ta voix et de ton profil de style...",
+            "Rédaction de suggestions de réponses adaptées...",
+            "Polissage des formulations pour rester naturel...",
+          ];
+        } else {
+          steps = [
+            "Analyse sémantique de ta question...",
+            "Consultation de ta base de connaissances et de ta mémoire...",
+            "Recherche d'éléments pertinents dans ton espace...",
+            "Synthèse et mise en forme de la réponse...",
+          ];
+        }
+      }
     }
-    // Document (devis…) → création directe + ouverture canvas (Niveau 4).
-    if (isDocRequest(text)) {
-      runDocument(text);
-      return;
-    }
-    // Planification → propose des créneaux (Niveau 3), crée après choix.
-    if (isScheduleRequest(text)) {
-      runSlots(text);
-      return;
-    }
-    // Priorisation / focus → réponse informative (Niveau 1→2), aucune mutation.
-    if (isFocusRequest(text)) {
-      runFocus(text);
-      return;
-    }
-    // Multi-tâches → prévisualisation (Niveau 3) AVANT toute création.
-    if (isMultiTaskRequest(text)) {
-      runMultiTaskPreview(text);
-      return;
-    }
-    const parsed = parseTaskRequest(text);
-    if (parsed) {
-      runTaskAction(text, parsed);
-      return;
-    }
-    void runAsk(text);
+
+    clearActiveTimers();
+
+    // 3. Ajouter le message de réflexion inline
+    const thinkingId = `thinking-${Date.now()}`;
+    const initialStep = "Prend en compte...";
+    setAskMessages((prev) => [
+      ...prev,
+      {
+        id: thinkingId,
+        role: "mue",
+        kind: "thinking",
+        content: "",
+        thinkingSteps: [initialStep],
+        activeThinkingStep: initialStep,
+        thinkingElapsed: 0,
+      },
+    ]);
+
+    const T = 4000 + Math.random() * 2000; // 4 to 6 seconds total
+    const startTime = Date.now();
+
+    // Live counter timer (100ms interval) for internal elapsed state tracking
+    const intervalId = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      setAskMessages((prev) =>
+        prev.map((msg) => (msg.id === thinkingId ? { ...msg, thinkingElapsed: elapsed } : msg))
+      );
+    }, 100);
+    activeTimersRef.current.push(intervalId);
+
+    // Schedule updates for steps: the wording changes approximately every 2s randomly
+    const currentSteps: string[] = [initialStep];
+    const scheduleNextStep = (stepIdx: number) => {
+      if (Date.now() - startTime >= T) return;
+
+      const nextDelay = 1800 + Math.random() * 400; // ~2 seconds
+      const timeoutId = setTimeout(() => {
+        if (Date.now() - startTime >= T) return;
+
+        let nextStepText = steps[stepIdx];
+        if (!nextStepText) {
+          const fallbacks = [
+            "Analyse finale...",
+            "Mise en forme des données...",
+            "Préparation de la réponse...",
+          ];
+          nextStepText = fallbacks[stepIdx - steps.length] || "Finalisation...";
+        }
+
+        currentSteps.push(nextStepText);
+        setAskMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === thinkingId
+              ? {
+                  ...msg,
+                  thinkingSteps: [...currentSteps],
+                  activeThinkingStep: nextStepText,
+                }
+              : msg
+          )
+        );
+
+        scheduleNextStep(stepIdx + 1);
+      }, nextDelay);
+      activeTimersRef.current.push(timeoutId);
+    };
+
+    // Start scheduling steps (the first one "Prend en compte..." is shown immediately)
+    scheduleNextStep(0);
+
+    // Final resolution timer
+    const finalTimeoutId = setTimeout(async () => {
+      const duration = (Date.now() - startTime) / 1000;
+      clearActiveTimers();
+
+      try {
+        const result = await getResult();
+        const finalResult: AskMessage = {
+          ...result,
+          thinkingSteps: currentSteps,
+          thinkingDuration: duration,
+        };
+        setAskMessages((prev) => prev.map((msg) => (msg.id === thinkingId ? finalResult : msg)));
+      } catch (err) {
+        setAskMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === thinkingId
+              ? {
+                  id: `err-${Date.now()}`,
+                  role: "mue",
+                  content: "Mue n'a pas pu traiter ta demande.",
+                  tone: "error" as const,
+                  thinkingSteps: currentSteps,
+                  thinkingDuration: duration,
+                }
+              : msg
+          )
+        );
+      } finally {
+        setAskPending(false);
+      }
+    }, T);
+    activeTimersRef.current.push(finalTimeoutId);
   };
 
   const handleAsk = (e: React.FormEvent) => {
@@ -1013,7 +1224,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     }
   };
   const feedback = (v: "up" | "down") =>
-    push({ kind: "info", text: v === "up" ? "Merci pour ton retour 👍" : "Noté — je ferai mieux." });
+    push({
+      kind: "info",
+      text: v === "up" ? "Merci pour ton retour 👍" : "Noté — je ferai mieux.",
+    });
 
   const handleClear = async () => {
     const previous = askMessages;
@@ -1049,13 +1263,13 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
           title: "Résumer ce fil",
           sub: "L'essentiel en 3 points",
           icon: "doc",
-          run: () => runAsk("Résume ce fil"),
+          run: () => submit("Résume ce fil"),
         },
         {
           title: "Proposer une réponse",
           sub: "Mue rédige pour toi",
           icon: "reply",
-          run: () => runAsk("Propose une réponse à ce fil"),
+          run: () => submit("Propose une réponse à ce fil"),
         },
         { title: "Suggérer des tâches", sub: "Mue scanne ce client", icon: "spark", run: runScan },
       ]
@@ -1070,13 +1284,13 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
           title: "Résumer ma journée",
           sub: "Ce qui compte aujourd'hui",
           icon: "doc",
-          run: () => runAsk("Résume ma journée"),
+          run: () => submit("Résume ma journée"),
         },
         {
           title: "Prioriser cette semaine",
           sub: "Mue ordonne tes tâches",
           icon: "bolt",
-          run: () => runAsk("Aide-moi à prioriser cette semaine"),
+          run: () => submit("Aide-moi à prioriser cette semaine"),
         },
       ];
 
@@ -1165,7 +1379,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         <div className="mue2-disc-wrap">
           <button
             type="button"
-            className="mue2-disc-btn"
+            className={`mue2-disc-btn ${discOpen ? "is-active" : ""}`}
             aria-haspopup="menu"
             aria-expanded={discOpen}
             onClick={() => setDiscOpen((v) => !v)}
@@ -1384,6 +1598,14 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                 Tout disparaît dès que le composer contient du texte. */}
             {!askInput.trim() && (
               <div className="mue2-intentzone">
+                {activeIntent && (
+                  <button
+                    type="button"
+                    className="mue2-intent-scrim"
+                    onClick={() => setActiveIntent(null)}
+                    aria-label="Fermer"
+                  />
+                )}
                 <div
                   className={`mue2-intents ${activeIntent ? "is-hidden" : ""}`}
                   aria-label="Raccourcis d'intention"
@@ -1525,25 +1747,29 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   <div className="mue2-msg-head">
                     <MueMark size={16} /> Mue
                   </div>
+                  {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">{m.content}</div>
                   <div className="mue2-prev">
-                    {m.preview.tasks.map((t, i) => (
-                      <div key={i} className="mue2-prev-row">
-                        <span className="mue2-prev-ic" aria-hidden>
-                          <svg {...stroke} width={14} height={14}>
-                            <rect x="4" y="4" width="16" height="16" rx="4" />
-                          </svg>
-                        </span>
-                        <span className="mue2-prev-main">
-                          <span className="mue2-prev-title">{t.title}</span>
-                          <span className="mue2-prev-meta">
-                            {t.dueLabel}
-                            {t.client ? ` · ${t.client}` : ""}
+                    {m.preview.tasks.map((t, i) => {
+                      const key = `${t.title}-${t.dueAtIso}-${i}`;
+                      return (
+                        <div key={key} className="mue2-prev-row">
+                          <span className="mue2-prev-ic" aria-hidden>
+                            <svg {...stroke} width={14} height={14}>
+                              <rect x="4" y="4" width="16" height="16" rx="4" />
+                            </svg>
                           </span>
-                        </span>
-                        <MueBadge kind="priority" value={t.priority} />
-                      </div>
-                    ))}
+                          <span className="mue2-prev-main">
+                            <span className="mue2-prev-title">{t.title}</span>
+                            <span className="mue2-prev-meta">
+                              {t.dueLabel}
+                              {t.client ? ` · ${t.client}` : ""}
+                            </span>
+                          </span>
+                          <MueBadge kind="priority" value={t.priority} />
+                        </div>
+                      );
+                    })}
                     <div className="mue2-prev-dest">
                       <svg {...stroke} width={13} height={13}>
                         <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -1556,7 +1782,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       type="button"
                       className="mue2-cfm-btn is-primary"
                       disabled={m.preview.done}
-                      onClick={() => void executeMultiTask(m.id, m.preview!.tasks)}
+                      onClick={() =>
+                        m.preview?.tasks && void executeMultiTask(m.id, m.preview.tasks)
+                      }
                     >
                       {m.preview.done ? "✓ En cours…" : "Oui, crée-les dans ma liste"}
                     </button>
@@ -1611,6 +1839,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   <div className="mue2-msg-head">
                     <MueMark size={16} /> Mue
                   </div>
+                  {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">{m.content}</div>
                   <div className="mue2-slots">
                     {m.slots.options.map((s) => (
@@ -1633,6 +1862,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   <div className="mue2-msg-head">
                     <MueMark size={16} /> Mue
                   </div>
+                  {renderThinkingBlock(m)}
                   <div className="mue2-refusal">
                     <div className="mue2-refusal-reason">
                       <span className="mue2-refusal-ic" aria-hidden>
@@ -1654,17 +1884,18 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       </button>
                     )}
                   </div>
-                  <MueSuggestions
-                    label="À la place"
-                    items={m.improvements ?? []}
-                    onPick={submit}
-                  />
+                  <MueSuggestions label="À la place" items={m.improvements ?? []} onPick={submit} />
+                </div>
+              ) : m.kind === "thinking" ? (
+                <div key={m.id} className="mue2-msg is-mue">
+                  {renderThinkingBlock(m)}
                 </div>
               ) : m.kind === "result" ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
                     <MueMark size={16} /> Mue
                   </div>
+                  {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">
                     <span className="mue2-result-check" aria-hidden>
                       <svg {...stroke} width={15} height={15}>
@@ -1696,6 +1927,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   <div className="mue2-msg-head">
                     <MueMark size={16} /> Mue
                   </div>
+                  {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">
                     {m.inlineRefs ? renderRich(m.content, m.inlineRefs) : m.content}
                     {m.action && (
@@ -1734,7 +1966,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                 </div>
               )
             )}
-            {askPending && (
+            {askPending && !askMessages.some((msg) => msg.kind === "thinking") && (
               <div className="mue2-msg is-mue">
                 <div className="mue2-msg-head">
                   <MueMark size={16} /> Mue

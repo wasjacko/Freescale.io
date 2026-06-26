@@ -47,9 +47,7 @@ export async function applySignupAnswers(answers: SignupAnswers): Promise<void> 
 
   if (workspace?.id && answers.channelsPicked.length) {
     const rows = answers.channelsPicked
-      .filter((kind) =>
-        ["gmail", "instagram", "whatsapp", "slack", "discord"].includes(kind)
-      )
+      .filter((kind) => ["gmail", "instagram", "whatsapp", "slack", "discord"].includes(kind))
       .map((kind) => ({
         workspace_id: workspace.id as string,
         kind,

@@ -140,7 +140,6 @@ export function InboxFolders() {
         );
       })}
 
-
       {/* Dossiers */}
       <div className="ibx-folders-head">
         <span>Dossiers</span>
@@ -190,7 +189,7 @@ export function InboxFolders() {
 
       {labels.length > 0 && (
         <>
-              <div className="ibx-folders-head">
+          <div className="ibx-folders-head">
             <span>Labels</span>
           </div>
           {labels.map((l) => (

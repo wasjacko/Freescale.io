@@ -25,7 +25,12 @@ export function OtpInput({ value, onChange, onComplete, length = 6 }: Props) {
     if (digit && idx < length - 1) {
       inputsRef.current[idx + 1]?.focus();
     }
-    if (digit && joined.length === length && !joined.includes("") && joined.replace(/\s/g, "").length === length) {
+    if (
+      digit &&
+      joined.length === length &&
+      !joined.includes("") &&
+      joined.replace(/\s/g, "").length === length
+    ) {
       onComplete?.(joined);
     }
   };

@@ -26,7 +26,7 @@ describe("Today operational home", () => {
 
     expect(types).toContain('"today"');
     expect(store).toContain('view: "today"');
-    expect(shell).toContain("<TodayView");
+    expect(shell).toContain("<TasksBoard");
     expect(sidebar).toContain('label: "Tâches"');
   });
 
