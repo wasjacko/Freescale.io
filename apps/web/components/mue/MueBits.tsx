@@ -108,15 +108,22 @@ export function MueObjectCard({
 export function MueInlineRef({
   label,
   badge,
+  entity,
   onOpen,
 }: {
   label: string;
   badge?: string | undefined;
+  entity?: "task" | "conversation" | "client" | "event" | "document" | undefined;
   onOpen: () => void;
 }) {
   return (
     <button type="button" className="mue2-inlineref" onClick={onOpen} title="Ouvrir">
-      {label}
+      {entity ? (
+        <span className="mue2-inlineref-ic" aria-hidden>
+          {ENTITY_ICON[entity]}
+        </span>
+      ) : null}
+      <span className="mue2-inlineref-label">{label}</span>
       {badge ? <span className="mue2-inlineref-badge">{badge}</span> : null}
     </button>
   );

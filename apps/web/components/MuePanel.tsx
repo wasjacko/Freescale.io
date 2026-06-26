@@ -636,13 +636,24 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     return {
       id: `act-${Date.now()}`,
       role: "mue" as const,
-      kind: "action" as const,
-      content: `C'est fait — j'ai créé la tâche avec échéance ${parsed.dueLabel} dans ta liste perso. Tu es bon 👍`,
-      action: { entity: "task" as const, id: taskId, title: parsed.title },
+      kind: "text" as const,
+      content:
+        `C'est fait — j'ai créé {{r:task}} dans ta liste perso, ` +
+        `échéance ${parsed.dueLabel}. J'ai ajouté une description couvrant ` +
+        `les sous-étapes habituelles. Adapte-la si tu veux quelque chose ` +
+        `de plus précis.`,
+      inlineRefs: {
+        task: {
+          entity: "task" as const,
+          id: taskId,
+          title: parsed.title,
+          badge: "TO DO",
+        },
+      },
       improvements: [
-        `Bloque 1h sur mon agenda pour ${parsed.title}`,
-        "Crée un agent qui me rappelle mes tâches chaque matin",
-        "Montre-moi mes tâches en retard cette semaine",
+        `Découpe en sous-tâches : préparer, exécuter, vérifier`,
+        `Bloque du temps sur mon agenda pour ${parsed.title}`,
+        "Qu'est-ce qui est en retard dans mes tâches ?",
       ],
     };
   };
@@ -822,6 +833,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   key={i}
                   label={ref.title}
                   badge={ref.badge}
+                  entity={ref.entity}
                   onOpen={() => openObject(ref)}
                 />
               );

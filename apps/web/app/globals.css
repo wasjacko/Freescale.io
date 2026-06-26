@@ -34000,44 +34000,63 @@ button.mfv-model:hover {
 .mue2-rich-p:last-child {
   margin-bottom: 0;
 }
+/* Lien inline façon ClickUp Brain : icône d'entité + titre souligné + badge
+   statut. Style sobre, sans fond bleu, intégré naturellement dans la prose. */
 .mue2-inlineref {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 1px 7px;
-  margin: 0 1px;
+  padding: 0 3px;
+  margin: 0;
   border: 0;
-  border-radius: 6px;
-  background: rgba(79, 108, 247, 0.1);
-  color: #3a52c4;
+  background: transparent;
+  color: var(--ink, #10131a);
   font-size: inherit;
   font-weight: 600;
   cursor: pointer;
   vertical-align: baseline;
   transition: background 120ms var(--ease);
+  border-radius: 4px;
 }
 .mue2-inlineref:hover {
-  background: rgba(79, 108, 247, 0.2);
+  background: rgba(15, 23, 42, 0.05);
+}
+.mue2-inlineref-ic {
+  display: inline-grid;
+  place-items: center;
+  color: var(--csv-text-soft, #5b6475);
+  flex: none;
+}
+.mue2-inlineref-label {
+  text-decoration: underline;
+  text-decoration-color: rgba(15, 23, 42, 0.3);
+  text-underline-offset: 2px;
 }
 .mue2-inlineref-badge {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  padding: 0 4px;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(79, 108, 247, 0.18);
-  color: #3a52c4;
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--csv-text-soft, #5b6475);
 }
 [data-theme="dark"] .mue2-inlineref {
-  background: rgba(122, 162, 255, 0.16);
-  color: #c5d0ff;
+  background: transparent;
+  color: #f4f4f7;
 }
 [data-theme="dark"] .mue2-inlineref:hover {
-  background: rgba(122, 162, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .mue2-inlineref-ic {
+  color: #c8ccd6;
+}
+[data-theme="dark"] .mue2-inlineref-label {
+  text-decoration-color: rgba(255, 255, 255, 0.3);
 }
 [data-theme="dark"] .mue2-inlineref-badge {
-  background: rgba(122, 162, 255, 0.22);
-  color: #dde4ff;
+  background: rgba(255, 255, 255, 0.1);
+  color: #c8ccd6;
 }
 
 /* Devis enrichi (Client / Prestataire / Prestations / Total / Conditions) */
