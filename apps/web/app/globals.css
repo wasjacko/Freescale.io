@@ -34606,3 +34606,131 @@ button.mfv-model:hover {
 [data-theme="dark"] .mue2-rich-p strong {
   color: #f4f4f7;
 }
+
+/* Pillule objet INLINE en état SKELETON (pastel shimmer) — l'IA est en
+   train de « finaliser » l'objet, puis la pillule morphe vers son état
+   final (icône + label + badge). Donne le sentiment que Mue créée
+   réellement l'asset en temps réel. */
+.mue2-inlineref--skeleton {
+  /* On garde le même padding/gap que la pillule finale pour éviter le saut
+     de layout au moment du morph. */
+  pointer-events: none;
+  background: transparent !important;
+  animation: mue2-inlineref-skel-pop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mue2-inlineref-ic--ghost {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%);
+  background-size: 400% 100%;
+  animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
+}
+.mue2-inlineref-label--ghost {
+  display: inline-block;
+  width: 84px;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%);
+  background-size: 400% 100%;
+  animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
+  /* annule l'underline + couleur du label final */
+  text-decoration: none !important;
+}
+.mue2-inlineref-badge--ghost {
+  display: inline-block;
+  width: 36px;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #fde6f1 25%, #fbd0e1 37%, #fde6f1 63%);
+  background-size: 400% 100%;
+  animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
+  color: transparent !important;
+}
+@keyframes mue2-skel-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+@keyframes mue2-inlineref-skel-pop {
+  from { opacity: 0; transform: scale(0.92); }
+}
+[data-theme="dark"] .mue2-inlineref-ic--ghost,
+[data-theme="dark"] .mue2-inlineref-label--ghost {
+  background: linear-gradient(90deg, #2c2940 25%, #3a3458 37%, #2c2940 63%);
+  background-size: 400% 100%;
+}
+[data-theme="dark"] .mue2-inlineref-badge--ghost {
+  background: linear-gradient(90deg, #3a2435 25%, #4a2c44 37%, #3a2435 63%);
+  background-size: 400% 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-inlineref--skeleton,
+  .mue2-inlineref-ic--ghost,
+  .mue2-inlineref-label--ghost,
+  .mue2-inlineref-badge--ghost {
+    animation: none;
+  }
+}
+
+/* Skeleton pour MueObjectCard (pillule .mue2-ref ET carte large .mue2-objcard).
+   Pastel violet/rose façon Suggérer des tâches, mêmes proportions que la
+   pillule/carte finale pour éviter le saut de layout. */
+.mue2-ref--skeleton,
+.mue2-objcard--skeleton {
+  pointer-events: none;
+  cursor: default;
+  animation: mue2-inlineref-skel-pop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mue2-skel-block {
+  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%) !important;
+  background-size: 400% 100% !important;
+  animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+  color: transparent !important;
+}
+.mue2-skel-block svg { visibility: hidden; }
+.mue2-skel-dot {
+  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%) !important;
+  background-size: 400% 100% !important;
+  animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
+}
+.mue2-skel-line {
+  display: inline-block;
+  height: 11px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%);
+  background-size: 400% 100%;
+  animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
+}
+.mue2-skel-line--ref { width: 132px; vertical-align: middle; }
+.mue2-skel-line--title { width: 160px; height: 12px; margin-bottom: 4px; }
+.mue2-skel-line--meta { width: 96px; height: 10px; opacity: 0.7; }
+.mue2-skel-badge {
+  display: inline-block;
+  width: 52px;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #fde6f1 25%, #fbd0e1 37%, #fde6f1 63%);
+  background-size: 400% 100%;
+  animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
+  vertical-align: middle;
+}
+[data-theme="dark"] .mue2-skel-block,
+[data-theme="dark"] .mue2-skel-dot,
+[data-theme="dark"] .mue2-skel-line {
+  background: linear-gradient(90deg, #2c2940 25%, #3a3458 37%, #2c2940 63%) !important;
+  background-size: 400% 100% !important;
+}
+[data-theme="dark"] .mue2-skel-badge {
+  background: linear-gradient(90deg, #3a2435 25%, #4a2c44 37%, #3a2435 63%);
+  background-size: 400% 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-skel-block,
+  .mue2-skel-dot,
+  .mue2-skel-line,
+  .mue2-skel-badge {
+    animation: none;
+  }
+}

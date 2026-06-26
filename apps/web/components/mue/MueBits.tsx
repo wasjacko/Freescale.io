@@ -5,6 +5,12 @@
 // les réemploient au lieu de dupliquer le JSX inline.
 
 import type { Priority } from "@/lib/types";
+import { useEffect, useState } from "react";
+
+// Cache module-level des refs déjà « révélées » (skeleton → pillule finale joué).
+// Au re-render (scroll, autre message…), une pillule déjà résolue apparaît
+// d'un coup, pas de réanimation. Vit pendant tout le mount de la page.
+const REVEALED_REFS = new Set<string>();
 
 const stroke = {
   fill: "none",
@@ -73,14 +79,55 @@ export function MueObjectCard({
   badge = "TO DO",
   meta,
   entity = "task",
+  revealId,
   onOpen,
 }: {
   title: string;
   badge?: string | undefined;
   meta?: string | undefined;
   entity?: "task" | "conversation" | "client" | "event" | "document" | undefined;
+  revealId?: string | undefined;
   onOpen: () => void;
 }) {
+  // Skeleton pastel ~750 ms avant d'afficher l'objet finalisé — donne le
+  // sentiment que Mue est en train de créer l'asset en temps réel.
+  const cacheKey = revealId ?? title;
+  const alreadyRevealed = REVEALED_REFS.has(cacheKey);
+  const [ready, setReady] = useState(alreadyRevealed);
+  useEffect(() => {
+    if (alreadyRevealed) return;
+    const t = setTimeout(() => {
+      REVEALED_REFS.add(cacheKey);
+      setReady(true);
+    }, 750);
+    return () => clearTimeout(t);
+  }, [cacheKey, alreadyRevealed]);
+
+  if (!ready) {
+    // Skeleton calé sur la pillule .mue2-ref (mode sans meta) ou sur la
+    // carte large .mue2-objcard (mode avec meta) — même métrique pour
+    // éviter le saut de layout au morph.
+    if (meta) {
+      return (
+        <span className="mue2-objcard mue2-objcard--skeleton" aria-busy="true" aria-label="…">
+          <span className="mue2-objcard-ic mue2-skel-block" aria-hidden />
+          <span className="mue2-objcard-main">
+            <span className="mue2-skel-line mue2-skel-line--title" aria-hidden />
+            <span className="mue2-skel-line mue2-skel-line--meta" aria-hidden />
+          </span>
+          <span className="mue2-skel-badge" aria-hidden />
+        </span>
+      );
+    }
+    return (
+      <span className="mue2-ref mue2-ref--skeleton" aria-busy="true" aria-label="…">
+        <span className="mue2-ref-dot mue2-skel-dot" aria-hidden />
+        <span className="mue2-skel-line mue2-skel-line--ref" aria-hidden />
+        <span className="mue2-skel-badge" aria-hidden />
+      </span>
+    );
+  }
+
   if (meta) {
     return (
       <button type="button" className="mue2-objcard" onClick={onOpen} title="Ouvrir dans le canvas">
@@ -109,13 +156,43 @@ export function MueInlineRef({
   label,
   badge,
   entity,
+  revealId,
   onOpen,
 }: {
   label: string;
   badge?: string | undefined;
   entity?: "task" | "conversation" | "client" | "event" | "document" | undefined;
+  // Identifiant stable de l'objet — sert au cache module-level pour ne pas
+  // re-jouer le skeleton si la pillule a déjà été révélée une fois.
+  revealId?: string | undefined;
   onOpen: () => void;
 }) {
+  const cacheKey = revealId ?? label;
+  const alreadyRevealed = REVEALED_REFS.has(cacheKey);
+  const [ready, setReady] = useState(alreadyRevealed);
+  useEffect(() => {
+    if (alreadyRevealed) return;
+    // Skeleton pastel pendant ~750 ms — donne le sentiment que l'IA est en
+    // train de finaliser l'objet, puis morphe vers la pillule complète.
+    const t = setTimeout(() => {
+      REVEALED_REFS.add(cacheKey);
+      setReady(true);
+    }, 750);
+    return () => clearTimeout(t);
+  }, [cacheKey, alreadyRevealed]);
+
+  if (!ready) {
+    // Skeleton inline (shimmer pastel) — emprunte la métrique de la pillule
+    // finale pour éviter un saut de layout au moment du morph.
+    return (
+      <span className="mue2-inlineref mue2-inlineref--skeleton" aria-busy="true" aria-label="…">
+        <span className="mue2-inlineref-ic mue2-inlineref-ic--ghost" aria-hidden />
+        <span className="mue2-inlineref-label mue2-inlineref-label--ghost" aria-hidden />
+        <span className="mue2-inlineref-badge mue2-inlineref-badge--ghost" aria-hidden />
+      </span>
+    );
+  }
+
   return (
     <button type="button" className="mue2-inlineref" onClick={onOpen} title="Ouvrir">
       {entity ? (

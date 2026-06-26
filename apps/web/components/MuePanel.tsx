@@ -895,6 +895,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             label={ref.title}
             badge={ref.badge}
             entity={ref.entity}
+            revealId={ref.id}
             onOpen={() => openObject(ref)}
           />
         );
@@ -2226,6 +2227,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                           title={c.title}
                           badge={c.badge ?? "TO DO"}
                           entity={c.entity}
+                          revealId={c.id}
                           onOpen={() => openObject(c)}
                         />
                       ))}
