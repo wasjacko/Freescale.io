@@ -801,9 +801,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       }
       let i = 0;
       let raf = 0;
+      // Vitesse : 1 caractère / frame ≈ 60 char/s — proche d'une vraie IA,
+      // lecture confortable, ressenti « token par token ».
       const tick = () => {
-        // Vitesse : ~2 caractères / frame ≈ 120 char/s, lecture confortable.
-        i = Math.min(i + 2, text.length);
+        i = Math.min(i + 1, text.length);
         setVisible(text.slice(0, i));
         if (i < text.length) raf = requestAnimationFrame(tick);
         else streamedIdsRef.current.add(id);
