@@ -3,7 +3,6 @@
 import { FreescaleMark } from "@/components/brand/FreescaleMark";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
-import { Fragment } from "react";
 
 type NavId =
   | "today"
@@ -151,25 +150,22 @@ export function Sidebar() {
         {NAV_ITEMS.map((item) => {
           const count = counts[item.id];
           return (
-            <Fragment key={item.id}>
-              <button
-                type="button"
-                className={`nav-item ${view === item.id ? "active" : ""}`}
-                aria-label={item.label}
-                onClick={() => {
-                  setView(item.id);
-                  if (item.id === "inbox") setActiveConv("");
-                }}
-              >
-                <span className="nav-ico">
-                  <NavIcon id={item.id} />
-                  {count != null && count > 0 && <span className="nav-badge">{count}</span>}
-                </span>
-                <span className="nav-text">{item.label}</span>
-              </button>
-              {/* Séparateur entre groupes (façon rail de réf.) : après Tâches. */}
-              {item.id === "today" && <div className="nav-divider" aria-hidden />}
-            </Fragment>
+            <button
+              key={item.id}
+              type="button"
+              className={`nav-item ${view === item.id ? "active" : ""}`}
+              aria-label={item.label}
+              onClick={() => {
+                setView(item.id);
+                if (item.id === "inbox") setActiveConv("");
+              }}
+            >
+              <span className="nav-ico">
+                <NavIcon id={item.id} />
+                {count != null && count > 0 && <span className="nav-badge">{count}</span>}
+              </span>
+              <span className="nav-text">{item.label}</span>
+            </button>
           );
         })}
       </nav>

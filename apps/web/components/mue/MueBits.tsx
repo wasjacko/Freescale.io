@@ -180,25 +180,41 @@ export function MuePrevRow({
   const [ready, setReady] = useState(alreadyRevealed);
   useEffect(() => {
     if (alreadyRevealed) return;
-    // Délai = 600ms de base + 220ms par ligne → effet de composition
-    // en cascade (chaque tâche apparaît juste après la précédente).
+    // Délai encore plus long pour charger le squelette (4500ms + 1500ms par ligne)
     const t = setTimeout(
       () => {
         REVEALED_REFS.add(revealId);
         setReady(true);
       },
-      600 + index * 220
+      4500 + index * 1500
     );
     return () => clearTimeout(t);
   }, [revealId, index, alreadyRevealed]);
   if (!ready) {
     return (
       <div className="mue2-prev-row mue2-prev-row--skeleton" aria-busy="true" aria-label="…">
-        <span className="mue2-prev-main">
-          <span className="mue2-skel-line mue2-skel-line--title" aria-hidden />
-          <span className="mue2-skel-line mue2-skel-line--meta" aria-hidden />
-        </span>
-        <span className="mue2-skel-badge" aria-hidden />
+        <div className="mue2-prev-row-content">
+          <div className="mue2-prev-row-top">
+            <span
+              className="mue2-skel-line mue2-skel-line--title"
+              style={{ width: "130px", height: "11px", margin: 0 }}
+              aria-hidden
+            />
+            <span className="mue2-prev-todo-badge mue2-prev-todo-badge--skeleton" aria-hidden />
+          </div>
+          <div className="mue2-prev-row-bottom" style={{ marginTop: "6px" }}>
+            <span
+              className="mue2-skel-line mue2-skel-line--meta"
+              style={{ width: "70px", height: "9px" }}
+              aria-hidden
+            />
+            <span
+              className="mue2-skel-line mue2-skel-line--meta"
+              style={{ width: "80px", height: "9px" }}
+              aria-hidden
+            />
+          </div>
+        </div>
       </div>
     );
   }

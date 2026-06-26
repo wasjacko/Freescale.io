@@ -4,7 +4,6 @@ import { MueFlower } from "@/components/MueFlower";
 import { MueMemory } from "@/components/MueMemoryDrawer";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import {
-  MueBadge,
   MueInlineRef,
   MueMsgActions,
   MueObjectCard,
@@ -38,6 +37,7 @@ type ProposedTask = {
   priority: Priority;
   dueLabel: string;
   dueAtIso: string;
+  conversationId?: string | null;
 };
 
 type AskMessage = {
@@ -128,9 +128,7 @@ function parseTaskRequest(
   }
 
   // 4) Polish final : ponctuation en bord.
-  let title = titlePart
-    .replace(/^[:\-—,;\s]+/u, "")
-    .replace(/[:\-—,;\s.]+$/u, "");
+  let title = titlePart.replace(/^[:\-—,;\s]+/u, "").replace(/[:\-—,;\s.]+$/u, "");
   if (title.length < 3) title = "Nouvelle tâche";
   title = title.charAt(0).toUpperCase() + title.slice(1);
 
@@ -250,16 +248,27 @@ function dueInDays(offset: number): { dueLabel: string; dueAtIso: string } {
 
 /** Liste de tâches proposée par Mue (mock), ancrée sur les vrais clients. */
 function proposeWeekTasks(): ProposedTask[] {
-  const defs: { title: string; client: string | null; priority: Priority }[] = [
-    { title: "Envoyer le contrat signé", client: "Thomas Aubry", priority: "high" },
-    { title: "Relancer le devis", client: "David Kim", priority: "medium" },
+  const defs: {
+    title: string;
+    client: string | null;
+    priority: Priority;
+    conversationId: string | null;
+  }[] = [
+    {
+      title: "Envoyer le contrat signé",
+      client: "Thomas Aubry",
+      priority: "high",
+      conversationId: "c2",
+    },
+    { title: "Relancer le devis", client: "David Kim", priority: "medium", conversationId: "c9" },
     {
       title: "Préparer la proposition commerciale",
       client: "Alexandre Dupont",
       priority: "medium",
+      conversationId: "c7",
     },
-    { title: "Réserver le coworking", client: null, priority: "low" },
-    { title: "Mettre à jour le portfolio", client: null, priority: "low" },
+    { title: "Réserver le coworking", client: null, priority: "low", conversationId: null },
+    { title: "Mettre à jour le portfolio", client: null, priority: "low", conversationId: null },
   ];
   return defs.map((def, i) => {
     const due = dueInDays(i + 1);
@@ -456,13 +465,7 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
 // - Léger halo coloré
 // Tout en CSS — léger, signé Mue, plus engageant qu'un cercle qui tourne.
 const MueLoader = ({ size = 18 }: { size?: number }) => (
-  <svg
-    viewBox="0 0 24 24"
-    width={size}
-    height={size}
-    aria-hidden
-    className="mue2-loader"
-  >
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden className="mue2-loader">
     <defs>
       <linearGradient id="mue2loadgrad" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stopColor="#7aa2ff" />
@@ -767,9 +770,30 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       id: `prev-${Date.now()}`,
       role: "mue" as const,
       kind: "preview" as const,
-      content: `Voici ce que je propose — ${tasks.length} tâches dans ta liste perso :`,
+      content:
+        "Oui, tu as reçu 15 nouveaux messages non scannés. J'ai détecté 13 messages qui présentent une potentielle tâche :",
       preview: { tasks, destination: "Ma liste perso" },
     };
+  };
+
+  const handleEditTaskTitle = (messageId: string, taskIdx: number, newTitle: string) => {
+    setAskMessages((prev) =>
+      prev.map((m) => {
+        if (m.id === messageId && m.preview) {
+          const updatedTasks = m.preview.tasks.map((t, idx) =>
+            idx === taskIdx ? { ...t, title: newTitle } : t
+          );
+          return {
+            ...m,
+            preview: {
+              ...m.preview,
+              tasks: updatedTasks,
+            },
+          };
+        }
+        return m;
+      })
+    );
   };
 
   // Étape 2 — exécution réelle (Niveau 4), élément par élément, après validation.
@@ -836,8 +860,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             kind: "result",
             content: cancelled
               ? `Arrêté — ${n} ${n > 1 ? "tâches créées" : "tâche créée"} avant l'interruption.`
-              : `C'est fait — ${n} tâches créées dans Ma liste perso.`,
-            created,
+              : "C'est fait",
             improvements: cancelled
               ? ["Reprends la création des tâches restantes", "Montre-moi ce qui a été créé"]
               : [
@@ -1255,9 +1278,18 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     } else if (isMultiTaskRequest(text)) {
       getResult = () => runMultiTaskPreview(text);
       steps = [
-        "Scan de ta boîte de réception...",
-        "Extraction des engagements clients...",
-        "Préparation de la liste d'actions...",
+        "Connexion sécurisée aux comptes email (Gmail, Outlook)...",
+        "Scan des 15 derniers messages non lus...",
+        "Analyse sémantique du contenu et du contexte...",
+        "Détection des requêtes et engagements clients...",
+        "Identification des clients et interlocuteurs clés...",
+        "Extraction des échéances implicites et deadlines...",
+        "Évaluation du niveau d'urgence des demandes...",
+        "Regroupement et consolidation des actions par client...",
+        "Formulation intelligente des titres de tâches...",
+        "Vérification des doublons dans ta liste actuelle...",
+        "Génération des fiches de tâches éditables...",
+        "Finalisation de la liste d'actions...",
       ];
     } else {
       const parsed = parseTaskRequest(text);
@@ -1339,7 +1371,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       },
     ]);
 
-    const T = 4000 + Math.random() * 2000; // 4 to 6 seconds total
+    const T = isMultiTaskRequest(text)
+      ? 12000 + Math.random() * 3000 // 12 to 15 seconds for multi-task scan
+      : 4000 + Math.random() * 2000; // 4 to 6 seconds total
     const startTime = Date.now();
 
     // Live counter timer (100ms interval) for internal elapsed state tracking
@@ -1356,7 +1390,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     const scheduleNextStep = (stepIdx: number) => {
       if (Date.now() - startTime >= T) return;
 
-      const nextDelay = 1800 + Math.random() * 400; // ~2 seconds
+      const nextDelay = isMultiTaskRequest(text)
+        ? 1000 + Math.random() * 300 // ~1.1 seconds per step for rapid feedback
+        : 1800 + Math.random() * 400; // ~2 seconds
       const timeoutId = setTimeout(() => {
         if (Date.now() - startTime >= T) return;
 
@@ -1602,7 +1638,13 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               <>
                 <span className="mue2-model-ic" aria-hidden style={{ color: "#d97757" }}>
                   <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor">
-                    <path d="M12 2v8M12 14v8M2 12h8M14 12h8M4.93 4.93l5.66 5.66M13.41 13.41l5.66 5.66M4.93 19.07l5.66-5.66M13.41 10.59l5.66-5.66" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+                    <path
+                      d="M12 2v8M12 14v8M2 12h8M14 12h8M4.93 4.93l5.66 5.66M13.41 13.41l5.66 5.66M4.93 19.07l5.66-5.66M13.41 10.59l5.66-5.66"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </span>
                 Claude Opus 4.8
@@ -1610,8 +1652,20 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             ) : (
               <>
                 <span className="mue2-model-ic" aria-hidden>
-                  <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2L13.5 9.5L21 11L13.5 12.5L12 20L10.5 12.5L3 11L10.5 9.5L12 2Z" fill="url(#gem-grad)" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    width={15}
+                    height={15}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path
+                      d="M12 2L13.5 9.5L21 11L13.5 12.5L12 20L10.5 12.5L3 11L10.5 9.5L12 2Z"
+                      fill="url(#gem-grad)"
+                    />
                     <defs>
                       <linearGradient id="gem-grad" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0" stopColor="#4285f4" />
@@ -1666,7 +1720,13 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       {m.icon === "mue" ? (
                         <MueMark size={16} />
                       ) : m.icon === "gpt" ? (
-                        <svg viewBox="0 0 24 24" width={16} height={16} fill="currentColor" aria-hidden>
+                        <svg
+                          viewBox="0 0 24 24"
+                          width={16}
+                          height={16}
+                          fill="currentColor"
+                          aria-hidden
+                        >
                           <path d="M22 9.4a5.5 5.5 0 0 0-.5-4.5 5.6 5.6 0 0 0-6-2.6 5.5 5.5 0 0 0-9.3 2 5.5 5.5 0 0 0-3.7 2.7 5.6 5.6 0 0 0 .7 6.6 5.5 5.5 0 0 0 .5 4.5 5.6 5.6 0 0 0 6 2.6 5.5 5.5 0 0 0 4.2 1.9 5.6 5.6 0 0 0 5.1-3.9 5.5 5.5 0 0 0 3.7-2.7 5.6 5.6 0 0 0-.7-6.6zm-8.3 11.6a4.1 4.1 0 0 1-2.6-1l.1-.1 4.4-2.5a.7.7 0 0 0 .4-.6V11l1.9 1v5a4.1 4.1 0 0 1-4.2 4zm-9-3.9a4.1 4.1 0 0 1-.5-2.7l.2.1 4.4 2.6c.2.1.5.1.8 0L15 14v2.2c0 .1 0 .2-.1.3L10.4 19a4.1 4.1 0 0 1-5.7-1.9zM3.5 9.4a4.1 4.1 0 0 1 2.1-1.8v5.1c0 .3.1.5.4.7l5.3 3-1.8 1.1c-.1 0-.2 0-.3 0L4.7 14.8a4.1 4.1 0 0 1-1.2-5.4zm15.2 3.5l-5.3-3.1 1.8-1c.1 0 .2 0 .3 0l4.5 2.6a4.1 4.1 0 0 1-.6 7.4v-5.2c0-.3-.2-.5-.7-.7zm1.9-2.8l-.2-.2-4.4-2.5a.7.7 0 0 0-.7 0L10 10.5V8.3c0-.1 0-.2.1-.3L14.6 5a4.1 4.1 0 0 1 6 4.3zm-9.8 3.8L9 12.8v-2.3l4-2.3 4 2.3v2.3l-4 2.3z" />
                         </svg>
                       ) : m.icon === "claude" ? (
@@ -1681,7 +1741,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                               <stop offset="1" stopColor="#34a853" />
                             </linearGradient>
                           </defs>
-                          <path d="M12 2L13.5 9.5L21 11L13.5 12.5L12 20L10.5 12.5L3 11L10.5 9.5L12 2Z" fill={`url(#gem-grad-mi-${m.id})`} />
+                          <path
+                            d="M12 2L13.5 9.5L21 11L13.5 12.5L12 20L10.5 12.5L3 11L10.5 9.5L12 2Z"
+                            fill={`url(#gem-grad-mi-${m.id})`}
+                          />
                         </svg>
                       )}
                     </span>
@@ -2132,21 +2195,49 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   </div>
                   {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">
-                    {m.inlineRefs ? renderRich(m.content, m.inlineRefs) : m.content}
+                    <StreamingText id={m.id} text={m.content} refs={m.inlineRefs} />
                   </div>
                   <div className="mue2-prev">
                     {m.preview.tasks.map((t, i) => {
                       const key = `${t.title}-${t.dueAtIso}-${i}`;
                       return (
                         <MuePrevRow key={key} revealId={`${m.id}:${key}`} index={i}>
-                          <span className="mue2-prev-main">
-                            <span className="mue2-prev-title">{t.title}</span>
-                            <span className="mue2-prev-meta">
-                              {t.dueLabel}
-                              {t.client ? ` · ${t.client}` : ""}
-                            </span>
-                          </span>
-                          <MueBadge kind="priority" value={t.priority} />
+                          <div className="mue2-prev-row-content">
+                            <div className="mue2-prev-row-top">
+                              <input
+                                type="text"
+                                className="mue2-prev-title-input"
+                                value={t.title}
+                                onChange={(e) => handleEditTaskTitle(m.id, i, e.target.value)}
+                                disabled={m.preview?.done}
+                                title="Clique pour modifier le titre de la tâche"
+                              />
+                              <span className="mue2-prev-todo-badge">TO DO</span>
+                            </div>
+                            {(t.client || t.conversationId) && (
+                              <div className="mue2-prev-row-bottom">
+                                {t.client && (
+                                  <span className="mue2-prev-client-tag">👤 {t.client}</span>
+                                )}
+                                {t.conversationId && (
+                                  <button
+                                    type="button"
+                                    className="mue2-prev-msg-link"
+                                    onClick={() =>
+                                      t.conversationId &&
+                                      openObject({
+                                        entity: "conversation",
+                                        id: t.conversationId,
+                                        title: t.client ?? "Discussion",
+                                      })
+                                    }
+                                  >
+                                    💬 Voir le message
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </MuePrevRow>
                       );
                     })}
@@ -2161,36 +2252,16 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     <button
                       type="button"
                       className="mue2-cfm-btn is-primary"
-                      disabled={m.preview.done}
+                      disabled={m.preview?.done}
                       onClick={() =>
                         m.preview?.tasks && void executeMultiTask(m.id, m.preview.tasks)
                       }
                     >
-                      {m.preview.done
+                      {m.preview?.done
                         ? "✓ En cours…"
-                        : m.preview.tasks.length === 1
+                        : m.preview?.tasks.length === 1
                           ? "Oui, crée-la dans ma liste"
                           : "Oui, crée-les dans ma liste"}
-                    </button>
-                    <button
-                      type="button"
-                      className="mue2-cfm-btn"
-                      disabled={m.preview.done}
-                      onClick={() =>
-                        push({ kind: "info", text: "Choix d'une autre liste — bientôt." })
-                      }
-                    >
-                      Choisir une autre liste
-                    </button>
-                    <button
-                      type="button"
-                      className="mue2-cfm-btn"
-                      disabled={m.preview.done}
-                      onClick={() =>
-                        push({ kind: "info", text: "Édition avant création — bientôt." })
-                      }
-                    >
-                      Modifier avant création
                     </button>
                   </div>
                 </div>
