@@ -99,7 +99,7 @@ export function MueObjectCard({
     const t = setTimeout(() => {
       REVEALED_REFS.add(cacheKey);
       setReady(true);
-    }, 750);
+    }, 1600);
     return () => clearTimeout(t);
   }, [cacheKey, alreadyRevealed]);
 
@@ -177,7 +177,7 @@ export function MueInlineRef({
     const t = setTimeout(() => {
       REVEALED_REFS.add(cacheKey);
       setReady(true);
-    }, 750);
+    }, 1600);
     return () => clearTimeout(t);
   }, [cacheKey, alreadyRevealed]);
 
