@@ -411,15 +411,26 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const docsRef = useRef<Record<string, DevisDoc>>({});
   // Raccourci d'intention déplié (façon ClickUp Brain) — null = pills affichées.
   const [activeIntent, setActiveIntent] = useState<string | null>(null);
-  // Intention RENDUE : suit activeIntent mais persiste ~200ms à la fermeture
-  // pour laisser jouer l'animation de sortie du popover.
+  // Intention RENDUE : suit activeIntent mais persiste à la fermeture pour
+  // laisser jouer l'animation de sortie. panelOpen pilote la classe is-open :
+  // on monte d'abord à opacity:0 (panelOpen false), puis on passe is-open à la
+  // frame SUIVANTE → la transition d'apparition se joue vraiment.
   const [displayIntent, setDisplayIntent] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
   useEffect(() => {
     if (activeIntent) {
       setDisplayIntent(activeIntent);
-      return;
+      let raf2 = 0;
+      const raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => setPanelOpen(true));
+      });
+      return () => {
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
+      };
     }
-    const t = setTimeout(() => setDisplayIntent(null), 200);
+    setPanelOpen(false);
+    const t = setTimeout(() => setDisplayIntent(null), 240);
     return () => clearTimeout(t);
   }, [activeIntent]);
 
@@ -1385,7 +1396,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     const it = INTENTIONS.find((x) => x.key === displayIntent);
                     if (!it) return null;
                     return (
-                      <div className={`mue2-intentpanel ${activeIntent ? "is-open" : ""}`}>
+                      <div className={`mue2-intentpanel ${panelOpen ? "is-open" : ""}`}>
                         <div className="mue2-intentpanel-head">
                           <span className="mue2-intentpanel-title">
                             {intentIcon(it.icon)} {it.label}
