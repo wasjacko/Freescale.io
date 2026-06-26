@@ -33126,3 +33126,38 @@ button.mfv-model:hover {
 [data-theme="dark"] .mue2-prog-track {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* Actions sur un message Mue (copier / réessayer / feedback) — P1 */
+.mue2-msgactions {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 130ms var(--ease);
+}
+.mue2-msg.is-mue:hover .mue2-msgactions {
+  opacity: 1;
+}
+.mue2-msgactions button {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #9097a3;
+  cursor: pointer;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+.mue2-msgactions button:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--ink, #10131a);
+}
+[data-theme="dark"] .mue2-msgactions button {
+  color: #8a90a2;
+}
+[data-theme="dark"] .mue2-msgactions button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f4f7;
+}

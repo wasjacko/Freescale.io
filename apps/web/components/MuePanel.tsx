@@ -2,6 +2,7 @@
 
 import { MueFlower } from "@/components/MueFlower";
 import { MueMemory } from "@/components/MueMemoryDrawer";
+import { MueBadge, MueMsgActions, MueObjectCard, MueSuggestions } from "@/components/mue/MueBits";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
@@ -125,7 +126,6 @@ function proposeWeekTasks(): ProposedTask[] {
   });
 }
 
-const PRIORITY_LABEL: Record<Priority, string> = { high: "Haute", medium: "Moyenne", low: "Basse" };
 
 const stroke = {
   fill: "none",
@@ -437,6 +437,23 @@ export function MuePanel() {
     if (!askInput.trim()) return;
     submit(askInput);
   };
+
+  // Actions sur un message Mue : copier / réessayer / feedback.
+  const copyText = (text: string) => {
+    void navigator.clipboard?.writeText(text);
+    push({ kind: "success", text: "Copié." });
+  };
+  const retryFromIndex = (mi: number) => {
+    for (let i = mi - 1; i >= 0; i--) {
+      const prev = askMessages[i];
+      if (prev?.role === "user") {
+        submit(prev.content);
+        return;
+      }
+    }
+  };
+  const feedback = (v: "up" | "down") =>
+    push({ kind: "info", text: v === "up" ? "Merci pour ton retour 👍" : "Noté — je ferai mieux." });
 
   const handleClear = async () => {
     const previous = askMessages;
@@ -794,7 +811,7 @@ export function MuePanel() {
         <>
           <div className="mue2-chat" ref={logRef} aria-live="polite">
             {askHistoryLoading && <div className="mue2-msg is-mue">Chargement…</div>}
-            {askMessages.map((m) =>
+            {askMessages.map((m, mi) =>
               m.role === "user" ? (
                 <div key={m.id} className="mue2-msg is-user">
                   {m.content}
@@ -884,9 +901,7 @@ export function MuePanel() {
                             {t.client ? ` · ${t.client}` : ""}
                           </span>
                         </span>
-                        <span className={`mue2-prio mue2-prio--${t.priority}`}>
-                          {PRIORITY_LABEL[t.priority]}
-                        </span>
+                        <MueBadge kind="priority" value={t.priority} />
                       </div>
                     ))}
                     <div className="mue2-prev-dest">
@@ -967,38 +982,15 @@ export function MuePanel() {
                   {m.created && m.created.length > 0 && (
                     <div className="mue2-result-list">
                       {m.created.map((c) => (
-                        <button
+                        <MueObjectCard
                           key={c.id}
-                          type="button"
-                          className="mue2-ref"
-                          onClick={() => setDetailTaskId(c.id)}
-                          title="Ouvrir la fiche"
-                        >
-                          <span className="mue2-ref-dot" aria-hidden />
-                          {c.title}
-                          <span className="mue2-ref-badge">TO DO</span>
-                        </button>
+                          title={c.title}
+                          onOpen={() => setDetailTaskId(c.id)}
+                        />
                       ))}
                     </div>
                   )}
-                  {m.improvements && m.improvements.length > 0 && (
-                    <div className="mue2-improve">
-                      <span className="mue2-improve-label">Et ensuite</span>
-                      {m.improvements.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          className="mue2-improve-chip"
-                          onClick={() => submit(s)}
-                        >
-                          <span className="mue2-improve-arrow" aria-hidden>
-                            ↳
-                          </span>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <MueSuggestions label="Et ensuite" items={m.improvements ?? []} onPick={submit} />
                 </div>
               ) : (
                 <div
@@ -1011,35 +1003,23 @@ export function MuePanel() {
                   <div className="mue2-msg-body">
                     {m.content}
                     {m.action && (
-                      <button
-                        type="button"
-                        className="mue2-ref"
-                        onClick={() => setDetailTaskId(m.action?.id ?? null)}
-                        title="Ouvrir la fiche"
-                      >
-                        <span className="mue2-ref-dot" aria-hidden />
-                        {m.action.title}
-                        <span className="mue2-ref-badge">TO DO</span>
-                      </button>
+                      <MueObjectCard
+                        title={m.action.title}
+                        onOpen={() => setDetailTaskId(m.action?.id ?? null)}
+                      />
                     )}
                   </div>
-                  {m.improvements && m.improvements.length > 0 && (
-                    <div className="mue2-improve">
-                      <span className="mue2-improve-label">Améliorations</span>
-                      {m.improvements.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          className="mue2-improve-chip"
-                          onClick={() => submit(s)}
-                        >
-                          <span className="mue2-improve-arrow" aria-hidden>
-                            ↳
-                          </span>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
+                  <MueSuggestions
+                    label="Améliorations"
+                    items={m.improvements ?? []}
+                    onPick={submit}
+                  />
+                  {m.tone !== "error" && (
+                    <MueMsgActions
+                      onCopy={() => copyText(m.content)}
+                      onRetry={() => retryFromIndex(mi)}
+                      onFeedback={feedback}
+                    />
                   )}
                 </div>
               )
