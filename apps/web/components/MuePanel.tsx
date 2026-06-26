@@ -1947,7 +1947,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             <span className="mue2-hero-mark">
               <MueFlower size={60} />
             </span>
-            <h2 className="mue2-hero-title">À votre service, {firstName}</h2>
+            <h2 className="mue2-hero-title">Muee</h2>
           </div>
           {/* Actions rapides : uniquement en contexte conversation (résumer ce
               fil, proposer une réponse…). Hors fil, on s'appuie sur les pills. */}

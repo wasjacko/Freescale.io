@@ -12488,9 +12488,11 @@ html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* Hero remonté plus haut dans le panneau — l'air respire en bas, on voit
+     mieux les chips d'intention. */
+  justify-content: flex-start;
   gap: 10px;
-  padding: 24px;
+  padding: 56px 24px 24px;
 }
 .mue2-hero-mark {
   display: grid;
