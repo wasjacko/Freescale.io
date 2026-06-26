@@ -28302,12 +28302,13 @@ button.sidebar-brand {
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* Cellule Client : bouton cliquable (avatars / + ajouter). */
+/* Cellule Client : bouton cliquable (avatars / + ajouter). Coins droits
+   (pas arrondis) pour rester aligné avec la grille du tableau. */
 .tboard-client-btn {
   background: transparent;
   border: 0;
   cursor: pointer;
-  border-radius: 7px;
+  border-radius: 0;
   padding: 4px 6px;
   transition: background 120ms var(--ease);
 }
