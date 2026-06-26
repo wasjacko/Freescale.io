@@ -492,10 +492,9 @@ button:not(:disabled):active,
 [data-theme="dark"] .recap-view,
 [data-theme="dark"] .mfv {
   background: linear-gradient(#1c1d27, #1c1d27) padding-box,
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06)) border-box;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06)) border-box;
   border: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.35),
-    0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Inbox / thread internes au conv-shell — fond hérité du parent. */
