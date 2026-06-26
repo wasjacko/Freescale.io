@@ -3,6 +3,7 @@
 import { MueFlower } from "@/components/MueFlower";
 import { MueMemory } from "@/components/MueMemoryDrawer";
 import { MueBadge, MueMsgActions, MueObjectCard, MueSuggestions } from "@/components/mue/MueBits";
+import { type DevisDoc, MueDocModal } from "@/components/mue/MueDocModal";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { askMue, clearMueChat, listMueChatMessages } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
@@ -32,7 +33,16 @@ type ProposedTask = {
 type AskMessage = {
   id: string;
   role: "user" | "mue";
-  kind?: "text" | "scan" | "action" | "privacy" | "preview" | "progress" | "result" | "refusal";
+  kind?:
+    | "text"
+    | "scan"
+    | "action"
+    | "privacy"
+    | "preview"
+    | "progress"
+    | "result"
+    | "refusal"
+    | "slots";
   content: string;
   tone?: "normal" | "error";
   action?: ActionRef;
@@ -40,6 +50,8 @@ type AskMessage = {
   improvements?: string[];
   /** kind="refusal" — limite expliquée + alternative manuelle (CTA optionnel). */
   refusal?: { alternative: string; cta?: { label: string; view: ViewId } };
+  /** kind="slots" — créneaux proposés (agenda), en attente du choix utilisateur. */
+  slots?: { options: string[]; dayLabel: string; day: number; done?: boolean };
   /** kind="preview" — liste prévisualisée + destination, en attente de validation. */
   preview?: { tasks: ProposedTask[]; destination: string; done?: boolean };
   /** kind="progress" — exécution en cours, élément par élément. */
@@ -96,6 +108,33 @@ function parseTaskRequest(
   });
   const dueLabel = `${dayLabel} · ${hour}h`;
   return { title, dueLabel, dueAtIso: due.toISOString() };
+}
+
+/** Détecte une demande de DOCUMENT (devis/facture/présentation/contrat). */
+function isDocRequest(msg: string): boolean {
+  const l = msg.toLowerCase();
+  return /(devis|facture|présentation|presentation|contrat)/.test(l) && /(cr[ée]e|génér|fais|rédige|prépare|prepare)/.test(l);
+}
+
+/** Détecte une demande de PLANIFICATION d'un créneau (agenda). */
+function isScheduleRequest(msg: string): boolean {
+  const l = msg.toLowerCase();
+  return /(cr[ée]neau|rendez-vous|\brdv\b|call|réunion|reunion|appel)/.test(l) && /(bloque|r[ée]serve|cale|planifie|trouve|pose|prends)/.test(l);
+}
+
+/** Extrait un prénom/nom après « pour » (« un devis pour Jean-Pierre »). */
+function extractClientName(msg: string): string {
+  const m = msg.match(/pour\s+([\p{L}][\p{L}\s-]{1,30})/u);
+  const name = m?.[1]?.trim().replace(/\s+/g, " ");
+  return name && name.length > 1 ? name : "un client";
+}
+
+/** Convertit « 10h » / « 10h30 » en minutes depuis 8h (base de CalEvent). */
+function slotToStartMinutes(slot: string): number {
+  const m = slot.match(/(\d{1,2})\s*h\s*(\d{2})?/);
+  const h = m ? Number.parseInt(m[1] ?? "10", 10) : 10;
+  const min = m?.[2] ? Number.parseInt(m[2], 10) : 0;
+  return (h - 8) * 60 + min;
 }
 
 /** Détecte une action DESTRUCTIVE / de masse que Mue doit refuser. */
@@ -199,7 +238,7 @@ export function MuePanel() {
     setActiveClientId,
     setView,
   } = useApp();
-  const { conversations, addTask } = useData();
+  const { conversations, addTask, createEvent } = useData();
   const push = useToast((s) => s.push);
 
   const [mode, setMode] = useState<Mode>("ask");
@@ -212,6 +251,9 @@ export function MuePanel() {
   // P5 — modale « Arrêter de générer ? » + annulation de l'exécution en cours.
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const cancelRef = useRef(false);
+  // P4 — document (devis) ouvert dans une surface par-dessus le canvas.
+  const [openDoc, setOpenDoc] = useState<DevisDoc | null>(null);
+  const docsRef = useRef<Record<string, DevisDoc>>({});
   // Tâche ouverte en détail (modal) suite à une action de Mue.
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   // Sélecteur de discussions (popover) : ouverture + recherche.
@@ -488,10 +530,97 @@ export function MuePanel() {
       case "event":
         setView("calendar");
         break;
-      case "document":
-        push({ kind: "info", text: "Ouverture du document — bientôt." });
+      case "document": {
+        const d = docsRef.current[ref.id];
+        if (d) setOpenDoc(d);
         break;
+      }
     }
+  };
+
+  // ── P4 · Création de DOCUMENT (devis) — demande claire → création directe
+  // (Niveau 4). Le document s'ouvre dans une surface par-dessus le canvas. */
+  const runDocument = (raw: string) => {
+    const client = extractClientName(raw);
+    const id = `doc-${Date.now()}`;
+    const doc: DevisDoc = {
+      id,
+      client,
+      ref: `DV-2026-${String(Math.floor(Date.now() / 1000) % 1000).padStart(3, "0")}`,
+      dateLabel: new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long" }),
+      lines: [
+        { label: "Refonte produit V2 — design", amount: 2800 },
+        { label: "Intégration & livraison", amount: 1700 },
+      ],
+      total: 4500,
+    };
+    docsRef.current[id] = doc;
+    setOpenDoc(doc);
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
+      {
+        id: `res-${Date.now()}`,
+        role: "mue",
+        kind: "result",
+        content: `Done, voici ton devis pour ${client}.`,
+        created: [{ entity: "document", id, title: `Devis — ${client}`, badge: "Brouillon" }],
+        improvements: [
+          "Transforme ce devis en présentation",
+          "Bloque un call découverte avec le client",
+          "Sauvegarde ces tarifs pour les prochains devis",
+        ],
+      },
+    ]);
+    setAskInput("");
+  };
+
+  // ── P4 · Planification — Mue lit les dispos, propose des créneaux (kind=slots),
+  // crée l'événement seulement APRÈS le choix de l'utilisateur. */
+  const runSlots = (raw: string) => {
+    setAskMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, role: "user", content: raw.trim() },
+      {
+        id: `slots-${Date.now()}`,
+        role: "mue",
+        kind: "slots",
+        content: "Tu es libre dès 10h lundi. Choisis un créneau :",
+        slots: { options: ["10h", "10h30", "11h", "11h30", "12h"], dayLabel: "lundi", day: 1 },
+      },
+    ]);
+    setAskInput("");
+  };
+
+  const confirmSlot = async (slotsId: string, slot: string, day: number, dayLabel: string) => {
+    setAskMessages((prev) =>
+      prev.map((m) => (m.id === slotsId && m.slots ? { ...m, slots: { ...m.slots, done: true } } : m))
+    );
+    const start = slotToStartMinutes(slot);
+    const duration = 45;
+    await createEvent({
+      title: "Call découverte",
+      day,
+      startMinutes: start,
+      durationMinutes: duration,
+      color: "lav",
+    });
+    const fmt = (mins: number) => {
+      const h = 8 + Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h}h${m === 0 ? "00" : m}`;
+    };
+    setAskMessages((prev) => [
+      ...prev,
+      {
+        id: `res-${Date.now()}`,
+        role: "mue",
+        kind: "result",
+        content: `C'est posé : ${dayLabel}, ${fmt(start)}–${fmt(start + duration)} (Europe/Paris), lien Meet inclus.`,
+        created: [{ entity: "event", id: `ev-${Date.now()}`, title: "Call découverte", badge: "Agenda" }],
+        improvements: ["Prépare l'ordre du jour du call", "Crée une note de réunion"],
+      },
+    ]);
   };
 
   // ── P3 · Réponse informative (Niveau 1→2) : cite des objets cliquables,
@@ -569,6 +698,16 @@ export function MuePanel() {
     // Destructif → refus (Niveau 0), AVANT toute autre intention.
     if (isDestructiveRequest(text)) {
       runRefusal(text);
+      return;
+    }
+    // Document (devis…) → création directe + ouverture canvas (Niveau 4).
+    if (isDocRequest(text)) {
+      runDocument(text);
+      return;
+    }
+    // Planification → propose des créneaux (Niveau 3), crée après choix.
+    if (isScheduleRequest(text)) {
+      runSlots(text);
       return;
     }
     // Priorisation / focus → réponse informative (Niveau 1→2), aucune mutation.
@@ -1127,6 +1266,28 @@ export function MuePanel() {
                     </div>
                   </div>
                 </div>
+              ) : m.kind === "slots" && m.slots ? (
+                <div key={m.id} className="mue2-msg is-mue">
+                  <div className="mue2-msg-head">
+                    <MueMark size={16} /> Mue
+                  </div>
+                  <div className="mue2-msg-body">{m.content}</div>
+                  <div className="mue2-slots">
+                    {m.slots.options.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        className="mue2-slot"
+                        disabled={m.slots?.done}
+                        onClick={() =>
+                          m.slots && void confirmSlot(m.id, s, m.slots.day, m.slots.dayLabel)
+                        }
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : m.kind === "refusal" && m.refusal ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
@@ -1175,7 +1336,13 @@ export function MuePanel() {
                   {m.created && m.created.length > 0 && (
                     <div className="mue2-result-list">
                       {m.created.map((c) => (
-                        <MueObjectCard key={c.id} title={c.title} onOpen={() => openObject(c)} />
+                        <MueObjectCard
+                          key={c.id}
+                          title={c.title}
+                          badge={c.badge ?? "TO DO"}
+                          entity={c.entity}
+                          onOpen={() => openObject(c)}
+                        />
                       ))}
                     </div>
                   )}
@@ -1247,6 +1414,8 @@ export function MuePanel() {
       {detailTaskId && (
         <TaskDetailModal taskId={detailTaskId} onClose={() => setDetailTaskId(null)} />
       )}
+
+      {openDoc && <MueDocModal doc={openDoc} onClose={() => setOpenDoc(null)} />}
 
       {/* P5 — confirmation avant fermeture pendant une génération en cours. */}
       {confirmCloseOpen && (

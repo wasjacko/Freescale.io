@@ -33346,3 +33346,139 @@ button.mfv-model:hover {
   color: #f4f4f7;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
+
+/* P4 — créneaux agenda (slots) */
+.mue2-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mue2-slot {
+  height: 30px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-input, rgba(15, 23, 42, 0.05));
+  color: var(--ink, #10131a);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  transition: background 120ms var(--ease), box-shadow 120ms var(--ease);
+}
+.mue2-slot:hover:not(:disabled) {
+  background: rgba(79, 108, 247, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.5);
+  color: #4f6cf7;
+}
+.mue2-slot:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+[data-theme="dark"] .mue2-slot {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4f4f7;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* P4 — surface document (devis) par-dessus le canvas */
+.muedoc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.muedoc-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 23, 42, 0.4);
+  cursor: default;
+}
+.muedoc-sheet {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  background: var(--csv-card-bg, #fff);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+  overflow: hidden;
+}
+.muedoc-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--csv-card-stroke, rgba(15, 23, 42, 0.08));
+}
+.muedoc-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink, #10131a);
+}
+.muedoc-sub {
+  font-size: 11.5px;
+  color: #9097a3;
+}
+.muedoc-close {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+.muedoc-close:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+.muedoc-body {
+  padding: 14px 20px;
+}
+.muedoc-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  font-size: 13px;
+  color: var(--csv-text, #3a4151);
+  border-bottom: 1px solid var(--csv-card-stroke, rgba(15, 23, 42, 0.06));
+}
+.muedoc-line strong {
+  color: var(--ink, #10131a);
+  font-weight: 600;
+}
+.muedoc-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0 2px;
+  font-size: 14px;
+}
+.muedoc-total strong {
+  color: var(--ink, #10131a);
+  font-weight: 700;
+}
+.muedoc-foot {
+  padding: 12px 20px 18px;
+}
+.muedoc-hint {
+  font-size: 11.5px;
+  color: #9097a3;
+  font-style: italic;
+}
+[data-theme="dark"] .muedoc-head h2,
+[data-theme="dark"] .muedoc-line strong,
+[data-theme="dark"] .muedoc-total strong {
+  color: #f4f4f7;
+}
+[data-theme="dark"] .muedoc-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
