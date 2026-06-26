@@ -8,6 +8,7 @@ import {
   MueInlineRef,
   MueMsgActions,
   MueObjectCard,
+  MuePrevRow,
   MueSuggestions,
 } from "@/components/mue/MueBits";
 import { type DevisDoc, MueDocModal } from "@/components/mue/MueDocModal";
@@ -2131,7 +2132,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     {m.preview.tasks.map((t, i) => {
                       const key = `${t.title}-${t.dueAtIso}-${i}`;
                       return (
-                        <div key={key} className="mue2-prev-row">
+                        <MuePrevRow key={key} revealId={`${m.id}:${key}`} index={i}>
                           <span className="mue2-prev-ic" aria-hidden>
                             <svg {...stroke} width={14} height={14}>
                               <rect x="4" y="4" width="16" height="16" rx="4" />
@@ -2145,7 +2146,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                             </span>
                           </span>
                           <MueBadge kind="priority" value={t.priority} />
-                        </div>
+                        </MuePrevRow>
                       );
                     })}
                     <div className="mue2-prev-dest">

@@ -164,6 +164,48 @@ export function MueObjectCard({
   );
 }
 
+/** Ligne d'une preview de tâche : skeleton pastel staggered (apparition en
+ *  cascade) puis morph vers la ligne réelle (icône + titre + meta + priorité).
+ *  Donne le sentiment que Mue compose la liste en temps réel. */
+export function MuePrevRow({
+  children,
+  revealId,
+  index = 0,
+}: {
+  children: React.ReactNode;
+  revealId: string;
+  index?: number;
+}) {
+  const alreadyRevealed = REVEALED_REFS.has(revealId);
+  const [ready, setReady] = useState(alreadyRevealed);
+  useEffect(() => {
+    if (alreadyRevealed) return;
+    // Délai = 600ms de base + 220ms par ligne → effet de composition
+    // en cascade (chaque tâche apparaît juste après la précédente).
+    const t = setTimeout(
+      () => {
+        REVEALED_REFS.add(revealId);
+        setReady(true);
+      },
+      600 + index * 220
+    );
+    return () => clearTimeout(t);
+  }, [revealId, index, alreadyRevealed]);
+  if (!ready) {
+    return (
+      <div className="mue2-prev-row mue2-prev-row--skeleton" aria-busy="true" aria-label="…">
+        <span className="mue2-prev-ic mue2-skel-block" aria-hidden />
+        <span className="mue2-prev-main">
+          <span className="mue2-skel-line mue2-skel-line--title" aria-hidden />
+          <span className="mue2-skel-line mue2-skel-line--meta" aria-hidden />
+        </span>
+        <span className="mue2-skel-badge" aria-hidden />
+      </div>
+    );
+  }
+  return <div className="mue2-prev-row">{children}</div>;
+}
+
 /** Lien objet INLINE (dans la prose) — nom + badge, cliquable. */
 export function MueInlineRef({
   label,

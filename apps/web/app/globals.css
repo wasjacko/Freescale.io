@@ -34801,3 +34801,14 @@ button.mfv-model:hover {
     animation: none;
   }
 }
+
+/* Skeleton de ligne de preview tâche (.mue2-prev-row) — staggered, pastel,
+   apparition en cascade dans la liste avant que les vrais titres/dates
+   ne se révèlent. */
+.mue2-prev-row--skeleton {
+  pointer-events: none;
+  animation: mue2-inlineref-skel-pop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-prev-row--skeleton { animation: none; }
+}
