@@ -34741,3 +34741,61 @@ button.mfv-model:hover {
     animation: none;
   }
 }
+
+/* Lueur sur une pillule/carte fraîchement créée par Mue : se joue UNE fois
+   après le morph skeleton → final, pour qu'on remarque l'asset qui vient
+   d'apparaître. Halo pastel doré/violet + léger zoom de respiration. */
+.mue2-ref.is-fresh,
+.mue2-objcard.is-fresh {
+  animation: mue2-fresh-glow 2400ms cubic-bezier(0.22, 1, 0.36, 1) 1 both;
+  position: relative;
+  z-index: 0;
+}
+@keyframes mue2-fresh-glow {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(183, 140, 255, 0.55),
+      0 0 0 0 rgba(255, 213, 128, 0.35);
+    transform: scale(1);
+  }
+  18% {
+    box-shadow:
+      0 0 0 6px rgba(183, 140, 255, 0.45),
+      0 0 28px 4px rgba(255, 213, 128, 0.45);
+    transform: scale(1.04);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(183, 140, 255, 0),
+      0 0 0 0 rgba(255, 213, 128, 0);
+    transform: scale(1);
+  }
+}
+[data-theme="dark"] .mue2-ref.is-fresh,
+[data-theme="dark"] .mue2-objcard.is-fresh {
+  animation-name: mue2-fresh-glow-dark;
+}
+@keyframes mue2-fresh-glow-dark {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(170, 140, 255, 0.6),
+      0 0 0 0 rgba(255, 200, 130, 0.4);
+    transform: scale(1);
+  }
+  18% {
+    box-shadow:
+      0 0 0 6px rgba(170, 140, 255, 0.55),
+      0 0 28px 4px rgba(255, 200, 130, 0.45);
+    transform: scale(1.04);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-ref.is-fresh,
+  .mue2-objcard.is-fresh {
+    animation: none;
+  }
+}

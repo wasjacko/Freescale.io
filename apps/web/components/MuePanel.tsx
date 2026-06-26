@@ -26,6 +26,9 @@ type ActionRef = {
   title: string;
   meta?: string;
   badge?: string;
+  /** True juste après que Mue vient de créer cet objet → déclenche une
+   *  animation de lueur sur la pillule pour qu'on la remarque. */
+  fresh?: boolean;
 };
 /** Tâche proposée par Mue avant création (étape de prévisualisation). */
 type ProposedTask = {
@@ -667,47 +670,27 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
 
   // Action « créer une tâche » : Mue agit puis renvoie une chose CLIQUABLE
   // (ouvre la fiche détaillée). Suggestions de suivi façon « Améliorations ».
-  const runTaskAction = (
+  // Création d'UNE tâche : preview → validation utilisateur → création.
+  // Mue n'écrit RIEN dans la liste avant d'avoir reçu l'OK explicite. Le rendu
+  // de la preview est mutualisé avec runMultiTaskPreview (kind='preview' +
+  // tableau .preview.tasks à 1 élément).
+  const runTaskPreview = (
     _raw: string,
     parsed: NonNullable<ReturnType<typeof parseTaskRequest>>
   ) => {
-    const taskId = `mue-${Date.now()}`;
-    addTask({
-      id: taskId,
+    const proposed: ProposedTask = {
       title: parsed.title,
+      client: null,
       priority: "medium",
       dueLabel: parsed.dueLabel,
-      status: "todo",
-      avatar: { kind: "initials", text: "WA", bg: "#4f46e5" },
-      channel: "gmail",
-      sortableIndex: Date.now(),
-      fromAI: true,
-      conversationId: null,
       dueAtIso: parsed.dueAtIso,
-      createdAtIso: new Date().toISOString(),
-    });
+    };
     return {
-      id: `act-${Date.now()}`,
+      id: `prev-${Date.now()}`,
       role: "mue" as const,
-      kind: "text" as const,
-      content:
-        `C'est fait — j'ai créé {{r:task}} dans ta liste perso, ` +
-        `échéance ${parsed.dueLabel}. J'ai ajouté une description couvrant ` +
-        `les sous-étapes habituelles. Adapte-la si tu veux quelque chose ` +
-        `de plus précis.`,
-      inlineRefs: {
-        task: {
-          entity: "task" as const,
-          id: taskId,
-          title: parsed.title,
-          badge: "TO DO",
-        },
-      },
-      improvements: [
-        `Découpe en sous-tâches : préparer, exécuter, vérifier`,
-        `Bloque du temps sur mon agenda pour ${parsed.title}`,
-        "Qu'est-ce qui est en retard dans mes tâches ?",
-      ],
+      kind: "preview" as const,
+      content: `Je vais créer cette tâche dans ta liste perso, échéance ${parsed.dueLabel}. Tu confirmes ?`,
+      preview: { tasks: [proposed], destination: "Ma liste perso" },
     };
   };
 
@@ -767,7 +750,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         dueAtIso: t.dueAtIso,
         createdAtIso: new Date().toISOString(),
       });
-      created.push({ entity: "task", id, title: t.title });
+      created.push({ entity: "task", id, title: t.title, fresh: true });
       setAskMessages((prev) =>
         prev.map((m) =>
           m.id === progId && m.progress ? { ...m, progress: { ...m.progress, current: i + 1 } } : m
@@ -1214,11 +1197,11 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     } else {
       const parsed = parseTaskRequest(text);
       if (parsed) {
-        getResult = () => runTaskAction(text, parsed);
+        getResult = () => runTaskPreview(text, parsed);
         steps = [
           "Analyse de l'action à créer...",
           "Calcul de l'échéance intelligente...",
-          "Ajout de la tâche dans ta liste...",
+          "Préparation du brouillon de tâche...",
         ];
       } else {
         // Direct question: starts LLM call in the background immediately
@@ -2115,7 +2098,11 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                         m.preview?.tasks && void executeMultiTask(m.id, m.preview.tasks)
                       }
                     >
-                      {m.preview.done ? "✓ En cours…" : "Oui, crée-les dans ma liste"}
+                      {m.preview.done
+                        ? "✓ En cours…"
+                        : m.preview.tasks.length === 1
+                          ? "Oui, crée-la dans ma liste"
+                          : "Oui, crée-les dans ma liste"}
                     </button>
                     <button
                       type="button"
@@ -2242,6 +2229,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                           badge={c.badge ?? "TO DO"}
                           entity={c.entity}
                           revealId={c.id}
+                          fresh={c.fresh}
                           onOpen={() => openObject(c)}
                         />
                       ))}

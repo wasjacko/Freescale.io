@@ -80,6 +80,7 @@ export function MueObjectCard({
   meta,
   entity = "task",
   revealId,
+  fresh,
   onOpen,
 }: {
   title: string;
@@ -87,6 +88,8 @@ export function MueObjectCard({
   meta?: string | undefined;
   entity?: "task" | "conversation" | "client" | "event" | "document" | undefined;
   revealId?: string | undefined;
+  /** True juste après création → joue une animation de lueur one-shot. */
+  fresh?: boolean | undefined;
   onOpen: () => void;
 }) {
   // Skeleton pastel ~750 ms avant d'afficher l'objet finalisé — donne le
@@ -130,7 +133,12 @@ export function MueObjectCard({
 
   if (meta) {
     return (
-      <button type="button" className="mue2-objcard" onClick={onOpen} title="Ouvrir dans le canvas">
+      <button
+        type="button"
+        className={`mue2-objcard${fresh ? " is-fresh" : ""}`}
+        onClick={onOpen}
+        title="Ouvrir dans le canvas"
+      >
         <span className="mue2-objcard-ic" aria-hidden>
           {ENTITY_ICON[entity] ?? ENTITY_ICON.task}
         </span>
@@ -143,7 +151,12 @@ export function MueObjectCard({
     );
   }
   return (
-    <button type="button" className="mue2-ref" onClick={onOpen} title="Ouvrir la fiche">
+    <button
+      type="button"
+      className={`mue2-ref${fresh ? " is-fresh" : ""}`}
+      onClick={onOpen}
+      title="Ouvrir la fiche"
+    >
       <span className="mue2-ref-dot" aria-hidden />
       {title}
       {badge ? <span className="mue2-ref-badge">{badge}</span> : null}
