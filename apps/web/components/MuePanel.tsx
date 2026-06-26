@@ -1345,66 +1345,72 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             </div>
           )}
           <div className="mue2-foot">
-            {/* Zone d'intention (façon ClickUp Brain) : pills ↔ suggestions.
-                Dès que le composer contient du texte (suggestion choisie ou
-                saisie manuelle), on masque pills + suggestions pour se concentrer
-                sur le chat. Elles reviennent quand le champ est vidé. */}
-            {!askInput.trim() &&
-              (activeIntent
-              ? (() => {
-                  const it = INTENTIONS.find((x) => x.key === activeIntent);
-                  if (!it) return null;
-                  return (
-                    <div className="mue2-intentpanel">
-                      <div className="mue2-intentpanel-head">
-                        <span className="mue2-intentpanel-title">
-                          {intentIcon(it.icon)} {it.label}
-                        </span>
-                        <button
-                          type="button"
-                          className="mue2-intentpanel-close"
-                          aria-label="Fermer"
-                          onClick={() => setActiveIntent(null)}
-                        >
-                          <svg {...stroke} width={14} height={14}>
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                          </svg>
-                        </button>
+            {/* Zone d'intention (façon ClickUp Brain). La rangée de pills garde
+                TOUJOURS sa hauteur ; quand on déplie une intention, ses
+                suggestions s'affichent en popover ABSOLU au-dessus du composer
+                (hors flux) → le hero « À votre service » ne bouge pas.
+                Tout disparaît dès que le composer contient du texte. */}
+            {!askInput.trim() && (
+              <div className="mue2-intentzone">
+                <div
+                  className={`mue2-intents ${activeIntent ? "is-hidden" : ""}`}
+                  aria-label="Raccourcis d'intention"
+                  aria-hidden={!!activeIntent}
+                >
+                  {INTENTIONS.map((it) => (
+                    <button
+                      key={it.key}
+                      type="button"
+                      className="mue2-intent"
+                      onClick={() => setActiveIntent(it.key)}
+                    >
+                      {intentIcon(it.icon)}
+                      {it.label}
+                    </button>
+                  ))}
+                </div>
+                {activeIntent &&
+                  (() => {
+                    const it = INTENTIONS.find((x) => x.key === activeIntent);
+                    if (!it) return null;
+                    return (
+                      <div className="mue2-intentpanel">
+                        <div className="mue2-intentpanel-head">
+                          <span className="mue2-intentpanel-title">
+                            {intentIcon(it.icon)} {it.label}
+                          </span>
+                          <button
+                            type="button"
+                            className="mue2-intentpanel-close"
+                            aria-label="Fermer"
+                            onClick={() => setActiveIntent(null)}
+                          >
+                            <svg {...stroke} width={14} height={14}>
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                            </svg>
+                          </button>
+                        </div>
+                        {it.suggestions.map((sg) => (
+                          <button
+                            key={sg}
+                            type="button"
+                            className="mue2-intentsugg"
+                            onClick={() => {
+                              setAskInput(sg);
+                              setActiveIntent(null);
+                              requestAnimationFrame(() => askInputRef.current?.focus());
+                            }}
+                          >
+                            {intentIcon(it.icon)}
+                            {sg}
+                          </button>
+                        ))}
                       </div>
-                      {it.suggestions.map((sg) => (
-                        <button
-                          key={sg}
-                          type="button"
-                          className="mue2-intentsugg"
-                          onClick={() => {
-                            setAskInput(sg);
-                            setActiveIntent(null);
-                            requestAnimationFrame(() => askInputRef.current?.focus());
-                          }}
-                        >
-                          {intentIcon(it.icon)}
-                          {sg}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })()
-              : (
-                  <div className="mue2-intents" aria-label="Raccourcis d'intention">
-                    {INTENTIONS.map((it) => (
-                      <button
-                        key={it.key}
-                        type="button"
-                        className="mue2-intent"
-                        onClick={() => setActiveIntent(it.key)}
-                      >
-                        {intentIcon(it.icon)}
-                        {it.label}
-                      </button>
-                    ))}
-                  </div>
-                ))}
+                    );
+                  })()}
+              </div>
+            )}
             {composer}
           </div>
         </>

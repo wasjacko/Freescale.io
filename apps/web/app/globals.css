@@ -33493,6 +33493,9 @@ button.mfv-model:hover {
 }
 
 /* Raccourcis d'intention (façon ClickUp Brain) — pills + panneau suggestions */
+.mue2-intentzone {
+  position: relative;
+}
 .mue2-intents {
   display: flex;
   flex-wrap: nowrap;
@@ -33501,6 +33504,14 @@ button.mfv-model:hover {
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+}
+/* Pills masquées quand une intention est dépliée — on GARDE leur hauteur pour
+   que le hero ne bouge pas (le popover s'affiche au-dessus, hors flux). */
+.mue2-intents.is-hidden {
+  visibility: hidden;
+}
+.mue2-intents::-webkit-scrollbar {
+  display: none;
 }
 .mue2-intents::-webkit-scrollbar {
   display: none;
@@ -33541,10 +33552,22 @@ button.mfv-model:hover {
 }
 
 .mue2-intentpanel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-bottom: 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--csv-card-bg, #fff);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.14), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .mue2-intentpanel {
+  background: #20232f;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .mue2-intentpanel-head {
   display: flex;
