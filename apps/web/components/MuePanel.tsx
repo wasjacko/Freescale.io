@@ -1004,7 +1004,11 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
 
   if (!mueOpen) return null;
 
-  const hasChat = askMessages.length > 0 || askPending || askHistoryLoading || executing;
+  // On n'inclut PAS askHistoryLoading : sinon le chargement async de
+  // l'historique affiche une vue « Chargement… » au lieu du hero à l'ouverture.
+  // L'état vide (hero + intentions) s'affiche tout de suite ; si un historique
+  // existe vraiment, il peuple askMessages et bascule alors sur le chat.
+  const hasChat = askMessages.length > 0 || askPending || executing;
 
   // 3 suggestions (cartes). « Suggérer des tâches » lance le scan inline.
   const suggestions = conv
@@ -1323,19 +1327,23 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             </span>
             <h2 className="mue2-hero-title">À votre service, {firstName}</h2>
           </div>
-          <div className="mue2-chips" aria-label="Suggestions">
-            {suggestions.map((s) => (
-              <button
-                key={s.title}
-                type="button"
-                className={`mue2-chip mue2-chip--${s.icon}`}
-                onClick={s.run}
-              >
-                <span className="mue2-chip-ic">{cardIcon(s.icon)}</span>
-                {s.title}
-              </button>
-            ))}
-          </div>
+          {/* Actions rapides : uniquement en contexte conversation (résumer ce
+              fil, proposer une réponse…). Hors fil, on s'appuie sur les pills. */}
+          {conv && (
+            <div className="mue2-chips" aria-label="Suggestions">
+              {suggestions.map((s) => (
+                <button
+                  key={s.title}
+                  type="button"
+                  className={`mue2-chip mue2-chip--${s.icon}`}
+                  onClick={s.run}
+                >
+                  <span className="mue2-chip-ic">{cardIcon(s.icon)}</span>
+                  {s.title}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="mue2-foot">
             {/* Zone d'intention (façon ClickUp Brain) : pills ↔ suggestions. */}
             {activeIntent
