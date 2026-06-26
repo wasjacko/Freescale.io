@@ -34174,11 +34174,11 @@ button.mfv-model:hover {
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: #4f6cf7;
+  color: var(--ink, #10131a);
 }
 
 [data-theme="dark"] .mue-thinking-summary {
-  color: #7aa2ff;
+  color: #f4f4f7;
 }
 
 .mue-thinking-toggle {
@@ -34235,12 +34235,12 @@ button.mfv-model:hover {
 }
 
 .mue-thinking-step.is-current {
-  color: #4f6cf7;
+  color: var(--ink, #10131a);
   font-weight: 500;
 }
 
 [data-theme="dark"] .mue-thinking-step.is-current {
-  color: #7aa2ff;
+  color: #f4f4f7;
 }
 
 .mue-step-bullet {
