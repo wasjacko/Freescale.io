@@ -33486,11 +33486,18 @@ button.mfv-model:hover {
 /* Raccourcis d'intention (façon ClickUp Brain) — pills + panneau suggestions */
 .mue2-intents {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   margin-bottom: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.mue2-intents::-webkit-scrollbar {
+  display: none;
 }
 .mue2-intent {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
