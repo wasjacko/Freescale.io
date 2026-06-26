@@ -448,15 +448,10 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                       </span>
                     )}
                   </span>
-                  {channels.length > 1 && (
-                    <span className="conv-channels" title={`${channels.length} canaux`}>
-                      {channels.map((ch) => (
-                        <span key={ch} className="conv-channels-ic">
-                          <ChannelLogo channel={ch} />
-                        </span>
-                      ))}
-                    </span>
-                  )}
+                  {/* Indicateur multi-canaux retiré : on garde uniquement le
+                      logo du canal sur lequel arrive le message courant
+                      (sur l'avatar, .conv-channel). La fiche client liste
+                      tous les canaux du contact pour ceux qui veulent. */}
                 </button>
               </Fragment>
             );
