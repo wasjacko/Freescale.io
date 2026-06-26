@@ -209,9 +209,10 @@ const INTENTIONS: Intent[] = [
     label: "Trouver",
     icon: "search",
     suggestions: [
-      "Retrouve le dernier message de Sarah Lemoine",
-      "Trouve les devis envoyés ce mois",
-      "Où en est le projet Refonte produit V2 ?",
+      "Trouve mes tâches en retard",
+      "Cherche dans mes échanges tout ce qui concerne…",
+      "Trouve les fils clients sans réponse",
+      "Retrouve un fichier (devis, contrat, brief)…",
     ],
   },
   {
@@ -219,9 +220,10 @@ const INTENTIONS: Intent[] = [
     label: "Rechercher",
     icon: "compass",
     suggestions: [
-      "Cherche les fils où on parle de paiement en retard",
-      "Liste les relances en attente",
-      "Trouve les clients silencieux depuis 10 jours",
+      "Recherche les tendances récentes de mon secteur",
+      "Trouve les actus récentes sur le client…",
+      "Comment d'autres freelances facturent ce type de projet ?",
+      "Quelles bonnes pratiques pour relancer sans relancer trop ?",
     ],
   },
   {
@@ -229,9 +231,10 @@ const INTENTIONS: Intent[] = [
     label: "Créer",
     icon: "plus",
     suggestions: [
-      "Crée un devis pour Jean-Pierre",
-      "Crée une tâche : envoyer le contrat à Thomas",
-      "Rédige une relance pour David Kim",
+      "Crée une tâche pour…",
+      "Rédige un devis pour…",
+      "Écris une relance pour…",
+      "Prépare un compte-rendu de call sur…",
     ],
   },
   {
@@ -239,9 +242,10 @@ const INTENTIONS: Intent[] = [
     label: "Modifier",
     icon: "pencil",
     suggestions: [
-      "Reformule ce brouillon en plus chaleureux",
-      "Change l'échéance de cette tâche à lundi",
-      "Passe cette tâche en Terminé",
+      "Change le statut d'une tâche sur…",
+      "Change l'échéance d'une tâche sur…",
+      "Définis la priorité d'une tâche sur…",
+      "Reformule mon brouillon en plus chaleureux",
     ],
   },
   {
@@ -249,9 +253,10 @@ const INTENTIONS: Intent[] = [
     label: "Analyser",
     icon: "chart",
     suggestions: [
+      "Qu'est-ce que j'ai livré cette semaine ?",
       "Quels clients me doivent une réponse ?",
-      "Analyse ma santé client cette semaine",
-      "Quel client rapporte le plus ?",
+      "Analyse ma santé client",
+      "Quel client rapporte le plus vs temps passé ?",
     ],
   },
   {
