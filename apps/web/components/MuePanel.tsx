@@ -90,20 +90,47 @@ const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi",
 /** Détecte une demande d'ACTION « créer une tâche / planifier » (mock NLU). */
 function parseTaskRequest(
   msg: string
-): { title: string; dueLabel: string; dueAtIso: string } | null {
+): { title: string; dueLabel: string; dueAtIso: string; client: string | null } | null {
   const lower = msg.toLowerCase();
   if (!/(t[aâ]che|task|planifie|bloque|ajoute|cr[ée]e|rdv|rendez|calendr)/.test(lower)) return null;
 
-  // Titre : mot après « tâche/task », sinon après « ajoute/crée ».
-  let title =
-    msg.match(/t[aâ]ches?\s+(?:["«]\s*)?([\p{L}\p{N}-]{2,})/iu)?.[1] ??
-    msg.match(
-      /(?:ajoute|ajouter|cr[ée]e?r?|planifie|bloque)\s+(?:la\s+|le\s+|une\s+|un\s+|ma\s+)?(?:t[aâ]che\s+)?([\p{L}\p{N}-]{2,})/iu
-    )?.[1] ??
-    "";
-  const STOP = new Set(["la", "le", "les", "une", "un", "ma", "mon", "tache", "tâche", "task"]);
-  if (STOP.has(title.toLowerCase())) title = "";
-  if (!title) title = "Nouvelle tâche";
+  // 1) Extrait TOUT le texte après le déclencheur, pas juste le premier mot.
+  let titlePart = "";
+  const afterColon = msg.match(/t[aâ]ches?\s*[:\-—]\s*(.+)/iu);
+  const afterTache = msg.match(/t[aâ]ches?\s+(?:de\s+|pour\s+)?(.+)/iu);
+  const afterVerb = msg.match(
+    /(?:ajoute|ajouter|cr[ée]e?r?|planifie|bloque)\s+(?:la\s+|le\s+|une\s+|un\s+|ma\s+|mon\s+)?(?:t[aâ]che\s+(?:de\s+)?)?(.+)/iu
+  );
+  if (afterColon?.[1]) titlePart = afterColon[1];
+  else if (afterTache?.[1]) titlePart = afterTache[1];
+  else if (afterVerb?.[1]) titlePart = afterVerb[1];
+
+  // 2) Nettoyage AMONT du titlePart : retire les hints temporels avant
+  //    l'extraction du client (sinon « Thomas Aubry jeudi » serait capturé
+  //    comme nom de client au lieu de « Thomas Aubry »).
+  titlePart = titlePart
+    .replace(/\b(aujourd['']?hui|demain|ce\s+soir|ce\s+matin|cet\s+apr[èe]s[- ]?midi)\b/giu, "")
+    .replace(/\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b/giu, "")
+    .replace(/\b\d{1,2}\s*(?:h|am|:00)\b/giu, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  // 3) Détection client : « pour <Nom> » en fin de phrase, sinon « à/de <Nom> ».
+  let client: string | null = null;
+  const forClient = titlePart.match(/^(.*?)\s+pour\s+([\p{L}][\p{L}\s'-]{1,30}?)\s*\.?\s*$/u);
+  if (forClient?.[1] != null && forClient?.[2] != null) {
+    titlePart = forClient[1].trim();
+    client = forClient[2].trim().replace(/\s+/g, " ");
+  } else {
+    const trailing = titlePart.match(/\b(?:à|de|avec)\s+([A-ZÀ-Ý][\p{L}'-]+)\b/u);
+    if (trailing?.[1]) client = trailing[1];
+  }
+
+  // 4) Polish final : ponctuation en bord.
+  let title = titlePart
+    .replace(/^[:\-—,;\s]+/u, "")
+    .replace(/[:\-—,;\s.]+$/u, "");
+  if (title.length < 3) title = "Nouvelle tâche";
   title = title.charAt(0).toUpperCase() + title.slice(1);
 
   // Jour : un jour de semaine cité, sinon demain.
@@ -128,12 +155,15 @@ function parseTaskRequest(
     month: "short",
   });
   const dueLabel = `${dayLabel} · ${hour}h`;
-  return { title, dueLabel, dueAtIso: due.toISOString() };
+  return { title, dueLabel, dueAtIso: due.toISOString(), client };
 }
 
 /** Détecte une demande de DOCUMENT (devis/facture/présentation/contrat). */
 function isDocRequest(msg: string): boolean {
   const l = msg.toLowerCase();
+  // Si l'utilisateur dit explicitement « tâche/task », c'est une tâche
+  // (même s'il y a « contrat à envoyer » dans le contenu).
+  if (/\bt[aâ]ches?\b|\btask\b/.test(l)) return false;
   return (
     /(devis|facture|présentation|presentation|contrat)/.test(l) &&
     /(cr[ée]e|génér|fais|rédige|prépare|prepare)/.test(l)
@@ -680,16 +710,39 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   ) => {
     const proposed: ProposedTask = {
       title: parsed.title,
-      client: null,
+      client: parsed.client,
       priority: "medium",
       dueLabel: parsed.dueLabel,
       dueAtIso: parsed.dueAtIso,
     };
+    // Si un client a été détecté, on cite explicitement la conversation
+    // « source » dont Mue a déduit la demande → l'utilisateur peut cliquer
+    // dessus pour vérifier le contexte avant de valider.
+    const inlineRefs: Record<string, ActionRef> = {};
+    let content = `Je vais créer **${parsed.title}**`;
+    if (parsed.client) {
+      const slug = parsed.client.toLowerCase().replace(/\s+/g, "-");
+      inlineRefs.client = {
+        entity: "client",
+        id: `client-${slug}`,
+        title: parsed.client,
+      };
+      inlineRefs.source = {
+        entity: "conversation",
+        id: `conv-${slug}`,
+        title: `Discussion avec ${parsed.client}`,
+        badge: "Hier",
+      };
+      content += ` pour {{r:client}} dans ta liste perso, échéance ${parsed.dueLabel}. Détectée depuis {{r:source}}. Tu confirmes ?`;
+    } else {
+      content += ` dans ta liste perso, échéance ${parsed.dueLabel}. Tu confirmes ?`;
+    }
     return {
       id: `prev-${Date.now()}`,
       role: "mue" as const,
       kind: "preview" as const,
-      content: `Je vais créer cette tâche dans ta liste perso, échéance ${parsed.dueLabel}. Tu confirmes ?`,
+      content,
+      inlineRefs,
       preview: { tasks: [proposed], destination: "Ma liste perso" },
     };
   };
@@ -2060,7 +2113,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     <MueMark size={16} /> Mue
                   </div>
                   {renderThinkingBlock(m)}
-                  <div className="mue2-msg-body">{m.content}</div>
+                  <div className="mue2-msg-body">
+                    {m.inlineRefs ? renderRich(m.content, m.inlineRefs) : m.content}
+                  </div>
                   <div className="mue2-prev">
                     {m.preview.tasks.map((t, i) => {
                       const key = `${t.title}-${t.dueAtIso}-${i}`;
