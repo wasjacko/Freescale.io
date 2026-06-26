@@ -12896,7 +12896,10 @@ html {
 }
 .tdm-sheet {
   width: 100%;
-  max-width: 540px;
+  /* Réduit pour ne pas envahir le canvas : carte compacte centrée, on garde
+     de l'air autour pour voir la page derrière. */
+  max-width: 420px;
+  max-height: calc(100vh - 80px);
   display: flex;
   flex-direction: column;
   border-radius: 16px;
