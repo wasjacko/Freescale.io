@@ -752,16 +752,49 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const runDocument = (raw: string) => {
     const client = extractClientName(raw);
     const id = `doc-${Date.now()}`;
+    // Société dérivée des initiales (mock) : « Jean Pierre » → « JP Consulting ».
+    const initials = client
+      .split(/\s+/)
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join("")
+      .slice(0, 3);
+    const company = `${initials} Consulting`;
+    const emailHandle = client.toLowerCase().replace(/\s+/g, ".");
+    const lines = [
+      { label: "Logo & identité visuelle", amount: 1500 },
+      { label: "Charte graphique", amount: 1200 },
+      { label: "Carte de visite", amount: 350 },
+      { label: "Templates réseaux sociaux", amount: 500 },
+    ];
+    const subtotal = lines.reduce((s, l) => s + l.amount, 0);
+    const vat = Math.round(subtotal * 0.2);
+    const total = subtotal + vat;
     const doc: DevisDoc = {
       id,
-      client,
-      ref: `DV-2026-${String(Math.floor(Date.now() / 1000) % 1000).padStart(3, "0")}`,
-      dateLabel: new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long" }),
-      lines: [
-        { label: "Refonte produit V2 — design", amount: 2800 },
-        { label: "Intégration & livraison", amount: 1700 },
-      ],
-      total: 4500,
+      ref: `#2026-${String(Math.floor(Date.now() / 1000) % 1000).padStart(3, "0")}`,
+      dateLabel: new Date().toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      validity: "30 jours",
+      client: {
+        name: client,
+        company,
+        email: `${emailHandle}@${initials.toLowerCase()}-consulting.fr`,
+        phone: "06 12 34 56 78",
+        address: "42 rue des Lilas, 75011 Paris",
+      },
+      provider: {
+        name: `${firstName} — Designer graphique freelance`,
+        role: "Identité de marque & design produit",
+        email: `${firstName.toLowerCase()}@freescale.site`,
+      },
+      lines,
+      subtotal,
+      vat,
+      total,
+      terms: "Conditions de paiement : 40 % à la commande, 60 % à la livraison · Délai 3–4 semaines.",
     };
     docsRef.current[id] = doc;
     setOpenDoc(doc);
@@ -772,12 +805,15 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         id: `res-${Date.now()}`,
         role: "mue",
         kind: "result",
-        content: `Done, voici ton devis pour ${client}.`,
-        created: [{ entity: "document", id, title: `Devis — ${client}`, badge: "Brouillon" }],
+        content:
+          `Done, voici ton devis fictif. J'ai simulé ${client} (${company}) avec un pack branding ` +
+          `classique — logo, charte, carte de visite, templates réseaux — pour ${total.toLocaleString("fr-FR")} € TTC. ` +
+          `Conditions 40/60, délai 3–4 semaines. Tu peux l'adapter directement dans le document.`,
+        created: [{ entity: "document", id, title: `Devis ${doc.ref} — ${client}`, badge: "Brouillon" }],
         improvements: [
-          "Transforme ce devis en présentation",
-          "Bloque un call découverte avec le client",
-          "Sauvegarde ces tarifs pour les prochains devis",
+          "Transforme ce devis en présentation slides",
+          "Bloque un créneau lundi pour le call découverte",
+          "Sauvegarde mes tarifs en mémoire pour les prochains devis",
         ],
       },
     ]);

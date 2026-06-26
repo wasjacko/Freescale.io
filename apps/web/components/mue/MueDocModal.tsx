@@ -1,29 +1,42 @@
 "use client";
 
-// Surface document légère (mock) — ouvre un devis généré par Mue dans une
-// modale par-dessus le canvas. Le panneau Mue reste ouvert à droite.
+// Surface document (mock) — ouvre un devis généré par Mue dans une modale
+// par-dessus le canvas. Structure complète façon vrai devis (en-tête, client,
+// prestataire, prestations, total, conditions). Le panneau Mue reste à droite.
 
 export type DevisDoc = {
   id: string;
-  client: string;
   ref: string;
   dateLabel: string;
+  validity: string;
+  client: { name: string; company: string; email: string; phone: string; address: string };
+  provider: { name: string; role: string; email: string };
   lines: { label: string; amount: number }[];
+  subtotal: number;
+  vat: number;
   total: number;
+  terms: string;
 };
 
 const eur = (n: number) => `${n.toLocaleString("fr-FR")} €`;
 
 export function MueDocModal({ doc, onClose }: { doc: DevisDoc; onClose: () => void }) {
   return (
-    <div className="muedoc-overlay" role="dialog" aria-modal="true" aria-label={`Devis ${doc.client}`}>
+    <div
+      className="muedoc-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Devis ${doc.client.name}`}
+    >
       <button type="button" className="muedoc-scrim" aria-label="Fermer" onClick={onClose} />
       <div className="muedoc-sheet">
         <header className="muedoc-head">
           <div>
-            <h2>Devis — {doc.client}</h2>
+            <h2>
+              Devis {doc.ref} — {doc.client.name}
+            </h2>
             <span className="muedoc-sub">
-              {doc.ref} · {doc.dateLabel}
+              {doc.dateLabel} · Validité {doc.validity}
             </span>
           </div>
           <button type="button" className="muedoc-close" aria-label="Fermer" onClick={onClose}>
@@ -42,18 +55,82 @@ export function MueDocModal({ doc, onClose }: { doc: DevisDoc; onClose: () => vo
             </svg>
           </button>
         </header>
+
         <div className="muedoc-body">
-          {doc.lines.map((l, i) => (
-            <div key={i} className="muedoc-line">
-              <span>{l.label}</span>
-              <strong>{eur(l.amount)}</strong>
-            </div>
-          ))}
-          <div className="muedoc-total">
-            <span>Total</span>
-            <strong>{eur(doc.total)}</strong>
+          <div className="muedoc-cols">
+            <section className="muedoc-block">
+              <h3>Client</h3>
+              <dl>
+                <div>
+                  <dt>Nom</dt>
+                  <dd>{doc.client.name}</dd>
+                </div>
+                <div>
+                  <dt>Société</dt>
+                  <dd>{doc.client.company}</dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{doc.client.email}</dd>
+                </div>
+                <div>
+                  <dt>Téléphone</dt>
+                  <dd>{doc.client.phone}</dd>
+                </div>
+                <div>
+                  <dt>Adresse</dt>
+                  <dd>{doc.client.address}</dd>
+                </div>
+              </dl>
+            </section>
+            <section className="muedoc-block">
+              <h3>Prestataire</h3>
+              <dl>
+                <div>
+                  <dt>Nom</dt>
+                  <dd>{doc.provider.name}</dd>
+                </div>
+                <div>
+                  <dt>Activité</dt>
+                  <dd>{doc.provider.role}</dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{doc.provider.email}</dd>
+                </div>
+              </dl>
+            </section>
           </div>
+
+          <section className="muedoc-block">
+            <h3>Prestations</h3>
+            <div className="muedoc-lines">
+              {doc.lines.map((l, i) => (
+                <div key={i} className="muedoc-line">
+                  <span>{l.label}</span>
+                  <strong>{eur(l.amount)}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="muedoc-totals">
+              <div>
+                <span>Sous-total HT</span>
+                <span>{eur(doc.subtotal)}</span>
+              </div>
+              <div>
+                <span>TVA 20 %</span>
+                <span>{eur(doc.vat)}</span>
+              </div>
+              <div className="muedoc-grand">
+                <span>Total TTC</span>
+                <strong>{eur(doc.total)}</strong>
+              </div>
+            </div>
+          </section>
+
+          <p className="muedoc-terms">{doc.terms}</p>
         </div>
+
         <footer className="muedoc-foot">
           <span className="muedoc-hint">Brouillon — adapte-le directement dans le document.</span>
         </footer>

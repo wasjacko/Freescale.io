@@ -33649,3 +33649,85 @@ button.mfv-model:hover {
   background: rgba(122, 162, 255, 0.22);
   color: #dde4ff;
 }
+
+/* Devis enrichi (Client / Prestataire / Prestations / Total / Conditions) */
+.muedoc-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 520px) {
+  .muedoc-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.muedoc-block {
+  margin-bottom: 16px;
+}
+.muedoc-block h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--csv-text-muted, #9097a3);
+}
+.muedoc-block dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.muedoc-block dl > div {
+  display: grid;
+  grid-template-columns: 78px 1fr;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.muedoc-block dt {
+  color: var(--csv-text-muted, #9097a3);
+}
+.muedoc-block dd {
+  margin: 0;
+  color: var(--ink, #10131a);
+  overflow-wrap: anywhere;
+}
+.muedoc-lines {
+  border-top: 1px solid var(--csv-card-stroke, rgba(15, 23, 42, 0.08));
+}
+.muedoc-totals {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.muedoc-totals > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--csv-text, #3a4151);
+}
+.muedoc-grand {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--csv-card-stroke, rgba(15, 23, 42, 0.08));
+  font-size: 14px;
+}
+.muedoc-grand strong {
+  color: var(--ink, #10131a);
+  font-weight: 700;
+}
+.muedoc-terms {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  color: var(--csv-text-muted, #9097a3);
+  line-height: 1.5;
+}
+[data-theme="dark"] .muedoc-block dd,
+[data-theme="dark"] .muedoc-grand strong {
+  color: #f4f4f7;
+}
+[data-theme="dark"] .muedoc-totals > div {
+  color: #c8ccd6;
+}
