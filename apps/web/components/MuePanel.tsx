@@ -213,7 +213,17 @@ function isFocusRequest(msg: string): boolean {
 /** Détecte une demande de création MULTIPLE (« toutes mes tâches de la semaine »). */
 function isMultiTaskRequest(msg: string): boolean {
   const l = msg.toLowerCase();
-  return /(toutes?\s+(?:mes\s+)?t[aâ]ches|mes\s+t[aâ]ches\s+(?:de\s+la\s+semaine|pour\s+la\s+semaine|de\s+cette\s+semaine)|plusieurs\s+t[aâ]ches|liste\s+de\s+t[aâ]ches|planifie\s+ma\s+semaine)/.test(
+  // Patterns historiques (semaine, toutes mes tâches, planifie ma semaine)
+  if (
+    /(toutes?\s+(?:mes\s+)?t[aâ]ches|mes\s+t[aâ]ches\s+(?:de\s+la\s+semaine|pour\s+la\s+semaine|de\s+cette\s+semaine)|plusieurs\s+t[aâ]ches|liste\s+de\s+t[aâ]ches|planifie\s+ma\s+semaine)/.test(
+      l
+    )
+  ) {
+    return true;
+  }
+  // Nouveau : extraction de tâches depuis les emails/messages reçus.
+  // « à partir des nouveaux messages », « depuis mes messages », « scanne mes mails »…
+  return /(t[aâ]ches?[^.?!]*(?:à\s+partir\s+(?:de(?:s)?\s+)?|depuis\s+(?:mes\s+|les\s+)?|dans\s+(?:mes\s+|les\s+)?)?(?:nouveaux?\s+|nouvelles?\s+|récents?\s+|récentes?\s+|reçus?\s+|non\s+lus?\s+)?(?:messages?|mails?|emails?|conversations?|fils?)\b|scann?e[rz]?\s+(?:mes\s+|les\s+)?(?:messages?|mails?|emails?|inbox))/.test(
     l
   );
 }
@@ -287,6 +297,7 @@ const INTENTIONS: Intent[] = [
     label: "Créer",
     icon: "plus",
     suggestions: [
+      "Crée mes tâches à partir des nouveaux messages reçus",
       "Crée une tâche pour…",
       "Rédige un devis pour…",
       "Écris une relance pour…",
