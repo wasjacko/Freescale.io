@@ -33825,3 +33825,13 @@ button.mfv-model:hover {
 .app.mue-open .muedoc-overlay {
   right: calc(var(--mue-panel-w) + 10px);
 }
+
+/* Sur viewport étroit, le canvas à gauche du panneau est trop fin : réserver
+   sa largeur ne laisse qu'une lamelle sombre (bande). On repasse l'overlay en
+   pleine largeur → vraie modale centrée, plus de bande parasite. */
+@media (max-width: 900px) {
+  .app.mue-open .tdm-overlay,
+  .app.mue-open .muedoc-overlay {
+    right: 0;
+  }
+}
