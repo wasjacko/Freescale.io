@@ -33826,12 +33826,21 @@ button.mfv-model:hover {
   background: #dfe3ee;
 }
 
-.mue-thinking-step.is-done .mue-step-bullet {
-  color: #10b981;
+/* Étape passée : puce grise atténuée (façon ClickUp Brain « Pondering »). */
+.mue-thinking-step.is-done .mue-step-bullet-dot {
+  background: #9097a3;
+  opacity: 0.55;
 }
-
+[data-theme="dark"] .mue-thinking-step.is-done .mue-step-bullet-dot {
+  background: #6b7280;
+  opacity: 0.7;
+}
+.mue-thinking-step.is-done .mue-step-bullet {
+  color: #9097a3;
+}
+/* Étape courante : puce pleine, bien visible. */
 .mue-thinking-step.is-current .mue-step-bullet {
-  color: #4f6cf7;
+  color: var(--ink, #10131a);
 }
 
 [data-theme="dark"] .mue-thinking-step.is-current .mue-step-bullet {
@@ -34276,12 +34285,21 @@ button.mfv-model:hover {
   flex-shrink: 0;
 }
 
-.mue-thinking-step.is-done .mue-step-bullet {
-  color: #10b981;
+/* Étape passée : puce grise atténuée (façon ClickUp Brain « Pondering »). */
+.mue-thinking-step.is-done .mue-step-bullet-dot {
+  background: #9097a3;
+  opacity: 0.55;
 }
-
+[data-theme="dark"] .mue-thinking-step.is-done .mue-step-bullet-dot {
+  background: #6b7280;
+  opacity: 0.7;
+}
+.mue-thinking-step.is-done .mue-step-bullet {
+  color: #9097a3;
+}
+/* Étape courante : puce pleine, bien visible. */
 .mue-thinking-step.is-current .mue-step-bullet {
-  color: #4f6cf7;
+  color: var(--ink, #10131a);
 }
 
 [data-theme="dark"] .mue-thinking-step.is-current .mue-step-bullet {

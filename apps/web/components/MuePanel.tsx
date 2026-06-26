@@ -1093,12 +1093,21 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
           <ThinkingTitle />
         </div>
         <div className="mue-thinking-steps">
-          <div className="mue-thinking-step is-current">
-            <span className="mue-step-bullet">
-              <span className="mue-step-bullet-dot" />
-            </span>
-            <span className="mue-step-text">{m.activeThinkingStep || "Prend en compte..."}</span>
-          </div>
+          {steps.map((label, idx) => {
+            const isCurrent = idx === steps.length - 1;
+            return (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable, accumulé
+                key={idx}
+                className={`mue-thinking-step ${isCurrent ? "is-current" : "is-done"}`}
+              >
+                <span className="mue-step-bullet">
+                  <span className="mue-step-bullet-dot" />
+                </span>
+                <span className="mue-step-text">{label}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
