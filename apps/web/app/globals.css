@@ -4266,10 +4266,9 @@ html {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Séparateur du menu compte retiré — espacement suffit à structurer. */
 .account-menu-sep {
-  height: 1px;
-  margin: 5px 4px;
-  background: rgba(15, 23, 42, 0.08);
+  display: none;
 }
 /* Crédits IA dans le menu compte (anneau + valeur + libellé). */
 .account-menu-credits {
