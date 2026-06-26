@@ -491,9 +491,8 @@ button:not(:disabled):active,
 [data-theme="dark"] .today-view,
 [data-theme="dark"] .recap-view,
 [data-theme="dark"] .mfv {
-  background: linear-gradient(#1c1d27, #1c1d27) padding-box,
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06)) border-box;
-  border: 1px solid transparent;
+  background: #1c1d27;
+  border: 0;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
