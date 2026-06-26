@@ -12877,16 +12877,18 @@ html {
   left: 0;
   bottom: 0;
   /* Couvre la PAGE principale, pas le panneau Mue : on réserve sa largeur
-     à droite quand il est ouvert. */
+     à droite quand il est ouvert (cf. règle .tdm-overlay { right: … }). */
   right: 0;
   z-index: 120;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  /* Pas d'assombrissement : la fiche s'ouvre DANS le canvas (façon ClickUp),
-     pas en modale qui dim. Aucune bande grise sur le canvas. */
-  background: transparent;
+  /* Scrim sombre subtil sur le reste du SaaS (sidebar + canvas) — le panneau
+     Mue à droite reste 100% visible et interactif, hors de cette zone. */
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   animation: tdm-fade 150ms var(--ease);
 }
 @keyframes tdm-fade {
@@ -33524,10 +33526,11 @@ button.mfv-model:hover {
   position: absolute;
   inset: 0;
   border: 0;
-  /* Pas d'assombrissement : le devis s'ouvre DANS le canvas comme une page
-     (façon ClickUp), pas en modale qui dim. Le scrim reste cliquable pour
-     fermer mais transparent → aucune bande grise sur le canvas. */
-  background: transparent;
+  /* Scrim sombre subtil sur le SaaS (sidebar + canvas) — le panneau Mue
+     reste 100% visible. Le scrim reste cliquable pour fermer. */
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   cursor: default;
 }
 .muedoc-sheet {
