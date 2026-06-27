@@ -35628,3 +35628,19 @@ button.mfv-model:hover {
     opacity: 0;
   }
 }
+
+/* Fleur Mue des en-têtes de message : rotation lente et sympathique. */
+.mue2-msg-head .mue-flower {
+  transform-origin: 50% 50%;
+  animation: mue-flower-gentle-spin 9s linear infinite;
+}
+@keyframes mue-flower-gentle-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-msg-head .mue-flower {
+    animation: none;
+  }
+}
