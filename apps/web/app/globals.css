@@ -35446,3 +35446,24 @@ button.mfv-model:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #f4f4f7;
 }
+
+/* Escalier d'affichage Mue — chaque palier slide-in à son tour (rien avant). */
+.mue2-stair-item {
+  animation: mue2-stair-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes mue2-stair-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+/* Carte de tâche révélée individuellement dans l'escalier (pas de gap géré
+   par le conteneur .mue2-prev d'origine → on remet la marge ici). */
+.mue2-prev--single {
+  margin-top: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue2-stair-item {
+    animation: none;
+  }
+}
