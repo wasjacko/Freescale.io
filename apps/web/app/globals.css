@@ -5608,7 +5608,7 @@ html {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   padding: 14px var(--page-pad-x);
 }
 /* Rangée des filtres actifs, sous la barre. */
