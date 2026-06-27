@@ -328,23 +328,26 @@ export function AppShell({
               visible à gauche, le FIL au centre. Sous 768px on bascule
               liste↔fil (cf. media query). Thread gère lui-même son état vide. */}
           <div className="conv-shell">
-            {/* Colonne dossiers — à l'extrême gauche, pleine hauteur du bloc. */}
-            <InboxFolders />
-            <div className="conv-shell-main">
-              {showOnboardingChips && view === "inbox" && (
-                <OnboardingChips
-                  initialRole={user?.profileRole}
-                  initialObjective={user?.profileObjective}
-                  initialUsageMode={user?.profileUsageMode}
-                />
-              )}
-              {/* Barre d'outils pleine largeur, au-dessus des deux colonnes. */}
-              <InboxToolbar />
-              <div className={`conv-shell-body conv-shell-split inbox-mode-${inboxMode}`}>
-                <Inbox currentUserId={user?.id ?? null} />
-                <Thread
-                  currentUser={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
-                />
+            {showOnboardingChips && view === "inbox" && (
+              <OnboardingChips
+                initialRole={user?.profileRole}
+                initialObjective={user?.profileObjective}
+                initialUsageMode={user?.profileUsageMode}
+              />
+            )}
+            {/* Barre d'outils tout en haut, pleine largeur — AU-DESSUS de la
+                colonne dossiers (Inbox/Favoris…) et de la liste. */}
+            <InboxToolbar />
+            <div className="conv-shell-row">
+              {/* Colonne dossiers — sous la barre, à l'extrême gauche. */}
+              <InboxFolders />
+              <div className="conv-shell-main">
+                <div className={`conv-shell-body conv-shell-split inbox-mode-${inboxMode}`}>
+                  <Inbox currentUserId={user?.id ?? null} />
+                  <Thread
+                    currentUser={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
+                  />
+                </div>
               </div>
             </div>
           </div>

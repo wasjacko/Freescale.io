@@ -4924,8 +4924,9 @@ html {
 .conv-shell {
   --inbox-w: 320px;
   display: flex;
-  /* Ligne : colonne dossiers (gauche) + zone principale (barre + liste/fil). */
-  flex-direction: row;
+  /* Colonne : barre d'outils PLEINE LARGEUR en haut, puis la rangée
+     dossiers + liste/fil en dessous. */
+  flex-direction: column;
   gap: 0;
   padding: 0;
   min-height: 0;
@@ -4937,7 +4938,15 @@ html {
     rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
-/* Zone principale à droite des dossiers : barre d'outils + corps empilés. */
+/* Rangée sous la barre d'outils : colonne dossiers (gauche) + zone principale. */
+.conv-shell-row {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+/* Zone principale à droite des dossiers : corps liste/fil. */
 .conv-shell-main {
   display: flex;
   flex-direction: column;
