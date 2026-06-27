@@ -1,6 +1,6 @@
 "use client";
 
-import { MueAvatar } from "@/components/MueAvatar";
+import { FreescaleLogo } from "@/components/brand/FreescaleLogo";
 import { appUrl } from "@/lib/app-url";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -104,8 +104,7 @@ export function WelcomeScreen() {
         aria-labelledby="welcome-title"
       >
         <div className="welcome-brand">
-          <MueAvatar />
-          <span>Freescale</span>
+          <FreescaleLogo height={30} />
         </div>
 
         {banner && <div className="welcome-banner">{banner}</div>}

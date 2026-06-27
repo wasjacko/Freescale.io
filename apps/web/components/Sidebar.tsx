@@ -1,5 +1,6 @@
 "use client";
 
+import { FreescaleLogo } from "@/components/brand/FreescaleLogo";
 import { FreescaleMark } from "@/components/brand/FreescaleMark";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
@@ -143,8 +144,9 @@ export function Sidebar() {
         onClick={() => setView("today")}
         aria-label="Accueil — Tâches"
       >
+        {/* Étendu : wordmark officiel. Réduit : juste la marque (icône). */}
         <FreescaleMark size={26} className="sidebar-brand-mark" />
-        <span className="sidebar-brand-word">Freescale</span>
+        <FreescaleLogo height={24} className="sidebar-brand-logo" />
       </button>
 
       <nav className="nav-section">

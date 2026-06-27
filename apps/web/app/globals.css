@@ -7773,6 +7773,17 @@ html {
 }
 .sidebar-brand-mark {
   color: var(--ink, #10131a);
+  /* Étendu : on montre le wordmark, pas la petite marque. */
+  display: none;
+}
+.sidebar-brand-logo {
+  flex: none;
+}
+.app.sidebar-collapsed .sidebar-brand-mark {
+  display: block;
+}
+.app.sidebar-collapsed .sidebar-brand-logo {
+  display: none;
 }
 .sidebar-brand-word {
   font-family: "Instrument Serif", Georgia, serif;

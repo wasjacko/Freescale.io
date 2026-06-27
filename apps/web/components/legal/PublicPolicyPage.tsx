@@ -1,4 +1,4 @@
-import { MueAvatar } from "@/components/MueAvatar";
+import { FreescaleLogo } from "@/components/brand/FreescaleLogo";
 import {
   PUBLIC_CONTACT_EMAIL,
   PUBLIC_POLICY_UPDATED_AT,
@@ -11,10 +11,7 @@ export function PublicPolicyPage({ policy }: { policy: PublicPolicy }) {
     <div className="policy-page">
       <header className="policy-nav">
         <Link href="/" className="policy-brand">
-          <span className="policy-brand-mark">
-            <MueAvatar />
-          </span>
-          <span>Freescale</span>
+          <FreescaleLogo height={26} />
         </Link>
         <nav aria-label="Informations">
           <Link href="/privacy">Confidentialité</Link>
