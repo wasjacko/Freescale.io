@@ -35156,3 +35156,140 @@ button.mfv-model:hover {
 [data-theme="dark"] .csv3-channels__big { color: #f4f4f7; }
 [data-theme="dark"] .csv3-channels__pct,
 [data-theme="dark"] .csv3-channels__head h3 { color: #c8ccd6; }
+
+/* Bouton « Ajouter un client » dans la toolbar Santé client. */
+.csv3-add-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #0a0a0a;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25), 0 6px 18px rgba(15, 23, 42, 0.16);
+  transition: background 140ms var(--ease), transform 140ms var(--ease);
+}
+.csv3-add-client:hover {
+  background: #1a1a1a;
+  transform: translateY(-1px);
+}
+.csv3-add-client:active {
+  transform: translateY(0);
+}
+[data-theme="dark"] .csv3-add-client {
+  background: #f4f4f7;
+  color: #0a0a0a;
+}
+
+/* Corps de la modale « Ajouter un client ». */
+.acm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 16px 8px;
+}
+.acm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.acm-field > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--csv-text-soft, #5b6475);
+}
+.acm-field input {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  font-size: 13.5px;
+  color: var(--ink, #10131a);
+  outline: none;
+  transition: border-color 120ms var(--ease), box-shadow 120ms var(--ease);
+}
+.acm-field input:focus {
+  border-color: #7aa2ff;
+  box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.18);
+}
+.acm-channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.acm-chan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--csv-text, #3a4151);
+  cursor: pointer;
+  transition: all 120ms var(--ease);
+}
+.acm-chan-logo {
+  width: 15px;
+  height: 15px;
+}
+.acm-chan.is-on {
+  border-color: var(--ink, #10131a);
+  background: var(--ink, #10131a);
+  color: #fff;
+}
+.acm-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px 16px;
+}
+.acm-btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--csv-text, #3a4151);
+  cursor: pointer;
+  transition: all 130ms var(--ease);
+}
+.acm-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+.acm-btn--primary {
+  border: 0;
+  background: #0a0a0a;
+  color: #fff;
+}
+.acm-btn--primary:hover {
+  background: #1a1a1a;
+}
+[data-theme="dark"] .acm-field input,
+[data-theme="dark"] .acm-chan,
+[data-theme="dark"] .acm-btn {
+  background: #1f222d;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f4f4f7;
+}
+[data-theme="dark"] .acm-chan.is-on {
+  background: #f4f4f7;
+  color: #0a0a0a;
+  border-color: #f4f4f7;
+}
+[data-theme="dark"] .acm-btn--primary {
+  background: #f4f4f7;
+  color: #0a0a0a;
+}

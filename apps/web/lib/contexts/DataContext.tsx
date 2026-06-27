@@ -21,10 +21,12 @@ import {
 } from "@/lib/actions/inbox";
 import type { MemberRole } from "@/lib/collaboration";
 import type { ConnectedChannel, InboxData } from "@/lib/data/queries";
+import { MOCK_CLIENTS } from "@/lib/mock-v2";
 import type {
   Avatar,
   CalEvent,
   ChannelId,
+  Client,
   Conversation,
   Message,
   Task,
@@ -61,6 +63,7 @@ type Ctx = {
   canConnectChannels: boolean;
   messagesByConv: Record<string, Message[]>;
   tasks: Task[];
+  clients: Client[];
   events: CalEvent[];
   upcoming: UpcomingEvent[];
   channels: ConnectedChannel[];
@@ -77,6 +80,8 @@ type Ctx = {
   retryFailedMessage: (convId: string, msgId: string) => Promise<void>;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   addTask: (task: Task) => void;
+  /** Ajoute un client (UI/mock) en tête de la liste Santé client. */
+  addClient: (client: Client) => void;
   /** Réordonne les tâches de premier niveau selon la nouvelle liste d'ids. */
   reorderTasks: (orderedVisibleIds: string[]) => void;
   /** Change le statut d'une tâche (drag entre les colonnes À faire / En cours / Terminé). */
@@ -127,6 +132,7 @@ export function DataProvider({
     initial.messagesByConv
   );
   const [tasks, setTasks] = useState<Task[]>(initial.tasks);
+  const [clients, setClients] = useState<Client[]>(MOCK_CLIENTS);
   const [events, setEvents] = useState<CalEvent[]>(initial.events);
   const [archived, setArchived] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
@@ -295,6 +301,11 @@ export function DataProvider({
   // Ajout optimiste d'une tâche — impact immédiat sur le dashboard.
   const addTask = useCallback((task: Task) => {
     setTasks((prev) => (prev.some((t) => t.id === task.id) ? prev : [task, ...prev]));
+  }, []);
+
+  // Ajout d'un client (UI/mock) — en tête de la liste Santé client.
+  const addClient = useCallback((client: Client) => {
+    setClients((prev) => (prev.some((c) => c.id === client.id) ? prev : [client, ...prev]));
   }, []);
 
   // Ajout d'un client/conversation (UI/mock) — en tête de l'inbox.
@@ -529,6 +540,7 @@ export function DataProvider({
       canConnectChannels: initial.canConnectChannels,
       messagesByConv,
       tasks,
+      clients,
       events,
       upcoming: initial.upcoming,
       channels: initial.channels,
@@ -544,6 +556,7 @@ export function DataProvider({
       retryFailedMessage,
       toggleTask,
       addTask,
+      addClient,
       reorderTasks,
       setTaskStatus,
       removeTask,
@@ -565,6 +578,7 @@ export function DataProvider({
       initial.canConnectChannels,
       messagesByConv,
       tasks,
+      clients,
       events,
       initial.upcoming,
       initial.channels,
@@ -579,6 +593,7 @@ export function DataProvider({
       retryFailedMessage,
       toggleTask,
       addTask,
+      addClient,
       reorderTasks,
       setTaskStatus,
       removeTask,

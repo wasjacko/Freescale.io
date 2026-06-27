@@ -3,15 +3,16 @@
 // Freescale V2 — Pilotage clients (refonte v3).
 // Décisions clés vs. la maquette générique :
 //   • Le wedge value de Freescale = « argent évoqué dans tes échanges » + Mue qui priorise.
-//   • Les chiffres montrés sont DÉRIVÉS de MOCK_CLIENTS. Ce qu'on ne peut pas dériver
+//   • Les chiffres montrés sont DÉRIVÉS de clients. Ce qu'on ne peut pas dériver
 //     honnêtement (deltas vs période précédente avec n<10) est masqué.
 //   • Tout chiffre estimé par l'IA porte la signature « Mue ».
 //   • Le toggle période modifie aussi le périmètre des KPI, pas seulement les deltas.
 
+import { AddClientModal } from "@/components/AddClientModal";
 import { ClientHub } from "@/components/ClientHub";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
-import { MOCK_CLIENTS } from "@/lib/mock-v2";
+import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import type { ChannelId, Client, Tone } from "@/lib/types";
 import { useMemo, useState } from "react";
@@ -114,13 +115,15 @@ function attentionScore(c: Client): number {
 
 export function ClientsView() {
   const { activeClientId, setActiveClientId } = useApp();
+  const { clients, addClient } = useData();
   const [period, setPeriod] = useState<Period>("month");
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
 
   // ─ KPI dérivés pour le score de santé ─────────────────────────────
-  const total = MOCK_CLIENTS.length;
-  const toReplyCount = MOCK_CLIENTS.filter((c) => relationHealth(c).state === "owe").length;
+  const total = clients.length;
+  const toReplyCount = clients.filter((c) => relationHealth(c).state === "owe").length;
 
   // ─ SCORE DE SANTÉ — 4 indicateurs composent une note 0–100 ────────
   // Source de vérité : on ne MESURE que ce qu'on observe dans l'inbox.
@@ -128,11 +131,11 @@ export function ClientsView() {
   const health = useMemo(() => {
     const n = Math.max(1, total);
     const reactivite = Math.round((1 - toReplyCount / n) * 100);
-    const actifs = MOCK_CLIENTS.filter((c) => c.stage === "active").length;
+    const actifs = clients.filter((c) => c.stage === "active").length;
     const regularite = Math.round((actifs / n) * 100);
-    const silents = MOCK_CLIENTS.filter((c) => (c.silentDays ?? 0) >= 10).length;
+    const silents = clients.filter((c) => (c.silentDays ?? 0) >= 10).length;
     const engagement = Math.round((1 - silents / n) * 100);
-    const invoices = MOCK_CLIENTS.flatMap((c) => c.invoices ?? []);
+    const invoices = clients.flatMap((c) => c.invoices ?? []);
     const lateInv = invoices.filter((i) => i.status === "late").length;
     const paiements =
       invoices.length === 0 ? 100 : Math.round((1 - lateInv / invoices.length) * 100);
@@ -204,7 +207,7 @@ export function ClientsView() {
       active: 0,
       dormant: 0,
     };
-    for (const c of MOCK_CLIENTS) if (c.stage) counts[c.stage]++;
+    for (const c of clients) if (c.stage) counts[c.stage]++;
     const tot = Math.max(
       1,
       Object.values(counts).reduce((a, b) => a + b, 0)
@@ -217,12 +220,12 @@ export function ClientsView() {
         ...STAGE[key],
       })
     );
-  }, []);
+  }, [clients]);
 
   // ─ Répartition par canal (barre empilée — pas une jauge) ─────────
   const channelDist = useMemo(() => {
     const counts = new Map<ChannelId, number>();
-    for (const c of MOCK_CLIENTS)
+    for (const c of clients)
       for (const ch of c.channels) counts.set(ch, (counts.get(ch) ?? 0) + 1);
     const tot = Math.max(
       1,
@@ -237,12 +240,12 @@ export function ClientsView() {
         color: CHAN_COLOR[ch],
         label: CHAN_LABEL[ch],
       }));
-  }, []);
+  }, [clients]);
 
   // ─ Grille filtrée ────────────────────────────────────────────────
-  const clients = useMemo(() => {
+  const filteredClients = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return [...MOCK_CLIENTS]
+    return [...clients]
       .filter((c) => {
         if (q) {
           const hay = `${c.name} ${c.company ?? ""}`.toLowerCase();
@@ -256,15 +259,15 @@ export function ClientsView() {
         return true;
       })
       .sort((a, b) => attentionScore(b) - attentionScore(a));
-  }, [filter, query]);
+  }, [filter, query, clients]);
 
   // ─ Insights observationnels neutres ──────────────────────────────
   const avgChannels = (
-    MOCK_CLIENTS.reduce((s, c) => s + c.channels.length, 0) / Math.max(1, MOCK_CLIENTS.length)
+    clients.reduce((s, c) => s + c.channels.length, 0) / Math.max(1, clients.length)
   ).toFixed(1);
   const topChannel = channelDist[0];
 
-  const openClient = MOCK_CLIENTS.find((c) => c.id === activeClientId) ?? null;
+  const openClient = clients.find((c) => c.id === activeClientId) ?? null;
   if (openClient) {
     return (
       <section className="clients-view" aria-label="Fiche client">
@@ -313,8 +316,28 @@ export function ClientsView() {
               </button>
             ))}
           </div>
+          <button type="button" className="csv3-add-client" onClick={() => setAddOpen(true)}>
+            <svg
+              viewBox="0 0 24 24"
+              width={15}
+              height={15}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Ajouter un client
+          </button>
         </div>
       </header>
+      {addOpen && (
+        <AddClientModal open={addOpen} onClose={() => setAddOpen(false)} onCreate={addClient} />
+      )}
 
       {/* ── HERO : score de santé global + ses 4 indicateurs ────────────
            Le score répond à « est-ce que ma santé client est bonne ? ».
@@ -430,7 +453,7 @@ export function ClientsView() {
         </article>
       </div>
 
-      {clients.length === 0 ? (
+      {filteredClients.length === 0 ? (
         <div className="csv3-empty">
           <p>Aucun client ne correspond à ce filtre.</p>
           <button
@@ -446,7 +469,7 @@ export function ClientsView() {
         </div>
       ) : (
         <div className="csv3-grid">
-          {clients.map((c) => (
+          {filteredClients.map((c) => (
             <MiniClientCard key={c.id} client={c} onOpen={() => setActiveClientId(c.id)} />
           ))}
         </div>
