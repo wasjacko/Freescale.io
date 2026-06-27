@@ -20487,9 +20487,11 @@ button:active:not(:disabled):not(.no-press) {
   display: block;
 }
 .thread-empty-title {
-  margin: 0 0 10px;
+  max-width: 280px;
+  margin: 0 auto 10px;
   font-size: 19px;
   font-weight: 700;
+  line-height: 1.25;
   letter-spacing: -0.02em;
   color: #0f172a;
 }
