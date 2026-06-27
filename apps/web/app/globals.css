@@ -303,7 +303,7 @@
      bleu clair → bleu → violet → rouge → rose → rose pâle → bleu.
      Variable de référence (90deg) + déclinaison stops réutilisable. */
   --freescale-gradient: linear-gradient(
-    90deg,
+    135deg,
     #78aabf 0%,
     #6981b8 11%,
     #611c71 28%,
