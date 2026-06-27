@@ -12439,17 +12439,17 @@ html {
 /* Composer à liseré dégradé (pastel). */
 .mue2-composer {
   position: relative;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 14px 14px 10px;
-  border: 1.5px solid transparent;
+  border: 2px solid transparent;
   background: linear-gradient(#ffffff, #ffffff) padding-box,
-    linear-gradient(135deg, #6f8bff 0%, #b78cff 48%, #ff9d7a 100%) border-box;
-  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.1);
+    var(--freescale-gradient) border-box;
+  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.12);
 }
 [data-theme="dark"] .mue2-composer {
   background: linear-gradient(#15171d, #15171d) padding-box,
-    linear-gradient(135deg, #6f8bff 0%, #b78cff 48%, #ff9d7a 100%) border-box;
-  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.14);
+    var(--freescale-gradient) border-box;
+  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.16);
 }
 .mue2-input {
   width: 100%;
@@ -12544,10 +12544,19 @@ html {
   font-size: 36px;
   font-weight: 400;
   letter-spacing: -0.02em;
-  color: var(--ink, #10131a);
+  /* Titre en GRADIENT officiel Freescale — affichage marquant de l'identité. */
+  background: var(--freescale-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 [data-theme="dark"] .mue2-hero-title {
-  color: var(--ink);
+  background: var(--freescale-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 .mue2-chips {
   display: flex;
