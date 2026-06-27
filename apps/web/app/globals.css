@@ -35391,3 +35391,19 @@ button.mfv-model:hover {
 [data-theme="dark"] .csv3-stat--peach { background: rgba(245, 158, 11, 0.12); }
 [data-theme="dark"] .csv3-stat--violet { background: rgba(122, 90, 248, 0.14); }
 [data-theme="dark"] .csv3-stat__value { color: #f4f4f7; }
+
+/* Badge non-lus sur les onglets Email / Messages du toggle inbox. */
+.ibx-mode-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #eb0020;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}

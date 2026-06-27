@@ -2,7 +2,7 @@
 
 import { AddChannelModal } from "@/components/AddChannelModal";
 import { NewMessageModal } from "@/components/NewMessageModal";
-import { channelProviderLabel } from "@/lib/channels/registry";
+import { channelProviderLabel, isEmailLikeChannel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import { useState } from "react";
@@ -50,7 +50,14 @@ function Check({ on }: { on: boolean }) {
  * recherche · Nouveau message. L'état vit dans le store (`useApp`).
  */
 export function InboxToolbar() {
-  const { channels, conversations } = useData();
+  const { channels, conversations, archived } = useData();
+  // Non-lus par monde (email vs chat) — badge sur chaque onglet du toggle.
+  const emailUnread = conversations.filter(
+    (c) => c.unread && !archived.has(c.id) && isEmailLikeChannel(c.channel)
+  ).length;
+  const messageUnread = conversations.filter(
+    (c) => c.unread && !archived.has(c.id) && !isEmailLikeChannel(c.channel)
+  ).length;
   const {
     inboxSort,
     inboxChannels,
@@ -143,6 +150,7 @@ export function InboxToolbar() {
               <path d="m3 7 9 6 9-6" />
             </svg>
             Email
+            {emailUnread > 0 && <span className="ibx-mode-badge">{emailUnread}</span>}
           </button>
           <button
             type="button"
@@ -168,6 +176,7 @@ export function InboxToolbar() {
               <path d="M21 11.5a8.4 8.4 0 0 1-9.3 8.4L3 21l1.1-3.7A8.4 8.4 0 1 1 21 11.5z" />
             </svg>
             Messages
+            {messageUnread > 0 && <span className="ibx-mode-badge">{messageUnread}</span>}
           </button>
         </div>
         <div className="ibx-tool-wrap">
