@@ -1835,7 +1835,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   );
 
   return (
-    <aside className="copilot mue-pane mue2 is-open" aria-label="Mue copilot">
+    <aside
+      className={`copilot mue-pane mue2 is-open ${askPending || executing ? "is-pending" : ""}`}
+      aria-label="Mue copilot"
+    >
       <header className="mue2-head">
         {hasChat && (
           <button

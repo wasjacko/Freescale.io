@@ -35632,9 +35632,13 @@ button.mfv-model:hover {
   }
 }
 
-/* Fleur Mue des en-têtes de message : rotation lente et sympathique. */
+/* Fleur Mue des en-têtes de message : tourne UNIQUEMENT pendant que Mue
+   réfléchit/génère (.mue2.is-pending). Une fois la réponse finie, elle
+   s'arrête. */
 .mue2-msg-head .mue-flower {
   transform-origin: 50% 50%;
+}
+.mue2.is-pending .mue2-msg-head .mue-flower {
   animation: mue-flower-gentle-spin 9s linear infinite;
 }
 @keyframes mue-flower-gentle-spin {
