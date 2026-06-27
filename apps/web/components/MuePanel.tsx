@@ -1755,6 +1755,33 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   return (
     <aside className="copilot mue-pane mue2 is-open" aria-label="Mue copilot">
       <header className="mue2-head">
+        {hasChat && (
+          <button
+            type="button"
+            className="mue2-newdisc"
+            title="Nouvelle discussion"
+            aria-label="Nouvelle discussion"
+            onClick={() => {
+              void handleClear();
+              setDiscOpen(false);
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={16}
+              height={16}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" />
+            </svg>
+          </button>
+        )}
         <div className="mue2-disc-wrap">
           <button
             type="button"
