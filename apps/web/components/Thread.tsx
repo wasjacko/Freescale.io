@@ -258,16 +258,16 @@ export function Thread({
                     floodColor="#1a1730" floodOpacity="0.12" />
                 </filter>
                 <clipPath id="fs-av-1">
-                  <circle cx="84" cy="86" r="30" />
+                  <circle cx="160" cy="108" r="34" />
                 </clipPath>
                 <clipPath id="fs-av-2">
-                  <circle cx="514" cy="72" r="30" />
+                  <circle cx="448" cy="104" r="25" />
                 </clipPath>
                 <clipPath id="fs-av-3">
-                  <circle cx="106" cy="262" r="28" />
+                  <circle cx="165" cy="244" r="29" />
                 </clipPath>
                 <clipPath id="fs-av-4">
-                  <circle cx="510" cy="258" r="28" />
+                  <circle cx="442" cy="246" r="22" />
                 </clipPath>
               </defs>
 
@@ -275,15 +275,6 @@ export function Thread({
                   et le cercle tient dans le viewBox → aucune coupure nette. */}
               <circle cx="190" cy="170" r="170" fill="url(#fs-illu-halo-a)" />
               <circle cx="430" cy="170" r="170" fill="url(#fs-illu-halo-b)" />
-
-              {/* Liens canaux → boîte centrale */}
-              <g stroke="url(#fs-illu-grad)" strokeWidth="2" strokeLinecap="round"
-                strokeDasharray="2 9" opacity="0.5">
-                <path d="M96 92 Q180 120 212 150" />
-                <path d="M506 78 Q424 110 388 150" />
-                <path d="M118 256 Q180 232 214 200" />
-                <path d="M498 252 Q436 230 386 200" />
-              </g>
 
               {/* Boîte unifiée (au centre) — sans contour, juste une ombre douce */}
               <rect x="206" y="112" width="188" height="126" rx="22"
@@ -303,23 +294,24 @@ export function Thread({
                 <rect x="252" y="214" width="88" height="5" rx="2.5" fill="#eef0f6" />
               </g>
 
-              {/* Avatars réels (photos contacts) + pastille canal */}
+              {/* Avatars réels (photos contacts) + pastille canal — tailles variées,
+                  rapprochés de la boîte centrale */}
               <g>
-                <image href="/avatars/1.webp" x="54" y="56" width="60" height="60"
+                <image href="/avatars/1.webp" x="126" y="74" width="68" height="68"
                   clipPath="url(#fs-av-1)" preserveAspectRatio="xMidYMid slice" />
-                <circle cx="104" cy="104" r="9" fill="#25D366" stroke="#fff" strokeWidth="3" />
+                <circle cx="184" cy="132" r="10" fill="#25D366" stroke="#fff" strokeWidth="3" />
 
-                <image href="/avatars/2.webp" x="484" y="42" width="60" height="60"
+                <image href="/avatars/2.webp" x="423" y="79" width="50" height="50"
                   clipPath="url(#fs-av-2)" preserveAspectRatio="xMidYMid slice" />
-                <circle cx="534" cy="90" r="9" fill="#EA4335" stroke="#fff" strokeWidth="3" />
+                <circle cx="466" cy="122" r="8" fill="#EA4335" stroke="#fff" strokeWidth="3" />
 
-                <image href="/avatars/3.webp" x="78" y="234" width="56" height="56"
+                <image href="/avatars/3.webp" x="136" y="215" width="58" height="58"
                   clipPath="url(#fs-av-3)" preserveAspectRatio="xMidYMid slice" />
-                <circle cx="125" cy="278" r="8.5" fill="#0A66C2" stroke="#fff" strokeWidth="3" />
+                <circle cx="185" cy="264" r="9" fill="#0A66C2" stroke="#fff" strokeWidth="3" />
 
-                <image href="/avatars/4.webp" x="482" y="230" width="56" height="56"
+                <image href="/avatars/4.webp" x="420" y="224" width="44" height="44"
                   clipPath="url(#fs-av-4)" preserveAspectRatio="xMidYMid slice" />
-                <circle cx="529" cy="274" r="8.5" fill="#7B5CFF" stroke="#fff" strokeWidth="3" />
+                <circle cx="458" cy="262" r="7.5" fill="#7B5CFF" stroke="#fff" strokeWidth="3" />
               </g>
 
               {/* Étincelles */}
