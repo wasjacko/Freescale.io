@@ -331,9 +331,7 @@ export function Thread({
           </div>
           <h2 className="thread-empty-title">Discutez avec tous vos contacts au même endroit !</h2>
           <p className="thread-empty-text">
-            C'est ici que vous échangez avec vos contacts sur tous vos canaux connectés. Chaque fois
-            que quelqu'un vous envoie un message, il apparaît ici. Vous pouvez modifier cela et plus
-            encore dans les{" "}
+            Tous vos messages, quel que soit le canal, arrivent ici. Gérez vos canaux dans les{" "}
             <Link href="/app/settings/connections" className="thread-empty-link">
               Réglages de l'Inbox
             </Link>

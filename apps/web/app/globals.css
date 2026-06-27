@@ -20468,6 +20468,8 @@ button:active:not(:disabled):not(.no-press) {
   align-items: center;
   text-align: center;
   gap: 0;
+  /* Remonte légèrement l'ensemble (illustration + texte) par rapport au centre. */
+  transform: translateY(-40px);
 }
 .thread-empty-illu {
   width: 460px;
@@ -20492,10 +20494,10 @@ button:active:not(:disabled):not(.no-press) {
   color: #0f172a;
 }
 .thread-empty-text {
-  max-width: 380px;
+  max-width: 300px;
   margin: 0 auto;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.55;
   color: #6b7280;
 }
 .thread-empty-link {
