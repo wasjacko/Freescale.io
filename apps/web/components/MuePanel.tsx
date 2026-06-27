@@ -508,11 +508,25 @@ function ThinkingTitle() {
 // Cache module-level des escaliers déjà entièrement révélés (par clé) → au
 // re-render (scroll, autre message…) tout réapparaît d'un coup, pas de rejeu.
 const STAIRCASE_DONE = new Set<string>();
+type StairItem = { node: React.ReactNode; skeleton?: React.ReactNode };
+// Un palier : s'il a un skeleton, on l'affiche d'abord (~700ms) puis on morphe
+// vers le contenu réel. Sinon, contenu direct (slide-in).
+function MueStairSlot({ item, instant }: { item: StairItem; instant: boolean }) {
+  const [ready, setReady] = useState(instant || !item.skeleton);
+  useEffect(() => {
+    if (ready) return;
+    const t = setTimeout(() => setReady(true), 650 + Math.random() * 350);
+    return () => clearTimeout(t);
+  }, [ready]);
+  return (
+    <div className="mue2-stair-item">{ready ? item.node : item.skeleton}</div>
+  );
+}
 // MueStaircase — RÈGLE D'AFFICHAGE : révèle ses enfants STRICTEMENT un par un,
-// de haut en bas, rien avant son tour. Chaque palier attend un délai (avec
-// jitter) avant de faire apparaître le suivant. Défini hors de MuePanel pour
-// garder son state entre les renders.
-function MueStaircase({ items, doneKey }: { items: React.ReactNode[]; doneKey: string }) {
+// de haut en bas, rien avant son tour. Chaque palier paraît d'abord en
+// skeleton pastel (s'il en a un) puis morphe vers le contenu. Défini hors de
+// MuePanel pour garder son state entre les renders.
+function MueStaircase({ items, doneKey }: { items: StairItem[]; doneKey: string }) {
   const already = STAIRCASE_DONE.has(doneKey);
   const [revealed, setRevealed] = useState(already ? items.length : 0);
   useEffect(() => {
@@ -531,11 +545,9 @@ function MueStaircase({ items, doneKey }: { items: React.ReactNode[]; doneKey: s
   }, [revealed, items.length, already, doneKey]);
   return (
     <>
-      {items.slice(0, revealed).map((node, i) => (
+      {items.slice(0, revealed).map((item, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable, séquentiel
-        <div key={i} className="mue2-stair-item">
-          {node}
-        </div>
+        <MueStairSlot key={i} item={item} instant={already} />
       ))}
     </>
   );
@@ -2194,77 +2206,98 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   <MueStaircase
                     doneKey={`prev:${m.id}`}
                     items={[
-                      <div key="body" className="mue2-msg-body">
-                        <StreamingText id={m.id} text={m.content} refs={m.inlineRefs} />
-                      </div>,
-                      ...m.preview.tasks.map((t, i) => (
-                        <div
-                          // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
-                          key={`t-${i}`}
-                          className="mue2-prev mue2-prev--single"
-                        >
-                          <div className="mue2-prev-row">
-                            <div className="mue2-prev-row-content">
-                              <div className="mue2-prev-row-top">
-                                <input
-                                  type="text"
-                                  className="mue2-prev-title-input"
-                                  value={t.title}
-                                  onChange={(e) => handleEditTaskTitle(m.id, i, e.target.value)}
-                                  disabled={m.preview?.done}
-                                  title="Clique pour modifier le titre de la tâche"
-                                />
-                                <span className="mue2-prev-todo-badge">TO DO</span>
+                      {
+                        node: (
+                          <div className="mue2-msg-body">
+                            <StreamingText id={m.id} text={m.content} refs={m.inlineRefs} />
+                          </div>
+                        ),
+                      },
+                      ...m.preview.tasks.map((t, i) => ({
+                        skeleton: (
+                          <div className="mue2-prev mue2-prev--single">
+                            <div className="mue2-prev-row mue2-prev-row--skeleton" aria-busy="true">
+                              <div className="mue2-prev-main">
+                                <span className="mue2-skel-line mue2-skel-line--title" aria-hidden />
+                                <span className="mue2-skel-line mue2-skel-line--meta" aria-hidden />
                               </div>
-                              {(t.client || t.conversationId) && (
-                                <div className="mue2-prev-row-bottom">
-                                  {t.client && (
-                                    <span className="mue2-prev-client-tag">👤 {t.client}</span>
-                                  )}
-                                  {t.conversationId && (
-                                    <button
-                                      type="button"
-                                      className="mue2-prev-msg-link"
-                                      onClick={() =>
-                                        t.conversationId &&
-                                        openObject({
-                                          entity: "conversation",
-                                          id: t.conversationId,
-                                          title: t.client ?? "Discussion",
-                                        })
-                                      }
-                                    >
-                                      💬 Voir le message
-                                    </button>
-                                  )}
-                                </div>
-                              )}
+                              <span className="mue2-skel-badge" aria-hidden />
                             </div>
                           </div>
-                        </div>
-                      )),
-                      <div key="dest" className="mue2-prev-dest">
-                        <svg {...stroke} width={13} height={13}>
-                          <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                        </svg>
-                        Destination : <strong>{m.preview.destination}</strong>
-                      </div>,
-                      <div key="cfm" className="mue2-cfm">
-                        <button
-                          type="button"
-                          className="mue2-cfm-btn is-primary"
-                          disabled={m.preview?.done}
-                          onClick={() =>
-                            m.preview?.tasks && void executeMultiTask(m.id, m.preview.tasks)
-                          }
-                        >
-                          {m.preview?.done
-                            ? "✓ En cours…"
-                            : m.preview?.tasks.length === 1
-                              ? "Oui, crée-la dans ma liste"
-                              : "Oui, crée-les dans ma liste"}
-                        </button>
-                      </div>,
+                        ),
+                        node: (
+                          <div className="mue2-prev mue2-prev--single">
+                            <div className="mue2-prev-row">
+                              <div className="mue2-prev-row-content">
+                                <div className="mue2-prev-row-top">
+                                  <input
+                                    type="text"
+                                    className="mue2-prev-title-input"
+                                    value={t.title}
+                                    onChange={(e) => handleEditTaskTitle(m.id, i, e.target.value)}
+                                    disabled={m.preview?.done}
+                                    title="Clique pour modifier le titre de la tâche"
+                                  />
+                                  <span className="mue2-prev-todo-badge">TO DO</span>
+                                </div>
+                                {(t.client || t.conversationId) && (
+                                  <div className="mue2-prev-row-bottom">
+                                    {t.client && (
+                                      <span className="mue2-prev-client-tag">👤 {t.client}</span>
+                                    )}
+                                    {t.conversationId && (
+                                      <button
+                                        type="button"
+                                        className="mue2-prev-msg-link"
+                                        onClick={() =>
+                                          t.conversationId &&
+                                          openObject({
+                                            entity: "conversation",
+                                            id: t.conversationId,
+                                            title: t.client ?? "Discussion",
+                                          })
+                                        }
+                                      >
+                                        💬 Voir le message
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ),
+                      })),
+                      {
+                        node: (
+                          <div className="mue2-prev-dest">
+                            <svg {...stroke} width={13} height={13}>
+                              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            </svg>
+                            Destination : <strong>{m.preview.destination}</strong>
+                          </div>
+                        ),
+                      },
+                      {
+                        node: (
+                          <div className="mue2-cfm">
+                            <button
+                              type="button"
+                              className="mue2-cfm-btn is-primary"
+                              disabled={m.preview?.done}
+                              onClick={() =>
+                                m.preview?.tasks && void executeMultiTask(m.id, m.preview.tasks)
+                              }
+                            >
+                              {m.preview?.done
+                                ? "✓ En cours…"
+                                : m.preview?.tasks.length === 1
+                                  ? "Oui, crée-la dans ma liste"
+                                  : "Oui, crée-les dans ma liste"}
+                            </button>
+                          </div>
+                        ),
+                      },
                     ]}
                   />
                 </div>
