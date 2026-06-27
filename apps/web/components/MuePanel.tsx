@@ -1232,6 +1232,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     const text = raw.trim();
     if (!text || askPending || executing) return;
 
+    // Repart d'un état non-annulé (après un reset « Nouvelle discussion »).
+    cancelRef.current = false;
+
     // 1. Ajouter le message utilisateur
     const userMsgId = `user-${Date.now()}`;
     setAskMessages((prev) => [...prev, { id: userMsgId, role: "user", content: text }]);
@@ -1486,17 +1489,25 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       text: v === "up" ? "Merci pour ton retour 👍" : "Noté — je ferai mieux.",
     });
 
+  // « Nouvelle discussion » — reset LOCAL et inconditionnel : on vide le fil
+  // tout de suite et on garde le reset quoi qu'il arrive côté serveur (la
+  // suppression distante est best-effort). On annule aussi toute génération
+  // en cours et on repart d'un état totalement vierge.
   const handleClear = async () => {
-    const previous = askMessages;
+    clearActiveTimers();
+    cancelRef.current = true;
+    setExecuting(false);
+    setAskPending(false);
     setAskMessages([]);
+    setAskInput("");
+    setCurrentDisc(null);
+    streamedIdsRef.current = new Set();
+    setDoneStreamingIds(new Set());
+    // Suppression serveur best-effort — n'annule jamais le reset visuel.
     try {
-      const result = await clearMueChat({ conversationId: activeConvId || null });
-      if (!result.ok) {
-        setAskMessages(previous);
-        push({ kind: "error", text: result.error ?? "Impossible d'effacer." });
-      }
+      await clearMueChat({ conversationId: activeConvId || null });
     } catch {
-      setAskMessages(previous);
+      // ignoré : le fil est déjà vidé localement, c'est ce qui compte.
     }
   };
 
