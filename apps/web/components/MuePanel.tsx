@@ -2116,7 +2116,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         <>
           <div className="mue2-hero">
             <span className="mue2-hero-mark">
-              <MueFlower size={60} />
+              <MueFlower size={60} animated />
             </span>
             <h2 className="mue2-hero-title">Muee</h2>
           </div>

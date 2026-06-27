@@ -35570,3 +35570,64 @@ button.mfv-model:hover {
 .mue2-prev-remove:disabled {
   display: none;
 }
+
+/* Logo fleur Mue animé : les 5 pétales convergent au centre (boule gradient
+   + grain noise) puis reviennent à l'état fleur, en boucle. */
+.mue-flower--anim {
+  animation: mue-flower-spin 18s linear infinite;
+  transform-origin: 50% 50%;
+  overflow: visible;
+}
+@keyframes mue-flower-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Chaque pétale glisse vers le centre (cy 20 → 31) puis revient. */
+.mue-flower--anim .mue-flower-petal {
+  animation: mue-flower-merge 5.2s ease-in-out infinite;
+}
+@keyframes mue-flower-merge {
+  0%,
+  18% {
+    cy: 20px;
+  }
+  44%,
+  56% {
+    cy: 31px;
+  }
+  82%,
+  100% {
+    cy: 20px;
+  }
+}
+/* Le grain (noise) apparaît seulement quand les pétales sont fondus en boule. */
+.mue-flower--anim .mue-flower-noise {
+  opacity: 0;
+  mix-blend-mode: overlay;
+  animation: mue-flower-noise 5.2s ease-in-out infinite;
+}
+@keyframes mue-flower-noise {
+  0%,
+  22% {
+    opacity: 0;
+  }
+  44%,
+  56% {
+    opacity: 0.45;
+  }
+  80%,
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mue-flower--anim,
+  .mue-flower--anim .mue-flower-petal,
+  .mue-flower--anim .mue-flower-noise {
+    animation: none;
+  }
+  .mue-flower--anim .mue-flower-noise {
+    opacity: 0;
+  }
+}
