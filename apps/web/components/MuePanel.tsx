@@ -910,6 +910,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   };
   // Quelle tâche affiche son menu de statut (clé "msgId:idx"), null = aucun.
   const [statusMenuFor, setStatusMenuFor] = useState<string | null>(null);
+  // Message preview dont l'édition des tâches est active (null = aucune).
+  const [editPreviewId, setEditPreviewId] = useState<string | null>(null);
 
   // Étape 2 — exécution réelle (Niveau 4), élément par élément, après validation.
   const executeMultiTask = async (previewId: string, tasks: ProposedTask[]) => {
@@ -2310,23 +2312,35 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                                     className="mue2-prev-title-input"
                                     value={t.title}
                                     onChange={(e) => handleEditTaskTitle(m.id, i, e.target.value)}
-                                    disabled={m.preview?.done}
-                                    title="Clique pour modifier le titre de la tâche"
+                                    disabled={m.preview?.done || editPreviewId !== m.id}
+                                    title={
+                                      editPreviewId === m.id
+                                        ? "Modifie le titre de la tâche"
+                                        : undefined
+                                    }
                                   />
-                                  {/* Statut éditable : clic = menu de choix. */}
+                                  {/* Statut : éditable (menu) en mode édition, sinon statique. */}
                                   <div className="mue2-prev-status-wrap">
                                     {(() => {
                                       const st = STATUS_META[t.status ?? "todo"];
                                       const key = `${m.id}:${i}`;
+                                      const editing = editPreviewId === m.id && !m.preview?.done;
+                                      const badgeStyle = {
+                                        color: st.color,
+                                        background: `color-mix(in srgb, ${st.color} 14%, transparent)`,
+                                      };
+                                      if (!editing) {
+                                        return (
+                                          <span className="mue2-prev-status-badge" style={badgeStyle}>
+                                            {st.label}
+                                          </span>
+                                        );
+                                      }
                                       return (
                                         <button
                                           type="button"
                                           className="mue2-prev-status-badge mue2-prev-status-badge--btn"
-                                          style={{
-                                            color: st.color,
-                                            background: `color-mix(in srgb, ${st.color} 14%, transparent)`,
-                                          }}
-                                          disabled={m.preview?.done}
+                                          style={badgeStyle}
                                           aria-haspopup="menu"
                                           onClick={() =>
                                             setStatusMenuFor((cur) => (cur === key ? null : key))
@@ -2387,29 +2401,30 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                                       </>
                                     )}
                                   </div>
-                                  {/* Retirer cette tâche de la liste à créer. */}
-                                  <button
-                                    type="button"
-                                    className="mue2-prev-remove"
-                                    title="Retirer cette tâche"
-                                    aria-label="Retirer cette tâche"
-                                    disabled={m.preview?.done}
-                                    onClick={() => handleRemoveTask(m.id, i)}
-                                  >
-                                    <svg
-                                      viewBox="0 0 24 24"
-                                      width={14}
-                                      height={14}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth={2}
-                                      strokeLinecap="round"
-                                      aria-hidden
+                                  {/* Retirer une tâche — seulement en mode édition. */}
+                                  {editPreviewId === m.id && !m.preview?.done && (
+                                    <button
+                                      type="button"
+                                      className="mue2-prev-remove"
+                                      title="Retirer cette tâche"
+                                      aria-label="Retirer cette tâche"
+                                      onClick={() => handleRemoveTask(m.id, i)}
                                     >
-                                      <line x1="6" y1="6" x2="18" y2="18" />
-                                      <line x1="18" y1="6" x2="6" y2="18" />
-                                    </svg>
-                                  </button>
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        width={14}
+                                        height={14}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={2}
+                                        strokeLinecap="round"
+                                        aria-hidden
+                                      >
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                      </svg>
+                                    </button>
+                                  )}
                                 </div>
                                 {(t.client || t.conversationId) && (
                                   <div className="mue2-prev-row-bottom">
@@ -2444,7 +2459,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                           <div className="mue2-cfm-chips">
                             <button
                               type="button"
-                              className="mue2-cfm-chip mue2-cfm-chip--go"
+                              className="mue2-cfm-chip"
                               disabled={m.preview?.done}
                               onClick={() =>
                                 m.preview?.tasks && void executeMultiTask(m.id, m.preview.tasks)
@@ -2461,14 +2476,16 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                             </button>
                             <button
                               type="button"
-                              className="mue2-cfm-chip"
+                              className={`mue2-cfm-chip ${editPreviewId === m.id ? "is-on" : ""}`}
                               disabled={m.preview?.done}
-                              onClick={() => handleClear()}
+                              onClick={() =>
+                                setEditPreviewId((cur) => (cur === m.id ? null : m.id))
+                              }
                             >
                               <span className="mue2-cfm-chip-arrow" aria-hidden>
-                                ↳
+                                ✎
                               </span>
-                              non, laisse tomber
+                              {editPreviewId === m.id ? "terminer les modifs" : "modifier les tâches"}
                             </button>
                           </div>
                         ),
