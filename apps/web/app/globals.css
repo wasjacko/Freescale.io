@@ -12249,13 +12249,13 @@ html {
   /* Fond = notre dégradé Freescale officiel + grain (noise) par-dessus, et
      stroke dégradé en border-box. Le noise est une couche padding-box légère. */
   background:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .09 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")
       repeat,
-    var(--freescale-gradient);
+    var(--freescale-gradient-pastel);
   border: none;
   /* Double liseré INTERNE (inset) : trait fin, espace blanc, second trait fin. */
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), inset 0 0 0 3px rgba(255, 255, 255, 0.6),
-    inset 0 0 0 4px rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1), inset 0 0 0 3px rgba(255, 255, 255, 0.55),
+    inset 0 0 0 4px rgba(15, 23, 42, 0.08);
 }
 [data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
