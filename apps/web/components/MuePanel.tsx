@@ -2394,20 +2394,34 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       })),
                       {
                         node: (
-                          <div className="mue2-cfm">
+                          <div className="mue2-cfm-chips">
                             <button
                               type="button"
-                              className="mue2-cfm-btn is-primary"
+                              className="mue2-cfm-chip mue2-cfm-chip--go"
                               disabled={m.preview?.done}
                               onClick={() =>
                                 m.preview?.tasks && void executeMultiTask(m.id, m.preview.tasks)
                               }
                             >
+                              <span className="mue2-cfm-chip-arrow" aria-hidden>
+                                ✓
+                              </span>
                               {m.preview?.done
-                                ? "✓ En cours…"
+                                ? "en cours…"
                                 : m.preview?.tasks.length === 1
-                                  ? "Oui, crée-la dans ma liste"
-                                  : "Oui, crée-les dans ma liste"}
+                                  ? "oui, crée-la"
+                                  : "oui, crée-les toutes"}
+                            </button>
+                            <button
+                              type="button"
+                              className="mue2-cfm-chip"
+                              disabled={m.preview?.done}
+                              onClick={() => handleClear()}
+                            >
+                              <span className="mue2-cfm-chip-arrow" aria-hidden>
+                                ↳
+                              </span>
+                              non, laisse tomber
                             </button>
                           </div>
                         ),
