@@ -36,16 +36,6 @@ const VIEWS: { key: string | null; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
-    key: "view:snoozed",
-    label: "Reportés",
-    icon: (
-      <svg {...stroke}>
-        <circle cx="12" cy="12" r="9" />
-        <polyline points="12 7 12 12 16 14" />
-      </svg>
-    ),
-  },
-  {
     key: "view:sent",
     label: "Envoyés",
     icon: (
