@@ -240,30 +240,52 @@ export function Thread({
                   <stop offset="88%" stopColor="#E1B9B8" />
                   <stop offset="100%" stopColor="#6981B8" />
                 </linearGradient>
-                <linearGradient id="fs-illu-soft" x1="0" y1="0" x2="600" y2="320"
-                  gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#78AABF" stopOpacity="0.16" />
-                  <stop offset="50%" stopColor="#611C71" stopOpacity="0.14" />
-                  <stop offset="100%" stopColor="#FE0045" stopOpacity="0.16" />
-                </linearGradient>
+                {/* Halos radiaux : se fondent vers le transparent (aucune arête). */}
+                <radialGradient id="fs-illu-halo-a">
+                  <stop offset="0%" stopColor="#6981B8" stopOpacity="0.20" />
+                  <stop offset="60%" stopColor="#6981B8" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="#6981B8" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="fs-illu-halo-b">
+                  <stop offset="0%" stopColor="#FE0045" stopOpacity="0.16" />
+                  <stop offset="60%" stopColor="#FE0045" stopOpacity="0.07" />
+                  <stop offset="100%" stopColor="#FE0045" stopOpacity="0" />
+                </radialGradient>
+                {/* Ombre douce pour la boîte (remplace le contour). */}
+                <filter id="fs-illu-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="8" stdDeviation="16"
+                    floodColor="#1a1730" floodOpacity="0.12" />
+                </filter>
+                <clipPath id="fs-av-1">
+                  <circle cx="84" cy="86" r="30" />
+                </clipPath>
+                <clipPath id="fs-av-2">
+                  <circle cx="514" cy="72" r="30" />
+                </clipPath>
+                <clipPath id="fs-av-3">
+                  <circle cx="106" cy="262" r="28" />
+                </clipPath>
+                <clipPath id="fs-av-4">
+                  <circle cx="510" cy="258" r="28" />
+                </clipPath>
               </defs>
 
-              {/* Halos d'ambiance */}
-              <circle cx="120" cy="90" r="120" fill="url(#fs-illu-soft)" />
-              <circle cx="500" cy="250" r="140" fill="url(#fs-illu-soft)" />
+              {/* Halos d'ambiance (fondus, sans bord) */}
+              <circle cx="150" cy="120" r="150" fill="url(#fs-illu-halo-a)" />
+              <circle cx="470" cy="220" r="170" fill="url(#fs-illu-halo-b)" />
 
               {/* Liens canaux → boîte centrale */}
               <g stroke="url(#fs-illu-grad)" strokeWidth="2" strokeLinecap="round"
-                strokeDasharray="2 9" opacity="0.55">
+                strokeDasharray="2 9" opacity="0.5">
                 <path d="M96 92 Q180 120 212 150" />
                 <path d="M506 78 Q424 110 388 150" />
                 <path d="M118 256 Q180 232 214 200" />
                 <path d="M498 252 Q436 230 386 200" />
               </g>
 
-              {/* Boîte unifiée (au centre) */}
+              {/* Boîte unifiée (au centre) — sans contour, juste une ombre douce */}
               <rect x="206" y="112" width="188" height="126" rx="22"
-                fill="#ffffff" stroke="url(#fs-illu-grad)" strokeWidth="2.5" />
+                fill="#ffffff" filter="url(#fs-illu-shadow)" />
               {/* 3 rangées de conversation */}
               <g>
                 <circle cx="234" cy="142" r="9" fill="url(#fs-illu-grad)" />
@@ -279,19 +301,22 @@ export function Thread({
                 <rect x="252" y="214" width="88" height="5" rx="2.5" fill="#eef0f6" />
               </g>
 
-              {/* Avatars / canaux autour */}
+              {/* Avatars réels (photos contacts) + pastille canal */}
               <g>
-                <circle cx="84" cy="86" r="28" fill="url(#fs-illu-grad)" />
-                <circle cx="84" cy="86" r="28" fill="#fff" fillOpacity="0.12" />
+                <image href="/avatars/1.webp" x="54" y="56" width="60" height="60"
+                  clipPath="url(#fs-av-1)" preserveAspectRatio="xMidYMid slice" />
                 <circle cx="104" cy="104" r="9" fill="#25D366" stroke="#fff" strokeWidth="3" />
 
-                <circle cx="514" cy="72" r="28" fill="url(#fs-illu-grad)" opacity="0.9" />
+                <image href="/avatars/2.webp" x="484" y="42" width="60" height="60"
+                  clipPath="url(#fs-av-2)" preserveAspectRatio="xMidYMid slice" />
                 <circle cx="534" cy="90" r="9" fill="#EA4335" stroke="#fff" strokeWidth="3" />
 
-                <circle cx="106" cy="262" r="26" fill="url(#fs-illu-grad)" opacity="0.85" />
+                <image href="/avatars/3.webp" x="78" y="234" width="56" height="56"
+                  clipPath="url(#fs-av-3)" preserveAspectRatio="xMidYMid slice" />
                 <circle cx="125" cy="278" r="8.5" fill="#0A66C2" stroke="#fff" strokeWidth="3" />
 
-                <circle cx="510" cy="258" r="26" fill="url(#fs-illu-grad)" opacity="0.95" />
+                <image href="/avatars/4.webp" x="482" y="230" width="56" height="56"
+                  clipPath="url(#fs-av-4)" preserveAspectRatio="xMidYMid slice" />
                 <circle cx="529" cy="274" r="8.5" fill="#7B5CFF" stroke="#fff" strokeWidth="3" />
               </g>
 
