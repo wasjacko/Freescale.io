@@ -12553,7 +12553,8 @@ html {
   filter: drop-shadow(0 6px 20px rgba(120, 90, 255, 0.18));
 }
 .mue2-hero-title {
-  margin: 0;
+  /* Descendu sous la fleur (plus d'air entre le logo et le mot). */
+  margin: 34px 0 0;
   font-family: "Instrument Serif", serif;
   font-size: 36px;
   font-weight: 400;
