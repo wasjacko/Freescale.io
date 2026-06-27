@@ -203,9 +203,6 @@ export function InboxToolbar() {
               <path d="M17 20V4M17 20l3-3M17 20l-3-3" />
             </svg>
             Tri : {sortLabel}
-            <span className="ibx-tool-caret" aria-hidden>
-              ▾
-            </span>
           </button>
           {sortMenuOpen && (
             <>
@@ -258,9 +255,6 @@ export function InboxToolbar() {
             </svg>
             Filtre
             {activeCount > 0 && <span className="ibx-tool-badge">{activeCount}</span>}
-            <span className="ibx-tool-caret" aria-hidden>
-              ▾
-            </span>
           </button>
           {filterMenuOpen && (
             <>
