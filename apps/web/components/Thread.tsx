@@ -228,7 +228,8 @@ export function Thread({
       <section className="thread thread-empty-pane">
         <div className="thread-empty-card">
           <div className="thread-empty-illu" aria-hidden>
-            <svg viewBox="0 0 600 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 600 340" fill="none" overflow="visible"
+              xmlns="http://www.w3.org/2000/svg">
               <defs>
                 <linearGradient id="fs-illu-grad" x1="0" y1="0" x2="600" y2="320"
                   gradientUnits="userSpaceOnUse">
@@ -270,9 +271,10 @@ export function Thread({
                 </clipPath>
               </defs>
 
-              {/* Halos d'ambiance (fondus, sans bord) */}
-              <circle cx="150" cy="120" r="150" fill="url(#fs-illu-halo-a)" />
-              <circle cx="470" cy="220" r="170" fill="url(#fs-illu-halo-b)" />
+              {/* Halos d'ambiance : le dégradé radial atteint 0 pile à son rayon,
+                  et le cercle tient dans le viewBox → aucune coupure nette. */}
+              <circle cx="190" cy="170" r="170" fill="url(#fs-illu-halo-a)" />
+              <circle cx="430" cy="170" r="170" fill="url(#fs-illu-halo-b)" />
 
               {/* Liens canaux → boîte centrale */}
               <g stroke="url(#fs-illu-grad)" strokeWidth="2" strokeLinecap="round"
