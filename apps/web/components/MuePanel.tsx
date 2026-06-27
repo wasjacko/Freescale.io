@@ -533,7 +533,10 @@ function ThinkingTitle() {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (idx >= THINKING_LABELS.length - 1) return;
-    const t = setTimeout(() => setIdx((i) => Math.min(i + 1, THINKING_LABELS.length - 1)), 850);
+    // Chaque phase (Réfléchit → Comprend → Conçoit) dure plus longtemps +
+    // un peu de jitter → réflexion qui respire au lieu de défiler trop vite.
+    const delay = 1700 + Math.random() * 700;
+    const t = setTimeout(() => setIdx((i) => Math.min(i + 1, THINKING_LABELS.length - 1)), delay);
     return () => clearTimeout(t);
   }, [idx]);
   return <span className="mue-thinking-title">{THINKING_LABELS[idx]}</span>;
@@ -1453,8 +1456,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     ]);
 
     const T = isMultiTaskRequest(text)
-      ? 12000 + Math.random() * 3000 // 12 to 15 seconds for multi-task scan
-      : 4000 + Math.random() * 2000; // 4 to 6 seconds total
+      ? 13000 + Math.random() * 3000 // 13 à 16 s pour un scan multi-task
+      : 6500 + Math.random() * 2500; // 6.5 à 9 s — réflexion qui respire
     const startTime = Date.now();
 
     // Live counter timer (100ms interval) for internal elapsed state tracking
