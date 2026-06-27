@@ -34982,3 +34982,93 @@ button.mfv-model:hover {
     -webkit-text-fill-color: var(--ink, #10131a);
   }
 }
+
+/* Santé client : bloc 'Messages' (répartition par canal) — façon widget
+   compact avec total + breakdown coloré + cercles d'icônes + pourcentages. */
+.csv3-chart--channels {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.csv3-channels__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.csv3-channels__head h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--csv-text-soft, #5b6475);
+}
+.csv3-channels__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.csv3-channels__totals {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+.csv3-channels__big {
+  font-size: 36px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink, #10131a);
+}
+.csv3-channels__lead {
+  font-size: 14px;
+  font-weight: 500;
+}
+.csv3-channels__lead strong {
+  margin-left: 4px;
+  font-weight: 700;
+}
+.csv3-channels__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.csv3-channels__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.csv3-channels__bubble {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  color: #fff;
+  flex: none;
+}
+.csv3-channels__logo {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1);
+}
+.csv3-channels__pct {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--csv-text-soft, #5b6475);
+  font-variant-numeric: tabular-nums;
+}
+[data-theme="dark"] .csv3-channels__big { color: #f4f4f7; }
+[data-theme="dark"] .csv3-channels__pct,
+[data-theme="dark"] .csv3-channels__head h3 { color: #c8ccd6; }

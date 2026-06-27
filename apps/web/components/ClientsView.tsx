@@ -383,21 +383,52 @@ export function ClientsView() {
           </div>
         </article>
 
-        <article className="csv3-chart">
-          <header className="csv3-chart__head">
-            <h3>Répartition par canal</h3>
-            <span className="csv3-chart__note">Sur quels canaux tes clients t'écrivent</span>
+        <article className="csv3-chart csv3-chart--channels">
+          <header className="csv3-chart__head csv3-channels__head">
+            <h3>
+              <svg
+                viewBox="0 0 24 24"
+                width={16}
+                height={16}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z" />
+              </svg>
+              Messages
+            </h3>
           </header>
-          <div className="csv3-chart__body csv3-chart__body--bar">
-            <StackedBar parts={channelDist.map((s) => ({ value: s.count, color: s.color }))} />
-            <ul className="csv-legend csv-legend--grid">
+          <div className="csv3-channels__body">
+            <div className="csv3-channels__totals">
+              <strong className="csv3-channels__big">
+                {channelDist.reduce((s, c) => s + c.count, 0).toLocaleString("fr-FR")}
+              </strong>
+              {channelDist[0] && (
+                <span className="csv3-channels__lead" style={{ color: channelDist[0].color }}>
+                  {channelDist[0].label} <strong>{channelDist[0].count}</strong>
+                </span>
+              )}
+              {channelDist[1] && (
+                <span className="csv3-channels__lead" style={{ color: channelDist[1].color }}>
+                  {channelDist[1].label} <strong>{channelDist[1].count}</strong>
+                </span>
+              )}
+            </div>
+            <ul className="csv3-channels__row">
               {channelDist.map((c) => (
-                <li key={c.ch} className="csv-leg">
-                  <span className="csv-leg__dot" style={{ background: c.color }} aria-hidden />
-                  <span className="csv-leg__name">{c.label}</span>
-                  <span className="csv-leg__nums">
-                    <strong>{c.count}</strong> · {c.pct} %
+                <li key={c.ch} className="csv3-channels__cell">
+                  <span
+                    className="csv3-channels__bubble"
+                    style={{ background: c.color }}
+                    aria-label={c.label}
+                  >
+                    <ChannelLogo channel={c.ch} className="csv3-channels__logo" />
                   </span>
+                  <span className="csv3-channels__pct">{c.pct}%</span>
                 </li>
               ))}
             </ul>
@@ -531,28 +562,6 @@ function Donut({ parts }: { parts: { value: number; color: string }[] }) {
         );
       })}
     </svg>
-  );
-}
-
-function StackedBar({ parts }: { parts: { value: number; color: string }[] }) {
-  const tot = Math.max(
-    1,
-    parts.reduce((s, p) => s + p.value, 0)
-  );
-  return (
-    <div className="csv-bar" role="img" aria-label="Répartition par canal">
-      {parts.map((p, i) => {
-        const w = (p.value / tot) * 100;
-        return (
-          <span
-            key={i}
-            className="csv-bar__seg"
-            style={{ width: `${w}%`, background: p.color }}
-            title={`${p.value} (${Math.round(w)} %)`}
-          />
-        );
-      })}
-    </div>
   );
 }
 
