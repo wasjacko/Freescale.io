@@ -35366,8 +35366,23 @@ button.mfv-model:hover {
   color: var(--ink, #10131a);
 }
 .csv3-stat__sub {
-  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
   color: var(--csv-text-muted, #9097a3);
+}
+.csv3-stat__arrow {
+  color: #16a34a;
+  flex: none;
+}
+.csv3-stat__delta {
+  color: #16a34a;
+  font-weight: 600;
+}
+[data-theme="dark"] .csv3-stat__arrow,
+[data-theme="dark"] .csv3-stat__delta {
+  color: #4ade80;
 }
 .csv3-stat--green { background: #e9f5ee; }
 .csv3-stat--peach { background: #fcefe1; }

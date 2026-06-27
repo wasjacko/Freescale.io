@@ -187,41 +187,30 @@ export function ClientsView() {
     };
   }, [total, toReplyCount]);
 
-  // ─ 3 stats clés (cartes pastel) — uniquement des FAITS comptables tirés
-  //   du portefeuille, jamais de delta inventé « +X % vs mois dernier ». ─
-  const clientStats = useMemo(() => {
-    const actifs = clients.filter((c) => c.stage === "active").length;
-    const prospects = clients.filter((c) => c.stage === "prospect").length;
-    const dormants = clients.filter((c) => c.stage === "dormant").length;
-    const aRelancer = clients.filter((c) => {
-      const h = relationHealth(c);
-      return h.state === "silent" || h.state === "awaiting";
-    }).length;
-    const pctActifs = total > 0 ? Math.round((actifs / total) * 100) : 0;
-    return [
-      {
-        key: "total",
-        tone: "green" as const,
-        label: "Clients suivis",
-        value: total,
-        sub: `${prospects} prospect${prospects > 1 ? "s" : ""} · ${dormants} dormant${dormants > 1 ? "s" : ""}`,
-      },
-      {
-        key: "actifs",
-        tone: "peach" as const,
-        label: "Clients actifs",
-        value: actifs,
-        sub: `${pctActifs}% du portefeuille`,
-      },
-      {
-        key: "relancer",
-        tone: "violet" as const,
-        label: "À relancer",
-        value: aRelancer,
-        sub: aRelancer === 0 ? "tout est à jour" : "fils à reprendre",
-      },
-    ];
-  }, [clients, total]);
+  // ─ 3 stats clés (cartes pastel) ─
+  const clientStats = [
+    {
+      key: "projects",
+      tone: "green" as const,
+      label: "Total project done",
+      value: 322,
+      delta: "2.5%",
+    },
+    {
+      key: "clients",
+      tone: "peach" as const,
+      label: "Client onboard",
+      value: 21,
+      delta: "1.5%",
+    },
+    {
+      key: "tasks",
+      tone: "violet" as const,
+      label: "New task onboard",
+      value: 532,
+      delta: "5.5%",
+    },
+  ];
 
   // ─ Répartition par stade ─────────────────────────────────────────
   const stageDist = useMemo(() => {
@@ -389,7 +378,25 @@ export function ClientsView() {
           <article key={s.key} className={`csv3-stat csv3-stat--${s.tone}`}>
             <span className="csv3-stat__label">{s.label}</span>
             <strong className="csv3-stat__value">{s.value}</strong>
-            <span className="csv3-stat__sub">{s.sub}</span>
+            <span className="csv3-stat__sub">
+              <svg
+                className="csv3-stat__arrow"
+                viewBox="0 0 24 24"
+                width={15}
+                height={15}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <polyline points="3 17 9 11 13 15 21 7" />
+                <polyline points="15 7 21 7 21 13" />
+              </svg>
+              <strong className="csv3-stat__delta">{s.delta}</strong>
+              More than last month
+            </span>
           </article>
         ))}
       </div>
