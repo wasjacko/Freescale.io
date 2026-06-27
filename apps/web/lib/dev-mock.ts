@@ -83,6 +83,25 @@ const AV = (text: string, bg: string): Conversation["avatar"] => ({
 export function mockInboxData(): InboxData {
   const conversations: Conversation[] = [
     {
+      id: "c0-fav",
+      name: "Léa Fontaine",
+      preview: "Top, j'ai hâte de voir la suite ! Tiens-moi au courant dès que c'est prêt.",
+      lastAtIso: isoAgo({ minutes: 12 }),
+      avatar: FACE(2),
+      channel: "gmail",
+      unread: true,
+      group: "today",
+      subject: "Refonte identité — phase 2",
+      contactEmail: "lea@fontaine-studio.fr",
+      category: "client",
+      starred: true,
+      tags: ["design", "client-clé"],
+      lastInboundAt: isoAgo({ minutes: 12 }),
+      lastOutboundAt: isoAgo({ hours: 2 }),
+      clientTone: "chaleureux",
+      clientLang: "fr",
+    },
+    {
       id: "c1",
       clientId: "cl-sarah",
       name: "Sarah Lemoine",

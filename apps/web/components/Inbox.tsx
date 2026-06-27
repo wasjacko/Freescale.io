@@ -441,7 +441,22 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                   </span>
                   <span className="conv-main">
                     <span className="conv-top">
-                      <span className="conv-name">{c.name}</span>
+                      <span className="conv-namewrap">
+                        <span className="conv-name">{c.name}</span>
+                        {c.starred && (
+                          <svg
+                            className="conv-star"
+                            viewBox="0 0 24 24"
+                            width={13}
+                            height={13}
+                            fill="currentColor"
+                            stroke="none"
+                            aria-label="Favori"
+                          >
+                            <path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.9 6.2 20.9l1.1-6.47L2.6 9.85l6.5-.95L12 2.5z" />
+                          </svg>
+                        )}
+                      </span>
                       <span className="conv-meta">
                         {unread && <span className="conv-dot" aria-hidden />}
                         <span className={`conv-when ${unread ? "is-unread" : ""}`}>

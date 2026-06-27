@@ -11534,6 +11534,13 @@ html {
   color: #6b7280;
 }
 
+/* Nom + étoile favori : flex pour que le nom s'ellipse et l'étoile reste. */
+.conv-namewrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
 .conv-name {
   font-size: 13px;
   font-weight: 500;
@@ -11543,6 +11550,11 @@ html {
   white-space: nowrap;
   letter-spacing: -0.01em;
   line-height: 1.2;
+}
+/* Étoile favori (amber), affichée seulement si la conversation est en favoris. */
+.conv-star {
+  flex: none;
+  color: #f5a623;
 }
 .conv.active .conv-name {
   font-weight: 700;
