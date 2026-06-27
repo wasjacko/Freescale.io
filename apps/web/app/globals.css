@@ -5409,7 +5409,9 @@ html {
 .ibx-search-wrap--list {
   max-width: none;
   flex: none;
-  padding: 10px var(--page-pad-x) 8px;
+  /* Même padding-top que la colonne dossiers (--page-pad-top) → la recherche
+     s'aligne pile sur l'item « Principale » à sa gauche. */
+  padding: var(--page-pad-top) var(--page-pad-x) 8px;
 }
 .ibx-search-ic {
   position: absolute;
