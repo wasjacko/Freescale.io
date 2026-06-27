@@ -32758,9 +32758,16 @@ button.mfv-model:hover {
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 .csv3-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  /* Flex (au lieu de grid) → chaque carte prend une part égale de la
+     largeur restante (flex 1 1 0) ; min-width 180px évite l'écrasement
+     quand il y a beaucoup de clients (au-delà, ça wrap proprement). */
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
+}
+.csv3-grid > * {
+  flex: 1 1 0;
+  min-width: 180px;
 }
 .csv3-empty {
   padding: 32px;
