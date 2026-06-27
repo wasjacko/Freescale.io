@@ -35433,18 +35433,11 @@ button.mfv-model:hover {
 .ibx-modeswitch {
   margin-right: 4px;
 }
-/* Mode MESSAGE (chat) : l'aperçu du dernier message prend une forme de bulle
-   → structure d'affichage visiblement différente du mode Email (liste sobre). */
+/* Mode MESSAGE (chat) : aperçu en texte simple (sans fond/bulle). */
 .inbox-mode-message .conv-preview {
-  display: inline-block;
-  max-width: 100%;
-  padding: 3px 10px;
-  border-radius: 12px 12px 12px 3px;
-  background: rgba(15, 23, 42, 0.05);
   color: var(--csv-text, #3a4151);
 }
 [data-theme="dark"] .inbox-mode-message .conv-preview {
-  background: rgba(255, 255, 255, 0.07);
   color: #c8ccd6;
 }
 
