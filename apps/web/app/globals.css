@@ -35577,6 +35577,8 @@ button.mfv-model:hover {
 .mue-flower--anim {
   transform-origin: 50% 50%;
   overflow: visible;
+  /* La fleur tourne en continu, en plus de la vague de fonte des pétales. */
+  animation: mue-flower-gentle-spin 8s linear infinite;
 }
 /* Animation PAR VAGUE avec temps de pose : la fleur reste fleur (repos),
    puis les pétales fondent en boule au centre, reviennent, et pause à
