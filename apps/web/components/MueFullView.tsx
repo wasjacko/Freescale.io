@@ -180,7 +180,7 @@ export function MueFullView() {
       {messages.length === 0 ? (
         <div className="mfv2-center">
           <div className="mfv2-logo">
-            <MueFlower size={48} animated />
+            <MueFlower size={48} />
           </div>
 
           <div className="mfv2-tabs" role="tablist">
