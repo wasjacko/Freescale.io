@@ -12,20 +12,6 @@ import { useApp } from "@/lib/store";
 import type { ChannelId } from "@/lib/types";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-/** Section temporelle pour grouper la liste : Aujourd'hui / Hier / … */
-function sectionOf(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const dayMs = 86400000;
-  const diffDays = Math.floor((startToday.getTime() - d.getTime()) / dayMs);
-  if (d.getTime() >= startToday.getTime()) return "Aujourd'hui";
-  if (diffDays < 1) return "Hier";
-  if (diffDays < 7) return "Cette semaine";
-  if (diffDays < 30) return "Ce mois-ci";
-  return "Plus tôt";
-}
-
 /** Âge relatif compact façon maquette : « 2h », « 23h », « 1d », « 8d ». */
 function relAge(iso: string): string {
   const mins = (Date.now() - new Date(iso).getTime()) / 60000;
@@ -393,10 +379,16 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
             );
           })()}
         {(() => {
-          // Séparateurs de section temporels (uniquement en tri par date) :
-          // « Aujourd'hui / Hier / Cette semaine… » pour casser le mur de lignes.
+          // Groupement par ÉTAT DE LECTURE : « Non lus » d'abord, puis
+          // « Déjà ouverts ». On réordonne pour que chaque groupe soit
+          // contigu (non-lus en tête), en gardant le tri courant à l'intérieur.
           let lastSection = "";
-          return clientRows.map(({ rep: c }) => {
+          const orderedRows = [...clientRows].sort((a, b) => {
+            const ua = isUnread(a.rep.id, a.rep.unread) ? 0 : 1;
+            const ub = isUnread(b.rep.id, b.rep.unread) ? 0 : 1;
+            return ua - ub;
+          });
+          return orderedRows.map(({ rep: c }) => {
             const isActive = c.id === activeConvId;
             const unread = isUnread(c.id, c.unread);
             const ball = archived.has(c.id) ? null : ballInCourt(c) ? "toreply" : "waiting";
@@ -404,8 +396,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
               ball === "waiting" && c.lastOutboundAt
                 ? Math.floor((Date.now() - new Date(c.lastOutboundAt).getTime()) / 86400000)
                 : 0;
-            const section = sortBy === "date" ? sectionOf(c.lastAtIso) : "";
-            const showSection = !!section && section !== lastSection;
+            const section = unread ? "Non lus" : "Déjà ouverts";
+            const showSection = section !== lastSection;
             if (showSection) lastSection = section;
             return (
               <Fragment key={c.clientId ?? c.id}>
