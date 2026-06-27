@@ -30471,6 +30471,11 @@ button.sidebar-brand {
 .app.view-ai .workspace {
   grid-template-columns: 1fr;
 }
+/* Sur la vue Mue le panneau est caché → ne pas réserver sa largeur à
+   droite (sinon la page n'est pas pleine largeur quand mue-open). */
+.app.view-ai.mue-open .workspace {
+  margin-right: 0;
+}
 [data-theme="dark"] .mfv {
   background: linear-gradient(#1c1d27, #1c1d27) padding-box,
     linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06)) border-box;
