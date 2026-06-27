@@ -754,7 +754,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         role: "mue",
         kind: "privacy",
         content:
-          "Tes échanges restent chez toi : Mue ne s'entraîne PAS sur tes messages, ils sont stockés chiffrés dans un espace dédié à ton compte, isolé du modèle et de nos équipes. Personne n'y accède — pas même nous.",
+          "tes échanges restent chez toi. je m'entraîne PAS sur tes messages, ils sont chiffrés dans un espace dédié à ton compte, isolé du modèle et de l'équipe. personne n'y touche, nous compris.",
       },
     ]);
   };
@@ -812,7 +812,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     // « source » dont Mue a déduit la demande → l'utilisateur peut cliquer
     // dessus pour vérifier le contexte avant de valider.
     const inlineRefs: Record<string, ActionRef> = {};
-    let content = `Je vais créer **${parsed.title}**`;
+    let content = `c'est noté, je crée **${parsed.title}**`;
     if (parsed.client) {
       const slug = parsed.client.toLowerCase().replace(/\s+/g, "-");
       inlineRefs.client = {
@@ -826,9 +826,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         title: `Discussion avec ${parsed.client}`,
         badge: "Hier",
       };
-      content += ` pour {{r:client}} dans ta liste perso, échéance ${parsed.dueLabel}. Détectée depuis {{r:source}}. Tu confirmes ?`;
+      content += ` pour {{r:client}} dans ta liste perso, échéance ${parsed.dueLabel}. je l'ai repérée depuis {{r:source}}. je valide ?`;
     } else {
-      content += ` dans ta liste perso, échéance ${parsed.dueLabel}. Tu confirmes ?`;
+      content += ` dans ta liste perso, échéance ${parsed.dueLabel}. je valide ?`;
     }
     return {
       id: `prev-${Date.now()}`,
@@ -849,7 +849,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       role: "mue" as const,
       kind: "preview" as const,
       content:
-        "Oui, tu as reçu 15 nouveaux messages non scannés. J'ai détecté 13 messages qui présentent une potentielle tâche :",
+        "ok, j'ai fouillé tes 15 nouveaux messages. 13 cachent une tâche en fait. voilà ce que j'en sors :",
       preview: { tasks, destination: "Ma liste perso" },
     };
   };
@@ -937,14 +937,14 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             role: "mue",
             kind: "result",
             content: cancelled
-              ? `Arrêté — ${n} ${n > 1 ? "tâches créées" : "tâche créée"} avant l'interruption.`
-              : "C'est fait",
+              ? `ok j'arrête. ${n} ${n > 1 ? "tâches créées" : "tâche créée"} avant que tu coupes.`
+              : "voilà, c'est dans ta liste.",
             improvements: cancelled
-              ? ["Reprends la création des tâches restantes", "Montre-moi ce qui a été créé"]
+              ? ["Reprends les tâches restantes", "Montre-moi ce qui a été créé"]
               : [
-                  "Bloque du temps dans mon calendrier pour ces tâches",
-                  "Priorise-les selon leur urgence",
-                  "Crée un agent qui me relance le lundi",
+                  "Bloque du temps pour ces tâches",
+                  "Priorise-les par urgence",
+                  "Relance-moi là-dessus lundi matin",
                 ],
           },
         ])
@@ -1156,7 +1156,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       id: `res-${Date.now()}`,
       role: "mue" as const,
       kind: "result" as const,
-      content: `Done, voici ton devis fictif. J'ai simulé ${client} (${company}) avec un pack branding classique — logo, charte, carte de visite, templates réseaux — pour ${total.toLocaleString("fr-FR")} € TTC. Conditions 40/60, délai 3–4 semaines. Tu peux l'adapter directement dans le document.`,
+      content: `voilà ton devis. j'ai parié sur un pack branding classique pour ${client} (${company}) : logo, charte, carte de visite, templates réseaux. ça fait ${total.toLocaleString("fr-FR")} € TTC, conditions 40/60, délai 3 à 4 semaines. ajuste direct dans le doc si besoin.`,
       created: [
         {
           entity: "document" as const,
@@ -1180,7 +1180,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       id: `slots-${Date.now()}`,
       role: "mue" as const,
       kind: "slots" as const,
-      content: "Tu es libre dès 10h lundi. Choisis un créneau :",
+      content: "t'es libre dès 10h lundi. dis-moi quel créneau :",
       slots: { options: ["10h", "10h30", "11h", "11h30", "12h"], dayLabel: "lundi", day: 1 },
     };
   };
@@ -1211,7 +1211,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         id: `res-${Date.now()}`,
         role: "mue",
         kind: "result",
-        content: `C'est posé : ${dayLabel}, ${fmt(start)}–${fmt(start + duration)} (Europe/Paris), lien Meet inclus.`,
+        content: `c'est calé : ${dayLabel}, ${fmt(start)} à ${fmt(start + duration)} (Europe/Paris), lien Meet inclus.`,
         created: [
           { entity: "event", id: `ev-${Date.now()}`, title: "Call découverte", badge: "Agenda" },
         ],
@@ -1229,21 +1229,21 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       alex: { entity: "conversation", id: "c7", title: "Alexandre Dupont", badge: "En cours" },
     };
     const firstName = userName ? userName.split(/\s+/)[0] : null;
-    const greeting = firstName ? `OK ${firstName}` : "OK";
-    // Ton ClickUp Brain : salutation perso → diagnostic → priorités numérotées
-    // → section « le reste » → question CTA finale. Plus narratif, plus humain.
+    const greeting = firstName ? `ok ${firstName}` : "ok";
+    // Voix Mue : pote en chat, direct, opinions, pas de tirets longs.
     const content =
-      `${greeting}, voilà le topo : rien en retard côté tâches, ton agenda est clair, ` +
-      `mais **3 fils clients te réclament**. Voilà comment je les classerais.\n\n` +
-      `1. **Réponds à {{r:thomas}}** — il attend le contrat signé depuis 2 jours, ` +
-      `c'est ce qui débloque le reste.\n` +
-      `2. **Relance {{r:david}}** — silencieux depuis 12 jours avec 6 500 € à suivre, ` +
-      `un mot suffit pour rouvrir la discussion.\n` +
-      `3. **Réponds à {{r:alex}}** — il attend ton retour sur les livrables, ` +
-      `pas urgent mais ça flotte depuis hier.\n\n` +
-      `Le reste (facturation, prospection, admin) peut attendre lundi. ` +
-      `Concentre-toi là où l'énergie compte.\n\n` +
-      `Tu veux que je traite ces 3 fils dans cet ordre ?`;
+      `${greeting}, le topo : rien en retard côté tâches, ton agenda est clair. ` +
+      `mais **3 fils clients te réclament**, et franchement ça presse un peu. ` +
+      `voilà l'ordre que je tiendrais.\n\n` +
+      `1. **réponds à {{r:thomas}}** : il attend le contrat signé depuis 2 jours, ` +
+      `c'est ça qui débloque le reste. commence par lui.\n` +
+      `2. **relance {{r:david}}** : silence radio depuis 12 jours avec 6 500 € à suivre. ` +
+      `un mot suffit pour rouvrir, laisse pas filer.\n` +
+      `3. **réponds à {{r:alex}}** : il attend ton retour sur les livrables, ` +
+      `pas urgent mais ça traîne depuis hier.\n\n` +
+      `le reste (facturation, prospection, admin) peut attendre lundi. ` +
+      `concentre ton énergie là où ça compte.\n\n` +
+      `je m'occupe des 3 dans cet ordre ?`;
     return {
       id: `focus-${Date.now()}`,
       role: "mue" as const,
@@ -1264,10 +1264,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       id: `ref-${Date.now()}`,
       role: "mue" as const,
       kind: "refusal" as const,
-      content: "Je ne peux pas supprimer en masse — c'est une action sensible et irréversible.",
+      content: "là je te suis pas. supprimer en masse c'est sensible et irréversible, je touche pas à ça tout seul.",
       refusal: {
         alternative:
-          "Sélectionne les éléments dans le Tableau, puis envoie-les à la Corbeille d'un clic.",
+          "par contre, sélectionne les éléments dans le Tableau et envoie-les à la Corbeille d'un clic, tu gardes la main.",
         cta: { label: "Ouvrir le Tableau", view: "tasks" as ViewId },
       },
       improvements: ["Archive les tâches terminées", "Montre-moi les tâches en retard"],
@@ -1623,10 +1623,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         className="mue2-input"
         placeholder={
           askPending || executing
-            ? "J'y travaille…"
+            ? "je m'en occupe…"
             : askMessages.length > 0
-              ? "Dis à Mue ce qu'elle doit faire ensuite"
-              : "Besoin d'aide ? Pose une question, recherche ou crée."
+              ? "et ensuite, on fait quoi ?"
+              : "balance, je m'en occupe (crée, fouille, rédige…)"
         }
         value={askInput}
         onChange={(e) => setAskInput(e.target.value)}
