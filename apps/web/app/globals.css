@@ -20455,10 +20455,10 @@ button:active:not(:disabled):not(.no-press) {
 /* Empty thread pane — no conversation selected */
 .thread-empty-pane {
   display: grid;
-  /* Contenu remonté : aligné en haut plutôt que centré verticalement. */
-  place-items: start center;
+  /* Contenu centré verticalement ET horizontalement dans le bloc. */
+  place-items: center;
   background: #fff;
-  padding: 48px 32px 32px;
+  padding: 32px;
   overflow: auto;
 }
 .thread-empty-card {
