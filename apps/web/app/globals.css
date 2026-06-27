@@ -12246,11 +12246,10 @@ html {
 .mue-pane.mue2 {
   padding: 0;
   color: var(--ink, #0a0a0a);
-  background: #f1f5f9;
-  border-left: none;
-  /* Double liseré (déplacé depuis le bloc principal) : trait fin, espace blanc,
-     second trait fin. */
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 0 0 3px #ffffff, 0 0 0 4px rgba(15, 23, 42, 0.11);
+  /* Fond blanc + stroke en dégradé officiel Freescale (border-box). */
+  background: linear-gradient(#fff, #fff) padding-box, var(--stroke-grad-ai) border-box;
+  border: 2px solid transparent;
+  box-shadow: none;
 }
 [data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
@@ -28107,8 +28106,8 @@ button.sidebar-brand {
   margin-left: 6px;
   margin-right: 10px;
   margin-bottom: 0;
-  /* Double liseré retiré du bloc principal — déplacé sur le panneau Mue. */
-  box-shadow: none;
+  /* Stroke simple (le double liseré gradient vit désormais sur le panneau Mue). */
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 .app.view-today .tboard-table {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent), inset 0 0 0 1px
