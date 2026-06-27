@@ -443,9 +443,9 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden className="mue2-mark">
     <defs>
       <linearGradient id="mue2grad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#7aa2ff" />
-        <stop offset="50%" stopColor="#b78cff" />
-        <stop offset="100%" stopColor="#ff9d7a" />
+        <stop offset="0%" stopColor="#78AABF" />
+        <stop offset="50%" stopColor="#611C71" />
+        <stop offset="100%" stopColor="#FE0045" />
       </linearGradient>
     </defs>
     <path
@@ -468,13 +468,13 @@ const MueLoader = ({ size = 18 }: { size?: number }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden className="mue2-loader">
     <defs>
       <linearGradient id="mue2loadgrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#7aa2ff" />
-        <stop offset="50%" stopColor="#b78cff" />
-        <stop offset="100%" stopColor="#ff9d7a" />
+        <stop offset="0%" stopColor="#78AABF" />
+        <stop offset="50%" stopColor="#611C71" />
+        <stop offset="100%" stopColor="#FE0045" />
       </linearGradient>
       <radialGradient id="mue2loadhalo" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0%" stopColor="#b78cff" stopOpacity="0.35" />
-        <stop offset="100%" stopColor="#b78cff" stopOpacity="0" />
+        <stop offset="0%" stopColor="#611C71" stopOpacity="0.35" />
+        <stop offset="100%" stopColor="#611C71" stopOpacity="0" />
       </radialGradient>
     </defs>
     <circle cx="12" cy="12" r="11" fill="url(#mue2loadhalo)" className="mue2-loader-halo" />

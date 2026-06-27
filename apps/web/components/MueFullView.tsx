@@ -29,9 +29,9 @@ const MueMark = ({ size = 18 }: { size?: number }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
     <defs>
       <linearGradient id="mfvgrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#7aa2ff" />
-        <stop offset="50%" stopColor="#b78cff" />
-        <stop offset="100%" stopColor="#ff9d7a" />
+        <stop offset="0%" stopColor="#78AABF" />
+        <stop offset="50%" stopColor="#611C71" />
+        <stop offset="100%" stopColor="#FE0045" />
       </linearGradient>
     </defs>
     <path

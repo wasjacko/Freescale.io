@@ -2,8 +2,9 @@
 // Partagé entre le panneau latéral et la page IA dédiée.
 
 export function MueFlower({ size = 56 }: { size?: number }) {
-  // Couleurs ordonnées autour du cercle pour un dégradé fluide.
-  const colors = ["#7aa2ff", "#a98aff", "#d088ec", "#ff8fb0", "#ff9d7a"];
+  // Couleurs de l'identité OFFICIELLE Freescale, ordonnées autour du cercle
+  // (teal → bleu → violet → rouge → rose pâle) pour un dégradé fluide.
+  const colors = ["#78AABF", "#6981B8", "#611C71", "#EB0020", "#E1B9B8"];
   return (
     <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden>
       <defs>

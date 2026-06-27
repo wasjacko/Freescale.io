@@ -314,6 +314,19 @@
   );
   --freescale-gradient-stops: #78aabf 0%, #6981b8 11%, #611c71 28%, #eb0020 46%, #fe0045 61%,
     #e1b9b8 88%, #6981b8 100%;
+  /* Déclinaison PASTEL (teintes éclaircies des mêmes familles) — pour les
+     skeletons « l'IA réfléchit/crée » : bleu → lavande → rose pâle.
+     Toujours en diagonale pour rester fidèle à l'identité. */
+  --freescale-pastel-stops: #dbe6ec 0%, #d8dcef 22%, #e6d2ec 48%, #f8d2d9 72%, #f4e4e3 100%;
+  --freescale-gradient-pastel: linear-gradient(135deg, var(--freescale-pastel-stops));
+  /* Bande shimmer pastel (pour l'animation de balayage des skeletons). */
+  --freescale-skeleton: linear-gradient(
+    115deg,
+    #dde7ec 22%,
+    #e3d6ee 38%,
+    #f7d4db 60%
+  );
+  --freescale-skeleton-dark: linear-gradient(115deg, #2a2e3f 22%, #3a3052 38%, #3a2438 60%);
   /* Trait coloré (console Suggestions IA, liserés de marque) — désormais
      aligné sur l'identité officielle, à 115deg pour le sens du trait. */
   --stroke-grad-ai: linear-gradient(115deg, var(--freescale-gradient-stops));
@@ -34847,7 +34860,7 @@ button.mfv-model:hover {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%);
+  background: var(--freescale-skeleton);
   background-size: 400% 100%;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
 }
@@ -34856,7 +34869,7 @@ button.mfv-model:hover {
   width: 84px;
   height: 12px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%);
+  background: var(--freescale-skeleton);
   background-size: 400% 100%;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
   /* annule l'underline + couleur du label final */
@@ -34867,7 +34880,7 @@ button.mfv-model:hover {
   width: 36px;
   height: 14px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #fde6f1 25%, #fbd0e1 37%, #fde6f1 63%);
+  background: var(--freescale-skeleton);
   background-size: 400% 100%;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
   color: transparent !important;
@@ -34888,11 +34901,11 @@ button.mfv-model:hover {
 }
 [data-theme="dark"] .mue2-inlineref-ic--ghost,
 [data-theme="dark"] .mue2-inlineref-label--ghost {
-  background: linear-gradient(90deg, #2c2940 25%, #3a3458 37%, #2c2940 63%);
+  background: var(--freescale-skeleton-dark);
   background-size: 400% 100%;
 }
 [data-theme="dark"] .mue2-inlineref-badge--ghost {
-  background: linear-gradient(90deg, #3a2435 25%, #4a2c44 37%, #3a2435 63%);
+  background: var(--freescale-skeleton-dark);
   background-size: 400% 100%;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -34914,7 +34927,7 @@ button.mfv-model:hover {
   animation: mue2-inlineref-skel-pop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .mue2-skel-block {
-  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%) !important;
+  background: var(--freescale-skeleton) !important;
   background-size: 400% 100% !important;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
   border-radius: 6px;
@@ -34924,7 +34937,7 @@ button.mfv-model:hover {
   visibility: hidden;
 }
 .mue2-skel-dot {
-  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%) !important;
+  background: var(--freescale-skeleton) !important;
   background-size: 400% 100% !important;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
 }
@@ -34932,7 +34945,7 @@ button.mfv-model:hover {
   display: inline-block;
   height: 11px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%);
+  background: var(--freescale-skeleton);
   background-size: 400% 100%;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
 }
@@ -34955,7 +34968,7 @@ button.mfv-model:hover {
   width: 52px;
   height: 16px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #fde6f1 25%, #fbd0e1 37%, #fde6f1 63%);
+  background: var(--freescale-skeleton);
   background-size: 400% 100%;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
   vertical-align: middle;
@@ -34963,11 +34976,11 @@ button.mfv-model:hover {
 [data-theme="dark"] .mue2-skel-block,
 [data-theme="dark"] .mue2-skel-dot,
 [data-theme="dark"] .mue2-skel-line {
-  background: linear-gradient(90deg, #2c2940 25%, #3a3458 37%, #2c2940 63%) !important;
+  background: var(--freescale-skeleton-dark) !important;
   background-size: 400% 100% !important;
 }
 [data-theme="dark"] .mue2-skel-badge {
-  background: linear-gradient(90deg, #3a2435 25%, #4a2c44 37%, #3a2435 63%);
+  background: var(--freescale-skeleton-dark);
   background-size: 400% 100%;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -35038,12 +35051,12 @@ button.mfv-model:hover {
   width: 38px;
   height: 16px;
   border-radius: 5px;
-  background: linear-gradient(90deg, #ebe7fa 25%, #d7d0f4 37%, #ebe7fa 63%);
+  background: var(--freescale-skeleton);
   background-size: 400% 100%;
   animation: mue2-skel-shimmer 1.4s ease-in-out infinite;
 }
 [data-theme="dark"] .mue2-prev-todo-badge--skeleton {
-  background: linear-gradient(90deg, #2c2940 25%, #3a3458 37%, #2c2940 63%) !important;
+  background: var(--freescale-skeleton-dark) !important;
   background-size: 400% 100% !important;
 }
 @media (prefers-reduced-motion: reduce) {
