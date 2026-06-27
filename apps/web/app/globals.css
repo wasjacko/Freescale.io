@@ -12210,7 +12210,9 @@ html {
      pour qu'il fasse exactement la même hauteur visuelle. */
   top: var(--topbar-h, 52px);
   right: 10px;
-  bottom: 0;
+  /* Étendu de 6px sous le viewport : le double liseré interne du bas sort du
+     cadre visible (pas de liseré en bas). */
+  bottom: -6px;
   width: var(--mue-panel-w);
   z-index: 50;
   min-height: 0;
