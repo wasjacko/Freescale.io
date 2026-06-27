@@ -43,6 +43,7 @@ export function AppShell({
     mueOpen,
     setMueOpen,
     theme,
+    inboxMode,
   } = useApp();
   const { conversations, channels, archive, unarchive, addTask } = useData();
   // Soft profiling: show only when user hasn't been profiled AND has at
@@ -339,7 +340,7 @@ export function AppShell({
               )}
               {/* Barre d'outils pleine largeur, au-dessus des deux colonnes. */}
               <InboxToolbar />
-              <div className="conv-shell-body conv-shell-split">
+              <div className={`conv-shell-body conv-shell-split inbox-mode-${inboxMode}`}>
                 <Inbox currentUserId={user?.id ?? null} />
                 <Thread
                   currentUser={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}

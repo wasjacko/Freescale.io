@@ -66,6 +66,8 @@ export function InboxToolbar() {
     setInboxSearch,
     resetInboxFilters,
     setActiveConv,
+    inboxMode,
+    setInboxMode,
   } = useApp();
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
@@ -113,6 +115,61 @@ export function InboxToolbar() {
   return (
     <div className="ibx-toolbar-wrap">
       <div className="ibx-toolbar-bar">
+        {/* 2 catégories principales : Email vs Messages (chat). Restructure
+            l'affichage en filtrant les canaux du monde actif. */}
+        <div className="cal-viewtoggle ibx-modeswitch" role="tablist" aria-label="Type de messagerie">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={inboxMode === "email"}
+            className={`cal-viewtoggle__btn ${inboxMode === "email" ? "is-active" : ""}`}
+            onClick={() => {
+              setInboxMode("email");
+              setActiveConv("");
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={15}
+              height={15}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <path d="m3 7 9 6 9-6" />
+            </svg>
+            Email
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={inboxMode === "message"}
+            className={`cal-viewtoggle__btn ${inboxMode === "message" ? "is-active" : ""}`}
+            onClick={() => {
+              setInboxMode("message");
+              setActiveConv("");
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={15}
+              height={15}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M21 11.5a8.4 8.4 0 0 1-9.3 8.4L3 21l1.1-3.7A8.4 8.4 0 1 1 21 11.5z" />
+            </svg>
+            Messages
+          </button>
+        </div>
         <div className="ibx-tool-wrap">
           <button
             type="button"
@@ -336,11 +393,11 @@ export function InboxToolbar() {
           )}
         </div>
 
-        {/* Nouveau message — à l'opposé des filtres (poussé tout à droite). */}
+        {/* Compose — libellé adapté au mode (Email vs Message), poussé à droite. */}
         <button
           type="button"
           className="ibx-tool ibx-tool-new"
-          title="Nouveau message"
+          title={inboxMode === "email" ? "Nouvel email" : "Nouveau message"}
           onClick={() => setComposeOpen(true)}
         >
           <svg
@@ -356,7 +413,7 @@ export function InboxToolbar() {
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" />
           </svg>
-          Nouveau message
+          {inboxMode === "email" ? "Nouvel email" : "Nouveau message"}
         </button>
 
         {composeOpen && (

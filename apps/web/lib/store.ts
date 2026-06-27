@@ -43,6 +43,10 @@ type State = {
   /** Vue « balle dans ton camp » : tout / à répondre / en attente / terminé. */
   inboxBucket: "all" | "to-reply" | "waiting" | "done";
   setInboxBucket: (b: "all" | "to-reply" | "waiting" | "done") => void;
+  /** Mode d'affichage de l'inbox : canaux email (Gmail/Outlook…) vs chat
+   *  (WhatsApp/Instagram/Slack…). Sépare les deux mondes + leurs outils. */
+  inboxMode: "email" | "message";
+  setInboxMode: (m: "email" | "message") => void;
   /** Écran de confirmation des clients après connexion d'un canal (mock). */
   clientConfirm: { open: boolean; channel: string };
   openClientConfirm: (channel: string) => void;
@@ -95,6 +99,8 @@ export const useApp = create<State>()(
       setInboxSearch: (inboxSearch) => set({ inboxSearch }),
       inboxBucket: "all",
       setInboxBucket: (inboxBucket) => set({ inboxBucket }),
+      inboxMode: "email",
+      setInboxMode: (inboxMode) => set({ inboxMode }),
       theme: "system",
       setTheme: (theme) => set({ theme }),
       clientConfirm: { open: false, channel: "gmail" },

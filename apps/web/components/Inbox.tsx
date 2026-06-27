@@ -5,7 +5,7 @@ import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
 import { Avatar } from "@/components/ui/Avatar";
-import { channelProviderLabel } from "@/lib/channels/registry";
+import { channelProviderLabel, isEmailLikeChannel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { useApp } from "@/lib/store";
@@ -70,6 +70,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     inboxUnreadOnly: unreadOnly,
     inboxFolders,
     activeFolderId,
+    inboxMode,
   } = useApp();
   const {
     conversations,
@@ -211,6 +212,9 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     };
     return conversations
       .filter((c) => {
+        // Mode Email vs Message : on ne montre que les canaux du monde actif
+        // (Gmail/Outlook… en Email ; WhatsApp/Slack/Insta… en Message).
+        if (isEmailLikeChannel(c.channel) !== (inboxMode === "email")) return false;
         // Onglet « Terminé » = conversations archivées ; sinon on les masque.
         if (inboxBucket === "done") {
           if (!archived.has(c.id)) return false;
@@ -260,6 +264,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     activeFolderId,
     inboxFolders,
     inboxBucket,
+    inboxMode,
     isUnread,
   ]);
 
