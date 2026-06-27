@@ -135,12 +135,8 @@ export function ClientsView() {
     const regularite = Math.round((actifs / n) * 100);
     const silents = clients.filter((c) => (c.silentDays ?? 0) >= 10).length;
     const engagement = Math.round((1 - silents / n) * 100);
-    const invoices = clients.flatMap((c) => c.invoices ?? []);
-    const lateInv = invoices.filter((i) => i.status === "late").length;
-    const paiements =
-      invoices.length === 0 ? 100 : Math.round((1 - lateInv / invoices.length) * 100);
 
-    const score = Math.round((reactivite + regularite + engagement + paiements) / 4);
+    const score = Math.round((reactivite + regularite + engagement) / 3);
     const verdict =
       score >= 80
         ? {
@@ -186,15 +182,6 @@ export function ClientsView() {
               ? "Aucun fil en silence prolongé"
               : `${silents} fil${silents > 1 ? "s" : ""} à réveiller (>10j sans nouvelle)`,
           value: engagement,
-        },
-        {
-          key: "paiements",
-          label: "Trésorerie saine",
-          hint:
-            invoices.length === 0
-              ? "Aucune facture suivie"
-              : `${lateInv} sur ${invoices.length} facture${invoices.length > 1 ? "s" : ""} en retard`,
-          value: paiements,
         },
       ],
     };
@@ -337,6 +324,29 @@ export function ClientsView() {
         <AddClientModal open={addOpen} onClose={() => setAddOpen(false)} onCreate={addClient} />
       )}
 
+      {/* ── Liste des clients EN PREMIER (feature principale) ── */}
+      {filteredClients.length === 0 ? (
+        <div className="csv3-empty">
+          <p>Aucun client ne correspond à ce filtre.</p>
+          <button
+            type="button"
+            className="csv3-empty__reset"
+            onClick={() => {
+              setFilter("all");
+              setQuery("");
+            }}
+          >
+            Réinitialiser le filtre
+          </button>
+        </div>
+      ) : (
+        <div className="csv3-grid">
+          {filteredClients.map((c) => (
+            <MiniClientCard key={c.id} client={c} onOpen={() => setActiveClientId(c.id)} />
+          ))}
+        </div>
+      )}
+
       {/* ── HERO : score de santé global + ses 4 indicateurs ────────────
            Le score répond à « est-ce que ma santé client est bonne ? ».
            Chaque indicateur explique POURQUOI — pas de boîte noire. */}
@@ -451,28 +461,6 @@ export function ClientsView() {
         </article>
       </div>
 
-      {filteredClients.length === 0 ? (
-        <div className="csv3-empty">
-          <p>Aucun client ne correspond à ce filtre.</p>
-          <button
-            type="button"
-            className="csv3-empty__reset"
-            onClick={() => {
-              setFilter("all");
-              setQuery("");
-            }}
-          >
-            Réinitialiser le filtre
-          </button>
-        </div>
-      ) : (
-        <div className="csv3-grid">
-          {filteredClients.map((c) => (
-            <MiniClientCard key={c.id} client={c} onOpen={() => setActiveClientId(c.id)} />
-          ))}
-        </div>
-      )}
-
       {/* ── Insights Mue : observations neutres sur le portefeuille ── */}
       <div className="csv3-insights">
         <article className="csv3-insight">
@@ -563,7 +551,6 @@ function Donut({ parts }: { parts: { value: number; color: string }[] }) {
 
 function MiniClientCard({ client, onOpen }: { client: Client; onOpen: () => void }) {
   const h = relationHealth(client);
-  const m = moneySignal(client);
   const stage = client.stage ? STAGE[client.stage] : null;
   return (
     <button type="button" className="csv-mini" onClick={onOpen}>
@@ -583,13 +570,6 @@ function MiniClientCard({ client, onOpen }: { client: Client; onOpen: () => void
             <ChannelLogo key={ch} channel={ch} className="csv-mini__chan" />
           ))}
         </span>
-      </div>
-
-      <div className={`csv-mini__money csv-mini__money--${m.label ? m.tone : "ok"}`}>
-        <span className="csv-mini__money-ic" aria-hidden>
-          €
-        </span>
-        <span>{m.label ?? "Rien à suivre"}</span>
       </div>
 
       <div className={`csv-mini__rel csv-mini__rel--${h.state}`}>
