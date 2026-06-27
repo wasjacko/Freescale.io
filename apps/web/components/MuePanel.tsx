@@ -472,25 +472,6 @@ const stroke = {
   viewBox: "0 0 24 24",
 };
 
-const MueMark = ({ size = 18 }: { size?: number }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden className="mue2-mark">
-    <defs>
-      <linearGradient id="mue2grad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#78AABF" />
-        <stop offset="50%" stopColor="#611C71" />
-        <stop offset="100%" stopColor="#FE0045" />
-      </linearGradient>
-    </defs>
-    <path
-      d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z"
-      fill="url(#mue2grad)"
-    />
-    <path
-      d="M18.5 16l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9.9-2.4z"
-      fill="url(#mue2grad)"
-    />
-  </svg>
-);
 
 // Titre du bloc thinking : cycle entre 3 états (Réfléchit → Comprend → Conçoit)
 // toutes les ~850ms. Reste figé sur le dernier label jusqu'à la fin du thinking.
@@ -1664,9 +1645,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             }}
           >
             {currentModel === "mue-max" ? (
-              <>
-                <MueMark size={15} /> Max
-              </>
+              <>Max</>
             ) : currentModel === "gpt" ? (
               <>
                 <span className="mue2-model-ic" aria-hidden>
