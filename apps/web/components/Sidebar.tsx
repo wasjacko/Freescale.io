@@ -146,7 +146,7 @@ export function Sidebar() {
       >
         {/* Étendu : wordmark officiel. Réduit : juste la marque (icône). */}
         <FreescaleMark size={26} className="sidebar-brand-mark" />
-        <FreescaleLogo height={24} className="sidebar-brand-logo" />
+        <FreescaleLogo height={44} className="sidebar-brand-logo" />
       </button>
 
       <nav className="nav-section">

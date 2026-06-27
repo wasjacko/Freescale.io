@@ -1,3 +1,5 @@
+"use client";
+
 // Logo fleur Mue — 5 pétales ronds organiques façon Brain², dégradé pastel.
 // Partagé entre le panneau latéral et la page IA dédiée.
 // Variante `animated` : les 5 couleurs convergent au centre (boule gradient +

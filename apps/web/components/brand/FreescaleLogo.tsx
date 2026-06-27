@@ -13,11 +13,11 @@ export function FreescaleLogo({
   return (
     // biome-ignore lint/performance/noImgElement: asset statique simple (logo)
     <img
-      src="/freescale-logo.svg"
+      src="/logowhitemode.png"
       alt="Freescale"
       height={height}
       className={className}
-      style={{ height, width: "auto", display: "block" }}
+      style={{ height, width: "auto", display: "block", flexShrink: 0, maxWidth: "none" }}
     />
   );
 }

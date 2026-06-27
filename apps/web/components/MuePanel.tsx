@@ -608,6 +608,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [askPending, setAskPending] = useState(false);
   const [askHistoryLoading, setAskHistoryLoading] = useState(false);
   const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
+  const [closedNews, setClosedNews] = useState<Record<string, boolean>>({});
   // Exécution agentique en cours (création multiple en cours, élément par élément).
   const [executing, setExecuting] = useState(false);
   // P5 — modale « Arrêter de générer ? » + annulation de l'exécution en cours.
@@ -752,6 +753,23 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         kind: "privacy",
         content:
           "tes échanges restent chez toi. je m'entraîne PAS sur tes messages, ils sont chiffrés dans un espace dédié à ton compte, isolé du modèle et de l'équipe. personne n'y touche, nous compris.",
+      },
+    ]);
+  };
+
+  const runShortcutsNews = () => {
+    setAskMessages((prev) => [
+      ...prev,
+      {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: "Quels sont les raccourcis clavier ?",
+      },
+      {
+        id: `mue-${Date.now()}`,
+        role: "mue",
+        content:
+          "Tu peux me piloter au clavier sans quitter tes tâches :\n\n- **⌘J** (ou **Ctrl+J**) : Ouvrir ou fermer ce panneau copilote.\n- **⌘K** (ou **Ctrl+K**) : Ouvrir la palette globale de recherche rapide.\n- **Échap** : Masquer le panneau Mue ou toute modale active.",
       },
     ]);
   };

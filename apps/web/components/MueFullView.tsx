@@ -25,21 +25,7 @@ const stroke = {
   viewBox: "0 0 24 24",
 };
 
-const MueMark = ({ size = 18 }: { size?: number }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
-    <defs>
-      <linearGradient id="mfvgrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#78AABF" />
-        <stop offset="50%" stopColor="#611C71" />
-        <stop offset="100%" stopColor="#FE0045" />
-      </linearGradient>
-    </defs>
-    <path
-      d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z"
-      fill="url(#mfvgrad)"
-    />
-  </svg>
-);
+
 
 export function MueFullView() {
   const { activeConvId } = useApp();
@@ -168,7 +154,7 @@ export function MueFullView() {
               ) : (
                 <div key={m.id} className="mfv-msg mfv-msg--mue">
                   <div className="mfv-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   <div className="mfv-msg-body">{m.content}</div>
                 </div>
@@ -177,7 +163,7 @@ export function MueFullView() {
             {pending && (
               <div className="mfv-msg mfv-msg--mue">
                 <div className="mfv-msg-head">
-                  <MueMark size={16} /> Mue
+                  <MueFlower size={16} /> Mue
                 </div>
                 <div className="mfv-thinking">
                   <span />
@@ -330,7 +316,7 @@ export function MueFullView() {
             </button>
             <span className="mfv-spacer" />
             <button type="button" className="mfv-model">
-              <MueMark size={15} /> Max
+              <MueFlower size={15} /> Max
               <svg {...stroke} width={12} height={12}>
                 <polyline points="6 9 12 15 18 9" />
               </svg>

@@ -785,6 +785,9 @@ button:not(:disabled):active,
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
+[data-theme="dark"] .topbar-actbtn.topbar-mue.is-active:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
 
 /* ── DARK : séparateurs entre blocs nettement plus visibles. ─────────
    Les inset-shadows existaient en rgba(10,10,10,.08-.1) → invisible sur
@@ -2771,9 +2774,11 @@ html {
 }
 /* Bouton Mue : pilule icône + libellé « Mue ». */
 .topbar-mue {
-  width: auto;
-  gap: 7px;
-  padding: 0 13px 0 11px;
+  width: 182px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 12px 0 14px;
+  white-space: nowrap;
 }
 /* ── Bouton Agent (Mue) — neutre au repos, anneau IA animé au hover ── */
 @property --mue-angle {
@@ -2793,9 +2798,9 @@ html {
 .topbar-actbtn.topbar-mue::before {
   content: "";
   position: absolute;
-  inset: -2.5px;
-  border-radius: inherit;
-  padding: 2.5px;
+  inset: -2px;
+  border-radius: 8px;
+  padding: 2px;
   background: conic-gradient(
     from var(--mue-angle),
     #78aabf 0deg,
@@ -2846,9 +2851,13 @@ html {
 /* Selected (panneau Mue ouvert) = même look que le hover : fond blanc,
    texte sombre, anneau conique gradient qui tourne en continu. */
 .topbar-actbtn.topbar-mue.is-active {
-  background: #fff;
-  color: var(--ink, #0a0a0a);
-  box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.06);
+  background: #10131a;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px #10131a, 0 2px 6px rgba(16, 19, 26, 0.15);
+}
+.topbar-actbtn.topbar-mue.is-active:hover {
+  background: #1f2937;
+  color: #ffffff;
 }
 .topbar-actbtn.topbar-mue.is-active::before {
   opacity: 1;
@@ -7769,7 +7778,7 @@ html {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px 10px 10px;
+  padding: 6px 8px 10px 0px;
 }
 .sidebar-brand-mark {
   color: var(--ink, #10131a);
@@ -12182,16 +12191,9 @@ html {
 .mue-pane.mue2 {
   padding: 0;
   color: var(--ink, #0a0a0a);
-  /* Fond = écho PASTEL de l'identité officielle (135deg) : blanc → bleu-teal
-     → lavande → rose pâle. Teintes très claires pour garder le texte lisible. */
-  background: linear-gradient(
-    135deg,
-    #ffffff 0%,
-    #e9f1f6 30%,
-    #f1ecf7 62%,
-    #fdeef1 100%
-  );
-  box-shadow: 0 10px 34px rgba(15, 23, 42, 0.1), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  background: #f1f5f9;
+  border-left: 2px solid rgba(15, 23, 42, 0.1);
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.08);
 }
 [data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
@@ -12203,7 +12205,8 @@ html {
     #211a30 72%,
     #2a1822 100%
   );
-  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.34);
+  border-left: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: -18px 0 48px rgba(0, 0, 0, 0.5);
 }
 .mue2-head {
   flex: none;
@@ -12461,20 +12464,19 @@ html {
   color: #fff;
 }
 
-/* Composer à liseré dégradé (pastel). */
+/* Composer de discussion avec bordure fine et sobre. */
 .mue2-composer {
   position: relative;
   border-radius: 10px;
   padding: 14px 14px 10px;
-  border: 2px solid transparent;
-  background: linear-gradient(#ffffff, #ffffff) padding-box,
-    var(--freescale-gradient) border-box;
-  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.12);
+  background: #ffffff;
+  /* Fine stroke noire en box-shadow inset (le flat-killer global rend les
+     border-color transparentes) + ombre douce. */
+  box-shadow: inset 0 0 0 1px rgba(10, 10, 10, 0.9), 0 8px 30px rgba(15, 23, 42, 0.06);
 }
 [data-theme="dark"] .mue2-composer {
-  background: linear-gradient(#15171d, #15171d) padding-box,
-    var(--freescale-gradient) border-box;
-  box-shadow: 0 8px 30px rgba(120, 90, 255, 0.16);
+  background: #15171d;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 8px 30px rgba(0, 0, 0, 0.25);
 }
 .mue2-input {
   width: 100%;
@@ -25688,7 +25690,7 @@ button.sidebar-brand {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  padding: 0 6px 0 12px;
+  padding: 0 6px 0 0px;
   white-space: nowrap;
 }
 .sidebar .sidebar-brand-word {

@@ -2,6 +2,7 @@
 
 import { AccountMenu } from "@/components/AccountMenu";
 import { AddChannelModal } from "@/components/AddChannelModal";
+import { MueFlower } from "@/components/MueFlower";
 import { ChannelLogo } from "@/components/icons/Icon";
 import type { CurrentUser } from "@/lib/auth";
 import { channelProviderLabel } from "@/lib/channels/registry";
@@ -88,28 +89,15 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
         <button
           type="button"
           className={`topbar-actbtn topbar-mue ${mueOpen ? "is-active" : ""}`}
-          aria-label="Agent — assistant Mue"
+          aria-label="Panneau Agent Mue"
           aria-pressed={mueOpen}
-          title="Agent"
+          title="Panneau Agent Mue"
           onClick={() => setMueOpen(!mueOpen)}
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" />
-            <path
-              d="M12 7.9l.95 2.15 2.15.95-2.15.95L12 15.1l-.95-2.15L8.9 12l2.15-.95z"
-              fill="currentColor"
-              stroke="none"
-            />
-          </svg>
-          <span className="topbar-actbtn-label">Agent</span>
+          <MueFlower size={16} />
+          <span className="topbar-actbtn-label">
+            Panneau Agent Mue
+          </span>
         </button>
         )}
 
