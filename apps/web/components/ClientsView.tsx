@@ -316,14 +316,12 @@ export function ClientsView() {
               </button>
             ))}
           </div>
-          <button type="button" className="csv3-add-client" onClick={() => setAddOpen(true)}>
+          <button type="button" className="btn-new-task csv3-add-client" onClick={() => setAddOpen(true)}>
             <svg
+              className="icon"
               viewBox="0 0 24 24"
-              width={15}
-              height={15}
               fill="none"
               stroke="currentColor"
-              strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden
