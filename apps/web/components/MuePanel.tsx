@@ -608,7 +608,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [askPending, setAskPending] = useState(false);
   const [askHistoryLoading, setAskHistoryLoading] = useState(false);
   const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
-  const [closedNews, setClosedNews] = useState<Record<string, boolean>>({});
   // Exécution agentique en cours (création multiple en cours, élément par élément).
   const [executing, setExecuting] = useState(false);
   // P5 — modale « Arrêter de générer ? » + annulation de l'exécution en cours.
@@ -668,6 +667,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [discOpen, setDiscOpen] = useState(false);
   // Drawer « Mémoire » — alimente ce que Mue sait de toi.
   const [memoryOpen, setMemoryOpen] = useState(false);
+  // Annonces (newsletter) fermées par l'utilisateur.
+  const [dismissedNews, setDismissedNews] = useState<Set<string>>(new Set());
   const [discQuery, setDiscQuery] = useState("");
   const [currentDisc, setCurrentDisc] = useState<{ id: string; title: string } | null>(null);
 
@@ -753,23 +754,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         kind: "privacy",
         content:
           "tes échanges restent chez toi. je m'entraîne PAS sur tes messages, ils sont chiffrés dans un espace dédié à ton compte, isolé du modèle et de l'équipe. personne n'y touche, nous compris.",
-      },
-    ]);
-  };
-
-  const runShortcutsNews = () => {
-    setAskMessages((prev) => [
-      ...prev,
-      {
-        id: `user-${Date.now()}`,
-        role: "user",
-        content: "Quels sont les raccourcis clavier ?",
-      },
-      {
-        id: `mue-${Date.now()}`,
-        role: "mue",
-        content:
-          "Tu peux me piloter au clavier sans quitter tes tâches :\n\n- **⌘J** (ou **Ctrl+J**) : Ouvrir ou fermer ce panneau copilote.\n- **⌘K** (ou **Ctrl+K**) : Ouvrir la palette globale de recherche rapide.\n- **Échap** : Masquer le panneau Mue ou toute modale active.",
       },
     ]);
   };
@@ -2082,31 +2066,83 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         </div>
       </header>
 
-      {/* CTA RGPD — sous l'en-tête, visible uniquement quand le chat est vide
-          ET que la mémoire n'est pas ouverte. */}
-      {mode === "ask" && !hasChat && !memoryOpen && (
-        <button type="button" className="mue2-privacy-cta" onClick={runPrivacy}>
-          <span className="mue2-privacy-thumb" aria-hidden>
-            <svg
-              viewBox="0 0 24 24"
-              width={10}
-              height={10}
-              fill="currentColor"
-              className="mue2-privacy-play"
-              aria-hidden
-            >
-              <polygon points="6 4 20 12 6 20 6 4" />
-            </svg>
-          </span>
-          <span className="mue2-privacy-tx">
-            <b>Comment Mue protège tes données</b>
-            <small>Vidéo · 1 min</small>
-          </span>
-          <span className="mue2-privacy-arrow" aria-hidden>
-            →
-          </span>
-        </button>
-      )}
+      {/* Annonces (style newsletter) — sous l'en-tête, chat vide + mémoire
+          fermée. Chaque carte est fermable (croix). */}
+      {mode === "ask" &&
+        !hasChat &&
+        !memoryOpen &&
+        (() => {
+          const news = [
+            {
+              id: "privacy",
+              eyebrow: "Confidentialité",
+              title: "Comment Mue protège tes données",
+              meta: "Vidéo · 1 min",
+              onOpen: runPrivacy,
+            },
+            {
+              id: "channels",
+              eyebrow: "Nouveauté",
+              title: "Connecte WhatsApp & Instagram à ton inbox",
+              meta: "Mise à jour · cette semaine",
+              onOpen: () => push({ kind: "info", text: "Connexion des canaux — bientôt." }),
+            },
+          ].filter((n) => !dismissedNews.has(n.id));
+          if (news.length === 0) return null;
+          return (
+            <div className="mue2-news" aria-label="Annonces">
+              {news.map((n) => (
+                <div key={n.id} className="mue2-news-card">
+                  <button type="button" className="mue2-news-main" onClick={n.onOpen}>
+                    <span className="mue2-privacy-thumb" aria-hidden>
+                      <svg
+                        viewBox="0 0 24 24"
+                        width={10}
+                        height={10}
+                        fill="currentColor"
+                        className="mue2-privacy-play"
+                        aria-hidden
+                      >
+                        <polygon points="6 4 20 12 6 20 6 4" />
+                      </svg>
+                    </span>
+                    <span className="mue2-news-tx">
+                      <span className="mue2-news-eyebrow">{n.eyebrow}</span>
+                      <b>{n.title}</b>
+                      <small>{n.meta}</small>
+                    </span>
+                    <span className="mue2-privacy-arrow" aria-hidden>
+                      →
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="mue2-news-close"
+                    aria-label="Fermer l'annonce"
+                    title="Fermer"
+                    onClick={() =>
+                      setDismissedNews((prev) => new Set(prev).add(n.id))
+                    }
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width={13}
+                      height={13}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      aria-hidden
+                    >
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
       {memoryOpen ? (
         <div className="mue2-memory-wrap">
