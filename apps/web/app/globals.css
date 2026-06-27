@@ -12249,7 +12249,9 @@ html {
   /* Fond blanc + stroke en dégradé officiel Freescale (border-box). */
   background: linear-gradient(#fff, #fff) padding-box, var(--stroke-grad-ai) border-box;
   border: 2px solid transparent;
-  box-shadow: none;
+  /* Double liseré INTERNE (inset) : trait fin, espace blanc, second trait fin. */
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14), inset 0 0 0 3px #ffffff,
+    inset 0 0 0 4px rgba(15, 23, 42, 0.11);
 }
 [data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
