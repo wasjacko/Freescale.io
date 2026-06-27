@@ -2798,11 +2798,13 @@ html {
   padding: 2.5px;
   background: conic-gradient(
     from var(--mue-angle),
-    #4f6cf7 0deg,
-    #c248e8 110deg,
-    #ff5f7e 200deg,
-    #ffb774 290deg,
-    #4f6cf7 360deg
+    #78aabf 0deg,
+    #6981b8 50deg,
+    #611c71 130deg,
+    #eb0020 210deg,
+    #fe0045 270deg,
+    #e1b9b8 320deg,
+    #78aabf 360deg
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
