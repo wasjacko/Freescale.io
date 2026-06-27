@@ -23,7 +23,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { id: "inbox", label: "Inbox" },
   { id: "today", label: "Tâches" },
-  { id: "clients", label: "Santé client" },
+  { id: "clients", label: "Clients" },
   { id: "calendar", label: "Calendar" },
   { id: "ai-knowledge", label: "Mue" },
 ];
