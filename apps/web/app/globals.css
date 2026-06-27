@@ -4961,7 +4961,7 @@ html {
 /* ── Inbox 3 panneaux (façon maquette) : LISTE | FIL côte à côte, dans le
    même cadre blanc arrondi que les autres pages (bord dégradé + ombre). ─── */
 .conv-shell {
-  --inbox-w: 320px;
+  --inbox-w: 270px;
   display: flex;
   /* Colonne : barre d'outils PLEINE LARGEUR en haut, puis la rangée
      dossiers + liste/fil en dessous. */
