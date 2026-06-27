@@ -12247,8 +12247,10 @@ html {
   padding: 0;
   color: var(--ink, #0a0a0a);
   background: #f1f5f9;
-  border-left: 2px solid rgba(15, 23, 42, 0.1);
-  box-shadow: none;
+  border-left: none;
+  /* Double liseré (déplacé depuis le bloc principal) : trait fin, espace blanc,
+     second trait fin. */
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 0 0 3px #ffffff, 0 0 0 4px rgba(15, 23, 42, 0.11);
 }
 [data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
@@ -28105,8 +28107,8 @@ button.sidebar-brand {
   margin-left: 6px;
   margin-right: 10px;
   margin-bottom: 0;
-  /* Double liseré : trait fin, petit espace blanc, second trait fin, puis ombre. */
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 0 0 3px #ffffff, 0 0 0 4px rgba(15, 23, 42, 0.11);
+  /* Double liseré retiré du bloc principal — déplacé sur le panneau Mue. */
+  box-shadow: none;
 }
 .app.view-today .tboard-table {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent), inset 0 0 0 1px
