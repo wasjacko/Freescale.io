@@ -35482,3 +35482,91 @@ button.mfv-model:hover {
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
+
+/* Édition par tâche dans la preview : statut cliquable + menu + retrait. */
+.mue2-prev-status-wrap {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+.mue2-prev-status-badge--btn {
+  gap: 4px;
+  border: 0;
+  cursor: pointer;
+}
+.mue2-prev-status-badge--btn:disabled {
+  cursor: default;
+}
+.mue2-prev-status-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+.mue2-prev-status-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 61;
+  min-width: 150px;
+  padding: 5px;
+  border-radius: 11px;
+  background: var(--csv-card-bg, #fff);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .mue2-prev-status-menu {
+  background: #1f222d;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.mue2-prev-status-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink, #10131a);
+  cursor: pointer;
+  text-align: left;
+}
+.mue2-prev-status-item:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+[data-theme="dark"] .mue2-prev-status-item {
+  color: #f4f4f7;
+}
+[data-theme="dark"] .mue2-prev-status-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.mue2-prev-status-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.mue2-prev-remove {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--csv-text-muted, #9097a3);
+  cursor: pointer;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+.mue2-prev-remove:hover {
+  background: rgba(235, 0, 32, 0.1);
+  color: #eb0020;
+}
+.mue2-prev-remove:disabled {
+  display: none;
+}

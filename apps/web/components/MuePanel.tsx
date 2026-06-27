@@ -877,6 +877,46 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     );
   };
 
+  // Édition par tâche dans la preview : changer le statut, retirer une tâche.
+  const handleEditTaskStatus = (
+    messageId: string,
+    taskIdx: number,
+    status: NonNullable<ProposedTask["status"]>
+  ) => {
+    setAskMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId && m.preview
+          ? {
+              ...m,
+              preview: {
+                ...m.preview,
+                tasks: m.preview.tasks.map((t, idx) =>
+                  idx === taskIdx ? { ...t, status } : t
+                ),
+              },
+            }
+          : m
+      )
+    );
+  };
+  const handleRemoveTask = (messageId: string, taskIdx: number) => {
+    setAskMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId && m.preview
+          ? {
+              ...m,
+              preview: {
+                ...m.preview,
+                tasks: m.preview.tasks.filter((_, idx) => idx !== taskIdx),
+              },
+            }
+          : m
+      )
+    );
+  };
+  // Quelle tâche affiche son menu de statut (clé "msgId:idx"), null = aucun.
+  const [statusMenuFor, setStatusMenuFor] = useState<string | null>(null);
+
   // Étape 2 — exécution réelle (Niveau 4), élément par élément, après validation.
   const executeMultiTask = async (previewId: string, tasks: ProposedTask[]) => {
     if (executing) return;
@@ -2276,20 +2316,103 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                                     disabled={m.preview?.done}
                                     title="Clique pour modifier le titre de la tâche"
                                   />
-                                  {(() => {
-                                    const st = STATUS_META[t.status ?? "todo"];
-                                    return (
-                                      <span
-                                        className="mue2-prev-status-badge"
-                                        style={{
-                                          color: st.color,
-                                          background: `color-mix(in srgb, ${st.color} 14%, transparent)`,
-                                        }}
-                                      >
-                                        {st.label}
-                                      </span>
-                                    );
-                                  })()}
+                                  {/* Statut éditable : clic = menu de choix. */}
+                                  <div className="mue2-prev-status-wrap">
+                                    {(() => {
+                                      const st = STATUS_META[t.status ?? "todo"];
+                                      const key = `${m.id}:${i}`;
+                                      return (
+                                        <button
+                                          type="button"
+                                          className="mue2-prev-status-badge mue2-prev-status-badge--btn"
+                                          style={{
+                                            color: st.color,
+                                            background: `color-mix(in srgb, ${st.color} 14%, transparent)`,
+                                          }}
+                                          disabled={m.preview?.done}
+                                          aria-haspopup="menu"
+                                          onClick={() =>
+                                            setStatusMenuFor((cur) => (cur === key ? null : key))
+                                          }
+                                        >
+                                          {st.label}
+                                          <svg
+                                            viewBox="0 0 24 24"
+                                            width={11}
+                                            height={11}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth={2.2}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            aria-hidden
+                                          >
+                                            <polyline points="6 9 12 15 18 9" />
+                                          </svg>
+                                        </button>
+                                      );
+                                    })()}
+                                    {statusMenuFor === `${m.id}:${i}` && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          className="mue2-prev-status-scrim"
+                                          aria-label="Fermer"
+                                          onClick={() => setStatusMenuFor(null)}
+                                        />
+                                        <div className="mue2-prev-status-menu" role="menu">
+                                          {(
+                                            Object.keys(STATUS_META) as NonNullable<
+                                              ProposedTask["status"]
+                                            >[]
+                                          ).map((key) => {
+                                            const meta = STATUS_META[key];
+                                            return (
+                                              <button
+                                                key={key}
+                                                type="button"
+                                                className="mue2-prev-status-item"
+                                                onClick={() => {
+                                                  handleEditTaskStatus(m.id, i, key);
+                                                  setStatusMenuFor(null);
+                                                }}
+                                              >
+                                                <span
+                                                  className="mue2-prev-status-dot"
+                                                  style={{ background: meta.color }}
+                                                  aria-hidden
+                                                />
+                                                {meta.label}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                  {/* Retirer cette tâche de la liste à créer. */}
+                                  <button
+                                    type="button"
+                                    className="mue2-prev-remove"
+                                    title="Retirer cette tâche"
+                                    aria-label="Retirer cette tâche"
+                                    disabled={m.preview?.done}
+                                    onClick={() => handleRemoveTask(m.id, i)}
+                                  >
+                                    <svg
+                                      viewBox="0 0 24 24"
+                                      width={14}
+                                      height={14}
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                      strokeLinecap="round"
+                                      aria-hidden
+                                    >
+                                      <line x1="6" y1="6" x2="18" y2="18" />
+                                      <line x1="18" y1="6" x2="6" y2="18" />
+                                    </svg>
+                                  </button>
                                 </div>
                                 {(t.client || t.conversationId) && (
                                   <div className="mue2-prev-row-bottom">
