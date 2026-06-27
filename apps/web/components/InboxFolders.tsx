@@ -18,7 +18,7 @@ const stroke = {
 const VIEWS: { key: string | null; label: string; icon: React.ReactNode }[] = [
   {
     key: null,
-    label: "Inbox",
+    label: "Principale",
     icon: (
       <svg {...stroke}>
         <path d="M22 12h-6l-2 3h-4l-2-3H2" />
