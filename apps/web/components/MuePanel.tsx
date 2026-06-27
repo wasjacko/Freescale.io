@@ -539,6 +539,51 @@ function MueStaircase({ items, doneKey }: { items: StairItem[]; doneKey: string 
   );
 }
 
+// Cache des nombres déjà comptés (par valeur+texte) → pas de recompte au
+// re-render des étapes (qui re-rendent souvent).
+const COUNTED_NUMS = new Set<string>();
+// Un nombre qui s'anime de 0 → cible (count-up), une seule fois.
+function CountUpNumber({ value, ck }: { value: number; ck: string }) {
+  const already = COUNTED_NUMS.has(ck);
+  const [n, setN] = useState(already ? value : 0);
+  useEffect(() => {
+    if (already) return;
+    let raf = 0;
+    const dur = 650;
+    let start = 0;
+    const tick = (ts: number) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / dur, 1);
+      // easeOutCubic pour finir en douceur.
+      const eased = 1 - (1 - p) ** 3;
+      setN(Math.round(eased * value));
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else COUNTED_NUMS.add(ck);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, ck, already]);
+  return <span className="mue-count">{n}</span>;
+}
+// Rend un texte d'étape en animant chaque nombre (count-up). Les segments non
+// numériques sont rendus tels quels.
+function ThinkingStepText({ text }: { text: string }) {
+  const parts = text.split(/(\d+)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        /^\d+$/.test(part) ? (
+          // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+          <CountUpNumber key={i} value={Number.parseInt(part, 10)} ck={`${text}#${i}`} />
+        ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: ordre stable
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 /**
  * MuePanel — copilote Mue façon « Brain » : deux modes (Demander / Agents),
  * un composer à liseré dégradé, 3 suggestions, et une surface de chat pur.
@@ -1292,7 +1337,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                 <span className="mue-step-bullet">
                   <span className="mue-step-bullet-dot" />
                 </span>
-                <span className="mue-step-text">{label}</span>
+                <span className="mue-step-text">
+                  <ThinkingStepText text={label} />
+                </span>
               </div>
             );
           })}
