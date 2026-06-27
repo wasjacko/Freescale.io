@@ -20484,9 +20484,9 @@ button:active:not(:disabled):not(.no-press) {
   gap: 0;
 }
 .thread-empty-illu {
-  width: 620px;
-  max-width: 92%;
-  margin-bottom: 0;
+  width: 460px;
+  max-width: 88%;
+  margin-bottom: 8px;
 }
 .thread-empty-img {
   display: block;
@@ -20499,8 +20499,8 @@ button:active:not(:disabled):not(.no-press) {
   display: block;
 }
 .thread-empty-title {
-  margin: 0;
-  font-size: 17px;
+  margin: 0 0 10px;
+  font-size: 19px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #0f172a;

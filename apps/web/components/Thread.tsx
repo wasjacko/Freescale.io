@@ -228,9 +228,81 @@ export function Thread({
       <section className="thread thread-empty-pane">
         <div className="thread-empty-card">
           <div className="thread-empty-illu" aria-hidden>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/inbox-empty.webp" alt="" className="thread-empty-img" />
+            <svg viewBox="0 0 600 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="fs-illu-grad" x1="0" y1="0" x2="600" y2="320"
+                  gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#78AABF" />
+                  <stop offset="18%" stopColor="#6981B8" />
+                  <stop offset="38%" stopColor="#611C71" />
+                  <stop offset="58%" stopColor="#EB0020" />
+                  <stop offset="74%" stopColor="#FE0045" />
+                  <stop offset="88%" stopColor="#E1B9B8" />
+                  <stop offset="100%" stopColor="#6981B8" />
+                </linearGradient>
+                <linearGradient id="fs-illu-soft" x1="0" y1="0" x2="600" y2="320"
+                  gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#78AABF" stopOpacity="0.16" />
+                  <stop offset="50%" stopColor="#611C71" stopOpacity="0.14" />
+                  <stop offset="100%" stopColor="#FE0045" stopOpacity="0.16" />
+                </linearGradient>
+              </defs>
+
+              {/* Halos d'ambiance */}
+              <circle cx="120" cy="90" r="120" fill="url(#fs-illu-soft)" />
+              <circle cx="500" cy="250" r="140" fill="url(#fs-illu-soft)" />
+
+              {/* Liens canaux → boîte centrale */}
+              <g stroke="url(#fs-illu-grad)" strokeWidth="2" strokeLinecap="round"
+                strokeDasharray="2 9" opacity="0.55">
+                <path d="M96 92 Q180 120 212 150" />
+                <path d="M506 78 Q424 110 388 150" />
+                <path d="M118 256 Q180 232 214 200" />
+                <path d="M498 252 Q436 230 386 200" />
+              </g>
+
+              {/* Boîte unifiée (au centre) */}
+              <rect x="206" y="112" width="188" height="126" rx="22"
+                fill="#ffffff" stroke="url(#fs-illu-grad)" strokeWidth="2.5" />
+              {/* 3 rangées de conversation */}
+              <g>
+                <circle cx="234" cy="142" r="9" fill="url(#fs-illu-grad)" />
+                <rect x="252" y="137" width="116" height="6" rx="3" fill="#e7eaf2" />
+                <rect x="252" y="148" width="78" height="5" rx="2.5" fill="#eef0f6" />
+
+                <circle cx="234" cy="175" r="9" fill="url(#fs-illu-grad)" opacity="0.78" />
+                <rect x="252" y="170" width="116" height="6" rx="3" fill="#e7eaf2" />
+                <rect x="252" y="181" width="64" height="5" rx="2.5" fill="#eef0f6" />
+
+                <circle cx="234" cy="208" r="9" fill="url(#fs-illu-grad)" opacity="0.56" />
+                <rect x="252" y="203" width="116" height="6" rx="3" fill="#e7eaf2" />
+                <rect x="252" y="214" width="88" height="5" rx="2.5" fill="#eef0f6" />
+              </g>
+
+              {/* Avatars / canaux autour */}
+              <g>
+                <circle cx="84" cy="86" r="28" fill="url(#fs-illu-grad)" />
+                <circle cx="84" cy="86" r="28" fill="#fff" fillOpacity="0.12" />
+                <circle cx="104" cy="104" r="9" fill="#25D366" stroke="#fff" strokeWidth="3" />
+
+                <circle cx="514" cy="72" r="28" fill="url(#fs-illu-grad)" opacity="0.9" />
+                <circle cx="534" cy="90" r="9" fill="#EA4335" stroke="#fff" strokeWidth="3" />
+
+                <circle cx="106" cy="262" r="26" fill="url(#fs-illu-grad)" opacity="0.85" />
+                <circle cx="125" cy="278" r="8.5" fill="#0A66C2" stroke="#fff" strokeWidth="3" />
+
+                <circle cx="510" cy="258" r="26" fill="url(#fs-illu-grad)" opacity="0.95" />
+                <circle cx="529" cy="274" r="8.5" fill="#7B5CFF" stroke="#fff" strokeWidth="3" />
+              </g>
+
+              {/* Étincelles */}
+              <g fill="url(#fs-illu-grad)">
+                <path d="M408 96l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" opacity="0.7" />
+                <path d="M188 214l2.4 6 6 2.4-6 2.4-2.4 6-2.4-6-6-2.4 6-2.4z" opacity="0.5" />
+              </g>
+            </svg>
           </div>
+          <h2 className="thread-empty-title">Discutez avec tous vos contacts au même endroit !</h2>
           <p className="thread-empty-text">
             C'est ici que vous échangez avec vos contacts sur tous vos canaux connectés. Chaque fois
             que quelqu'un vous envoie un message, il apparaît ici. Vous pouvez modifier cela et plus
