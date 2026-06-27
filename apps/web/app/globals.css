@@ -35489,7 +35489,7 @@ button.mfv-model:hover {
 /* Carte de tâche révélée individuellement dans l'escalier (pas de gap géré
    par le conteneur .mue2-prev d'origine → on remet la marge ici). */
 .mue2-prev--single {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 @media (prefers-reduced-motion: reduce) {
   .mue2-stair-item {
@@ -35686,7 +35686,8 @@ button.mfv-model:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin-top: 4px;
+  /* Plus d'air entre la dernière tâche et les chips de confirmation. */
+  margin-top: 20px;
 }
 .mue2-cfm-chip {
   display: inline-flex;
