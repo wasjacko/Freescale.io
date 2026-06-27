@@ -35467,3 +35467,18 @@ button.mfv-model:hover {
     animation: none;
   }
 }
+
+/* Badge de statut dans la preview de tâches (À faire / À cadrer / En attente…)
+   — couleur portée en inline (color + bg color-mix), forme pilule. */
+.mue2-prev-status-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}

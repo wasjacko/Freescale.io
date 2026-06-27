@@ -37,6 +37,19 @@ type ProposedTask = {
   dueLabel: string;
   dueAtIso: string;
   conversationId?: string | null;
+  status?: "to-scope" | "todo" | "in-progress" | "awaiting-reply" | "done";
+};
+
+// Statuts canoniques (mêmes libellés + accents que le Tableau de tâches).
+const STATUS_META: Record<
+  NonNullable<ProposedTask["status"]>,
+  { label: string; color: string }
+> = {
+  "to-scope": { label: "À cadrer", color: "#8b5cf6" },
+  todo: { label: "À faire", color: "#4f6cf7" },
+  "in-progress": { label: "En cours", color: "#d97706" },
+  "awaiting-reply": { label: "En attente", color: "#0891b2" },
+  done: { label: "Terminé", color: "#16a34a" },
 };
 
 type AskMessage = {
@@ -252,22 +265,43 @@ function proposeWeekTasks(): ProposedTask[] {
     client: string | null;
     priority: Priority;
     conversationId: string | null;
+    status: NonNullable<ProposedTask["status"]>;
   }[] = [
     {
       title: "Envoyer le contrat signé",
       client: "Thomas Aubry",
       priority: "high",
       conversationId: "c2",
+      status: "todo",
     },
-    { title: "Relancer le devis", client: "David Kim", priority: "medium", conversationId: "c9" },
+    {
+      title: "Relancer le devis",
+      client: "David Kim",
+      priority: "medium",
+      conversationId: "c9",
+      status: "awaiting-reply",
+    },
     {
       title: "Préparer la proposition commerciale",
       client: "Alexandre Dupont",
       priority: "medium",
       conversationId: "c7",
+      status: "to-scope",
     },
-    { title: "Réserver le coworking", client: null, priority: "low", conversationId: null },
-    { title: "Mettre à jour le portfolio", client: null, priority: "low", conversationId: null },
+    {
+      title: "Réserver le coworking",
+      client: null,
+      priority: "low",
+      conversationId: null,
+      status: "todo",
+    },
+    {
+      title: "Mettre à jour le portfolio",
+      client: null,
+      priority: "low",
+      conversationId: null,
+      status: "to-scope",
+    },
   ];
   return defs.map((def, i) => {
     const due = dueInDays(i + 1);
@@ -772,6 +806,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       priority: "medium",
       dueLabel: parsed.dueLabel,
       dueAtIso: parsed.dueAtIso,
+      status: "todo",
     };
     // Si un client a été détecté, on cite explicitement la conversation
     // « source » dont Mue a déduit la demande → l'utilisateur peut cliquer
@@ -2238,7 +2273,20 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                                     disabled={m.preview?.done}
                                     title="Clique pour modifier le titre de la tâche"
                                   />
-                                  <span className="mue2-prev-todo-badge">TO DO</span>
+                                  {(() => {
+                                    const st = STATUS_META[t.status ?? "todo"];
+                                    return (
+                                      <span
+                                        className="mue2-prev-status-badge"
+                                        style={{
+                                          color: st.color,
+                                          background: `color-mix(in srgb, ${st.color} 14%, transparent)`,
+                                        }}
+                                      >
+                                        {st.label}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
                                 {(t.client || t.conversationId) && (
                                   <div className="mue2-prev-row-bottom">
@@ -2268,16 +2316,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                           </div>
                         ),
                       })),
-                      {
-                        node: (
-                          <div className="mue2-prev-dest">
-                            <svg {...stroke} width={13} height={13}>
-                              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                            </svg>
-                            Destination : <strong>{m.preview.destination}</strong>
-                          </div>
-                        ),
-                      },
                       {
                         node: (
                           <div className="mue2-cfm">
