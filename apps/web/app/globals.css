@@ -35574,49 +35574,46 @@ button.mfv-model:hover {
 /* Logo fleur Mue animé : les 5 pétales convergent au centre (boule gradient
    + grain noise) puis reviennent à l'état fleur, en boucle. */
 .mue-flower--anim {
-  animation: mue-flower-spin 18s linear infinite;
   transform-origin: 50% 50%;
   overflow: visible;
 }
-@keyframes mue-flower-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-/* Chaque pétale glisse vers le centre (cy 20 → 31) puis revient. */
+/* Animation PAR VAGUE avec temps de pose : la fleur reste fleur (repos),
+   puis les pétales fondent en boule au centre, reviennent, et pause à
+   nouveau avant la vague suivante. */
 .mue-flower--anim .mue-flower-petal {
-  animation: mue-flower-merge 5.2s ease-in-out infinite;
+  animation: mue-flower-merge 4.6s ease-in-out infinite;
 }
 @keyframes mue-flower-merge {
+  /* 0-34% : pose (fleur) */
   0%,
-  18% {
+  34% {
     cy: 20px;
   }
-  44%,
-  56% {
+  /* ~53% : boule fondue au centre */
+  53% {
     cy: 31px;
   }
-  82%,
+  /* 72-100% : retour fleur puis pose avant la vague suivante */
+  72%,
   100% {
     cy: 20px;
   }
 }
-/* Le grain (noise) apparaît seulement quand les pétales sont fondus en boule. */
+/* Le grain (noise) n'apparaît que pendant la fonte en boule. */
 .mue-flower--anim .mue-flower-noise {
   opacity: 0;
   mix-blend-mode: overlay;
-  animation: mue-flower-noise 5.2s ease-in-out infinite;
+  animation: mue-flower-noise 4.6s ease-in-out infinite;
 }
 @keyframes mue-flower-noise {
   0%,
-  22% {
+  38% {
     opacity: 0;
   }
-  44%,
-  56% {
+  53% {
     opacity: 0.45;
   }
-  80%,
+  68%,
   100% {
     opacity: 0;
   }
