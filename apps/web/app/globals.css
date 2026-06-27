@@ -35334,3 +35334,43 @@ button.mfv-model:hover {
   background: rgba(255, 255, 255, 0.07);
   color: #c8ccd6;
 }
+
+/* Stats clés Santé client — 3 cartes pastel (faits comptables réels). */
+.csv3-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 4px 0 2px;
+}
+.csv3-stat {
+  flex: 1 1 0;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: 16px;
+}
+.csv3-stat__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--csv-text-soft, #5b6475);
+}
+.csv3-stat__value {
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink, #10131a);
+}
+.csv3-stat__sub {
+  font-size: 12.5px;
+  color: var(--csv-text-muted, #9097a3);
+}
+.csv3-stat--green { background: #e9f5ee; }
+.csv3-stat--peach { background: #fcefe1; }
+.csv3-stat--violet { background: #efeafc; }
+[data-theme="dark"] .csv3-stat--green { background: rgba(34, 176, 110, 0.12); }
+[data-theme="dark"] .csv3-stat--peach { background: rgba(245, 158, 11, 0.12); }
+[data-theme="dark"] .csv3-stat--violet { background: rgba(122, 90, 248, 0.14); }
+[data-theme="dark"] .csv3-stat__value { color: #f4f4f7; }

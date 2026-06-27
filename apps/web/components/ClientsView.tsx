@@ -187,6 +187,42 @@ export function ClientsView() {
     };
   }, [total, toReplyCount]);
 
+  // ─ 3 stats clés (cartes pastel) — uniquement des FAITS comptables tirés
+  //   du portefeuille, jamais de delta inventé « +X % vs mois dernier ». ─
+  const clientStats = useMemo(() => {
+    const actifs = clients.filter((c) => c.stage === "active").length;
+    const prospects = clients.filter((c) => c.stage === "prospect").length;
+    const dormants = clients.filter((c) => c.stage === "dormant").length;
+    const aRelancer = clients.filter((c) => {
+      const h = relationHealth(c);
+      return h.state === "silent" || h.state === "awaiting";
+    }).length;
+    const pctActifs = total > 0 ? Math.round((actifs / total) * 100) : 0;
+    return [
+      {
+        key: "total",
+        tone: "green" as const,
+        label: "Clients suivis",
+        value: total,
+        sub: `${prospects} prospect${prospects > 1 ? "s" : ""} · ${dormants} dormant${dormants > 1 ? "s" : ""}`,
+      },
+      {
+        key: "actifs",
+        tone: "peach" as const,
+        label: "Clients actifs",
+        value: actifs,
+        sub: `${pctActifs}% du portefeuille`,
+      },
+      {
+        key: "relancer",
+        tone: "violet" as const,
+        label: "À relancer",
+        value: aRelancer,
+        sub: aRelancer === 0 ? "tout est à jour" : "fils à reprendre",
+      },
+    ];
+  }, [clients, total]);
+
   // ─ Répartition par stade ─────────────────────────────────────────
   const stageDist = useMemo(() => {
     const counts: Record<NonNullable<Client["stage"]>, number> = {
@@ -346,6 +382,17 @@ export function ClientsView() {
           ))}
         </div>
       )}
+
+      {/* ── 3 stats clés (cartes pastel) — faits comptables du portefeuille ── */}
+      <div className="csv3-stats">
+        {clientStats.map((s) => (
+          <article key={s.key} className={`csv3-stat csv3-stat--${s.tone}`}>
+            <span className="csv3-stat__label">{s.label}</span>
+            <strong className="csv3-stat__value">{s.value}</strong>
+            <span className="csv3-stat__sub">{s.sub}</span>
+          </article>
+        ))}
+      </div>
 
       {/* ── HERO : score de santé global + ses 4 indicateurs ────────────
            Le score répond à « est-ce que ma santé client est bonne ? ».
