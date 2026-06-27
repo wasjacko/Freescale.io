@@ -1,6 +1,7 @@
 "use client";
 
 import { type ContextAction, ContextMenu } from "@/components/ContextMenu";
+import { InboxSortButton } from "@/components/InboxSortButton";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
@@ -302,42 +303,45 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
 
   return (
     <section className="inbox">
-      {/* Recherche permanente, en haut de la liste (au-dessus des conversations). */}
-      <div className="ibx-search-wrap ibx-search-wrap--list">
-        <svg
-          viewBox="0 0 24 24"
-          width="15"
-          height="15"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.9"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="ibx-search-ic"
-          aria-hidden
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input
-          ref={searchRef}
-          type="text"
-          className="ibx-search-input"
-          placeholder="Rechercher…"
-          value={inboxSearch}
-          onChange={(e) => setInboxSearch(e.target.value)}
-          aria-label="Rechercher dans l'inbox"
-        />
-        {inboxSearch && (
-          <button
-            type="button"
-            className="ibx-search-clear"
-            aria-label="Effacer"
-            onClick={() => setInboxSearch("")}
+      {/* Recherche permanente + bouton de tri (icône) en haut de la liste. */}
+      <div className="ibx-search-wrap--list">
+        <div className="ibx-search-field">
+          <svg
+            viewBox="0 0 24 24"
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="ibx-search-ic"
+            aria-hidden
           >
-            ✕
-          </button>
-        )}
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            ref={searchRef}
+            type="text"
+            className="ibx-search-input"
+            placeholder="Rechercher…"
+            value={inboxSearch}
+            onChange={(e) => setInboxSearch(e.target.value)}
+            aria-label="Rechercher dans l'inbox"
+          />
+          {inboxSearch && (
+            <button
+              type="button"
+              className="ibx-search-clear"
+              aria-label="Effacer"
+              onClick={() => setInboxSearch("")}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <InboxSortButton />
       </div>
 
       <div className="conv-list" id="conv-list">
