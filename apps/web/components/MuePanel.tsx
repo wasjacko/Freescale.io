@@ -1760,7 +1760,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   >
                     <span className="mue2-model-item-ic" aria-hidden>
                       {m.icon === "mue" ? (
-                        <MueMark size={16} />
+                        <MueFlower size={16} />
                       ) : m.icon === "gpt" ? (
                         <svg
                           viewBox="0 0 24 24"
@@ -2179,14 +2179,14 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               ) : m.kind === "scan" ? (
                 <div key={m.id} className="mue2-msg is-mue mue2-msg--scan">
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   <MueTaskScanner inline />
                 </div>
               ) : m.kind === "privacy" ? (
                 <div key={m.id} className="mue2-msg is-mue mue2-msg--privacy">
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   {/* Lecteur vidéo (mock) — RGPD & confidentialité. */}
                   <div className="mue2-video" role="group" aria-label="Vidéo confidentialité">
@@ -2243,7 +2243,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               ) : m.kind === "preview" && m.preview ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   {renderThinkingBlock(m)}
                   {/* RÈGLE : tout s'affiche en escalier, de haut en bas, rien
@@ -2436,7 +2436,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               ) : m.kind === "progress" && m.progress ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue · au travail
+                    <MueFlower size={16} /> Mue · au travail
                   </div>
                   <div className="mue2-prog">
                     <div className="mue2-prog-line">
@@ -2460,7 +2460,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               ) : m.kind === "slots" && m.slots ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">{m.content}</div>
@@ -2483,7 +2483,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               ) : m.kind === "refusal" && m.refusal ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   {renderThinkingBlock(m)}
                   <div className="mue2-refusal">
@@ -2516,7 +2516,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               ) : m.kind === "result" ? (
                 <div key={m.id} className="mue2-msg is-mue">
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">
@@ -2558,7 +2558,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   className={`mue2-msg is-mue ${m.tone === "error" ? "is-error" : ""}`}
                 >
                   <div className="mue2-msg-head">
-                    <MueMark size={16} /> Mue
+                    <MueFlower size={16} /> Mue
                   </div>
                   {renderThinkingBlock(m)}
                   <div className="mue2-msg-body">
@@ -2606,7 +2606,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
             {askPending && !askMessages.some((msg) => msg.kind === "thinking") && (
               <div className="mue2-msg is-mue">
                 <div className="mue2-msg-head">
-                  <MueMark size={16} /> Mue
+                  <MueFlower size={16} /> Mue
                 </div>
                 <div className="mue2-thinking">
                   <span />
