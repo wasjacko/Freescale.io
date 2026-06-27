@@ -24225,10 +24225,10 @@ button:active:not(:disabled):not(.no-press) {
 .ibx-chips-clear:hover {
   color: #10131a;
 }
-/* « Nouveau message » poussé à l'opposé des filtres (tout à droite),
-   en PRIMARY noir pour rendre l'action évidente. */
+/* « Nouveau message » en PRIMARY noir pour rendre l'action évidente.
+   Le groupe Tri/Filtre+compose est poussé à droite via .ibx-tool-wrap
+   (margin-left:auto) ; le compose suit donc juste à droite des filtres. */
 .ibx-tool-new {
-  margin-left: auto;
   background: #0a0a0a !important;
   color: #fff !important;
   border: 0 !important;
@@ -35465,7 +35465,9 @@ button.mfv-model:hover {
 
 /* ── Inbox : toggle Email / Messages (réutilise .cal-viewtoggle canonique) ── */
 .ibx-modeswitch {
-  margin-right: 4px;
+  /* margin-right:auto pousse tout le reste (Tri, Filtre, Nouveau message)
+     en groupe à droite de la barre. */
+  margin-right: auto;
 }
 /* Mode MESSAGE (chat) : aperçu en texte simple (sans fond/bulle). */
 .inbox-mode-message .conv-preview {
