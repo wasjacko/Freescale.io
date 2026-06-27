@@ -32486,9 +32486,14 @@ button.mfv-model:hover {
   font-weight: 700;
 }
 .csv3-head__tools {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: 10px;
+}
+/* « Ajouter un client » poussé tout à droite de la toolbar. */
+.csv3-add-client {
+  margin-left: auto;
 }
 .csv3-search {
   display: inline-flex;
