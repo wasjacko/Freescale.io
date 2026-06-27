@@ -1389,9 +1389,19 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     const scheduleNextStep = (stepIdx: number) => {
       if (Date.now() - startTime >= T) return;
 
+      // Délai PAR ÉTAPE volontairement très variable → simule une vraie
+      // réflexion (certaines étapes sont rapides, d'autres demandent plus de
+      // temps), au lieu d'un tempo régulier qui sonne faux.
+      const jitter = (min: number, max: number) => min + Math.random() * (max - min);
+      // Un quart des étapes « bute » un peu plus longtemps (réflexion appuyée).
+      const ponder = Math.random() < 0.25;
       const nextDelay = isMultiTaskRequest(text)
-        ? 1000 + Math.random() * 300 // ~1.1 seconds per step for rapid feedback
-        : 1800 + Math.random() * 400; // ~2 seconds
+        ? ponder
+          ? jitter(1600, 2600)
+          : jitter(450, 1300)
+        : ponder
+          ? jitter(1900, 3000)
+          : jitter(500, 1600);
       const timeoutId = setTimeout(() => {
         if (Date.now() - startTime >= T) return;
 
