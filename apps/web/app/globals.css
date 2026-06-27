@@ -35810,10 +35810,15 @@ button.mfv-model:hover {
   position: relative;
   height: 100%;
   min-height: 0;
-  display: flex;
+  /* Cachée par défaut — n'apparaît QUE sur la vue Mue (.app.view-ai). */
+  display: none;
   flex-direction: column;
   overflow: auto;
   background: var(--csv-card-bg, #fff);
+}
+.app.view-ai .mfv2 {
+  display: flex;
+  grid-column: 1 / -1;
 }
 /* Halo dégradé officiel, flouté, en haut au centre. */
 .mfv2-glow {
