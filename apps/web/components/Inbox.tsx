@@ -465,7 +465,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                       </span>
                     </span>
                     <span className="conv-preview">{c.preview || "…"}</span>
-                    {waitDays >= 2 && (
+                    {inboxMode === "email" && waitDays >= 2 && (
                       <span className="conv-relance">
                         ⏳ En attente {waitDays} j · <b>Relancer</b>
                       </span>
