@@ -5404,11 +5404,24 @@ html {
   flex: 1;
   max-width: 320px;
 }
+/* Variante « liste » : la recherche vit en haut de la colonne conversations,
+   pleine largeur, légèrement détachée des conversations en dessous. */
+.ibx-search-wrap--list {
+  max-width: none;
+  flex: none;
+  padding: 10px var(--page-pad-x) 8px;
+}
 .ibx-search-ic {
   position: absolute;
   left: 10px;
   color: #9aa0aa;
   pointer-events: none;
+}
+.ibx-search-wrap--list .ibx-search-ic {
+  left: calc(var(--page-pad-x) + 10px);
+}
+.ibx-search-wrap--list .ibx-search-clear {
+  right: calc(var(--page-pad-x) + 8px);
 }
 .ibx-search-input {
   width: 100%;

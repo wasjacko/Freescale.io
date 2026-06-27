@@ -76,7 +76,6 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
   const [extraUnread, setExtraUnread] = useState<Set<string>>(new Set());
   const [ctx, setCtx] = useState<{ x: number; y: number; convId: string } | null>(null);
   // « / » = recherche locale éphémère (filtre par nom, Esc pour fermer).
-  const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -84,7 +83,6 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
       const inField = tag === "input" || tag === "textarea";
       if (e.key === "/" && !inField) {
         e.preventDefault();
-        setSearchOpen(true);
         requestAnimationFrame(() => searchRef.current?.focus());
       }
     };
@@ -304,28 +302,43 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
 
   return (
     <section className="inbox">
-      {/* Plus de titre « Inbox » ni de bouton ici — le nouveau message vit dans
-          la barre d'outils. La recherche (« / ») s'affiche au-dessus de la liste. */}
-      {searchOpen && (
-        <header className="panel-head">
-          <input
-            ref={searchRef}
-            className="ibx-search"
-            placeholder="Filtrer…"
-            value={inboxSearch}
-            onChange={(e) => setInboxSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setInboxSearch("");
-                setSearchOpen(false);
-              }
-            }}
-            onBlur={() => {
-              if (!inboxSearch) setSearchOpen(false);
-            }}
-          />
-        </header>
-      )}
+      {/* Recherche permanente, en haut de la liste (au-dessus des conversations). */}
+      <div className="ibx-search-wrap ibx-search-wrap--list">
+        <svg
+          viewBox="0 0 24 24"
+          width="15"
+          height="15"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="ibx-search-ic"
+          aria-hidden
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          ref={searchRef}
+          type="text"
+          className="ibx-search-input"
+          placeholder="Rechercher…"
+          value={inboxSearch}
+          onChange={(e) => setInboxSearch(e.target.value)}
+          aria-label="Rechercher dans l'inbox"
+        />
+        {inboxSearch && (
+          <button
+            type="button"
+            className="ibx-search-clear"
+            aria-label="Effacer"
+            onClick={() => setInboxSearch("")}
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       <div className="conv-list" id="conv-list">
         {filteredConvs.length === 0 && showSkeletons && (
@@ -379,10 +392,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
             );
           })()}
         {(() => {
-          // Groupement par ÉTAT DE LECTURE : « Non lus » d'abord, puis
-          // « Déjà ouverts ». On réordonne pour que chaque groupe soit
-          // contigu (non-lus en tête), en gardant le tri courant à l'intérieur.
-          let lastSection = "";
+          // Ordre par ÉTAT DE LECTURE : non-lus en tête, puis déjà ouverts —
+          // sans en-tête de section visible (les groupes restent contigus).
           const orderedRows = [...clientRows].sort((a, b) => {
             const ua = isUnread(a.rep.id, a.rep.unread) ? 0 : 1;
             const ub = isUnread(b.rep.id, b.rep.unread) ? 0 : 1;
@@ -396,12 +407,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
               ball === "waiting" && c.lastOutboundAt
                 ? Math.floor((Date.now() - new Date(c.lastOutboundAt).getTime()) / 86400000)
                 : 0;
-            const section = unread ? "Non lus" : "Déjà ouverts";
-            const showSection = section !== lastSection;
-            if (showSection) lastSection = section;
             return (
               <Fragment key={c.clientId ?? c.id}>
-                {showSection && <div className="conv-section">{section}</div>}
                 <button
                   type="button"
                   className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""} ${ball ? `conv--${ball}` : ""}`}

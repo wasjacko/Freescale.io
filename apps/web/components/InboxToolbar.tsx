@@ -64,13 +64,11 @@ export function InboxToolbar() {
     inboxLabels,
     inboxBucket,
     inboxUnreadOnly,
-    inboxSearch,
     setInboxSort,
     toggleInboxChannel,
     toggleInboxLabel,
     setInboxBucket,
     setInboxUnreadOnly,
-    setInboxSearch,
     resetInboxFilters,
     setActiveConv,
     inboxMode,
@@ -358,42 +356,6 @@ export function InboxToolbar() {
             onClose={() => setAddChannelOpen(false)}
             connectedKinds={connectedKinds}
           />
-        </div>
-
-        <div className="ibx-search-wrap">
-          <svg
-            viewBox="0 0 24 24"
-            width="15"
-            height="15"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="ibx-search-ic"
-            aria-hidden
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            className="ibx-search-input"
-            placeholder="Rechercher…"
-            value={inboxSearch}
-            onChange={(e) => setInboxSearch(e.target.value)}
-            aria-label="Rechercher dans l'inbox"
-          />
-          {inboxSearch && (
-            <button
-              type="button"
-              className="ibx-search-clear"
-              aria-label="Effacer"
-              onClick={() => setInboxSearch("")}
-            >
-              ✕
-            </button>
-          )}
         </div>
 
         {/* Compose — libellé adapté au mode (Email vs Message), poussé à droite. */}
