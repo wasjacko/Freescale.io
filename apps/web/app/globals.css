@@ -299,9 +299,24 @@
   /* Trait du bloc principal de chaque page : dégradé noir (charbon clair en
      haut → noir profond en bas) pour un liseré sombre et net. */
   --stroke-black: linear-gradient(180deg, #44444a 0%, #232327 45%, #060607 100%);
-  /* Dégradé coloré (orange → rose → violet → bleu) pour le trait de la
-     console Suggestions IA — accent vivant qui la distingue. */
-  --stroke-grad-ai: linear-gradient(115deg, #f7941e 0%, #ff5f7e 32%, #c248e8 64%, #4f6cf7 100%);
+  /* ── Identité gradient OFFICIELLE Freescale ──
+     bleu clair → bleu → violet → rouge → rose → rose pâle → bleu.
+     Variable de référence (90deg) + déclinaison stops réutilisable. */
+  --freescale-gradient: linear-gradient(
+    90deg,
+    #78aabf 0%,
+    #6981b8 11%,
+    #611c71 28%,
+    #eb0020 46%,
+    #fe0045 61%,
+    #e1b9b8 88%,
+    #6981b8 100%
+  );
+  --freescale-gradient-stops: #78aabf 0%, #6981b8 11%, #611c71 28%, #eb0020 46%, #fe0045 61%,
+    #e1b9b8 88%, #6981b8 100%;
+  /* Trait coloré (console Suggestions IA, liserés de marque) — désormais
+     aligné sur l'identité officielle, à 115deg pour le sens du trait. */
+  --stroke-grad-ai: linear-gradient(115deg, var(--freescale-gradient-stops));
   --surface: rgba(255, 255, 255, 0.78);
 
   /* Text — noir plus profond pour le côté éditorial */
