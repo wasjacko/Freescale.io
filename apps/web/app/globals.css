@@ -781,12 +781,10 @@ button:not(:disabled):active,
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 [data-theme="dark"] .topbar-actbtn.topbar-mue.is-active {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-}
-[data-theme="dark"] .topbar-actbtn.topbar-mue.is-active:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(122, 162, 255, 0.22), rgba(255, 157, 122, 0.16)),
+    rgba(255, 255, 255, 0.06);
+  color: #f4f4f7;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 /* ── DARK : séparateurs entre blocs nettement plus visibles. ─────────
@@ -2847,22 +2845,21 @@ html {
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-/* Agent OUVERT : bouton full gradient, texte blanc. */
-/* Selected (panneau Mue ouvert) = même look que le hover : fond blanc,
-   texte sombre, anneau conique gradient qui tourne en continu. */
+/* Panneau Mue ouvert (actif) : fond gris avec un léger gradient officiel
+   dedans, texte sombre. Pas d'anneau au repos — il n'apparaît qu'au hover. */
 .topbar-actbtn.topbar-mue.is-active {
-  background: #10131a;
-  color: #ffffff;
-  box-shadow: inset 0 0 0 1px #10131a, 0 2px 6px rgba(16, 19, 26, 0.15);
+  background: linear-gradient(135deg, rgba(122, 162, 255, 0.16), rgba(255, 157, 122, 0.12)),
+    rgba(15, 23, 42, 0.05);
+  color: var(--ink, #0a0a0a);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
 }
 .topbar-actbtn.topbar-mue.is-active:hover {
-  background: #1f2937;
-  color: #ffffff;
+  color: var(--ink, #0a0a0a);
 }
+/* L'anneau reste masqué quand actif (il ne revient qu'au hover via la règle
+   .topbar-mue:hover::before). */
 .topbar-actbtn.topbar-mue.is-active::before {
-  opacity: 1;
-  transform: scale(1);
-  animation: mue-ring-spin 5.5s linear infinite;
+  opacity: 0;
 }
 .topbar-logo {
   display: inline-flex;
