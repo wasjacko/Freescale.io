@@ -12566,25 +12566,16 @@ html {
   filter: drop-shadow(0 6px 20px rgba(120, 90, 255, 0.18));
 }
 .mue2-hero-title {
-  /* Descendu sous la fleur (plus d'air entre le logo et le mot). */
-  margin: 34px 0 0;
-  font-family: "Instrument Serif", serif;
-  font-size: 36px;
-  font-weight: 400;
+  /* Phrase d'accueil : titre gras sobre, centré, sans logo au-dessus. */
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  /* Titre en GRADIENT officiel Freescale — affichage marquant de l'identité. */
-  background: var(--freescale-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  text-align: center;
+  color: var(--csv-text, #3a4151);
 }
 [data-theme="dark"] .mue2-hero-title {
-  background: var(--freescale-gradient);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
+  color: #e6e8ef;
 }
 .mue2-chips {
   display: flex;

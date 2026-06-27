@@ -477,6 +477,18 @@ const stroke = {
 // toutes les ~850ms. Reste figé sur le dernier label jusqu'à la fin du thinking.
 // Défini HORS de MuePanel pour ne pas être recréé à chaque render (sinon
 // useState reset à chaque mount).
+// Phrases d'accueil du hero (tirées au hasard à chaque ouverture).
+const HERO_PROMPTS = [
+  "Que veux-tu résoudre ?",
+  "On commence par quoi ?",
+  "Qu'est-ce qui te bloque ?",
+  "Sur quoi je t'aide ?",
+  "On attaque quoi aujourd'hui ?",
+  "Dis-moi tout.",
+  "Qu'est-ce qu'on règle ?",
+  "Par où on commence ?",
+] as const;
+
 const THINKING_LABELS = ["Réfléchit", "Comprend", "Conçoit"] as const;
 function ThinkingTitle() {
   const [idx, setIdx] = useState(0);
@@ -669,6 +681,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [memoryOpen, setMemoryOpen] = useState(false);
   // Annonces (newsletter) fermées par l'utilisateur.
   const [dismissedNews, setDismissedNews] = useState<Set<string>>(new Set());
+  // Phrase d'accueil tirée au hasard, stable tant que le panneau reste monté.
+  const [heroPrompt] = useState(
+    () => HERO_PROMPTS[Math.floor(Math.random() * HERO_PROMPTS.length)]
+  );
   const [discQuery, setDiscQuery] = useState("");
   const [currentDisc, setCurrentDisc] = useState<{ id: string; title: string } | null>(null);
 
@@ -2168,10 +2184,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         // ── État vide : hero personnalisé + chips rapides + pills d'intention ──
         <>
           <div className="mue2-hero">
-            <span className="mue2-hero-mark">
-              <MueFlower size={60} />
-            </span>
-            <h2 className="mue2-hero-title">Muee</h2>
+            <h2 className="mue2-hero-title">{heroPrompt}</h2>
           </div>
           <div className="mue2-foot">
             {/* Zone d'intention (façon ClickUp Brain). La rangée de pills garde
