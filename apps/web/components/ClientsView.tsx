@@ -98,12 +98,6 @@ const PERIODS: [Period, string][] = [
 ];
 
 type Filter = "all" | "money" | "reply" | "risk";
-const FILTERS: [Filter, string][] = [
-  ["all", "Tous"],
-  ["money", "Argent à suivre"],
-  ["reply", "À répondre"],
-  ["risk", "À risque"],
-];
 
 function attentionScore(c: Client): number {
   const h = relationHealth(c);
@@ -434,25 +428,6 @@ export function ClientsView() {
             </ul>
           </div>
         </article>
-      </div>
-
-      {/* ── Filtres + grille COMPLÈTE (plus de carrousel qui cache) ── */}
-      <div className="csv3-grid-head">
-        <h2>Tous les clients</h2>
-        <div className="csv3-filters" role="tablist">
-          {FILTERS.map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={filter === key}
-              className={`csv3-filter ${filter === key ? "is-on" : ""}`}
-              onClick={() => setFilter(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {clients.length === 0 ? (
