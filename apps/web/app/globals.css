@@ -19317,6 +19317,48 @@ button:active:not(:disabled):not(.no-press) {
   cursor: default;
 }
 
+/* Overlay plein-écran pour les modales qui réutilisent .add-channel-sheet
+   SANS être ancrées à un bouton (ex : NewMessageModal). Sans cette règle, le
+   sheet (position:absolute) se placerait n'importe où et l'overlay n'aurait
+   ni fond ni z-index → modale invisible. */
+.add-channel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: add-overlay-in 150ms ease;
+}
+@keyframes add-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+/* Dans un overlay centré, le sheet n'est plus un dropdown ancré : on annule
+   le positionnement absolu pour le recentrer et on le laisse s'élargir. */
+.add-channel-overlay .add-channel-sheet {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  transform-origin: center;
+  animation: add-overlay-sheet-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes add-overlay-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
 /* Fenêtre flottante ancrée sous le bouton « Connecter un canal ». */
 .add-channel-sheet {
   position: absolute;
