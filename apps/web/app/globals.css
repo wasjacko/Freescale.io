@@ -2857,10 +2857,15 @@ html {
 .topbar-actbtn.topbar-mue.is-active:hover {
   color: var(--ink, #0a0a0a);
 }
-/* L'anneau reste masqué quand actif (il ne revient qu'au hover via la règle
-   .topbar-mue:hover::before). */
+/* Actif : pas d'anneau au repos… */
 .topbar-actbtn.topbar-mue.is-active::before {
   opacity: 0;
+}
+/* …mais il revient au hover, même en état actif. */
+.topbar-actbtn.topbar-mue.is-active:hover::before {
+  opacity: 1;
+  transform: scale(1);
+  animation: mue-ring-spin 5.5s linear infinite;
 }
 .topbar-logo {
   display: inline-flex;
