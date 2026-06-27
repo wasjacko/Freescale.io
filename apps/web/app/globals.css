@@ -24276,6 +24276,17 @@ button:active:not(:disabled):not(.no-press) {
   border-radius: 6px;
   background: #fff;
   box-shadow: 0 0 0 1px #fff, 0 1px 2px rgba(15, 23, 42, 0.15);
+  /* Discret par défaut (ne masque pas l'avatar) → révélé au survol de la
+     ligne ou quand la conversation est active. */
+  opacity: 0;
+  transform: scale(0.7);
+  transform-origin: bottom right;
+  transition: opacity 140ms var(--ease), transform 140ms var(--ease);
+}
+.conv:hover .conv-channel,
+.conv.active .conv-channel {
+  opacity: 1;
+  transform: scale(1);
 }
 [data-theme="dark"] .conv-channel {
   box-shadow: 0 0 0 1px #1c1d27, 0 1px 2px rgba(0, 0, 0, 0.4);
