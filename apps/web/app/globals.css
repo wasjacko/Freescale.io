@@ -33395,18 +33395,35 @@ button.mfv-model:hover {
     transform: rotate(360deg);
   }
 }
-.mue2-prog-track {
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.08);
-  overflow: hidden;
+.mue2-prog-count {
+  color: var(--csv-text-soft, #5b6475);
+  font-variant-numeric: tabular-nums;
 }
-.mue2-prog-fill {
-  display: block;
-  height: 100%;
+/* Segments (un par tâche) qui se remplissent — remplace la jauge continue. */
+.mue2-prog-segs {
+  display: flex;
+  gap: 5px;
+}
+.mue2-prog-seg {
+  flex: 1 1 0;
+  height: 5px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #7aa2ff, #4f6cf7);
-  transition: width 240ms var(--ease);
+  background: rgba(15, 23, 42, 0.1);
+  transition: background 240ms var(--ease);
+}
+.mue2-prog-seg.is-done {
+  background: var(--freescale-gradient);
+}
+.mue2-prog-seg.is-active {
+  background: rgba(120, 90, 255, 0.35);
+  animation: mue2-prog-pulse 1s ease-in-out infinite;
+}
+@keyframes mue2-prog-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+[data-theme="dark"] .mue2-prog-seg {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* Résultat : coche + liste de liens créés */

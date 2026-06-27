@@ -2483,20 +2483,32 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   </div>
                   <div className="mue2-prog">
                     <div className="mue2-prog-line">
-                      <span className="mue2-prog-spin" aria-hidden>
-                        <svg {...stroke} width={14} height={14}>
-                          <path d="M12 3a9 9 0 1 0 9 9" />
-                        </svg>
+                      {m.progress.label}{" "}
+                      <span className="mue2-prog-count">
+                        {m.progress.current}/{m.progress.total}
                       </span>
-                      {m.progress.label} {m.progress.current}/{m.progress.total}
                     </div>
-                    <div className="mue2-prog-track" aria-hidden>
-                      <span
-                        className="mue2-prog-fill"
-                        style={{
-                          width: `${Math.round((m.progress.current / m.progress.total) * 100)}%`,
-                        }}
-                      />
+                    {/* Segments qui se remplissent (un par tâche) — plus net
+                        qu'une jauge continue. */}
+                    <div
+                      className="mue2-prog-segs"
+                      role="progressbar"
+                      aria-valuenow={m.progress.current}
+                      aria-valuemax={m.progress.total}
+                    >
+                      {Array.from({ length: m.progress.total }).map((_, k) => (
+                        <span
+                          // biome-ignore lint/suspicious/noArrayIndexKey: segments fixes
+                          key={k}
+                          className={`mue2-prog-seg ${
+                            k < m.progress!.current
+                              ? "is-done"
+                              : k === m.progress!.current
+                                ? "is-active"
+                                : ""
+                          }`}
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>
