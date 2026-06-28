@@ -24298,13 +24298,12 @@ button:active:not(:disabled):not(.no-press) {
     background 140ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 .ibx-tool-new:hover {
-  background: #1a1a1a !important;
-  transform: translateY(-1px);
+  /* Pas d'élévation : juste un léger changement de couleur. */
+  background: #2c2c2e !important;
   box-shadow: none;
 }
 .ibx-tool-new:active {
   background: #000 !important;
-  transform: translateY(0);
 }
 .ibx-tool-new .ibx-tool-ic {
   color: #fff;
