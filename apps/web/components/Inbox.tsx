@@ -42,14 +42,17 @@ const INITIAL_SYNC_SKELETONS = [
   "sync-skeleton-7",
 ];
 
-// Heuristique simple : la conversation contient probablement une pièce jointe
-// si son sujet/preview parle de contrat, brief, devis, facture, fichier, etc.
-// Suffisant pour démo en attendant un vrai champ `attachments` côté serveur.
-function hasAttachment(c: { subject?: string; preview?: string }): boolean {
-  const haystack = `${c.subject ?? ""} ${c.preview ?? ""}`.toLowerCase();
-  return /\b(contrat|brief|devis|facture|fichier|piece jointe|pièce jointe|pj|annex|attach|joint)\b/.test(
-    haystack
-  );
+// Heuristique : la conversation est marquée avec une pièce jointe seulement
+// quand le sujet/preview parle explicitement d'un document signé/envoyé
+// (contrat, devis, facture). On évite les mentions vagues (brief, joint…)
+// pour ne pas en mettre partout. Sera remplacé par un vrai compte côté
+// serveur le jour où on a le champ `attachments`.
+function hasAttachment(c: { preview?: string }): boolean {
+  // On ne regarde QUE le preview (le dernier message) — pas le subject — pour
+  // éviter de marquer une conv juste parce que le sujet historique mentionne
+  // un document. Match limité à des termes très explicites.
+  const haystack = (c.preview ?? "").toLowerCase();
+  return /\b(contrat\s+(signé|sign\w*)|devis|facture|pièce jointe|piece jointe)\b/.test(haystack);
 }
 
 export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: string | null }) {
