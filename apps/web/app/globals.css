@@ -19405,8 +19405,17 @@ button:active:not(:disabled):not(.no-press) {
     transform: translateY(0);
   }
 }
+/* Mes propres messages (envoyés) — clairement différenciés de ceux du
+   contact : fond bleu pâle + liseré coloré à gauche + nom de l'expéditeur
+   tinté pour mieux scanner la conversation. */
 .email-card.is-out {
-  background: #fafafe;
+  background: #eef3ff;
+  /* Liseré coloré à gauche via box-shadow inset (le `border-left` est
+     neutralisé par le flat-killer global). */
+  box-shadow: inset 3px 0 0 #4f6cf7;
+}
+.email-card.is-out .email-card-sender {
+  color: #1d4ed8;
 }
 
 .email-card-head {
