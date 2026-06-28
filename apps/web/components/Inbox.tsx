@@ -42,6 +42,16 @@ const INITIAL_SYNC_SKELETONS = [
   "sync-skeleton-7",
 ];
 
+// Heuristique simple : la conversation contient probablement une pièce jointe
+// si son sujet/preview parle de contrat, brief, devis, facture, fichier, etc.
+// Suffisant pour démo en attendant un vrai champ `attachments` côté serveur.
+function hasAttachment(c: { subject?: string; preview?: string }): boolean {
+  const haystack = `${c.subject ?? ""} ${c.preview ?? ""}`.toLowerCase();
+  return /\b(contrat|brief|devis|facture|fichier|piece jointe|pièce jointe|pj|annex|attach|joint)\b/.test(
+    haystack
+  );
+}
+
 export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: string | null }) {
   // Filtres/tri partagés avec la barre d'outils (InboxToolbar), via le store.
   const {
@@ -465,6 +475,24 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                       </span>
                     </span>
                     <span className="conv-preview">{c.preview || "…"}</span>
+                    {hasAttachment(c) && (
+                      <span className="conv-attach" aria-label="Pièce jointe">
+                        <svg
+                          viewBox="0 0 24 24"
+                          width={11}
+                          height={11}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.9}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 1 1-2.83-2.83l8.49-8.49" />
+                        </svg>
+                        1 pièce jointe
+                      </span>
+                    )}
                     {inboxMode === "email" && waitDays >= 2 && (
                       <span className="conv-relance">
                         ⏳ En attente {waitDays} j · <b>Relancer</b>
