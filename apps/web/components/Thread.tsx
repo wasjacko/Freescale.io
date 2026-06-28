@@ -271,11 +271,6 @@ export function Thread({
                 </clipPath>
               </defs>
 
-              {/* Halos d'ambiance : le dégradé radial atteint 0 pile à son rayon,
-                  et le cercle tient dans le viewBox → aucune coupure nette. */}
-              <circle cx="190" cy="170" r="170" fill="url(#fs-illu-halo-a)" />
-              <circle cx="430" cy="170" r="170" fill="url(#fs-illu-halo-b)" />
-
               {/* Boîte unifiée (au centre) — sans contour, juste une ombre douce */}
               <rect x="206" y="112" width="188" height="126" rx="22"
                 fill="#ffffff" filter="url(#fs-illu-shadow)" />
