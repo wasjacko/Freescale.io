@@ -10,6 +10,7 @@ import {
   listConversationCollaboration,
 } from "@/lib/actions/collaboration";
 import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-templates";
+import { simulateEmailThread } from "@/lib/simulateEmailThread";
 import { createTask, sendEmailReply } from "@/lib/actions/inbox";
 import {
   type ReplySuggestion,
@@ -191,10 +192,16 @@ export function Thread({
   // Strict per-conv lookup. NO fallback to messagesByConv across convs —
   // showing the wrong thread's content during a switch was the "loading
   // flash" bug.
-  const messages = useMemo<Message[]>(
-    () => liveByConv[activeConvId] ?? messagesByConv[activeConvId] ?? [],
-    [liveByConv, messagesByConv, activeConvId]
-  );
+  const messages = useMemo<Message[]>(() => {
+    const live = liveByConv[activeConvId];
+    const server = messagesByConv[activeConvId];
+    // Démo : si on n'a pas un vrai échange (≥ 2 messages), on simule un fil
+    // d'emails réaliste pour montrer à quoi ressemble Freescale.
+    if (live && live.length >= 2) return live;
+    if (server && server.length >= 2) return server;
+    if (conv) return simulateEmailThread(conv);
+    return live ?? server ?? [];
+  }, [liveByConv, messagesByConv, activeConvId, conv]);
   const messageCount = messages.length;
 
   const isEmail = isEmailLikeChannel(conv?.channel);
