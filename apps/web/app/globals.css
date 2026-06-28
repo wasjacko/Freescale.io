@@ -30973,6 +30973,108 @@ button.sidebar-brand {
   background: rgba(255, 255, 255, 0.11);
 }
 
+/* ════════════ Bouton « Consommation de l'agent » + popover ════════════ */
+.mue2-usage-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.mue2-usage-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--ink, #10131a);
+  cursor: pointer;
+  transition: background 130ms var(--ease);
+}
+.mue2-usage-btn:hover,
+.mue2-usage-btn.is-on {
+  background: rgba(15, 23, 42, 0.08);
+}
+[data-theme="dark"] .mue2-usage-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+}
+[data-theme="dark"] .mue2-usage-btn:hover,
+[data-theme="dark"] .mue2-usage-btn.is-on {
+  background: rgba(255, 255, 255, 0.11);
+}
+.mue2-usage-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 46;
+  width: 280px;
+  padding: 14px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  animation: ibx-panel-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mue2-usage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.mue2-usage-head h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #10131a;
+}
+.mue2-usage-period {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mue2-usage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.mue2-usage-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+}
+.mue2-usage-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+.mue2-usage-lbl {
+  font-size: 10.5px;
+  color: #6b7280;
+}
+.mue2-usage-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.07);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.mue2-usage-bar-fill {
+  height: 100%;
+  background: var(--freescale-gradient);
+  transition: width 250ms var(--ease);
+}
+.mue2-usage-note {
+  margin: 0;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
 /* ════════════ Drawer Mémoire (slide-over portail) ════════════ */
 .mmd-overlay {
   position: fixed;

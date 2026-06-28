@@ -679,6 +679,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [discOpen, setDiscOpen] = useState(false);
   // Drawer « Mémoire » — alimente ce que Mue sait de toi.
   const [memoryOpen, setMemoryOpen] = useState(false);
+  // Popover « Consommation de l'agent » : tokens, crédits, requêtes ce mois.
+  const [usageOpen, setUsageOpen] = useState(false);
   // Annonces (newsletter) fermées par l'utilisateur.
   const [dismissedNews, setDismissedNews] = useState<Set<string>>(new Set());
   // Phrase d'accueil tirée au hasard, stable tant que le panneau reste monté.
@@ -2047,6 +2049,60 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               </svg>
             </button>
           )}
+          {/* Consommation de l'agent — icône bar chart, popover compact à droite. */}
+          <div className="mue2-usage-wrap">
+            <button
+              type="button"
+              className={`mue2-usage-btn ${usageOpen ? "is-on" : ""}`}
+              title="Consommation de l'agent"
+              aria-label="Consommation de l'agent"
+              aria-pressed={usageOpen}
+              onClick={() => setUsageOpen((v) => !v)}
+            >
+              <svg {...stroke} width={15} height={15}>
+                <rect x="3" y="3" width="18" height="18" rx="3" />
+                <line x1="8" y1="16" x2="8" y2="12" />
+                <line x1="12" y1="16" x2="12" y2="8" />
+                <line x1="16" y1="16" x2="16" y2="14" />
+              </svg>
+            </button>
+            {usageOpen && (
+              <>
+                <button
+                  type="button"
+                  className="mue2-disc-scrim"
+                  aria-label="Fermer"
+                  onClick={() => setUsageOpen(false)}
+                />
+                <div className="mue2-usage-pop" role="dialog" aria-label="Consommation de Mue">
+                  <header className="mue2-usage-head">
+                    <h3>Consommation de Mue</h3>
+                    <span className="mue2-usage-period">Ce mois-ci</span>
+                  </header>
+                  <div className="mue2-usage-grid">
+                    <div className="mue2-usage-cell">
+                      <span className="mue2-usage-val">128</span>
+                      <span className="mue2-usage-lbl">Requêtes</span>
+                    </div>
+                    <div className="mue2-usage-cell">
+                      <span className="mue2-usage-val">42k</span>
+                      <span className="mue2-usage-lbl">Tokens</span>
+                    </div>
+                    <div className="mue2-usage-cell">
+                      <span className="mue2-usage-val">€3,40</span>
+                      <span className="mue2-usage-lbl">Coût estimé</span>
+                    </div>
+                  </div>
+                  <div className="mue2-usage-bar">
+                    <div className="mue2-usage-bar-fill" style={{ width: "32%" }} />
+                  </div>
+                  <p className="mue2-usage-note">
+                    32 % de ton quota mensuel utilisé (400 requêtes / mois).
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
           {/* Mémoire — toggle inline (la vue Mémoire s'affiche dans le panel
               au lieu d'ouvrir un drawer séparé). */}
           <button
