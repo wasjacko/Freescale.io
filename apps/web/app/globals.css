@@ -12244,8 +12244,11 @@ html {
 }
 
 /* ════════ Mue v2 — façon « Brain » : tabs + composer dégradé + chat pur ════════ */
-.mue-pane.mue2 {
-  padding: 0;
+/* Spécificité bumpée (.copilot.mue-pane.mue2) : surpasse le `.mue-pane`
+   défini plus bas qui écraserait sinon le padding. */
+.copilot.mue-pane.mue2 {
+  /* Même padding intérieur que le bloc Email/Messages (3px). */
+  padding: 3px;
   color: var(--ink, #0a0a0a);
   /* Fond = notre dégradé Freescale officiel + grain (noise) par-dessus, et
      stroke dégradé en border-box. Le noise est une couche padding-box légère. */
