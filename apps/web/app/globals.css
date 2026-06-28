@@ -12205,10 +12205,9 @@ html {
        No noise texture this time so it stays clean, not glassmorphism. */
 .copilot {
   position: fixed;
-  /* Calé sur le bord EXTERNE des cartes de contenu : celles-ci ont un double
-     liseré qui dépasse de ~4px (haut + bas), donc on étend le panneau de 4px
-     pour qu'il fasse exactement la même hauteur visuelle. */
-  top: var(--topbar-h, 52px);
+  /* Aligné sur le haut du bloc principal : le workspace a un padding-top de 4px
+     sous la topbar, donc le panneau démarre à topbar-h + 4px (même hauteur). */
+  top: calc(var(--topbar-h, 52px) + 4px);
   right: 10px;
   /* Étendu de 6px sous le viewport : le double liseré interne du bas sort du
      cadre visible (pas de liseré en bas). */
@@ -12295,6 +12294,7 @@ html {
   align-items: center;
   gap: 8px;
   height: 34px;
+  max-width: 230px;
   padding: 0 14px;
   border-radius: 8px;
   background: var(--bg-input, rgba(15, 23, 42, 0.03));
@@ -12304,6 +12304,17 @@ html {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Titre tronqué : ne déborde jamais, « … » si trop long. */
+.mue2-disc-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mue2-disc-ic,
+.mue2-disc-caret {
+  flex: none;
 }
 .mue2-disc-btn:hover {
   background: var(--bg-input-hover, rgba(15, 23, 42, 0.06));
@@ -12315,7 +12326,7 @@ html {
   box-shadow: 0 0 0 3px rgba(79, 108, 247, 0.12);
 }
 .mue2-disc-btn svg:first-child {
-  color: #4f6cf7;
+  color: #10131a;
   transition: transform 0.2s ease;
 }
 .mue2-disc-btn:hover svg:first-child {
@@ -16859,14 +16870,15 @@ button:active:not(:disabled):not(.no-press) {
     grid-template-columns: 1fr !important;
   }
 
-  /* Slide-over Drawer for Tablet — calé sur le bord externe des cartes
-     (double liseré qui dépasse de ~4px) pour une hauteur visuelle identique. */
+  /* Slide-over Drawer for Tablet — aligné sur le haut du bloc principal
+     (workspace padding-top 4px) et étendu de 6px sous le viewport (pas de
+     liseré en bas). */
   .copilot {
     display: flex !important;
     position: fixed !important;
-    top: var(--topbar-h, 52px);
+    top: calc(var(--topbar-h, 52px) + 4px);
     right: 10px;
-    bottom: 0;
+    bottom: -6px;
     /* 1,5× la largeur desktop (380→570), clampée à 92vw pour rester */
     /* dans la fenêtre sur les tablettes étroites. */
     width: min(570px, 92vw);
