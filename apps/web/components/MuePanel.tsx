@@ -314,15 +314,12 @@ function proposeWeekTasks(): ProposedTask[] {
 type Intent = { key: string; label: string; icon: string; suggestions: string[] };
 const INTENTIONS: Intent[] = [
   {
+    // Cas spécial : les suggestions sont remplacées dynamiquement au render
+    // par les dernières requêtes utilisateur envoyées à Mue (cf. JSX plus bas).
     key: "recent",
     label: "Invites récentes",
-    icon: "inbox",
-    suggestions: [
-      "Montre les invitations reçues cette semaine",
-      "Liste les invitations en attente de réponse",
-      "Quelles invitations je n'ai pas encore acceptées ?",
-      "Récupère les invites Calendar / Meet en attente",
-    ],
+    icon: "clock",
+    suggestions: [],
   },
   {
     key: "find",
@@ -468,11 +465,11 @@ function intentIcon(k: string) {
           <line x1="16" y1="3" x2="16" y2="7" />
         </svg>
       );
-    case "inbox":
+    case "clock":
       return (
         <svg {...s}>
-          <path d="M22 12h-6l-2 3h-4l-2-3H2" />
-          <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z" />
+          <circle cx="12" cy="12" r="9" />
+          <polyline points="12 7 12 12 15 14" />
         </svg>
       );
     default:
@@ -2298,6 +2295,23 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   (() => {
                     const it = INTENTIONS.find((x) => x.key === displayIntent);
                     if (!it) return null;
+                    // Cas spécial « Invites récentes » : suggestions = dernières
+                    // requêtes utilisateur envoyées à Mue (dédupliquées, max 5).
+                    let suggestions = it.suggestions;
+                    if (it.key === "recent") {
+                      const seen = new Set<string>();
+                      const recents: string[] = [];
+                      for (let i = askMessages.length - 1; i >= 0; i--) {
+                        const m = askMessages[i];
+                        if (!m || m.role !== "user") continue;
+                        const txt = m.content.trim().replace(/\s+/g, " ");
+                        if (!txt || seen.has(txt)) continue;
+                        seen.add(txt);
+                        recents.push(txt);
+                        if (recents.length >= 5) break;
+                      }
+                      suggestions = recents;
+                    }
                     return (
                       <div className={`mue2-intentpanel ${panelOpen ? "is-open" : ""}`}>
                         <div className="mue2-intentpanel-head">
@@ -2316,21 +2330,27 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                             </svg>
                           </button>
                         </div>
-                        {it.suggestions.map((sg) => (
-                          <button
-                            key={sg}
-                            type="button"
-                            className="mue2-intentsugg"
-                            onClick={() => {
-                              setAskInput(sg);
-                              setActiveIntent(null);
-                              requestAnimationFrame(() => askInputRef.current?.focus());
-                            }}
-                          >
-                            {intentIcon(it.icon)}
-                            {sg}
-                          </button>
-                        ))}
+                        {suggestions.length === 0 && it.key === "recent" ? (
+                          <p className="mue2-intentempty">
+                            Tes requêtes récentes apparaîtront ici après ta première question à Mue.
+                          </p>
+                        ) : (
+                          suggestions.map((sg) => (
+                            <button
+                              key={sg}
+                              type="button"
+                              className="mue2-intentsugg"
+                              onClick={() => {
+                                setAskInput(sg);
+                                setActiveIntent(null);
+                                requestAnimationFrame(() => askInputRef.current?.focus());
+                              }}
+                            >
+                              {intentIcon(it.icon)}
+                              {sg}
+                            </button>
+                          ))
+                        )}
                       </div>
                     );
                   })()}

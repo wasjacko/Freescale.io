@@ -34584,6 +34584,14 @@ button.mfv-model:hover {
 .mue2-intentsugg:hover {
   background: rgba(79, 108, 247, 0.08);
 }
+/* État vide « Invites récentes » — quand l'utilisateur n'a encore rien envoyé. */
+.mue2-intentempty {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #6b7280;
+}
 .mue2-intentsugg:hover svg {
   color: #4f6cf7;
 }
