@@ -2125,7 +2125,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               au lieu d'ouvrir un drawer séparé). */}
           <button
             type="button"
-            className={`mue2-mem-btn ${memoryOpen ? "is-on" : ""}`}
+            className={`mue2-mem-btn mue2-mem-btn--icon ${memoryOpen ? "is-on" : ""}`}
             title={memoryOpen ? "Fermer la mémoire" : "Mémoire de Mue"}
             aria-label="Mémoire de Mue"
             aria-pressed={memoryOpen}
@@ -2137,7 +2137,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               <line x1="7" y1="7.5" x2="7.01" y2="7.5" />
               <line x1="7" y1="16.5" x2="7.01" y2="16.5" />
             </svg>
-            Mémoire
           </button>
           <button
             type="button"
