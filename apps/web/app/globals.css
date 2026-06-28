@@ -12205,9 +12205,9 @@ html {
        No noise texture this time so it stays clean, not glassmorphism. */
 .copilot {
   position: fixed;
-  /* Aligné sur le haut du bloc principal : le workspace a un padding-top de 4px
-     sous la topbar, donc le panneau démarre à topbar-h + 4px (même hauteur). */
-  top: calc(var(--topbar-h, 52px) + 4px);
+  /* Aligné sur le bord PEINT du bloc principal : workspace padding-top 4px,
+     moins 1px car la stroke du bloc principal est outset (déborde de 1px). */
+  top: calc(var(--topbar-h, 52px) + 3px);
   right: 10px;
   /* Étendu de 6px sous le viewport : le double liseré interne du bas sort du
      cadre visible (pas de liseré en bas). */
@@ -16876,7 +16876,7 @@ button:active:not(:disabled):not(.no-press) {
   .copilot {
     display: flex !important;
     position: fixed !important;
-    top: calc(var(--topbar-h, 52px) + 4px);
+    top: calc(var(--topbar-h, 52px) + 3px);
     right: 10px;
     bottom: -6px;
     /* 1,5× la largeur desktop (380→570), clampée à 92vw pour rester */
@@ -28130,9 +28130,10 @@ button.sidebar-brand {
   margin-left: 6px;
   margin-right: 10px;
   margin-bottom: 0;
-  /* Stroke simple INTERNE (inset) : même bord peint que le panneau Mue, donc
-     même hauteur visuelle exacte. */
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+  /* Stroke simple OUTSET (toutes bordures visibles, dont la droite — l'inset
+     était masqué par le contenu enfant). Le panneau Mue est remonté de 1px
+     pour que les bords peints restent alignés. */
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 .app.view-today .tboard-table {
   box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent), inset 0 0 0 1px
