@@ -65,10 +65,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        {/* Caveat (Google Fonts) — police manuscrite pour les accents tactiles
-            (phrase d'accueil de Mue, signatures, etc.). */}
+        {/* Polices manuscrites épaisses pour les accents tactiles (phrase
+            d'accueil de Mue, signatures…). Permanent Marker = marker épais ;
+            Caveat Brush en fallback (calligraphie pinceau). */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Caveat+Brush&display=swap"
           rel="stylesheet"
         />
       </head>

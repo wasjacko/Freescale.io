@@ -12652,14 +12652,14 @@ html {
   filter: drop-shadow(0 6px 20px rgba(120, 90, 255, 0.18));
 }
 .mue2-hero-title {
-  /* Phrase d'accueil : manuscrite (Caveat) + remplie par le gradient officiel
-     Freescale (texte « peint » via background-clip:text). */
+  /* Phrase d'accueil : manuscrite épaisse (Permanent Marker) + remplie par le
+     gradient officiel Freescale (texte « peint » via background-clip:text). */
   margin: 0;
-  font-family: "Caveat", "Hanken Grotesk", system-ui, sans-serif;
-  font-size: 42px;
-  font-weight: 600;
-  letter-spacing: 0;
-  line-height: 1.05;
+  font-family: "Permanent Marker", "Caveat Brush", system-ui, sans-serif;
+  font-size: 36px;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1.1;
   text-align: center;
   background: var(--freescale-gradient);
   -webkit-background-clip: text;
