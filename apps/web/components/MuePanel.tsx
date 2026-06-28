@@ -314,6 +314,17 @@ function proposeWeekTasks(): ProposedTask[] {
 type Intent = { key: string; label: string; icon: string; suggestions: string[] };
 const INTENTIONS: Intent[] = [
   {
+    key: "recent",
+    label: "Invites récentes",
+    icon: "inbox",
+    suggestions: [
+      "Montre les invitations reçues cette semaine",
+      "Liste les invitations en attente de réponse",
+      "Quelles invitations je n'ai pas encore acceptées ?",
+      "Récupère les invites Calendar / Meet en attente",
+    ],
+  },
+  {
     key: "find",
     label: "Trouver",
     icon: "search",
@@ -455,6 +466,13 @@ function intentIcon(k: string) {
           <line x1="3" y1="10" x2="21" y2="10" />
           <line x1="8" y1="3" x2="8" y2="7" />
           <line x1="16" y1="3" x2="16" y2="7" />
+        </svg>
+      );
+    case "inbox":
+      return (
+        <svg {...s}>
+          <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+          <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z" />
         </svg>
       );
     default:
