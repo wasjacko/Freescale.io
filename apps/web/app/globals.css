@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * IvyMode (TypeTogether) — police d'affichage utilisée sur la phrase d'accueil
+ * de Mue. Dépose les fichiers .woff2 dans /public/fonts/ :
+ *   - IvyMode-Regular.woff2  (400)
+ *   - IvyMode-Semibold.woff2 (600)
+ * Si les fichiers ne sont pas présents, on retombe sur une serif système
+ * grâce à font-display:swap (le texte reste lisible).
+ * ─────────────────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: "IvyMode";
+  src: url("/fonts/IvyMode-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IvyMode";
+  src: url("/fonts/IvyMode-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* =============================================================================
    Design tokens — Tailwind v4 @theme block
    These generate utility classes automatically:
@@ -12652,13 +12675,13 @@ html {
   filter: drop-shadow(0 6px 20px rgba(120, 90, 255, 0.18));
 }
 .mue2-hero-title {
-  /* Phrase d'accueil : manuscrite épaisse (Permanent Marker) + remplie par le
-     gradient officiel Freescale (texte « peint » via background-clip:text). */
+  /* Phrase d'accueil : IvyMode (serif moderne) + remplie par le gradient
+     officiel Freescale (texte « peint » via background-clip:text). */
   margin: 0;
-  font-family: "Permanent Marker", "Caveat Brush", system-ui, sans-serif;
-  font-size: 36px;
-  font-weight: 400;
-  letter-spacing: 0.005em;
+  font-family: "IvyMode", "Instrument Serif", Georgia, serif;
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   line-height: 1.1;
   text-align: center;
   background: var(--freescale-gradient);
