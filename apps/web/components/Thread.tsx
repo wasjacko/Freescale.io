@@ -109,27 +109,22 @@ export function Thread({
     appendOutgoingMessage,
     retryFailedMessage,
     setTags,
-    archive,
-    snooze,
   } = useData();
-  // Section collaboration (notes internes + activité) repliée par défaut —
-  // elle s'ouvre via l'icône bulle de l'en-tête, façon maquette.
-  const [collabOpen, setCollabOpen] = useState(false);
+  // Section collaboration (notes internes + activité) — désormais inaccessible
+  // depuis l'en-tête (icônes retirées) ; on garde l'état au cas où.
+  const [collabOpen] = useState(false);
   // Fiche client : modale d'aperçu rapide sans changer de page.
   const [clientModalOpen, setClientModalOpen] = useState(false);
   // Composer compact au repos (1 ligne) — s'étend au focus.
   const [composerFocus, setComposerFocus] = useState(false);
-  // Clic droit sur 🕐 = choix du réveil (clic court = demain 9h).
-  const [snoozeMenuOpen, setSnoozeMenuOpen] = useState(false);
   const conv = conversations.find((c) => c.id === activeConvId);
   const push = useToast((s) => s.push);
 
   const [input, setInput] = useState("");
   const messagesEl = useRef<HTMLElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
-  const tagBtnRef = useRef<HTMLButtonElement>(null);
   const [tagOpen, setTagOpen] = useState(false);
-  const [tagAnchor, setTagAnchor] = useState<DOMRect | null>(null);
+  const [tagAnchor] = useState<DOMRect | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   // Live-fetch messages from Gmail on conv open. messagesByConv (server
   // DB cache) used only as an INSTANT fallback for the conv we last
@@ -511,137 +506,6 @@ export function Thread({
               <span>Fiche client</span>
             </button>
           )}
-          <button
-            ref={tagBtnRef}
-            className={`icon-btn ${(conv.tags?.length ?? 0) > 0 ? "is-on" : ""}`}
-            type="button"
-            aria-label="Tags"
-            data-tip="Tags"
-            aria-expanded={tagOpen}
-            onClick={() => {
-              setTagAnchor(tagBtnRef.current?.getBoundingClientRect() ?? null);
-              setTagOpen((v) => !v);
-            }}
-          >
-            <Icon name="i-tag" />
-            {(conv.tags?.length ?? 0) > 0 && (
-              <span className="icon-btn-badge">{conv.tags?.length}</span>
-            )}
-          </button>
-          <span className="snooze-wrap">
-            {snoozeMenuOpen && (
-              <div className="snooze-menu" role="menu">
-                {[
-                  { label: "Ce soir 18h", h: 18, d: 0 },
-                  { label: "Demain 9h", h: 9, d: 1 },
-                  { label: "Lundi 9h", h: 9, d: (8 - new Date().getDay()) % 7 || 7 },
-                ].map((o) => (
-                  <button
-                    key={o.label}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      const t = new Date();
-                      t.setDate(t.getDate() + o.d);
-                      t.setHours(o.h, 0, 0, 0);
-                      void snooze(conv.id, t.toISOString());
-                      setSnoozeMenuOpen(false);
-                      push({
-                        kind: "info",
-                        text: `Conversation en pause — ${o.label}`,
-                        action: { label: "Annuler", fn: () => void snooze(conv.id, null) },
-                      });
-                    }}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            <button
-              className="icon-btn"
-              type="button"
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setSnoozeMenuOpen((v) => !v);
-              }}
-              aria-label="Mettre en pause jusqu'à demain (clic droit : options)"
-              data-tip="En pause jusqu'à demain"
-              onClick={() => {
-                const t = new Date();
-                t.setDate(t.getDate() + 1);
-                t.setHours(9, 0, 0, 0);
-                void snooze(conv.id, t.toISOString());
-                push({
-                  kind: "info",
-                  text: "Conversation en pause jusqu'à demain 9h",
-                  action: { label: "Annuler", fn: () => void snooze(conv.id, null) },
-                });
-              }}
-            >
-              <svg
-                className="icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <polyline points="12 7 12 12 15.5 14" />
-              </svg>
-            </button>
-          </span>
-          <button
-            className="icon-btn"
-            type="button"
-            aria-label="Terminer la conversation"
-            data-tip="Terminer"
-            onClick={() => {
-              const ordered = [...conversations].sort(
-                (a, b) => new Date(b.lastAtIso).getTime() - new Date(a.lastAtIso).getTime()
-              );
-              const idxNow = ordered.findIndex((c) => c.id === conv.id);
-              const next = ordered.find((c, i) => i > idxNow && c.id !== conv.id);
-              archive(conv.id);
-              push({ kind: "success", text: "Conversation terminée" });
-              setActiveConv(next ? next.id : "");
-            }}
-          >
-            <svg
-              className="icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="2.5 13 7 17.5 14 9" />
-              <polyline points="10.5 13 15 17.5 22 9" />
-            </svg>
-          </button>
-          <button
-            className={`icon-btn ${collabOpen ? "is-on" : ""}`}
-            type="button"
-            aria-label="Notes internes"
-            data-tip="Notes internes"
-            aria-expanded={collabOpen}
-            onClick={() => setCollabOpen((v) => !v)}
-          >
-            <svg
-              className="icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 8.6 8.6 0 0 1-3.5-.7L3 21l1.9-4.4a8.3 8.3 0 0 1-1.4-4.6A8.4 8.4 0 0 1 12 3.6a8.4 8.4 0 0 1 9 7.9z" />
-            </svg>
-          </button>
         </div>
       </header>
 
