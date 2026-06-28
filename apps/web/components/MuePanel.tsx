@@ -52,6 +52,33 @@ const STATUS_META: Record<
   done: { label: "Terminé", color: "#16a34a" },
 };
 
+// Suggestions « Et ensuite » par défaut : 2-3 actions proposées après chaque
+// réponse Mue qui n'en porte pas explicitement. Adaptées au prompt utilisateur
+// quand on peut, sinon génériques.
+function defaultFollowUps(userPrompt?: string): string[] {
+  const q = (userPrompt ?? "").toLowerCase();
+  // Recherche / exploration -> proposer d'aller plus loin
+  if (
+    q.includes("trouv") ||
+    q.includes("cherch") ||
+    q.includes("recherch") ||
+    q.includes("résum") ||
+    q.includes("resum")
+  ) {
+    return ["Approfondis le résultat", "Sors-moi les actions à faire", "Rédige une réponse"];
+  }
+  // Brouillon / réponse -> proposer affinage
+  if (q.includes("répond") || q.includes("repond") || q.includes("brouillon") || q.includes("réponse")) {
+    return ["Reformule en plus formel", "Reformule en plus chaleureux", "Crée une tâche de suivi"];
+  }
+  // Tâches / planning
+  if (q.includes("tâche") || q.includes("tache") || q.includes("planif") || q.includes("priorit")) {
+    return ["Trie par urgence", "Bloque un créneau au calendrier", "Notifie les bons clients"];
+  }
+  // Générique : 3 actions classiques
+  return ["Résume ce fil", "Rédige une réponse", "Crée une tâche pour le suivi"];
+}
+
 type AskMessage = {
   id: string;
   role: "user" | "mue";
@@ -2818,15 +2845,43 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                       ))}
                     </div>
                   )}
-                  {doneStreamingIds.has(m.id) && (
-                    <div className="mue2-after-stream">
-                      <MueSuggestions
-                        label="Améliorations"
-                        items={m.improvements ?? []}
-                        onPick={submit}
-                      />
-                    </div>
-                  )}
+                  {doneStreamingIds.has(m.id) &&
+                    (() => {
+                      // Si la réponse Mue porte déjà des « Améliorations » (cas
+                      // brouillon), on les garde. Sinon, on propose toujours
+                      // 2-3 actions de suite (« Et ensuite »).
+                      const explicit = m.improvements ?? [];
+                      if (explicit.length > 0) {
+                        return (
+                          <div className="mue2-after-stream">
+                            <MueSuggestions
+                              label="Améliorations"
+                              items={explicit}
+                              onPick={submit}
+                            />
+                          </div>
+                        );
+                      }
+                      // Récupère le dernier prompt utilisateur AVANT cette réponse
+                      // pour adapter les suggestions au contexte.
+                      let userPrompt: string | undefined;
+                      for (let i = mi - 1; i >= 0; i--) {
+                        const prev = askMessages[i];
+                        if (prev?.role === "user") {
+                          userPrompt = prev.content;
+                          break;
+                        }
+                      }
+                      return (
+                        <div className="mue2-after-stream">
+                          <MueSuggestions
+                            label="Et ensuite"
+                            items={defaultFollowUps(userPrompt)}
+                            onPick={submit}
+                          />
+                        </div>
+                      );
+                    })()}
                   {m.tone !== "error" && (
                     <MueMsgActions
                       onCopy={() => copyText(cleanContent(m))}
