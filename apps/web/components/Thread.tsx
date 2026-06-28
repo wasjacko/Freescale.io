@@ -428,12 +428,7 @@ export function Thread({
           </svg>
           <span>Inbox</span>
         </button>
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: l'icône bulle offre le même accès clavier */}
-        <div
-          className="contact contact-clickable"
-          onClick={() => setCollabOpen((v) => !v)}
-          title="Notes internes"
-        >
+        <div className="contact">
           <span className="avatar large">
             <Avatar avatar={conv.avatar} className="" />
             <span className="status-dot" />
