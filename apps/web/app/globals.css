@@ -20535,6 +20535,25 @@ button:active:not(:disabled):not(.no-press) {
   font-weight: 600;
   text-decoration: none;
 }
+/* Message rassurant en bas du volet vide : icône cadenas + texte sobre,
+   avec « chiffrés de bout en bout » en vert. */
+.thread-empty-secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 40px auto 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #8b94a3;
+}
+.thread-empty-secure svg {
+  flex: none;
+  color: #8b94a3;
+}
+.thread-empty-secure-em {
+  color: #16a34a;
+  font-weight: 600;
+}
 .thread-empty-link:hover {
   text-decoration: underline;
 }
