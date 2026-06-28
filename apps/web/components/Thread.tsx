@@ -324,25 +324,25 @@ export function Thread({
             </Link>
             .
           </p>
-          <p className="thread-empty-secure" aria-label="Confidentialité">
-            <svg
-              viewBox="0 0 24 24"
-              width={13}
-              height={13}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <rect x="4" y="11" width="16" height="9" rx="2" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-            </svg>
-            Vos messages personnels sont{" "}
-            <span className="thread-empty-secure-em">chiffrés de bout en bout</span>.
-          </p>
         </div>
+        <p className="thread-empty-secure" aria-label="Confidentialité">
+          <svg
+            viewBox="0 0 24 24"
+            width={13}
+            height={13}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <rect x="4" y="11" width="16" height="9" rx="2" />
+            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+          </svg>
+          Vos messages personnels sont{" "}
+          <span className="thread-empty-secure-em">chiffrés de bout en bout</span>.
+        </p>
       </section>
     );
   }

@@ -20482,6 +20482,7 @@ button:active:not(:disabled):not(.no-press) {
 
 /* Empty thread pane — no conversation selected */
 .thread-empty-pane {
+  position: relative;
   display: grid;
   /* Contenu centré verticalement ET horizontalement dans le bloc. */
   place-items: center;
@@ -20538,13 +20539,19 @@ button:active:not(:disabled):not(.no-press) {
 /* Message rassurant en bas du volet vide : icône cadenas + texte sobre,
    avec « chiffrés de bout en bout » en vert. */
 .thread-empty-secure {
+  /* Épinglée en bas du volet, centrée horizontalement. */
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin: 40px auto 0;
+  margin: 0;
   font-size: 12.5px;
   font-weight: 500;
   color: #8b94a3;
+  white-space: nowrap;
 }
 .thread-empty-secure svg {
   flex: none;
