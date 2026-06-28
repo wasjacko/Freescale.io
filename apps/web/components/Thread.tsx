@@ -11,6 +11,7 @@ import {
 } from "@/lib/actions/collaboration";
 import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-templates";
 import { simulateEmailThread } from "@/lib/simulateEmailThread";
+import { ClientDetailsModal } from "@/components/ClientDetailsModal";
 import { createTask, sendEmailReply } from "@/lib/actions/inbox";
 import {
   type ReplySuggestion,
@@ -101,7 +102,7 @@ export function Thread({
 }: {
   currentUser?: { name: string; avatarUrl: string | null } | null;
 }) {
-  const { activeConvId, setActiveConv, setView, setActiveClientId } = useApp();
+  const { activeConvId, setActiveConv, setView } = useApp();
   const {
     conversations,
     messagesByConv,
@@ -114,6 +115,8 @@ export function Thread({
   // Section collaboration (notes internes + activité) repliée par défaut —
   // elle s'ouvre via l'icône bulle de l'en-tête, façon maquette.
   const [collabOpen, setCollabOpen] = useState(false);
+  // Fiche client : modale d'aperçu rapide sans changer de page.
+  const [clientModalOpen, setClientModalOpen] = useState(false);
   // Composer compact au repos (1 ligne) — s'étend au focus.
   const [composerFocus, setComposerFocus] = useState(false);
   // Clic droit sur 🕐 = choix du réveil (clic court = demain 9h).
@@ -487,10 +490,7 @@ export function Thread({
               className="thread-client-btn"
               data-tip="Voir la fiche client"
               aria-label="Voir la fiche client"
-              onClick={() => {
-                setActiveClientId(linkedClient.id);
-                setView("clients");
-              }}
+              onClick={() => setClientModalOpen(true)}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -930,6 +930,12 @@ export function Thread({
           </div>
         )}
       </footer>
+
+      <ClientDetailsModal
+        client={linkedClient ?? null}
+        open={clientModalOpen}
+        onClose={() => setClientModalOpen(false)}
+      />
     </main>
   );
 }
