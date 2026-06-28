@@ -6,7 +6,6 @@ import { ChannelLogo, Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import {
   type ConversationCollaboration,
-  assignConversation,
   createInternalNote,
   listConversationCollaboration,
 } from "@/lib/actions/collaboration";
@@ -136,7 +135,6 @@ export function Thread({
   const [liveError, setLiveError] = useState<string | null>(null);
   const [loadingConvId, setLoadingConvId] = useState<string | null>(null);
   const [collab, setCollab] = useState<ConversationCollaboration | null>(null);
-  const [collabLoading, setCollabLoading] = useState(false);
   const [collabPending, setCollabPending] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const activeLiveMessages = activeConvId ? liveByConv[activeConvId] : undefined;
@@ -180,14 +178,9 @@ export function Thread({
       return;
     }
     let cancelled = false;
-    setCollabLoading(true);
-    listConversationCollaboration(activeConvId)
-      .then((data) => {
-        if (!cancelled) setCollab(data);
-      })
-      .finally(() => {
-        if (!cancelled) setCollabLoading(false);
-      });
+    listConversationCollaboration(activeConvId).then((data) => {
+      if (!cancelled) setCollab(data);
+    });
     return () => {
       cancelled = true;
     };
@@ -372,20 +365,6 @@ export function Thread({
     setCollab(await listConversationCollaboration(activeConvId));
   };
 
-  const handleAssign = async (assigneeId: string) => {
-    setCollabPending("assign");
-    const result = await assignConversation({
-      conversationId: activeConvId,
-      assigneeId: assigneeId || null,
-    });
-    setCollabPending(null);
-    if (!result.ok) {
-      push({ kind: "error", text: result.error ?? "Assignation impossible." });
-      return;
-    }
-    await refreshCollab();
-  };
-
   const handleCreateNote = async (event: React.FormEvent) => {
     event.preventDefault();
     const body = noteDraft.trim();
@@ -496,27 +475,6 @@ export function Thread({
                   </span>
                 );
               })()}
-              <span className="contact-sub-sep" aria-hidden>
-                ·
-              </span>
-              <select
-                className="thread-assign"
-                aria-label="Assignée à"
-                value={collab?.assignedTo ?? conv.assignedTo ?? ""}
-                onChange={(event) => void handleAssign(event.target.value)}
-                disabled={
-                  collabLoading ||
-                  collabPending === "assign" ||
-                  !collab?.permissions.canAssignConversation
-                }
-              >
-                <option value="">Non assignée</option>
-                {(collab?.members ?? []).map((member) => (
-                  <option key={member.userId} value={member.userId}>
-                    {member.fullName || member.email}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>
