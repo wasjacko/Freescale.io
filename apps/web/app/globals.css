@@ -19987,12 +19987,16 @@ button:active:not(:disabled):not(.no-press) {
 .email-composer {
   display: flex;
   flex-direction: column;
-  padding: 10px 12px;
-  /* Pas de contour sur les côtés ni en bas : juste un filet en haut qui sépare
-     la zone de réponse des messages (le cadre vient de la carte du fil). */
+  /* Carte de réponse clairement détachée du fil : drop-shadow, radius,
+     marge autour, et zone d'icônes visuellement séparée. */
+  margin: 10px 14px 14px;
+  padding: 14px 14px 0;
   background: #fff;
-  border-radius: 0;
-  border-top: 1.5px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 0 0 1px rgba(15, 23, 42, 0.08),
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 28px rgba(15, 23, 42, 0.12);
   gap: 8px;
 }
 .email-composer-headers {
@@ -20060,9 +20064,9 @@ button:active:not(:disabled):not(.no-press) {
 
 .email-composer-body {
   width: 100%;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 9px;
-  padding: 12px 14px;
+  border: 0;
+  border-radius: 0;
+  padding: 4px 2px;
   font-family: inherit;
   font-size: 13px;
   line-height: 1.55;
@@ -36448,7 +36452,14 @@ button.mfv-model:hover {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 4px 0;
+  /* Plateau d'outils visuellement détaché de la zone d'écriture : trait fin
+     en haut + petit liseré sur les côtés négatifs pour casser le bord rond. */
+  margin: 8px -14px 0;
+  padding: 8px 12px;
+  background: #f7f8fb;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
 }
 .cbar-left {
   display: flex;
