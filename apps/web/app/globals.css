@@ -36441,6 +36441,95 @@ button.mfv-model:hover {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
+ * ComposerBar — barre d'actions unifiée (email + message). Rangée d'icônes
+ * à gauche, micro + bouton Envoyer noir à droite.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.cbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px 0;
+}
+.cbar-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cbar-left::-webkit-scrollbar {
+  display: none;
+}
+.cbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.cbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  transition: background 120ms var(--ease);
+}
+.cbar-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+}
+.cbar-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.cbar-btn.is-on {
+  background: rgba(15, 23, 42, 0.08);
+  color: #10131a;
+}
+/* Send group : noir + chevron à droite, séparés par un fin trait. */
+.cbar-send {
+  display: inline-flex;
+  align-items: center;
+  background: #0a0a0a;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cbar-send.is-disabled {
+  opacity: 0.4;
+}
+.cbar-send-main,
+.cbar-send-caret {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  transition: background 120ms var(--ease);
+}
+.cbar-send-main {
+  padding: 0 12px;
+}
+.cbar-send-caret {
+  padding: 0 10px;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.18);
+}
+.cbar-send-main:hover,
+.cbar-send-caret:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.cbar-send-main:disabled {
+  cursor: default;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
  * ClientDetailsModal — fiche client en modale centrée (ouvre depuis le header
  * d'une conversation). Réutilise .add-channel-overlay / .add-channel-sheet.
  * ─────────────────────────────────────────────────────────────────────────── */

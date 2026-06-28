@@ -12,13 +12,13 @@ import {
 import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-templates";
 import { simulateEmailThread } from "@/lib/simulateEmailThread";
 import { ClientDetailsModal } from "@/components/ClientDetailsModal";
+import { ComposerBar } from "@/components/ComposerBar";
 import { createTask, sendEmailReply } from "@/lib/actions/inbox";
 import {
   type ReplySuggestion,
   type SuggestedTask,
   type ThreadSummary,
   type TranslatedMessage,
-  rewriteDraftTone,
   suggestReplies,
   suggestTasks,
   summarizeThread,
@@ -32,7 +32,6 @@ import { useData } from "@/lib/contexts/DataContext";
 import { cleanEmailBody } from "@/lib/email-body-clean";
 import { useToast } from "@/lib/hooks/useToast";
 import { MOCK_CLIENTS } from "@/lib/mock-v2";
-import type { MueTone } from "@/lib/mue-chat";
 import { useApp } from "@/lib/store";
 import type { Message } from "@/lib/types";
 import { isAwaitingMyReply } from "@/lib/urgency";
@@ -750,47 +749,19 @@ export function Thread({
               }}
               rows={composerFocus || input ? 4 : 1}
             />
-            <div className="email-composer-actions">
-              <button
-                type="button"
-                className="email-composer-attach"
-                onClick={() =>
-                  push({ kind: "info", text: "Pièces jointes sur ce canal — bientôt 👋" })
-                }
-              >
-                <Icon name="i-clip" />
-                Joindre
-              </button>
-              <button
-                type="button"
-                className="email-composer-mue"
-                onClick={() =>
-                  setInput(
-                    `Merci pour ton message ${firstName} — je te reviens avec une réponse détaillée d'ici la fin de journée.`
-                  )
-                }
-                title="Mue propose une réponse"
-              >
-                <Icon name="i-spark" />
-                Suggérer (Mue)
-              </button>
-              <span style={{ flex: 1 }} />
-              {composerFocus && input.trim() && (
-                <span className="composer-hint" aria-hidden>
-                  ↵ envoyer
-                </span>
-              )}
-              <button
-                ref={sendBtnRef}
-                type="button"
-                className="email-composer-send"
-                onClick={handleSend}
-                disabled={!input.trim()}
-              >
-                <Icon name="i-send" />
-                Envoyer l'email
-              </button>
-            </div>
+            <ComposerBar
+              onAttach={() =>
+                push({ kind: "info", text: "Pièces jointes sur ce canal — bientôt 👋" })
+              }
+              onMue={() =>
+                setInput(
+                  `Merci pour ton message ${firstName} — je te reviens avec une réponse détaillée d'ici la fin de journée.`
+                )
+              }
+              onSend={handleSend}
+              onMic={() => push({ kind: "info", text: "Dictée vocale — bientôt 👋" })}
+              canSend={!!input.trim()}
+            />
           </div>
         )}
       </footer>
@@ -1127,8 +1098,7 @@ function EmailComposer({
 
   // Mue — AI reply suggestions
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
-  const [suggesting, setSuggesting] = useState(false);
-  const [tonePending, setTonePending] = useState<MueTone | null>(null);
+  const [, setSuggesting] = useState(false);
   const [autoDrafting, setAutoDrafting] = useState(false);
   const [draftedByMue, setDraftedByMue] = useState(false);
 
@@ -1278,45 +1248,6 @@ function EmailComposer({
       });
     } finally {
       setSuggesting(false);
-    }
-  };
-
-  const splitSignatureFromDraft = () => {
-    const suffix = signature ? `${SIGNATURE_SEP}${signature}` : "";
-    if (suffix && body.endsWith(suffix)) {
-      return {
-        draft: body.slice(0, -suffix.length).trimEnd(),
-        suffix,
-      };
-    }
-    return { draft: body, suffix: "" };
-  };
-
-  const handleToneRewrite = async (tone: MueTone) => {
-    const { draft, suffix } = splitSignatureFromDraft();
-    if (!draft.trim()) {
-      push({ text: "Écrivez un brouillon avant de changer le ton.", duration: 3000 });
-      return;
-    }
-    setTonePending(tone);
-    try {
-      const result = await rewriteDraftTone({
-        conversationId,
-        text: draft,
-        tone,
-      });
-      if (result.error || !result.text) {
-        push({ text: result.error ?? "Réécriture impossible.", duration: 5000 });
-        return;
-      }
-      setBody(suffix ? `${result.text}${suffix}` : result.text);
-    } catch (err) {
-      push({
-        text: err instanceof Error ? err.message : "Réécriture impossible.",
-        duration: 5000,
-      });
-    } finally {
-      setTonePending(null);
     }
   };
 
@@ -1533,81 +1464,41 @@ function EmailComposer({
         </div>
       )}
 
-      <div className="email-composer-actions">
-        <button
-          type="button"
-          className="email-composer-attach"
-          onClick={() => fileRef.current?.click()}
-          disabled={sending}
-        >
-          <Icon name="i-clip" />
-          Joindre
-        </button>
-        <div className="email-composer-templates-wrap">
-          <button
-            type="button"
-            className="email-composer-templates"
-            onClick={openTemplates}
-            disabled={sending}
-            aria-expanded={templatesOpen}
-            title="Insérer un modèle de réponse"
-          >
-            <Icon name="i-edit" />
-            Modèles
-          </button>
-          {templatesOpen && (
-            <div className="templates-menu" role="menu">
-              {templatesLoading && <div className="templates-menu-empty">Chargement…</div>}
-              {!templatesLoading && templates && templates.length === 0 && (
-                <div className="templates-menu-empty">
-                  Aucun modèle. Créez-en dans Paramètres → Modèles.
-                </div>
-              )}
-              {!templatesLoading &&
-                templates &&
-                templates.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className="templates-menu-item"
-                    role="menuitem"
-                    onClick={() => insertTemplate(t)}
-                  >
-                    <span className="templates-menu-name">{t.name}</span>
-                    <span className="templates-menu-preview">
-                      {t.body.replace(/\s+/g, " ").slice(0, 60) || "Modèle vide"}
-                    </span>
-                  </button>
-                ))}
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          className="email-composer-mue"
-          onClick={handleSuggest}
-          disabled={suggesting || sending}
-          title="Mue génère 3 propositions de réponse contextuelles"
-        >
-          <Icon name="i-spark" />
-          {suggesting ? "Mue réfléchit…" : "Suggérer (Mue)"}
-        </button>
-        <div className="email-composer-tone" aria-label="Changer le ton avec Mue">
-          {[
-            ["formal", "Formal"],
-            ["casual", "Casual"],
-            ["friendly", "Friendly"],
-          ].map(([tone, label]) => (
-            <button
-              key={tone}
-              type="button"
-              onClick={() => handleToneRewrite(tone as MueTone)}
-              disabled={sending || suggesting || tonePending !== null}
-            >
-              {tonePending === tone ? "…" : label}
-            </button>
-          ))}
-        </div>
+      <div className="email-composer-templates-wrap" style={{ position: "relative" }}>
+        <ComposerBar
+          onAttach={() => fileRef.current?.click()}
+          onMue={handleSuggest}
+          onTemplate={openTemplates}
+          onSend={handleSend}
+          onMic={() => push({ kind: "info", text: "Dictée vocale — bientôt 👋" })}
+          canSend={!sending && (body.trim().length > 0 || files.length > 0)}
+        />
+        {templatesOpen && (
+          <div className="templates-menu" role="menu">
+            {templatesLoading && <div className="templates-menu-empty">Chargement…</div>}
+            {!templatesLoading && templates && templates.length === 0 && (
+              <div className="templates-menu-empty">
+                Aucun modèle. Créez-en dans Paramètres → Modèles.
+              </div>
+            )}
+            {!templatesLoading &&
+              templates &&
+              templates.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className="templates-menu-item"
+                  role="menuitem"
+                  onClick={() => insertTemplate(t)}
+                >
+                  <span className="templates-menu-name">{t.name}</span>
+                  <span className="templates-menu-preview">
+                    {t.body.replace(/\s+/g, " ").slice(0, 60) || "Modèle vide"}
+                  </span>
+                </button>
+              ))}
+          </div>
+        )}
         <input
           ref={fileRef}
           type="file"
@@ -1618,16 +1509,6 @@ function EmailComposer({
             e.target.value = "";
           }}
         />
-        <span style={{ flex: 1 }} />
-        <button
-          type="button"
-          className="email-composer-send"
-          onClick={handleSend}
-          disabled={sending || (!body.trim() && files.length === 0)}
-        >
-          <Icon name="i-send" />
-          {sending ? "Envoi…" : "Envoyer l'email"}
-        </button>
       </div>
     </div>
   );
