@@ -12652,16 +12652,27 @@ html {
   filter: drop-shadow(0 6px 20px rgba(120, 90, 255, 0.18));
 }
 .mue2-hero-title {
-  /* Phrase d'accueil : titre gras sobre, centré, sans logo au-dessus. */
+  /* Phrase d'accueil : manuscrite (Caveat) + remplie par le gradient officiel
+     Freescale (texte « peint » via background-clip:text). */
   margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: "Caveat", "Hanken Grotesk", system-ui, sans-serif;
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.05;
   text-align: center;
-  color: var(--csv-text, #3a4151);
+  background: var(--freescale-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 [data-theme="dark"] .mue2-hero-title {
-  color: #e6e8ef;
+  /* En dark, le gradient reste lisible (mêmes teintes vives). */
+  background: var(--freescale-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .mue2-chips {
   display: flex;
