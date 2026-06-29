@@ -1099,8 +1099,8 @@ function EmailComposer({
   // Mue — AI reply suggestions
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
   const [, setSuggesting] = useState(false);
-  const [autoDrafting, setAutoDrafting] = useState(false);
-  const [draftedByMue, setDraftedByMue] = useState(false);
+  const [, setAutoDrafting] = useState(false);
+  const [, setDraftedByMue] = useState(false);
 
   // User-saved reply templates. Lazy-loaded the first time the user opens
   // the picker (no network on every conv switch) — then kept in memory
@@ -1418,17 +1418,6 @@ function EmailComposer({
           >
             ✕
           </button>
-        </div>
-      )}
-
-      {(autoDrafting || draftedByMue) && (
-        <div className={`mue-draft-flag ${autoDrafting ? "is-loading" : ""}`}>
-          <Icon name="i-spark" />
-          <span>
-            {autoDrafting
-              ? "Mue rédige ton brouillon…"
-              : "Brouillon de Mue · à relire avant d'envoyer"}
-          </span>
         </div>
       )}
 
