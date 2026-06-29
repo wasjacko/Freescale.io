@@ -19988,27 +19988,18 @@ button:active:not(:disabled):not(.no-press) {
   display: flex;
   flex-direction: column;
   /* Carte de réponse clairement détachée du fil : drop-shadow, radius,
-     marge autour, et zone d'icônes visuellement séparée. */
+     marge autour, et zone d'icônes visuellement séparée. Le FOND est
+     transparent : seule la barre d'outils en bas a un fill — la zone
+     d'écriture laisse passer le fond du fil. */
   margin: 10px 14px 14px;
   padding: 14px 14px 0;
-  background: #fff;
+  background: transparent;
   border-radius: 14px;
   box-shadow:
     inset 0 0 0 1px rgba(15, 23, 42, 0.08),
     0 1px 2px rgba(15, 23, 42, 0.04),
     0 12px 28px rgba(15, 23, 42, 0.12);
   gap: 8px;
-}
-/* Mode MESSAGE : composer transparent (sans carte blanche derrière), pour
-   coller au feeling chat ; on garde le plateau d'icônes du bas. */
-.inbox-mode-message .email-composer {
-  background: transparent;
-  box-shadow: none;
-}
-.inbox-mode-message .email-composer .cbar {
-  background: transparent;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
 }
 .email-composer-headers {
   display: flex;
