@@ -3,7 +3,10 @@
 // Barre d'actions unifiée du composer (mails + messages). Rangée d'icônes
 // compactes à gauche (+ outils), micro à droite, bouton Envoyer noir avec
 // chevron déroulant. Visuel commun aux 2 mondes (email / message).
+// Stratégie d'allègement : on n'affiche que 4 essentielles + un bouton
+// « ... » qui regroupe le reste dans un popover.
 
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 type IconAction = {
@@ -192,10 +195,18 @@ export function ComposerBar({
     },
   ];
 
+  // Allègement : on n'affiche que 4 actions essentielles + un bouton « ... »
+  // (more) qui regroupe le reste dans un popover. Les essentielles sont :
+  // Mue · Joindre · Mention (@) · Emoji.
+  const PRIMARY_KEYS = new Set(["mue", "attach", "at", "emoji"]);
+  const primary = actions.filter((a) => PRIMARY_KEYS.has(a.key));
+  const overflow = actions.filter((a) => !PRIMARY_KEYS.has(a.key));
+  const [moreOpen, setMoreOpen] = useState(false);
+
   return (
     <div className="cbar">
       <div className="cbar-left">
-        {actions.map((a) => (
+        {primary.map((a) => (
           <button
             key={a.key}
             type="button"
@@ -208,6 +219,51 @@ export function ComposerBar({
             {a.icon}
           </button>
         ))}
+        {overflow.length > 0 && (
+          <div className="cbar-more-wrap">
+            <button
+              type="button"
+              className={`cbar-btn ${moreOpen ? "is-on" : ""}`}
+              onClick={() => setMoreOpen((v) => !v)}
+              title="Plus d'actions"
+              aria-label="Plus d'actions"
+              aria-expanded={moreOpen}
+            >
+              <svg {...ico}>
+                <circle cx="5" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="19" cy="12" r="1.5" />
+              </svg>
+            </button>
+            {moreOpen && (
+              <>
+                <button
+                  type="button"
+                  className="cbar-scrim"
+                  aria-label="Fermer"
+                  onClick={() => setMoreOpen(false)}
+                />
+                <div className="cbar-more-menu" role="menu">
+                  {overflow.map((a) => (
+                    <button
+                      key={a.key}
+                      type="button"
+                      className="cbar-more-item"
+                      onClick={() => {
+                        setMoreOpen(false);
+                        a.onClick?.();
+                      }}
+                      disabled={a.disabled}
+                    >
+                      <span className="cbar-more-ic">{a.icon}</span>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
       <div className="cbar-right">
         {onMic && (
