@@ -19999,6 +19999,17 @@ button:active:not(:disabled):not(.no-press) {
     0 12px 28px rgba(15, 23, 42, 0.12);
   gap: 8px;
 }
+/* Mode MESSAGE : composer transparent (sans carte blanche derrière), pour
+   coller au feeling chat ; on garde le plateau d'icônes du bas. */
+.inbox-mode-message .email-composer {
+  background: transparent;
+  box-shadow: none;
+}
+.inbox-mode-message .email-composer .cbar {
+  background: transparent;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
 .email-composer-headers {
   display: flex;
   flex-direction: column;
