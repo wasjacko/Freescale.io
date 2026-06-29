@@ -36466,10 +36466,22 @@ button.mfv-model:hover {
 .cbar-left {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 10px;
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
+}
+.cbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.cbar-divider {
+  display: inline-block;
+  width: 1px;
+  height: 18px;
+  background: rgba(15, 23, 42, 0.14);
+  flex: none;
 }
 .cbar-left::-webkit-scrollbar {
   display: none;

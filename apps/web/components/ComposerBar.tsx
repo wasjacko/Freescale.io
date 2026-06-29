@@ -6,7 +6,6 @@
 // Stratégie d'allègement : on n'affiche que 4 essentielles + un bouton
 // « ... » qui regroupe le reste dans un popover.
 
-import { useState } from "react";
 import type { ReactNode } from "react";
 
 type IconAction = {
@@ -195,75 +194,34 @@ export function ComposerBar({
     },
   ];
 
-  // Allègement : on n'affiche que 4 actions essentielles + un bouton « ... »
-  // (more) qui regroupe le reste dans un popover. Les essentielles sont :
-  // Mue · Joindre · Mention (@) · Emoji.
-  const PRIMARY_KEYS = new Set(["mue", "attach", "at", "emoji"]);
-  const primary = actions.filter((a) => PRIMARY_KEYS.has(a.key));
-  const overflow = actions.filter((a) => !PRIMARY_KEYS.has(a.key));
-  const [moreOpen, setMoreOpen] = useState(false);
+  // Allègement : 2 groupes séparés par un divider vertical.
+  // Groupe « Contenu » (insérer/joindre) à gauche, puis « IA & productivité »
+  // à droite. Doublons retirés (add+template = un seul ; mention+at = un seul).
+  const GROUP_A = new Set(["attach", "at", "emoji", "video"]);
+  const GROUP_B = new Set(["mue", "reply", "task", "template", "swap"]);
+  const groupA = actions.filter((a) => GROUP_A.has(a.key));
+  const groupB = actions.filter((a) => GROUP_B.has(a.key));
+
+  const renderBtn = (a: IconAction) => (
+    <button
+      key={a.key}
+      type="button"
+      className={`cbar-btn ${a.active ? "is-on" : ""}`}
+      onClick={a.onClick}
+      disabled={a.disabled}
+      title={a.label}
+      aria-label={a.label}
+    >
+      {a.icon}
+    </button>
+  );
 
   return (
     <div className="cbar">
       <div className="cbar-left">
-        {primary.map((a) => (
-          <button
-            key={a.key}
-            type="button"
-            className={`cbar-btn ${a.active ? "is-on" : ""}`}
-            onClick={a.onClick}
-            disabled={a.disabled}
-            title={a.label}
-            aria-label={a.label}
-          >
-            {a.icon}
-          </button>
-        ))}
-        {overflow.length > 0 && (
-          <div className="cbar-more-wrap">
-            <button
-              type="button"
-              className={`cbar-btn ${moreOpen ? "is-on" : ""}`}
-              onClick={() => setMoreOpen((v) => !v)}
-              title="Plus d'actions"
-              aria-label="Plus d'actions"
-              aria-expanded={moreOpen}
-            >
-              <svg {...ico}>
-                <circle cx="5" cy="12" r="1.5" />
-                <circle cx="12" cy="12" r="1.5" />
-                <circle cx="19" cy="12" r="1.5" />
-              </svg>
-            </button>
-            {moreOpen && (
-              <>
-                <button
-                  type="button"
-                  className="cbar-scrim"
-                  aria-label="Fermer"
-                  onClick={() => setMoreOpen(false)}
-                />
-                <div className="cbar-more-menu" role="menu">
-                  {overflow.map((a) => (
-                    <button
-                      key={a.key}
-                      type="button"
-                      className="cbar-more-item"
-                      onClick={() => {
-                        setMoreOpen(false);
-                        a.onClick?.();
-                      }}
-                      disabled={a.disabled}
-                    >
-                      <span className="cbar-more-ic">{a.icon}</span>
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
+        <div className="cbar-group">{groupA.map(renderBtn)}</div>
+        {groupA.length > 0 && groupB.length > 0 && <span className="cbar-divider" aria-hidden />}
+        <div className="cbar-group">{groupB.map(renderBtn)}</div>
       </div>
       <div className="cbar-right">
         {onMic && (
