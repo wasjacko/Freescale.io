@@ -1,0 +1,61 @@
+# Task completion documents
+.claude/completions/**
+
+# Session files
+.claude/sessions/**
+
+# Archived documentation
+docs/archive/**
+
+# Plans / specs / roadmaps Superpowers (snapshots historiques, ~45k tokens) —
+# accessibles à la demande mais pas chargés à chaque session.
+docs/superpowers/**
+docs/app-store/**
+docs/prd-*.md
+docs/ux-*.md
+docs/INDEX.md
+
+# Roadmaps + briefs projet (chargés seulement si demandés explicitement).
+ROADMAP.md
+ROADMAP_V2.md
+ROADMAP_100.md
+ARCHITECTURE.md
+DESIGN.md
+Freescale.md
+Bienvenue.md
+
+# User-facing docs (not needed during dev sessions — devs have CLAUDE.md)
+CHANGELOG.md
+README.md
+CONTRIBUTING.md
+GEMINI.md
+AGENTS.md
+.cursorrules
+.windsurfrules
+.clinerules
+.roomodes
+
+# Git
+.git/**
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/**
+
+# OS
+.DS_Store
+
+# Node / Next.js
+node_modules/**
+.next/**
+out/**
+dist/**
+coverage/**
+__snapshots__/**
+*.snap
+public/fonts/**
