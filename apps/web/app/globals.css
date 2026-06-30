@@ -12697,9 +12697,10 @@ html {
   margin: 0;
   font-family: "IvyMode", "Instrument Serif", Georgia, serif;
   font-size: 38px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: -0.01em;
   line-height: 1.1;
+  white-space: nowrap;
   text-align: center;
   background: var(--freescale-gradient);
   -webkit-background-clip: text;
