@@ -2116,32 +2116,84 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                   aria-label="Fermer"
                   onClick={() => setUsageOpen(false)}
                 />
-                <div className="mue2-usage-pop" role="dialog" aria-label="Consommation de Mue">
-                  <header className="mue2-usage-head">
-                    <h3>Consommation de Mue</h3>
-                    <span className="mue2-usage-period">Ce mois-ci</span>
-                  </header>
-                  <div className="mue2-usage-grid">
-                    <div className="mue2-usage-cell">
-                      <span className="mue2-usage-val">128</span>
-                      <span className="mue2-usage-lbl">Requêtes</span>
+                {(() => {
+                  // Stats RÉELLES calculées à partir de l'historique de la
+                  // session courante (askMessages). Pas de chiffres fabriqués.
+                  // - Requêtes = nombre de messages utilisateur envoyés.
+                  // - Tokens  = estimation à partir des caractères des messages
+                  //             (in : prompts user, out : réponses Mue).
+                  //             Approximation usuelle : ~4 caractères / token.
+                  // - Coût    = tokens × tarif Claude Sonnet, converti en EUR.
+                  //             $3 / Mtok input, $15 / Mtok output. EUR ≈ $1.08.
+                  const QUOTA = 200; // quota mensuel indicatif (à câbler quand on aura le vrai).
+                  const CHARS_PER_TOKEN = 4;
+                  const USD_TO_EUR = 0.93;
+                  const INPUT_USD_PER_MTOK = 3;
+                  const OUTPUT_USD_PER_MTOK = 15;
+
+                  let userChars = 0;
+                  let mueChars = 0;
+                  let requests = 0;
+                  for (const m of askMessages) {
+                    const len = (m.content ?? "").length;
+                    if (m.role === "user") {
+                      requests += 1;
+                      userChars += len;
+                    } else {
+                      mueChars += len;
+                    }
+                  }
+                  const tokensIn = Math.round(userChars / CHARS_PER_TOKEN);
+                  const tokensOut = Math.round(mueChars / CHARS_PER_TOKEN);
+                  const totalTokens = tokensIn + tokensOut;
+                  const usd =
+                    (tokensIn / 1_000_000) * INPUT_USD_PER_MTOK +
+                    (tokensOut / 1_000_000) * OUTPUT_USD_PER_MTOK;
+                  const eur = usd * USD_TO_EUR;
+
+                  const fmtTokens = (n: number) =>
+                    n >= 10000
+                      ? `${Math.round(n / 1000)}k`
+                      : n >= 1000
+                        ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`
+                        : String(n);
+                  const fmtEur = (v: number) =>
+                    v < 0.01
+                      ? "€0,00"
+                      : `€${v.toFixed(2).replace(".", ",")}`;
+                  const pct = Math.min(100, Math.round((requests / QUOTA) * 100));
+
+                  return (
+                    <div className="mue2-usage-pop" role="dialog" aria-label="Consommation de Mue">
+                      <header className="mue2-usage-head">
+                        <h3>Consommation de Mue</h3>
+                        <span className="mue2-usage-period">Cette session</span>
+                      </header>
+                      <div className="mue2-usage-grid">
+                        <div className="mue2-usage-cell">
+                          <span className="mue2-usage-val">{requests}</span>
+                          <span className="mue2-usage-lbl">Requêtes</span>
+                        </div>
+                        <div className="mue2-usage-cell">
+                          <span className="mue2-usage-val">{fmtTokens(totalTokens)}</span>
+                          <span className="mue2-usage-lbl">Tokens</span>
+                        </div>
+                        <div className="mue2-usage-cell">
+                          <span className="mue2-usage-val">{fmtEur(eur)}</span>
+                          <span className="mue2-usage-lbl">Coût estimé</span>
+                        </div>
+                      </div>
+                      <div className="mue2-usage-bar">
+                        <div className="mue2-usage-bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="mue2-usage-note">
+                        {requests === 0
+                          ? `Aucune requête pour le moment. Quota mensuel indicatif : ${QUOTA}.`
+                          : `${pct} % du quota indicatif utilisé (${requests}/${QUOTA} requêtes ce mois).`}
+                      </p>
                     </div>
-                    <div className="mue2-usage-cell">
-                      <span className="mue2-usage-val">42k</span>
-                      <span className="mue2-usage-lbl">Tokens</span>
-                    </div>
-                    <div className="mue2-usage-cell">
-                      <span className="mue2-usage-val">€3,40</span>
-                      <span className="mue2-usage-lbl">Coût estimé</span>
-                    </div>
-                  </div>
-                  <div className="mue2-usage-bar">
-                    <div className="mue2-usage-bar-fill" style={{ width: "32%" }} />
-                  </div>
-                  <p className="mue2-usage-note">
-                    32 % de ton quota mensuel utilisé (400 requêtes / mois).
-                  </p>
-                </div>
+                  );
+                })()}
               </>
             )}
           </div>
