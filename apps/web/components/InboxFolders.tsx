@@ -1,5 +1,6 @@
 "use client";
 
+import { isEmailLikeChannel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import { useState } from "react";
@@ -75,9 +76,9 @@ const LABEL_COLORS = ["#e94f8a", "#4f6cf7", "#16a34a", "#d97706", "#8b5cf6", "#0
  * Dossiers (rangement custom), et Labels (tags des conversations). UI/mock.
  */
 export function InboxFolders() {
-  const { inboxFolders, activeFolderId, setActiveFolder, setActiveConv } = useApp();
+  const { inboxFolders, activeFolderId, setActiveFolder, setActiveConv, inboxMode } = useApp();
   const addFolder = useApp((s) => s.addFolder);
-  const { conversations } = useData();
+  const { conversations, archived } = useData();
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [othersOpen, setOthersOpen] = useState(false);
@@ -93,16 +94,29 @@ export function InboxFolders() {
     setAdding(false);
   };
 
-  // Compteurs dérivés des conversations.
+  // Conversations visibles côté liste : on filtre par mode (Email vs Messages)
+  // et on retire les archivées — c'est ce que l'utilisateur voit réellement,
+  // donc les compteurs doivent correspondre à ce périmètre (pas au total mock).
+  const visibleConvs = conversations.filter(
+    (c) => !archived.has(c.id) && isEmailLikeChannel(c.channel) === (inboxMode === "email")
+  );
+  const visibleIds = new Set(visibleConvs.map((c) => c.id));
+
+  // Compteurs dérivés des conversations VISIBLES — toujours cohérents avec
+  // la liste affichée à droite. Sent/Brouillons/Corbeille restent à 0 tant
+  // qu'on n'a pas câblé ces vraies sources.
   const counts: Record<string, number> = {
-    inbox: conversations.length,
-    "view:starred": conversations.filter((c) => c.starred).length,
-    "view:snoozed": conversations.filter((c) => c.snoozedUntilIso).length,
+    inbox: visibleConvs.length,
+    "view:starred": visibleConvs.filter((c) => c.starred).length,
+    "view:snoozed": visibleConvs.filter((c) => c.snoozedUntilIso).length,
+    "view:sent": 0,
+    "view:drafts": 0,
+    "view:trash": archived.size,
   };
 
-  // Labels = tags uniques des conversations, avec compteur + couleur.
+  // Labels = tags uniques des conversations VISIBLES, avec compteur + couleur.
   const tagCount = new Map<string, number>();
-  for (const c of conversations) {
+  for (const c of visibleConvs) {
     for (const t of c.tags ?? []) tagCount.set(t, (tagCount.get(t) ?? 0) + 1);
   }
   const labels = [...tagCount.entries()].map(([tag, n], i) => ({
@@ -154,7 +168,13 @@ export function InboxFolders() {
             <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.2h7a1.5 1.5 0 0 1 1.5 1.5v7.3A1.5 1.5 0 0 1 17.5 18h-13A1.5 1.5 0 0 1 3 16.5z" />
           </svg>
           <span className="ibx-folder-name">{f.name}</span>
-          {f.convIds.length > 0 && <span className="ibx-folder-count">{f.convIds.length}</span>}
+          {(() => {
+            // Compteur réel : on ne compte que les convIds qui existent ET sont
+            // visibles dans le mode courant. Les ids du store qui ne matchent
+            // plus rien sont ignorés (évite '3' alors qu'aucune n'est visible).
+            const realCount = f.convIds.filter((id) => visibleIds.has(id)).length;
+            return realCount > 0 ? <span className="ibx-folder-count">{realCount}</span> : null;
+          })()}
         </button>
       ))}
       {adding && (
