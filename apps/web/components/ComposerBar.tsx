@@ -195,10 +195,11 @@ export function ComposerBar({
   ];
 
   // Allègement : 2 groupes séparés par un divider vertical.
-  // Groupe « Contenu » (insérer/joindre) à gauche, puis « IA & productivité »
-  // à droite. Doublons retirés (add+template = un seul ; mention+at = un seul).
+  // Groupe « Contenu » (insérer/joindre) à gauche, Mue isolée à droite.
+  // Boutons retirés (peu lisibles / redondants) : Réponses rapides, Tâche,
+  // Modèle, Reformuler.
   const GROUP_A = new Set(["attach", "at", "emoji", "video"]);
-  const GROUP_B = new Set(["mue", "reply", "task", "template", "swap"]);
+  const GROUP_B = new Set(["mue"]);
   const groupA = actions.filter((a) => GROUP_A.has(a.key));
   const groupB = actions.filter((a) => GROUP_B.has(a.key));
 
