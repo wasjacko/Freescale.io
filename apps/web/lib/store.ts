@@ -101,7 +101,7 @@ export const useApp = create<State>()(
       setInboxBucket: (inboxBucket) => set({ inboxBucket }),
       inboxMode: "email",
       setInboxMode: (inboxMode) => set({ inboxMode }),
-      theme: "system",
+      theme: "light",
       setTheme: (theme) => set({ theme }),
       clientConfirm: { open: false, channel: "gmail" },
       openClientConfirm: (channel) => set({ clientConfirm: { open: true, channel } }),
@@ -148,7 +148,7 @@ export const useApp = create<State>()(
     }),
     {
       name: "fs:app",
-      version: 9,
+      version: 10,
       migrate: (persistedState, version) => {
         const stored = persistedState as Partial<State>;
         let next = stored;
@@ -190,6 +190,15 @@ export const useApp = create<State>()(
           // — ceux qui veulent du sombre l'auront via leur OS.
           if ((next as { theme?: string }).theme === "dark") {
             next = { ...next, theme: "system" };
+          }
+        }
+        if (version < 10) {
+          // Mode clair par défaut partout : on retire « system » (qui suivait
+          // l'OS) et on force « light » sauf si l'utilisateur a explicitement
+          // choisi « dark » (qui n'est plus exposé mais on respecte si présent).
+          const cur = (next as { theme?: string }).theme;
+          if (cur !== "dark") {
+            next = { ...next, theme: "light" };
           }
         }
         return next as State;

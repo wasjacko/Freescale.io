@@ -22,17 +22,15 @@ export const metadata: Metadata = {
  */
 const themeInitScript = `
 (function(){
+  // Par défaut : LIGHT, partout. On respecte uniquement un choix utilisateur
+  // explicite 'dark' (jamais 'system' qui suivait l'OS). Tout le reste -> light.
   try {
-    var t = 'system';
+    var effective = 'light';
     var raw = localStorage.getItem('fs:app');
     if (raw) {
       var parsed = JSON.parse(raw);
       var v = parsed && parsed.state && parsed.state.theme;
-      if (v === 'light' || v === 'dark' || v === 'system') t = v;
-    }
-    var effective = t;
-    if (t === 'system') {
-      effective = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      if (v === 'dark') effective = 'dark';
     }
     var r = document.documentElement;
     r.setAttribute('data-theme', effective);
