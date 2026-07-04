@@ -34,7 +34,7 @@ export type Avatar = AvatarSource & {
 };
 
 /** Mue-classified bucket. NULL = not yet triaged. */
-export type ConversationCategory = "client" | "promo" | "notif" | "other" | null;
+export type ConversationCategory = "client" | "prospect" | "prestataire" | "collaborateur" | "promo" | "notif" | "other" | null;
 
 export type Conversation = {
   id: string;

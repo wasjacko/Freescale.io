@@ -77,21 +77,12 @@ const LABEL_COLORS = ["#e94f8a", "#4f6cf7", "#16a34a", "#d97706", "#8b5cf6", "#0
  */
 export function InboxFolders() {
   const { inboxFolders, activeFolderId, setActiveFolder, setActiveConv, inboxMode } = useApp();
-  const addFolder = useApp((s) => s.addFolder);
   const { conversations, archived } = useData();
-  const [adding, setAdding] = useState(false);
-  const [newName, setNewName] = useState("");
   const [othersOpen, setOthersOpen] = useState(false);
 
   const open = (id: string | null) => {
     setActiveFolder(id);
     setActiveConv("");
-  };
-
-  const submit = () => {
-    if (newName.trim()) addFolder(newName);
-    setNewName("");
-    setAdding(false);
   };
 
   // Conversations visibles côté liste : on filtre par mode (Email vs Messages)
@@ -114,16 +105,7 @@ export function InboxFolders() {
     "view:trash": archived.size,
   };
 
-  // Labels = tags uniques des conversations VISIBLES, avec compteur + couleur.
-  const tagCount = new Map<string, number>();
-  for (const c of visibleConvs) {
-    for (const t of c.tags ?? []) tagCount.set(t, (tagCount.get(t) ?? 0) + 1);
-  }
-  const labels = [...tagCount.entries()].map(([tag, n], i) => ({
-    tag,
-    n,
-    color: LABEL_COLORS[i % LABEL_COLORS.length],
-  }));
+
 
   return (
     <aside className="ibx-folders" aria-label="Navigation Inbox">
@@ -144,117 +126,31 @@ export function InboxFolders() {
         );
       })}
 
-      {/* Dossiers */}
-      <div className="ibx-folders-head">
-        <span>Dossiers</span>
-        <button
-          type="button"
-          className="ibx-folders-add"
-          aria-label="Nouveau dossier"
-          onClick={() => setAdding(true)}
-        >
-          +
-        </button>
-      </div>
-      {inboxFolders.map((f) => (
-        <button
-          key={f.id}
-          type="button"
-          className={`ibx-folder ${activeFolderId === f.id ? "active" : ""}`}
-          title={f.name}
-          onClick={() => open(f.id)}
-        >
-          <svg className="ibx-folder-ic" {...stroke}>
-            <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.2h7a1.5 1.5 0 0 1 1.5 1.5v7.3A1.5 1.5 0 0 1 17.5 18h-13A1.5 1.5 0 0 1 3 16.5z" />
-          </svg>
-          <span className="ibx-folder-name">{f.name}</span>
-          {(() => {
-            // Compteur réel : on ne compte que les convIds qui existent ET sont
-            // visibles dans le mode courant. Les ids du store qui ne matchent
-            // plus rien sont ignorés (évite '3' alors qu'aucune n'est visible).
-            const realCount = f.convIds.filter((id) => visibleIds.has(id)).length;
-            return realCount > 0 ? <span className="ibx-folder-count">{realCount}</span> : null;
-          })()}
-        </button>
-      ))}
-      {adding && (
-        <input
-          type="text"
-          className="ibx-folder-input"
-          placeholder="Nom du dossier…"
-          value={newName}
-          // biome-ignore lint/a11y/noAutofocus: champ inline ouvert à la demande
-          autoFocus
-          onChange={(e) => setNewName(e.target.value)}
-          onBlur={submit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-            if (e.key === "Escape") {
-              setNewName("");
-              setAdding(false);
-            }
-          }}
-        />
-      )}
 
-      {labels.length > 0 && (
-        <>
-          <div className="ibx-folders-head">
-            <span>Labels</span>
-          </div>
-          {labels.map((l) => (
-            <button
-              key={l.tag}
-              type="button"
-              className={`ibx-folder ${activeFolderId === `label:${l.tag}` ? "active" : ""}`}
-              onClick={() => open(`label:${l.tag}`)}
-            >
-              <span className="ibx-label-dot" style={{ background: l.color }} />
-              <span className="ibx-folder-name ibx-label-name">{l.tag}</span>
-              <span className="ibx-folder-count">{l.n}</span>
-            </button>
-          ))}
-        </>
-      )}
-
-      {/* Zone « Autres » repliée — non-clients (promos, notifs). */}
-      <button
-        type="button"
-        className="ibx-folder ibx-folder-others"
-        onClick={() => setOthersOpen((v) => !v)}
-        aria-expanded={othersOpen}
-      >
-        <svg
-          className={`ibx-folder-ic ibx-others-chevron ${othersOpen ? "is-open" : ""}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <polyline points="9 6 15 12 9 18" />
-        </svg>
-        <span className="ibx-folder-name">Autres</span>
-      </button>
-      {othersOpen &&
-        (
-          [
-            ["cat:promo", "Promotions"],
-            ["cat:notif", "Notifications"],
-            ["cat:other", "Non classés"],
-          ] as const
-        ).map(([key, label]) => (
+      {(
+        [
+          ["cat:client", "Client", "#2563eb"], // Strong Blue
+          ["cat:prospect", "Prospect", "#e11d48"], // Strong Rose/Red
+          ["cat:prestataire", "Prestataire", "#d97706"], // Strong Amber/Orange
+          ["cat:collaborateur", "Équipe", "#16a34a"], // Strong Green
+          ["cat:other", "Non classé", "#4b5563"], // Strong Gray
+        ] as const
+      ).map(([key, label, color]) => {
+        const count = visibleConvs.filter(c => `cat:${c.category ?? "other"}` === key).length;
+        if (count === 0) return null;
+        return (
           <button
             key={key}
             type="button"
-            className={`ibx-folder ibx-folder-sub ${activeFolderId === key ? "active" : ""}`}
+            className={`ibx-folder ${activeFolderId === key ? "active" : ""}`}
             onClick={() => open(key)}
           >
-            <span className="ibx-folder-name">{label}</span>
+            <span className="ibx-label-dot" style={{ background: color }} />
+            <span className="ibx-folder-name ibx-label-name">{label}</span>
+            <span className="ibx-folder-count">{count}</span>
           </button>
-        ))}
+        );
+      })}
     </aside>
   );
 }

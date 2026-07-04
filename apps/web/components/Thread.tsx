@@ -13,6 +13,8 @@ import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-temp
 import { simulateEmailThread } from "@/lib/simulateEmailThread";
 import { ClientDetailsModal } from "@/components/ClientDetailsModal";
 import { ComposerBar } from "@/components/ComposerBar";
+import { FormatToolbar } from "@/components/FormatToolbar";
+import { EmailThreadClientSwitch } from "@/components/EmailThreadClientSwitch";
 import { createTask, sendEmailReply } from "@/lib/actions/inbox";
 import {
   type ReplySuggestion,
@@ -101,7 +103,7 @@ export function Thread({
 }: {
   currentUser?: { name: string; avatarUrl: string | null } | null;
 }) {
-  const { activeConvId, setActiveConv, setView } = useApp();
+  const { activeConvId, setActiveConv, setView, setMueOpen, setMuePendingAction } = useApp();
   const {
     conversations,
     messagesByConv,
@@ -699,6 +701,41 @@ export function Thread({
           })()}
       </section>
 
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", position: "relative", zIndex: 10 }}>
+        <div className="thread-mue-quick-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            type="button"
+            className="thread-ai-btn"
+            onClick={() => {
+              setMuePendingAction("Résume ce fil de discussion");
+              setMueOpen(true);
+            }}
+          >
+            <Icon name="i-list" /> Résumer le fil
+          </button>
+          <button
+            type="button"
+            className="thread-ai-btn"
+            onClick={() => {
+              setMuePendingAction(`Quelles sont mes nouvelles tâches pour le client ${conv.name} ?`);
+              setMueOpen(true);
+            }}
+          >
+            <Icon name="i-spark" /> Suggérer des tâches
+          </button>
+          <button
+            type="button"
+            className="thread-ai-btn"
+            onClick={() => {
+              setMuePendingAction("Suggère une réponse à ce fil");
+              setMueOpen(true);
+            }}
+          >
+            <Icon name="i-spark" /> Suggérer une réponse
+          </button>
+        </div>
+      </div>
+
       <footer className="composer">
         {isEmail ? (
           <EmailComposer
@@ -1108,6 +1145,7 @@ function EmailComposer({
   const [templates, setTemplates] = useState<EmailTemplate[] | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [formatOpen, setFormatOpen] = useState(false);
 
   // Fetch the signature ONCE per component lifecycle. The Composer mounts
   // when the user enters /app and unmounts on sign-out → no cross-user
@@ -1421,6 +1459,8 @@ function EmailComposer({
         </div>
       )}
 
+      {formatOpen && <FormatToolbar />}
+
       <textarea
         className="email-composer-body"
         placeholder={`Votre réponse à ${toName}…`}
@@ -1455,6 +1495,8 @@ function EmailComposer({
 
       <div className="email-composer-templates-wrap" style={{ position: "relative" }}>
         <ComposerBar
+          onFormat={() => setFormatOpen((prev) => !prev)}
+          formatOpen={formatOpen}
           onAttach={() => fileRef.current?.click()}
           onMue={handleSuggest}
           onTemplate={openTemplates}

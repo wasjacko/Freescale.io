@@ -81,6 +81,8 @@ const AV = (text: string, bg: string): Conversation["avatar"] => ({
 });
 
 export function mockInboxData(): InboxData {
+  if ((globalThis as any).__mockDb) return (globalThis as any).__mockDb;
+
   const conversations: Conversation[] = [
     {
       id: "c0-fav",
@@ -152,7 +154,7 @@ export function mockInboxData(): InboxData {
       group: "today",
       subject: "Optimisation de l'API",
       contactEmail: "alexandre@dupont-consulting.fr",
-      category: "client",
+      category: "collaborateur",
       tags: ["technique", "performance"],
       lastInboundAt: isoAgo({ minutes: 35 }),
       lastOutboundAt: isoAgo({ hours: 5 }),
@@ -170,7 +172,7 @@ export function mockInboxData(): InboxData {
       group: "today",
       subject: "Kick-off Projet Alpha",
       contactEmail: "clara.martin@alpha-corp.com",
-      category: "client",
+      category: "prospect",
       starred: true,
       tags: ["meeting", "important"],
       lastInboundAt: isoAgo({ hours: 1, minutes: 15 }),
@@ -190,7 +192,7 @@ export function mockInboxData(): InboxData {
       group: "today",
       subject: "Contrat mission — ITWA",
       contactEmail: "thomas@itwa.io",
-      category: "client",
+      category: "prestataire",
       tags: ["contrat"],
       lastInboundAt: isoAgo({ hours: 2 }),
       lastOutboundAt: isoAgo({ days: 1 }),
@@ -224,7 +226,7 @@ export function mockInboxData(): InboxData {
       group: "today",
       subject: "Devis refonte site vitrine",
       contactEmail: "capucine@studio-mave.fr",
-      category: "client",
+      category: "prospect",
       lastInboundAt: isoAgo({ days: 2 }),
       lastOutboundAt: isoAgo({ hours: 1 }),
       clientTone: "chaleureux",
@@ -241,7 +243,7 @@ export function mockInboxData(): InboxData {
       group: "yesterday",
       subject: "Validation proposition commerciale",
       contactEmail: "sophie.b@inov.fr",
-      category: "client",
+      category: "prestataire",
       tags: ["validation"],
       lastInboundAt: isoAgo({ hours: 18 }),
       lastOutboundAt: isoAgo({ days: 2 }),
@@ -852,7 +854,7 @@ export function mockInboxData(): InboxData {
     const channel = channels[i % channels.length] ?? "gmail";
     const subject = subjects[i % subjects.length] ?? "Sujet";
     const preview = previews[i % previews.length] ?? "Aperçu";
-    const category = i % 5 === 0 ? "notif" : "client";
+    const category = i % 7 === 0 ? "notif" : i % 7 === 1 ? "prospect" : i % 7 === 2 ? "prestataire" : i % 7 === 3 ? "collaborateur" : "client";
     const group = groups[i % groups.length] ?? "earlier";
     const unread = i % 3 === 0;
 
@@ -912,7 +914,7 @@ export function mockInboxData(): InboxData {
   );
   const allMessagesByConv = { ...messagesByConv, ...generatedMessagesByConv };
 
-  return {
+  const db: InboxData = {
     workspaceId: "dev-ws-0000",
     activeWorkspaceId: "dev-ws-0000",
     currentWorkspaceRole: "owner",
@@ -935,6 +937,9 @@ export function mockInboxData(): InboxData {
       },
     ],
   };
+
+  (globalThis as any).__mockDb = db;
+  return db;
 }
 
 // ── Mue mock responses (DEV_NO_AUTH) ────────────────────────────────────

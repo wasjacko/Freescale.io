@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+import { isDevNoAuth } from "@/lib/dev-mock";
+
 /**
  * Toggle a conversation's starred state. Star is purely user-facing
  * (the UI shows a gold ⭐ in the conv row); it has no impact on sync
@@ -16,7 +18,19 @@ export async function toggleConversationStar(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "unauthenticated" };
+
+  if (!user) {
+    if (isDevNoAuth()) {
+      const mockDb = (globalThis as any).__mockDb;
+      if (mockDb) {
+        const conv = mockDb.conversations.find((c: any) => c.id === conversationId);
+        if (conv) conv.starred = starred;
+      }
+      revalidatePath("/app", "layout");
+      return { ok: true, error: null };
+    }
+    return { ok: false, error: "unauthenticated" };
+  }
 
   const { error } = await supabase
     .from("conversations")

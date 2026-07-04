@@ -2871,13 +2871,13 @@ html {
 /* Panneau Mue ouvert (actif) : fond gris avec un léger gradient officiel
    dedans, texte sombre. Pas d'anneau au repos — il n'apparaît qu'au hover. */
 .topbar-actbtn.topbar-mue.is-active {
-  background: linear-gradient(135deg, rgba(122, 162, 255, 0.16), rgba(255, 157, 122, 0.12)),
-    rgba(15, 23, 42, 0.05);
-  color: var(--ink, #0a0a0a);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  background: rgba(79, 108, 247, 0.08);
+  color: #4f6cf7;
+  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.2);
 }
 .topbar-actbtn.topbar-mue.is-active:hover {
-  color: var(--ink, #0a0a0a);
+  background: rgba(79, 108, 247, 0.12);
+  color: #4f6cf7;
 }
 /* Actif : pas d'anneau au repos… */
 .topbar-actbtn.topbar-mue.is-active::before {
@@ -4984,7 +4984,7 @@ html {
 /* ── Inbox 3 panneaux (façon maquette) : LISTE | FIL côte à côte, dans le
    même cadre blanc arrondi que les autres pages (bord dégradé + ombre). ─── */
 .conv-shell {
-  --inbox-w: 270px;
+  --inbox-w: 320px;
   display: flex;
   /* Colonne : barre d'outils PLEINE LARGEUR en haut, puis la rangée
      dossiers + liste/fil en dessous. */
@@ -5017,16 +5017,22 @@ html {
 }
 /* ── Colonne dossiers — extrême gauche du bloc Inbox ──────────────── */
 .ibx-folders {
-  flex: 0 0 186px;
-  width: 186px;
+  flex: 0 0 68px;
+  width: 68px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   /* Inset top + left = 14px (--page-pad-top/x) — équilibre parfait
      et cohérent avec toutes les pages. */
   padding: var(--page-pad-top) var(--page-pad-x);
+  overflow-x: hidden;
   overflow-y: auto;
   box-shadow: inset -1.5px 0 0 rgba(10, 10, 10, 0.08);
+  transition: width 250ms cubic-bezier(0.4, 0, 0.2, 1), flex-basis 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ibx-folders:hover {
+  flex: 0 0 186px;
+  width: 186px;
 }
 .ibx-folders-head {
   display: flex;
@@ -5038,6 +5044,13 @@ html {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #9aa0aa;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ibx-folders:hover .ibx-folders-head {
+  opacity: 1;
 }
 .ibx-folders-add {
   display: grid;
@@ -5600,11 +5613,21 @@ html {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  opacity: 0;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ibx-folders:hover .ibx-folder-name {
+  opacity: 1;
 }
 .ibx-folder-count {
   font-size: 11px;
   font-weight: 600;
   color: #9aa0aa;
+  opacity: 0;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ibx-folders:hover .ibx-folder-count {
+  opacity: 1;
 }
 .ibx-folder-add {
   color: #9aa0aa;
@@ -11554,6 +11577,18 @@ html {
   gap: 5px;
   min-width: 0;
 }
+.ibx-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
 .conv-name {
   font-size: 13px;
   font-weight: 500;
@@ -11673,24 +11708,25 @@ html {
   letter-spacing: 0;
 }
 .badge-blue {
-  color: var(--pastel-blue-ink);
-  background: var(--pastel-blue);
+  color: #ffffff;
+  background: #2563eb;
 }
 .badge-green {
-  color: var(--pastel-green-ink);
-  background: var(--pastel-green);
+  color: #ffffff;
+  background: #16a34a;
 }
 .badge-amber {
-  color: var(--pastel-amber-ink);
-  background: var(--pastel-amber);
+  color: #ffffff;
+  background: #d97706;
 }
 .badge-rose {
-  color: var(--pastel-rose-ink);
-  background: var(--pastel-rose);
+  color: #ffffff;
+  background: #e11d48;
 }
 
 /* ====== THREAD (nested card) ====== */
 .thread {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -11888,7 +11924,7 @@ html {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 22px 26px 14px;
+  padding: 22px 26px 220px;
   /* Fond gris clair pour la zone des messages (les bulles ressortent dessus). */
   background: #f4f5f7;
   scrollbar-width: none;
@@ -12136,11 +12172,15 @@ html {
 
 /* Composer — refined */
 .composer {
-  flex: 0 0 auto;
-  /* Plus de marges : le bloc de réponse occupe toute la largeur, à plat. */
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 0;
   background: transparent;
   box-shadow: none;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .composer-box {
@@ -12678,11 +12718,9 @@ html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Hero remonté plus haut dans le panneau — l'air respire en bas, on voit
-     mieux les chips d'intention. */
-  justify-content: flex-start;
+  justify-content: center;
   gap: 10px;
-  padding: 56px 24px 24px;
+  padding: 24px;
 }
 .mue2-hero-mark {
   display: grid;
@@ -12966,7 +13004,7 @@ html {
 }
 .mue2-foot {
   flex: none;
-  padding: 8px 12px 14px;
+  padding: 8px 12px 64px;
 }
 /* Scanner de tâches intégré au chat : pas de carte propre. */
 .mue2-msg--scan .tscan--inline {
@@ -19988,13 +20026,12 @@ button:active:not(:disabled):not(.no-press) {
 .email-composer {
   display: flex;
   flex-direction: column;
+  pointer-events: auto;
   /* Carte de réponse clairement détachée du fil : drop-shadow, radius,
-     marge autour, et zone d'icônes visuellement séparée. Le FOND est
-     transparent : seule la barre d'outils en bas a un fill — la zone
-     d'écriture laisse passer le fond du fil. */
-  margin: 10px 14px 14px;
+     marge autour, et zone d'icônes visuellement séparée. */
+  margin: 10px 14px 24px;
   padding: 14px 14px 0;
-  background: transparent;
+  background: #ffffff;
   border-radius: 14px;
   box-shadow:
     inset 0 0 0 1px rgba(15, 23, 42, 0.08),
@@ -24692,11 +24729,12 @@ button:active:not(:disabled):not(.no-press) {
 .msg-daysep {
   display: flex;
   justify-content: center;
-  margin: 14px 0 10px;
+  margin: 18px 0 10px;
 }
 .msg-daysep span {
-  font-size: 12.5px;
-  color: #9aa0aa;
+  font-size: 11px;
+  font-weight: 500;
+  color: #a0a6b1;
 }
 /* Ligne système (« Conversation déplacée … ») : texte centré + traits
    pointillés (background dégradé, le flat-killer neutralise les border). */
@@ -25447,18 +25485,7 @@ button.dock-count-pill {
   color: var(--ink, #0a0a0a);
   outline: none;
 }
-/* (40) Séparateur de date sticky pendant le scroll. */
-.msg-daysep {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-}
-.msg-daysep span {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(4px);
-}
+
 /* (43) En-tête contact cliquable. */
 .contact-clickable {
   cursor: pointer;
@@ -27838,20 +27865,42 @@ button.sidebar-brand {
 .thread-client-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 11px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: var(--info-bg, rgba(79, 108, 247, 0.12));
   color: var(--info, #4f6cf7);
-  font-size: 12px;
-  font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
   transition: background 130ms var(--ease);
 }
 .thread-client-btn:hover {
   background: rgba(79, 108, 247, 0.2);
+}
+
+/* Bouton « Favori » dans l'en-tête d'un thread. */
+.thread-star-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.04);
+  color: #9aa0aa;
+  cursor: pointer;
+  transition: all 130ms var(--ease);
+}
+.thread-star-btn:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: #64748b;
+}
+.thread-star-btn.is-starred {
+  background: rgba(245, 166, 35, 0.12); /* f5a623 with opacity */
+  color: #f5a623;
+}
+.thread-star-btn.is-starred:hover {
+  background: rgba(245, 166, 35, 0.2);
 }
 .thread-client-btn svg {
   flex: none;
@@ -28230,8 +28279,7 @@ button.sidebar-brand {
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 .app.view-today .tboard-table {
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent), inset 0 0 0 1px
-    rgba(15, 23, 42, 0.12);
+  box-shadow: inset 3px 0 0 var(--g, #4f6cf7), inset 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 
 /* Repli/dépli d'un groupe (chevron) : hauteur animée dans les deux sens. */
@@ -28251,23 +28299,46 @@ button.sidebar-brand {
 .tboard-group {
   margin-bottom: 18px;
 }
-.tboard-group-head {
+.tboard-group-header-row {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 6px 2px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--g, #4f6cf7);
+  margin-bottom: 4px;
+}
+.tboard-group-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
   cursor: pointer;
+  border: none;
+  transition: filter 0.15s var(--ease);
 }
-.tboard-chevron {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.15s var(--ease);
+.tboard-group-pill:hover {
+  filter: brightness(0.95);
 }
-.tboard-chevron.is-col {
-  transform: rotate(-90deg);
+.tboard-group-pill svg {
+  flex-shrink: 0;
+  color: #111;
+}
+.tboard-group-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.tboard-group-add:hover {
+  color: #111;
+  background: rgba(15, 23, 42, 0.05);
 }
 .tboard-group-name {
   letter-spacing: -0.01em;
@@ -28492,13 +28563,11 @@ button.sidebar-brand {
 
 .tboard-table {
   margin-top: 6px;
-  /* Coins gauche droits : le trait coloré reste rectiligne (pas arrondi). */
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
   overflow: hidden;
   background: #fff;
-  /* Trait gauche : couleur du groupe ATTÉNUÉE (~28%), 3px, net et continu. */
-  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--g, #4f6cf7) 28%, transparent), inset 0 0 0 1px
-    rgba(15, 23, 42, 0.12);
+  /* Trait gauche : couleur du groupe FERME, 3px, net et continu. */
+  box-shadow: inset 3px 0 0 var(--g, #4f6cf7), inset 0 0 0 1px rgba(15, 23, 42, 0.12);
 }
 .tboard-row {
   display: grid;
@@ -31565,10 +31634,15 @@ button.sidebar-brand {
 /* ════════════ CTA RGPD (Mue) + lecteur vidéo confidentialité ════════════ */
 /* Annonces (newsletter) — cartes blanches à ombre portée, fermables. */
 .mue2-news {
+  position: absolute;
+  top: 64px;
+  left: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin: 16px 12px 0;
+  margin: 0;
+  z-index: 10;
 }
 .mue2-news-card {
   position: relative;
@@ -34293,16 +34367,15 @@ button.mfv-model:hover {
   transition: background 120ms var(--ease), color 120ms var(--ease), box-shadow 120ms var(--ease);
 }
 .mue2-intent:hover {
-  background: rgba(79, 108, 247, 0.05);
-  color: #4f6cf7;
-  box-shadow: inset 0 0 0 1.2px rgba(79, 108, 247, 0.45);
+  background: #f1f5f9;
+  box-shadow: inset 0 0 0 1.2px rgba(15, 23, 42, 0.2);
 }
 .mue2-intent svg {
   flex: none;
   color: #475569;
 }
 .mue2-intent:hover svg {
-  color: #4f6cf7;
+  color: #1e293b;
 }
 [data-theme="dark"] .mue2-intent {
   background: #20202a;
@@ -36766,7 +36839,63 @@ button.mfv-model:hover {
 .client-details-conv-prev {
   font-size: 12px;
   color: #6b7280;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+/* ====== FORMAT TOOLBAR ====== */
+.format-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="dark"] .format-toolbar {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.format-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.format-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(15, 23, 42, 0.1);
+  margin: 0 4px;
+}
+
+[data-theme="dark"] .format-divider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.format-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #64748b;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.format-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+}
+
+[data-theme="dark"] .format-btn {
+  color: #9aa0b0;
+}
+
+[data-theme="dark"] .format-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
 }

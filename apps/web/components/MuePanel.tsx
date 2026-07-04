@@ -648,6 +648,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     activeConvId,
     mueOpen,
     setMueOpen,
+    muePendingAction,
+    setMuePendingAction,
     suggestTasksOpen,
     setSuggestTasksOpen,
     setActiveConv,
@@ -725,10 +727,14 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [usageOpen, setUsageOpen] = useState(false);
   // Annonces (newsletter) fermées par l'utilisateur.
   const [dismissedNews, setDismissedNews] = useState<Set<string>>(new Set());
-  // Phrase d'accueil tirée au hasard, stable tant que le panneau reste monté.
-  const [heroPrompt] = useState(
-    () => HERO_PROMPTS[Math.floor(Math.random() * HERO_PROMPTS.length)]
-  );
+  // Phrase d'accueil tirée au hasard côté client uniquement (Math.random en
+  // useState initializer casse l'hydratation : server et client tirent des
+  // valeurs différentes). On démarre sur la 1ère phrase et on randomise
+  // après-mount pour préserver la variété sans mismatch SSR.
+  const [heroPrompt, setHeroPrompt] = useState<string>(() => HERO_PROMPTS[0] ?? "");
+  useEffect(() => {
+    setHeroPrompt(HERO_PROMPTS[Math.floor(Math.random() * HERO_PROMPTS.length)] ?? "");
+  }, []);
   const [discQuery, setDiscQuery] = useState("");
   const [currentDisc, setCurrentDisc] = useState<{ id: string; title: string } | null>(null);
 
@@ -1663,6 +1669,14 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     if (!askInput.trim()) return;
     submit(askInput);
   };
+
+  useEffect(() => {
+    if (muePendingAction) {
+      if (mode !== "ask") setMode("ask");
+      submit(muePendingAction);
+      setMuePendingAction(null);
+    }
+  }, [muePendingAction, mode, setMuePendingAction]);
 
   // Actions sur un message Mue : copier / réessayer / feedback.
   const copyText = (text: string) => {

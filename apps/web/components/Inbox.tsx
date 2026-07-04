@@ -409,14 +409,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
             );
           })()}
         {(() => {
-          // Ordre par ÉTAT DE LECTURE : non-lus en tête, puis déjà ouverts —
-          // sans en-tête de section visible (les groupes restent contigus).
-          const orderedRows = [...clientRows].sort((a, b) => {
-            const ua = isUnread(a.rep.id, a.rep.unread) ? 0 : 1;
-            const ub = isUnread(b.rep.id, b.rep.unread) ? 0 : 1;
-            return ua - ub;
-          });
-          return orderedRows.map(({ rep: c }) => {
+          return clientRows.map(({ rep: c }) => {
             const isActive = c.id === activeConvId;
             const unread = isUnread(c.id, c.unread);
             const ball = archived.has(c.id) ? null : ballInCourt(c) ? "toreply" : "waiting";
@@ -456,6 +449,10 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                     <span className="conv-top">
                       <span className="conv-namewrap">
                         <span className="conv-name">{c.name}</span>
+                        {c.category === "client" && <span className="ibx-cat-badge badge-blue">Client</span>}
+                        {c.category === "prospect" && <span className="ibx-cat-badge badge-rose">Prospect</span>}
+                        {c.category === "prestataire" && <span className="ibx-cat-badge badge-amber">Prestataire</span>}
+                        {c.category === "collaborateur" && <span className="ibx-cat-badge badge-green">Équipe</span>}
                         {c.starred && (
                           <svg
                             className="conv-star"

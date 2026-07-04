@@ -480,17 +480,7 @@ export function TasksBoard() {
 
       {boardView === "table" && (
         <>
-          {/* En-tête de colonnes unique (en haut, collant) — plus de répétition par statut. */}
-          <div className="tboard-headbar">
-            <div className="tboard-row tboard-row--head">
-              <span className="tboard-head-task">Tâche</span>
-              <span>Client</span>
-              <span>Statut</span>
-              <span>Échéance</span>
-              <span>Priorité</span>
-              <span>Source</span>
-            </div>
-          </div>
+
 
           {GROUPS.map((g) => {
             const rows = displayed.filter((t) => g.match.includes(t.status));
@@ -507,27 +497,36 @@ export function TasksBoard() {
                 }}
                 onDrop={() => onDrop(g.key)}
               >
-                <button
-                  type="button"
-                  className="tboard-group-head"
-                  onClick={() => toggleCollapse(g.key)}
-                  aria-expanded={!isCol}
-                >
-                  <svg
-                    className={`tboard-chevron ${isCol ? "is-col" : ""}`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.4}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
+                <div className="tboard-group-header-row">
+                  <button
+                    type="button"
+                    className="tboard-group-pill"
+                    onClick={() => toggleCollapse(g.key)}
+                    aria-expanded={!isCol}
+                    style={{ background: `color-mix(in srgb, var(--g) 25%, #fff)` }}
                   >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                  <span className="tboard-group-name">{g.label}</span>
+                    {g.key === "to-scope" && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="4 4"><circle cx="12" cy="12" r="9"/></svg>
+                    )}
+                    {g.key === "todo" && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/></svg>
+                    )}
+                    {g.key === "in-progress" && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/><path d="M3 12 A 9 9 0 0 0 21 12 Z" fill="currentColor" /></svg>
+                    )}
+                    {g.key === "awaiting-reply" && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+                    )}
+                    {g.key === "done" && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M8 12l3 3 5-5" stroke="#fff" /></svg>
+                    )}
+                    <span className="tboard-group-name">{g.label}</span>
+                  </button>
                   <span className="tboard-group-count">{rows.length}</span>
-                </button>
+                  <button type="button" className="tboard-group-add" onClick={() => { setNewStatus(g.key); setAdding(true); }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+                  </button>
+                </div>
 
                 <div className={`tboard-group-wrap ${isCol ? "" : "is-open"}`}>
                   <div className="tboard-group-inner">
@@ -622,49 +621,7 @@ export function TasksBoard() {
                                       Relancer
                                     </button>
                                   )}
-                                  {linkedConv ? (
-                                    <button
-                                      type="button"
-                                      className={`tlink ${isOpen ? "is-open" : ""}`}
-                                      aria-label="Voir le message lié"
-                                      aria-expanded={isOpen}
-                                      onClick={() => toggleExpand(t.id)}
-                                    >
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        width={16}
-                                        height={16}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={1.8}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden
-                                      >
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                      </svg>
-                                      <span className="tlink-badge">1</span>
-                                    </button>
-                                  ) : (
-                                    <span className="tlink tlink--none" title="Aucun message lié">
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        width={16}
-                                        height={16}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={1.8}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden
-                                      >
-                                        <circle cx="12" cy="12" r="9" />
-                                        <line x1="12" y1="8" x2="12" y2="16" />
-                                        <line x1="8" y1="12" x2="16" y2="12" />
-                                      </svg>
-                                    </span>
-                                  )}
-                                </div>
+                                  </div>
 
                                 <button
                                   type="button"
@@ -788,88 +745,7 @@ export function TasksBoard() {
                                 </span>
                               </div>
 
-                              {linkedConv && (
-                                <div className={`tdetail-wrap ${isOpen ? "is-open" : ""}`}>
-                                  <div className="tdetail">
-                                    <header className="tdetail-head">
-                                      <Avatar
-                                        avatar={{ ...linkedConv.avatar, alt: linkedConv.name }}
-                                        size={32}
-                                      />
-                                      <div className="tdetail-id">
-                                        <span className="tdetail-name">
-                                          {linkedConv.name}
-                                          <ChannelLogo
-                                            channel={linkedConv.channel}
-                                            className="tdetail-chan"
-                                          />
-                                        </span>
-                                        {linkedConv.subject && (
-                                          <span className="tdetail-subj">{linkedConv.subject}</span>
-                                        )}
-                                      </div>
-                                      <button
-                                        type="button"
-                                        className="tdetail-open"
-                                        onClick={() => openTask(t)}
-                                      >
-                                        Ouvrir le fil →
-                                      </button>
-                                    </header>
 
-                                    <ul className="tdetail-msgs">
-                                      {(messagesByConv[linkedConv.id] ?? []).slice(-2).map((m) => (
-                                        <li
-                                          key={m.id}
-                                          className={`tdetail-msg tdetail-msg--${m.dir === "out" ? "out" : "in"}`}
-                                        >
-                                          <span className="tdetail-bubble">{m.text}</span>
-                                          <span className="tdetail-time">{m.time}</span>
-                                        </li>
-                                      ))}
-                                      {(messagesByConv[linkedConv.id] ?? []).length === 0 && (
-                                        <li className="tdetail-msg tdetail-msg--in">
-                                          <span className="tdetail-bubble">
-                                            {linkedConv.preview}
-                                          </span>
-                                        </li>
-                                      )}
-                                    </ul>
-
-                                    <footer className="tdetail-foot">
-                                      <button
-                                        type="button"
-                                        className="tdetail-quick"
-                                        onClick={() => openTask(t)}
-                                      >
-                                        <svg
-                                          viewBox="0 0 24 24"
-                                          width={13}
-                                          height={13}
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth={1.9}
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          aria-hidden
-                                        >
-                                          <polyline points="9 17 4 12 9 7" />
-                                          <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
-                                        </svg>
-                                        Répondre
-                                      </button>
-                                      <span className="tdetail-spacer" />
-                                      <span className="tdetail-meta">
-                                        {(messagesByConv[linkedConv.id] ?? []).length} message
-                                        {((messagesByConv[linkedConv.id] ?? []).length || 0) > 1
-                                          ? "s"
-                                          : ""}{" "}
-                                        · {linkedConv.name}
-                                      </span>
-                                    </footer>
-                                  </div>
-                                </div>
-                              )}
                             </Fragment>
                           );
                         })

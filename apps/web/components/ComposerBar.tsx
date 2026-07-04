@@ -39,7 +39,10 @@ export function ComposerBar({
   onSend,
   onMic,
   canSend,
+  onFormat,
+  formatOpen,
 }: {
+  onFormat?: () => void;
   onAttach?: () => void;
   onMue?: () => void;
   onMention?: () => void;
@@ -49,6 +52,7 @@ export function ComposerBar({
   onSend: () => void;
   onMic?: () => void;
   canSend: boolean;
+  formatOpen?: boolean;
 }) {
   // Ordre des icônes calé sur la maquette : +, sparkle (Mue), mention,
   // paperclip, @, chat bubble, emoji, vidéo, checklist, template, swap.
@@ -63,6 +67,19 @@ export function ComposerBar({
         </svg>
       ),
       onClick: onAttach,
+    },
+    {
+      key: "format",
+      label: "Mise en forme",
+      active: formatOpen,
+      icon: (
+        <svg {...ico} viewBox="0 0 24 24">
+          <path d="M4 20h16" />
+          <path d="m6.9 15 6.9-11L21 15" />
+          <path d="m8.6 11.4 7.6-.2" />
+        </svg>
+      ),
+      onClick: onFormat,
     },
     {
       key: "mue",

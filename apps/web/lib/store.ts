@@ -67,6 +67,8 @@ type State = {
   setActiveClientId: (id: string) => void;
   toggleSidebar: () => void;
   setMueOpen: (open: boolean) => void;
+  muePendingAction: string | null;
+  setMuePendingAction: (action: string | null) => void;
   setMueView: (v: MueView) => void;
   setSuggestTasksOpen: (open: boolean) => void;
   setInboxSort: (s: InboxSort) => void;
@@ -126,6 +128,8 @@ export const useApp = create<State>()(
       setActiveClientId: (activeClientId) => set({ activeClientId }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setMueOpen: (mueOpen) => set({ mueOpen }),
+      muePendingAction: null,
+      setMuePendingAction: (muePendingAction) => set({ muePendingAction }),
       setMueView: (mueView) => set({ mueView }),
       setSuggestTasksOpen: (suggestTasksOpen) => set({ suggestTasksOpen }),
       setInboxSort: (inboxSort) => set({ inboxSort }),
