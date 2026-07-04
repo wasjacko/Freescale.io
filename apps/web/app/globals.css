@@ -11752,6 +11752,49 @@ html {
   position: relative;
   z-index: 2;
 }
+
+/* ── Toolbar Gmail-like (variante --toolbar) ──────────────────────────────
+   Rangée d'icônes rondes à gauche + Fiche client + étoile à droite. */
+.thread-head.thread-head--toolbar {
+  padding: 6px 14px;
+}
+.thread-head--toolbar .thread-tb-left,
+.thread-head--toolbar .thread-tb-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.thread-head--toolbar .thread-tb-right {
+  gap: 6px;
+}
+.thread-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  transition: background 120ms var(--ease), color 120ms var(--ease);
+}
+.thread-tb-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #10131a;
+}
+.thread-tb-btn.is-on {
+  color: #10131a;
+  background: rgba(15, 23, 42, 0.08);
+}
+.thread-tb-star.is-on {
+  color: #f5a623;
+  background: transparent;
+}
+.thread-tb-star.is-on:hover {
+  background: rgba(245, 166, 35, 0.12);
+}
 /* Avatar plus petit pour gagner de la hauteur. */
 .thread-head .avatar.large {
   width: 34px;

@@ -14,7 +14,6 @@ import { simulateEmailThread } from "@/lib/simulateEmailThread";
 import { ClientDetailsModal } from "@/components/ClientDetailsModal";
 import { ComposerBar } from "@/components/ComposerBar";
 import { FormatToolbar } from "@/components/FormatToolbar";
-import { EmailThreadClientSwitch } from "@/components/EmailThreadClientSwitch";
 import { createTask, sendEmailReply } from "@/lib/actions/inbox";
 import {
   type ReplySuggestion,
@@ -110,6 +109,9 @@ export function Thread({
     appendOutgoingMessage,
     retryFailedMessage,
     setTags,
+    markUnread,
+    archive,
+    toggleStar,
   } = useData();
   // Section collaboration (notes internes + activité) — désormais inaccessible
   // depuis l'en-tête (icônes retirées) ; on garde l'état au cas où.
@@ -124,8 +126,9 @@ export function Thread({
   const [input, setInput] = useState("");
   const messagesEl = useRef<HTMLElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
+  const tagBtnRef = useRef<HTMLButtonElement>(null);
   const [tagOpen, setTagOpen] = useState(false);
-  const [tagAnchor] = useState<DOMRect | null>(null);
+  const [tagAnchor, setTagAnchor] = useState<DOMRect | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   // Live-fetch messages from Gmail on conv open. messagesByConv (server
   // DB cache) used only as an INSTANT fallback for the conv we last
@@ -406,99 +409,124 @@ export function Thread({
 
   return (
     <main className="thread">
-      <header className="thread-head">
-        {/* Back-to-inbox button — visible at all viewports now since
-            opening a conv hides the inbox list entirely. Returns the
-            user to the conv list by clearing activeConvId AND forcing
-            view to "inbox" (defensive — in case the user opened a
-            thread via command palette from a non-inbox view). */}
-        <button
-          type="button"
-          className="thread-back"
-          onClick={() => {
-            setView("inbox");
-            setActiveConv("");
-          }}
-          aria-label="Retour à l'inbox"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
+      <header className="thread-head thread-head--toolbar">
+        {/* Barre d'actions Gmail-like : retour + actions rapides à gauche,
+            Fiche client + favori à droite. Contact info retiré (repose sur
+            la ligne d'expéditeur du 1er email pour l'identification). */}
+        <div className="thread-tb-left">
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => {
+              setView("inbox");
+              setActiveConv("");
+            }}
+            aria-label="Retour à l'inbox"
+            title="Retour à l'inbox"
           >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          <span>Inbox</span>
-        </button>
-        <div className="contact">
-          <span className="avatar large">
-            <Avatar avatar={conv.avatar} className="" />
-            <span className="status-dot" />
-          </span>
-          <div>
-            <h1>{conv.name}</h1>
-            <div className="contact-sub">
-              {/* Canal unique, ou sélecteur de canaux si le client en a plusieurs. */}
-              {(() => {
-                const siblings = conv.clientId
-                  ? conversations.filter((x) => x.clientId === conv.clientId)
-                  : [conv];
-                if (siblings.length <= 1) {
-                  return (
-                    <span className="thread-chan-inline">
-                      <ChannelLogo channel={conv.channel} className="" />
-                      {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
-                    </span>
-                  );
-                }
-                return (
-                  <span className="thread-chan-tabs" role="tablist" aria-label="Canaux du client">
-                    {siblings.map((x) => (
-                      <button
-                        key={x.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={x.id === conv.id}
-                        className={`thread-chan-tab ${x.id === conv.id ? "active" : ""}`}
-                        title={x.channel}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveConv(x.id);
-                        }}
-                      >
-                        <ChannelLogo channel={x.channel} className="" />
-                      </button>
-                    ))}
-                  </span>
-                );
-              })()}
-            </div>
-          </div>
+            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => void markUnread(activeConvId)}
+            aria-label="Marquer comme non lu"
+            title="Marquer comme non lu"
+          >
+            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+              <path d="M4 7l8 6 8-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => {
+              const ordered = [...conversations].sort(
+                (a, b) => new Date(b.lastAtIso).getTime() - new Date(a.lastAtIso).getTime()
+              );
+              const idxNow = ordered.findIndex((c) => c.id === conv.id);
+              const next = ordered.find((c, i) => i > idxNow && c.id !== conv.id);
+              archive(conv.id);
+              push({ kind: "success", text: "Conversation supprimée" });
+              setActiveConv(next ? next.id : "");
+            }}
+            aria-label="Supprimer"
+            title="Supprimer"
+          >
+            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => {
+              archive(conv.id);
+              push({ kind: "success", text: "Conversation archivée" });
+            }}
+            aria-label="Archiver"
+            title="Archiver"
+          >
+            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="3" y="5" width="18" height="4" rx="1" />
+              <path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9" />
+              <line x1="10" y1="13" x2="14" y2="13" />
+            </svg>
+          </button>
+          <button
+            ref={tagBtnRef}
+            type="button"
+            className={`thread-tb-btn ${(conv.tags?.length ?? 0) > 0 ? "is-on" : ""}`}
+            onClick={() => {
+              setTagAnchor(tagBtnRef.current?.getBoundingClientRect() ?? null);
+              setTagOpen((v) => !v);
+            }}
+            aria-label="Étiquettes"
+            title="Étiquettes"
+          >
+            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => push({ kind: "info", text: "Catégorie — bientôt 👋" })}
+            aria-label="Catégorie"
+            title="Catégorie"
+          >
+            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            aria-label="Plus d'actions"
+            title="Plus d'actions"
+          >
+            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="5" cy="12" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="19" cy="12" r="1.5" />
+            </svg>
+          </button>
         </div>
-        <div className="head-actions">
+        <div className="thread-tb-right">
           {linkedClient && (
             <button
               type="button"
               className="thread-client-btn"
-              data-tip="Voir la fiche client"
-              aria-label="Voir la fiche client"
               onClick={() => setClientModalOpen(true)}
+              aria-label="Voir la fiche client"
+              title="Voir la fiche client"
             >
-              <svg
-                viewBox="0 0 24 24"
-                width={15}
-                height={15}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.9}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
+              <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
@@ -507,6 +535,17 @@ export function Thread({
               <span>Fiche client</span>
             </button>
           )}
+          <button
+            type="button"
+            className={`thread-tb-btn thread-tb-star ${conv.starred ? "is-on" : ""}`}
+            onClick={() => void toggleStar(conv.id, !conv.starred)}
+            aria-label={conv.starred ? "Retirer des favoris" : "Ajouter aux favoris"}
+            title={conv.starred ? "Retirer des favoris" : "Ajouter aux favoris"}
+          >
+            <svg viewBox="0 0 24 24" width={17} height={17} fill={conv.starred ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polygon points="12 2 15 9 22 9.3 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.3 9 9 12 2" />
+            </svg>
+          </button>
         </div>
       </header>
 
