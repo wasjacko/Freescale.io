@@ -112,6 +112,8 @@ export function Thread({
     markUnread,
     archive,
     toggleStar,
+    setCategory,
+    snooze,
   } = useData();
   // Section collaboration (notes internes + activité) — désormais inaccessible
   // depuis l'en-tête (icônes retirées) ; on garde l'état au cas où.
@@ -129,6 +131,9 @@ export function Thread({
   const tagBtnRef = useRef<HTMLButtonElement>(null);
   const [tagOpen, setTagOpen] = useState(false);
   const [tagAnchor, setTagAnchor] = useState<DOMRect | null>(null);
+  // Menus de la toolbar Gmail-like : catégorie + « plus d'actions ».
+  const [catOpen, setCatOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   // Live-fetch messages from Gmail on conv open. messagesByConv (server
   // DB cache) used only as an INSTANT fallback for the conv we last
@@ -493,29 +498,192 @@ export function Thread({
               <line x1="7" y1="7" x2="7.01" y2="7" />
             </svg>
           </button>
-          <button
-            type="button"
-            className="thread-tb-btn"
-            onClick={() => push({ kind: "info", text: "Catégorie — bientôt 👋" })}
-            aria-label="Catégorie"
-            title="Catégorie"
-          >
-            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="12" r="9" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="thread-tb-btn"
-            aria-label="Plus d'actions"
-            title="Plus d'actions"
-          >
-            <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="5" cy="12" r="1.5" />
-              <circle cx="12" cy="12" r="1.5" />
-              <circle cx="19" cy="12" r="1.5" />
-            </svg>
-          </button>
+          <div className="thread-tb-menu-wrap">
+            <button
+              type="button"
+              className={`thread-tb-btn ${catOpen ? "is-on" : ""}`}
+              onClick={() => {
+                setMoreOpen(false);
+                setCatOpen((v) => !v);
+              }}
+              aria-label="Catégorie"
+              aria-expanded={catOpen}
+              title="Catégorie"
+            >
+              <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="9" />
+                {conv.category && (
+                  <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />
+                )}
+              </svg>
+            </button>
+            {catOpen && (
+              <>
+                <button
+                  type="button"
+                  className="thread-tb-scrim"
+                  aria-label="Fermer"
+                  onClick={() => setCatOpen(false)}
+                />
+                <div className="thread-tb-menu" role="menu">
+                  {(
+                    [
+                      { key: "client", label: "Client", dot: "#4f6cf7" },
+                      { key: "prospect", label: "Prospect", dot: "#8b5cf6" },
+                      { key: "prestataire", label: "Prestataire", dot: "#0891b2" },
+                      { key: "collaborateur", label: "Collaborateur", dot: "#16a34a" },
+                      { key: "promo", label: "Promo", dot: "#d97706" },
+                      { key: "notif", label: "Notification", dot: "#94a3b8" },
+                      { key: "other", label: "Autre", dot: "#6b7280" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      className={`thread-tb-menu-item ${conv.category === opt.key ? "is-active" : ""}`}
+                      onClick={() => {
+                        void setCategory(conv.id, opt.key);
+                        setCatOpen(false);
+                        push({ kind: "success", text: `Catégorisé : ${opt.label}` });
+                      }}
+                    >
+                      <span className="thread-tb-menu-dot" style={{ background: opt.dot }} />
+                      {opt.label}
+                    </button>
+                  ))}
+                  {conv.category && (
+                    <>
+                      <div className="thread-tb-menu-sep" />
+                      <button
+                        type="button"
+                        className="thread-tb-menu-item"
+                        onClick={() => {
+                          void setCategory(conv.id, null);
+                          setCatOpen(false);
+                          push({ kind: "info", text: "Catégorie retirée" });
+                        }}
+                      >
+                        <span className="thread-tb-menu-dot" style={{ background: "transparent", boxShadow: "inset 0 0 0 1.5px #94a3b8" }} />
+                        Retirer la catégorie
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="thread-tb-menu-wrap">
+            <button
+              type="button"
+              className={`thread-tb-btn ${moreOpen ? "is-on" : ""}`}
+              onClick={() => {
+                setCatOpen(false);
+                setMoreOpen((v) => !v);
+              }}
+              aria-label="Plus d'actions"
+              aria-expanded={moreOpen}
+              title="Plus d'actions"
+            >
+              <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="5" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="19" cy="12" r="1.5" />
+              </svg>
+            </button>
+            {moreOpen && (
+              <>
+                <button
+                  type="button"
+                  className="thread-tb-scrim"
+                  aria-label="Fermer"
+                  onClick={() => setMoreOpen(false)}
+                />
+                <div className="thread-tb-menu" role="menu">
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      const t = new Date();
+                      t.setDate(t.getDate() + 1);
+                      t.setHours(9, 0, 0, 0);
+                      void snooze(conv.id, t.toISOString());
+                      setMoreOpen(false);
+                      push({
+                        kind: "info",
+                        text: "En pause jusqu'à demain 9h",
+                        action: { label: "Annuler", fn: () => void snooze(conv.id, null) },
+                      });
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <circle cx="12" cy="12" r="9" />
+                      <polyline points="12 7 12 12 15.5 14" />
+                    </svg>
+                    Reporter (demain 9h)
+                  </button>
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      void setCategory(conv.id, "promo");
+                      setMoreOpen(false);
+                      push({
+                        kind: "info",
+                        text: "Marqué comme promo",
+                        action: {
+                          label: "Annuler",
+                          fn: () => void setCategory(conv.id, null),
+                        },
+                      });
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2" />
+                    </svg>
+                    Marquer comme promo
+                  </button>
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      if (typeof window !== "undefined") window.print();
+                      setMoreOpen(false);
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <polyline points="6 9 6 2 18 2 18 9" />
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                      <rect x="6" y="14" width="12" height="8" />
+                    </svg>
+                    Imprimer
+                  </button>
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        navigator.clipboard
+                          .writeText(conv.name)
+                          .then(() =>
+                            push({ kind: "success", text: "Nom du contact copié" })
+                          )
+                          .catch(() =>
+                            push({ kind: "error", text: "Copie impossible." })
+                          );
+                      }
+                      setMoreOpen(false);
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width={15} height={15} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <rect x="9" y="9" width="13" height="13" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copier le nom du contact
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div className="thread-tb-right">
           {linkedClient && (
