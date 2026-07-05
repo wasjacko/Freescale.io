@@ -19832,6 +19832,12 @@ button:active:not(:disabled):not(.no-press) {
   background: #e4f5ea;
   color: #2f7a4f;
 }
+.add-channel-tag.is-soon {
+  background: rgba(15, 23, 42, 0.04);
+  color: #8b93a4;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
 .add-channel-cta {
   height: 32px;
   padding: 0 14px;

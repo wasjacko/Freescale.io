@@ -5,11 +5,10 @@ import { CHANNEL_PROVIDER_REGISTRY } from "@/lib/channels/registry";
 import { useApp } from "@/lib/store";
 import { useEffect } from "react";
 
-const PROVIDERS = CHANNEL_PROVIDER_REGISTRY.filter((provider) =>
-  ["gmail", "outlook", "slack", "instagram", "whatsapp", "linkedin", "discord"].includes(
-    provider.kind
-  )
-);
+// Tous les canaux du registre — l'utilisateur voit toutes les intégrations
+// possibles, y compris celles pas encore prêtes (isProviderReady = false).
+// Les non-prêtes sont marquées « Bientôt » à la place du CTA « Connecter ».
+const PROVIDERS = CHANNEL_PROVIDER_REGISTRY;
 
 export function AddChannelModal({
   open,
@@ -90,7 +89,7 @@ export function AddChannelModal({
                 </span>
                 {isConnected ? (
                   <span className="add-channel-tag is-connected">Connecté</span>
-                ) : (
+                ) : p.ready ? (
                   <button
                     type="button"
                     className="add-channel-cta"
@@ -101,6 +100,8 @@ export function AddChannelModal({
                   >
                     Connecter
                   </button>
+                ) : (
+                  <span className="add-channel-tag is-soon">Bientôt</span>
                 )}
               </li>
             );
