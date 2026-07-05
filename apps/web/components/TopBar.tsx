@@ -5,7 +5,7 @@ import { AddChannelModal } from "@/components/AddChannelModal";
 import { MueFlower } from "@/components/MueFlower";
 import { ChannelLogo } from "@/components/icons/Icon";
 import type { CurrentUser } from "@/lib/auth";
-import { channelProviderLabel } from "@/lib/channels/registry";
+import { CHANNEL_PROVIDER_REGISTRY, channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { CREDITS_REMAINING, fmtCredits } from "@/lib/credits";
 import { useApp } from "@/lib/store";
@@ -32,22 +32,33 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
       .slice(0, 2)
       .toUpperCase() ?? "?";
   const connectedKinds = new Set((data.channels ?? []).map((c) => c.kind));
-  const connected = [...connectedKinds];
 
   return (
     <header className="topbar">
-      <div className="topbar-channels" aria-label="Canaux connectés">
-        {connected.map((kind) => {
-          const label = channelProviderLabel(kind);
+      <div className="topbar-channels" aria-label="Canaux">
+        {/* On affiche TOUS les canaux du registre : connectés en couleur,
+            non connectés en gris (clic = ouvre la modale de connexion). */}
+        {CHANNEL_PROVIDER_REGISTRY.map((p) => {
+          const label = channelProviderLabel(p.kind);
+          const isOn = connectedKinds.has(p.kind);
           return (
-            <span
-              key={kind}
-              className="topbar-channel is-on"
-              aria-label={`${label} — connecté`}
-              title={`${label} — connecté`}
+            <button
+              key={p.kind}
+              type="button"
+              className={`topbar-channel ${isOn ? "is-on" : "is-off"}`}
+              aria-label={isOn ? `${label} — connecté` : `${label} — non connecté`}
+              title={
+                isOn
+                  ? `${label} — connecté`
+                  : p.ready
+                    ? `${label} — cliquer pour connecter`
+                    : `${label} — bientôt`
+              }
+              onClick={() => !isOn && setAddOpen(true)}
+              disabled={isOn}
             >
-              <ChannelLogo channel={kind} className="topbar-channel-logo" />
-            </span>
+              <ChannelLogo channel={p.kind} className="topbar-channel-logo" />
+            </button>
           );
         })}
       </div>

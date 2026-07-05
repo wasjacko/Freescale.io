@@ -25694,9 +25694,19 @@ button.sidebar-brand {
   place-items: center;
   width: 34px;
   height: 34px;
+  padding: 0;
+  border: 0;
   border-radius: 8px;
   background: transparent;
   box-shadow: none;
+  cursor: pointer;
+  transition: background 120ms var(--ease);
+}
+.topbar-channel:disabled {
+  cursor: default;
+}
+.topbar-channel.is-off:hover {
+  background: rgba(15, 23, 42, 0.05);
 }
 /* Tuile uniforme : même taille + même radius pour tous les logos, le visuel
    est rogné à ce radius (les icônes « app » gardent ainsi un coin homogène). */
