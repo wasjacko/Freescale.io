@@ -203,6 +203,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
       if (af === "view:starred") return !!c.starred;
       if (af === "view:snoozed") return !!c.snoozedUntilIso;
       if (af === "view:sent" || af === "view:drafts" || af === "view:trash") return false;
+      if (af.startsWith("chan:")) return c.channel === af.slice(5);
       if (af.startsWith("label:")) return (c.tags ?? []).includes(af.slice(6));
       if (af.startsWith("cat:")) return (c.category ?? "other") === af.slice(4);
       if (folder) return folder.convIds.includes(c.id);

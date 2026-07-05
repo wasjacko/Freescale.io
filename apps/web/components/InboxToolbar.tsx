@@ -81,7 +81,9 @@ export function InboxToolbar() {
               strokeLinejoin="round"
               aria-hidden
             >
-              <path d="M21 11.5a8.4 8.4 0 0 1-9.3 8.4L3 21l1.1-3.7A8.4 8.4 0 1 1 21 11.5z" />
+              {/* Bulle de chat : rectangle arrondi + queue triangulaire propre
+                  qui part du bas-gauche, tracé en un seul chemin fermé. */}
+              <path d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-9l-4.5 3.5v-3.5H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
             </svg>
             Messages
             {messageUnread > 0 && <span className="ibx-mode-badge">{messageUnread}</span>}

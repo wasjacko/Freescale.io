@@ -796,17 +796,27 @@ button:not(:disabled):active,
   color: #f4f4f7;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
-[data-theme="dark"] .topbar-actbtn:hover,
-[data-theme="dark"] .topbar-actbtn.topbar-mue:hover {
+[data-theme="dark"] .topbar-actbtn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
+/* Ensure Mue button uses glassmorphic gradient in dark mode as well */
+[data-theme="dark"] .topbar-actbtn.topbar-mue {
+  background: linear-gradient(135deg, rgba(120, 170, 191, 0.88) 0%, rgba(105, 129, 184, 0.88) 11%, rgba(97, 28, 113, 0.88) 28%, rgba(235, 0, 32, 0.88) 46%, rgba(254, 0, 69, 0.88) 61%, rgba(225, 185, 184, 0.88) 88%, rgba(105, 129, 184, 0.88) 100%);
+  background-clip: padding-box;
+  transform: translateZ(0);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(97, 28, 113, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+[data-theme="dark"] .topbar-actbtn.topbar-mue:hover {
+  background: linear-gradient(135deg, rgba(120, 170, 191, 0.93) 0%, rgba(105, 129, 184, 0.93) 11%, rgba(97, 28, 113, 0.93) 28%, rgba(235, 0, 32, 0.93) 46%, rgba(254, 0, 69, 0.93) 61%, rgba(225, 185, 184, 0.93) 88%, rgba(105, 129, 184, 0.93) 100%);
+  box-shadow: 0 6px 18px rgba(97, 28, 113, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
 [data-theme="dark"] .topbar-actbtn.topbar-mue.is-active {
-  background: linear-gradient(135deg, rgba(122, 162, 255, 0.22), rgba(255, 157, 122, 0.16)),
-    rgba(255, 255, 255, 0.06);
-  color: #f4f4f7;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, rgba(120, 170, 191, 0.95) 0%, rgba(105, 129, 184, 0.95) 11%, rgba(97, 28, 113, 0.95) 28%, rgba(235, 0, 32, 0.95) 46%, rgba(254, 0, 69, 0.95) 61%, rgba(225, 185, 184, 0.95) 88%, rgba(105, 129, 184, 0.95) 100%);
 }
 
 /* ── DARK : séparateurs entre blocs nettement plus visibles. ─────────
@@ -2775,17 +2785,17 @@ html {
   width: 34px;
   height: 34px;
   padding: 0;
-  border-radius: 6px;
-  background: #fff;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.13), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.09);
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  background: #f8f9fa;
   color: #5b616b;
   cursor: pointer;
-  transition: background 140ms var(--ease), box-shadow 140ms var(--ease), color 140ms var(--ease);
+  transition: background 140ms var(--ease), color 140ms var(--ease);
 }
 .topbar-actbtn:hover {
-  background: #fff;
+  background: #f1f2f6;
   color: var(--ink, #0a0a0a);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.22), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.1);
 }
 .topbar-actbtn svg {
   width: 16px;
@@ -2794,10 +2804,10 @@ html {
 }
 /* Bouton Mue : pilule icône + libellé « Mue ». */
 .topbar-mue {
-  width: 182px;
-  justify-content: flex-start;
+  width: auto;
+  justify-content: center;
   gap: 8px;
-  padding: 0 12px 0 14px;
+  padding: 0 16px;
   white-space: nowrap;
 }
 /* ── Bouton Agent (Mue) — neutre au repos, anneau IA animé au hover ── */
@@ -2808,86 +2818,42 @@ html {
 }
 .topbar-actbtn.topbar-mue {
   position: relative;
-  isolation: isolate;
-  border: 0;
-  background: #fff;
-  color: var(--ink, #0a0a0a);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.13), inset 0 1.5px 2.5px rgba(15, 23, 42, 0.08);
+  border: none;
+  border-radius: 8px;
+  height: 36px;
+  padding: 0 18px;
+  background: linear-gradient(135deg, rgba(120, 170, 191, 0.88) 0%, rgba(105, 129, 184, 0.88) 11%, rgba(97, 28, 113, 0.88) 28%, rgba(235, 0, 32, 0.88) 46%, rgba(254, 0, 69, 0.88) 61%, rgba(225, 185, 184, 0.88) 88%, rgba(105, 129, 184, 0.88) 100%);
+  background-clip: padding-box; /* Fixes edge bleed bug */
+  transform: translateZ(0); /* Forces GPU rendering to fix Webkit border rendering issues */
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(97, 28, 113, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
 }
-/* Anneau conique gradient — INTERNE (dans les bords du bouton), invisible au
-   repos, opacité au hover. */
-.topbar-actbtn.topbar-mue::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--mue-angle),
-    #78aabf 0deg,
-    #6981b8 50deg,
-    #611c71 130deg,
-    #eb0020 210deg,
-    #fe0045 270deg,
-    #e1b9b8 320deg,
-    #78aabf 360deg
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transform: scale(0.985);
-  transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 520ms
-    cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-  z-index: -1;
-}
+
 .topbar-actbtn.topbar-mue:hover {
-  background: #fff;
-  color: var(--ink, #0a0a0a);
-  /* On laisse le liseré statique pour pas qu'il se cumule avec l'anneau. */
-  box-shadow: inset 0 1.5px 2.5px rgba(79, 108, 247, 0.06);
+  background: linear-gradient(135deg, rgba(120, 170, 191, 0.93) 0%, rgba(105, 129, 184, 0.93) 11%, rgba(97, 28, 113, 0.93) 28%, rgba(235, 0, 32, 0.93) 46%, rgba(254, 0, 69, 0.93) 61%, rgba(225, 185, 184, 0.93) 88%, rgba(105, 129, 184, 0.93) 100%);
+  box-shadow: 0 6px 18px rgba(97, 28, 113, 0.45);
+  filter: brightness(1.04);
 }
-.topbar-actbtn.topbar-mue:hover::before {
-  opacity: 1;
-  transform: scale(1);
-  animation: mue-ring-spin 5.5s linear infinite;
-}
-@keyframes mue-ring-spin {
-  to {
-    --mue-angle: 360deg;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .topbar-actbtn.topbar-mue:hover::before {
-    animation: none;
-  }
-}
+
 .topbar-mue .topbar-actbtn-label {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 14px;
+  font-weight: 700; /* Bolder font weight for crisp visibility */
+  letter-spacing: -0.015em;
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.15);
 }
-/* Panneau Mue ouvert (actif) : fond gris avec un léger gradient officiel
-   dedans, texte sombre. Pas d'anneau au repos — il n'apparaît qu'au hover. */
+
 .topbar-actbtn.topbar-mue.is-active {
-  background: rgba(79, 108, 247, 0.08);
-  color: #4f6cf7;
-  box-shadow: inset 0 0 0 1px rgba(79, 108, 247, 0.2);
+  background: linear-gradient(135deg, rgba(120, 170, 191, 0.95) 0%, rgba(105, 129, 184, 0.95) 11%, rgba(97, 28, 113, 0.95) 28%, rgba(235, 0, 32, 0.95) 46%, rgba(254, 0, 69, 0.95) 61%, rgba(225, 185, 184, 0.95) 88%, rgba(105, 129, 184, 0.95) 100%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-.topbar-actbtn.topbar-mue.is-active:hover {
-  background: rgba(79, 108, 247, 0.12);
-  color: #4f6cf7;
-}
-/* Actif : pas d'anneau au repos… */
-.topbar-actbtn.topbar-mue.is-active::before {
-  opacity: 0;
-}
-/* …mais il revient au hover, même en état actif. */
-.topbar-actbtn.topbar-mue.is-active:hover::before {
-  opacity: 1;
-  transform: scale(1);
-  animation: mue-ring-spin 5.5s linear infinite;
+.topbar-actbtn.topbar-mue.is-active .topbar-actbtn-label {
+  color: #ffffff;
 }
 .topbar-logo {
   display: inline-flex;
@@ -5708,6 +5674,26 @@ html {
   min-width: 0;
   min-height: 0;
 }
+/* Mode Email uniquement : si aucune conversation n'est active, la liste prend toute la largeur et le fil est masqué. */
+.conv-shell-body.inbox-mode-email.no-active-conv > .inbox {
+  flex: 1 1 100%;
+  width: 100%;
+  box-shadow: none;
+}
+.conv-shell-body.inbox-mode-email.no-active-conv > .thread {
+  display: none;
+}
+/* Mode Email uniquement : si une conversation est active, la liste est masquée, le fil prend toute la largeur, et le bouton retour est affiché. */
+.conv-shell-body.inbox-mode-email.has-active-conv > .inbox {
+  display: none;
+}
+.conv-shell-body.inbox-mode-email.has-active-conv > .thread {
+  flex: 1 1 100%;
+  width: 100%;
+}
+.conv-shell-body.inbox-mode-email.has-active-conv .thread-back {
+  display: inline-flex !important;
+}
 /* Desktop : pas de bouton retour (la liste est déjà là). */
 .thread-back {
   display: none;
@@ -7632,7 +7618,7 @@ html {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 4px 8px 24px;
+  padding: 4px var(--page-pad-x, 14px) 24px;
   scrollbar-width: thin;
   scrollbar-color: rgba(15, 23, 42, 0.08) transparent;
   /* Fade-to-transparent at top + bottom edges so the user has a
@@ -7678,7 +7664,7 @@ html {
   gap: 14px;
   padding: 12px 14px;
   margin-bottom: 2px;
-  border-radius: 12px;
+  border-radius: 8px;
   text-align: left;
   border: 1px solid transparent;
   transition: background 180ms var(--ease), border-color 180ms var(--ease), box-shadow 180ms
@@ -11652,7 +11638,7 @@ html {
   margin-top: 4px;
   padding: 2px 7px;
   align-self: flex-start;
-  border-radius: 999px;
+  border-radius: 5px;
   background: rgba(15, 23, 42, 0.06);
   color: #475569;
   font-size: 11px;
@@ -12036,6 +12022,9 @@ html {
   /* Fond gris clair pour la zone des messages (les bulles ressortent dessus). */
   background: #f4f5f7;
   scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
 .messages::-webkit-scrollbar {
   display: none;
@@ -12442,31 +12431,23 @@ html {
   /* Même padding intérieur que le bloc Email/Messages (3px). */
   padding: 3px;
   color: var(--ink, #0a0a0a);
-  /* Fond = notre dégradé Freescale officiel + grain (noise) par-dessus, et
-     stroke dégradé en border-box. Le noise est une couche padding-box légère. */
+  /* Fond gris clair avec grain */
   background:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>")
-      repeat,
-    /* Blanc pur en haut jusqu'à la phrase centrale, puis fondu vers le pastel. */
-    linear-gradient(180deg, #ffffff 0%, #ffffff 48%, rgba(255, 255, 255, 0) 78%),
-    /* Voile blanc global pour éclaircir le pastel. */
-    linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)),
-    var(--freescale-gradient-pastel);
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .03 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>") repeat,
+    #f4f6f9;
   border: none;
+  border-radius: 8px 8px 0 0;
   /* Double liseré INTERNE (inset) : trait fin, espace blanc, second trait fin. */
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1), inset 0 0 0 3px rgba(255, 255, 255, 0.55),
     inset 0 0 0 4px rgba(15, 23, 42, 0.08);
 }
 [data-theme="dark"] .mue-pane.mue2 {
   color: #e8eaf0;
-  /* Version sombre : même progression (bleu profond → violet → bordeaux). */
-  background: linear-gradient(
-    135deg,
-    #131a2b 0%,
-    #181a31 38%,
-    #211a30 72%,
-    #2a1822 100%
-  );
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .04 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>") repeat,
+    #12131a;
+  border: none;
+  border-radius: 8px 8px 0 0;
   border-left: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: none;
 }
@@ -12743,14 +12724,27 @@ html {
   position: relative;
   border-radius: 10px;
   padding: 14px 14px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  /* Glassmorphic border and soft purple drop shadow */
+  box-shadow: 0 4px 12px rgba(167, 62, 239, 0.04), inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+.mue2-composer:focus-within {
   background: #ffffff;
-  /* Fine stroke noire en box-shadow inset (le flat-killer global rend les
-     border-color transparentes) + ombre douce. */
-  box-shadow: inset 0 0 0 1px rgba(10, 10, 10, 0.9);
+  box-shadow: 0 6px 16px rgba(167, 62, 239, 0.12), inset 0 0 0 1.5px #611c71;
 }
 [data-theme="dark"] .mue2-composer {
+  background: rgba(21, 23, 29, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+[data-theme="dark"] .mue2-composer:focus-within {
   background: #15171d;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  box-shadow: 0 6px 16px rgba(167, 62, 239, 0.2), inset 0 0 0 1.5px rgba(255, 255, 255, 0.3);
 }
 .mue2-input {
   width: 100%;
@@ -12843,8 +12837,8 @@ html {
   margin: 0;
   font-family: "IvyMode", "Instrument Serif", Georgia, serif;
   font-size: 38px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  font-weight: 600; /* Bolder font weight */
+  letter-spacing: -0.015em;
   line-height: 1.1;
   white-space: nowrap;
   text-align: center;
@@ -12875,18 +12869,20 @@ html {
   height: 28px;
   padding: 0 11px;
   border-radius: 999px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   color: #475569;
   font-size: 12px;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07);
   cursor: pointer;
-  transition: background 130ms var(--ease), box-shadow 130ms var(--ease), color 130ms var(--ease);
+  transition: all 130ms var(--ease);
 }
 .mue2-chip:hover {
-  background: rgba(15, 23, 42, 0.04);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--ink, #10131a);
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.15), 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 .mue2-chip-ic {
   display: inline-grid;
@@ -12905,13 +12901,14 @@ html {
   color: #16a34a;
 }
 [data-theme="dark"] .mue2-chip {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--body);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: #8a90a2;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 [data-theme="dark"] .mue2-chip:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .mue2-empty {
@@ -19536,7 +19533,7 @@ button:active:not(:disabled):not(.no-press) {
    The .thread is flex column with min-height: 0 ; flex: 1 + min-height: 0 +
    overflow-y: auto here make the whole email list scroll inside the pane. */
 .messages.is-email {
-  padding: 0;
+  padding: 0 0 240px 0;
   gap: 0;
   display: flex;
   flex-direction: column;
@@ -19545,6 +19542,9 @@ button:active:not(:disabled):not(.no-press) {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
 }
 .email-card {
   background: transparent;
@@ -19554,10 +19554,12 @@ button:active:not(:disabled):not(.no-press) {
   overflow: visible;
   max-width: 100%;
   animation: email-card-in 280ms cubic-bezier(0.16, 1, 0.3, 1);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
 }
-.email-card:last-child {
-  border-bottom: 0;
+.email-card + .email-card {
+  border-top: 1px solid #cbd5e1 !important;
+}
+[data-theme="dark"] .email-card + .email-card {
+  border-top: 1px solid #334155 !important;
 }
 @keyframes email-card-in {
   from {
@@ -19569,12 +19571,9 @@ button:active:not(:disabled):not(.no-press) {
     transform: translateY(0);
   }
 }
-/* Mes propres messages (envoyés) — distinction SOBRE : fond légèrement plus
-   gris-bleuté + très fin liseré neutre à gauche. Pas de couleur de marque,
-   pas de recoloration du nom. Le lecteur scanne sans être agressé. */
 .email-card.is-out {
-  background: #f5f7fa;
-  box-shadow: inset 2px 0 0 rgba(15, 23, 42, 0.18);
+  background: transparent;
+  box-shadow: none;
 }
 
 .email-card-head {
@@ -19632,6 +19631,9 @@ button:active:not(:disabled):not(.no-press) {
   font-size: 12px;
   color: #8b93a4;
   letter-spacing: -0.005em;
+  flex-shrink: 0;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .email-card-body {
@@ -20219,15 +20221,15 @@ button:active:not(:disabled):not(.no-press) {
   font-size: 13px;
   line-height: 1.55;
   color: #0f172a;
-  resize: vertical;
+  resize: none;
   min-height: 60px;
   max-height: 320px;
   outline: none;
   transition: border-color 180ms, box-shadow 180ms;
 }
 .email-composer-body:focus {
-  border-color: rgba(10, 10, 10, 0.45);
-  box-shadow: 0 0 0 3px rgba(10, 10, 10, 0.12);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .email-composer-files {
@@ -25754,26 +25756,22 @@ button.sidebar-brand {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
-  padding: 0 14px;
+  height: 36px;
+  padding: 0 16px;
   margin-left: 0;
-  border: 1.5px solid rgba(15, 23, 42, 0.14);
-  border-radius: 6px;
-  font-size: 12.5px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 500;
-  color: #5b6475;
-  background: #fff;
-  box-shadow: inset 0 1.5px 2.5px rgba(15, 23, 42, 0.09);
+  color: #475569;
+  background: #f1f5f9;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 130ms var(--ease), color 130ms var(--ease), box-shadow 130ms var(--ease),
-    border-color 130ms var(--ease);
+  transition: all 130ms var(--ease);
 }
 .topbar-connect-cta:hover {
-  background: #fff;
-  color: var(--ink, #0a0a0a);
-  border-color: rgba(15, 23, 42, 0.24);
-  box-shadow: inset 0 1.5px 2.5px rgba(15, 23, 42, 0.1);
+  background: #e2e8f0;
+  color: #0f172a;
 }
 .topbar-connect-cta svg {
   flex: none;
@@ -27969,21 +27967,28 @@ button.sidebar-brand {
   }
 }
 
-/* Bouton « Voir la fiche client » dans l'en-tête d'un thread (V2). */
 .thread-client-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: none;
   border-radius: 8px;
-  background: var(--info-bg, rgba(79, 108, 247, 0.12));
+  background: var(--info-bg, rgba(79, 108, 247, 0.09));
   color: var(--info, #4f6cf7);
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 130ms var(--ease);
+  white-space: nowrap;
+  transition: all 130ms var(--ease);
 }
 .thread-client-btn:hover {
-  background: rgba(79, 108, 247, 0.2);
+  background: rgba(79, 108, 247, 0.16);
+  color: #3b5bfa;
+}
+.thread-client-btn svg {
+  flex: none;
 }
 
 /* Bouton « Favori » dans l'en-tête d'un thread. */
@@ -30478,14 +30483,22 @@ button.sidebar-brand {
    ════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
   /* ── Topbar : boutons & avatar ── */
-  & .topbar-connect-cta,
+  & .topbar-connect-cta {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+  & .topbar-connect-cta:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+  }
   & .topbar-avatar {
     background: #101015;
     border-color: rgba(255, 255, 255, 0.12);
     color: var(--body);
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
   }
-  & .topbar-connect-cta:hover,
   & .topbar-avatar:hover {
     border-color: rgba(255, 255, 255, 0.22);
     color: var(--ink);
@@ -31757,8 +31770,11 @@ button.sidebar-brand {
   display: flex;
   align-items: stretch;
   border-radius: 14px;
-  background: var(--csv-card-bg, #fff);
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 14px rgba(97, 28, 113, 0.03);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
 }
 .mue2-news-main {
@@ -31819,8 +31835,11 @@ button.sidebar-brand {
   color: var(--ink, #10131a);
 }
 [data-theme="dark"] .mue2-news-card {
-  background: #1f222d;
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 [data-theme="dark"] .mue2-news-main {
   color: #f4f4f7;
@@ -31845,23 +31864,22 @@ button.sidebar-brand {
   border-radius: 8px;
   flex: none;
   overflow: hidden;
-  background: radial-gradient(120% 80% at 30% 20%, #0e2a4a 0%, #0b1326 60%, #06080f 100%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, #78aabf 0%, #6981b8 50%, #611c71 100%);
+  box-shadow: 0 2px 8px rgba(97, 28, 113, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
 }
 .mue2-privacy-thumb::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 70% 80%, rgba(120, 140, 255, 0.45), transparent 55%),
-    radial-gradient(circle at 25% 65%, rgba(22, 163, 74, 0.4), transparent 50%);
-  opacity: 0.95;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 60%);
+  z-index: 1;
 }
 .mue2-privacy-play {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   color: #fff;
   margin-left: 1px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 .mue2-privacy-tx {
   flex: 1;
@@ -36800,10 +36818,16 @@ button.mfv-model:hover {
  * ClientDetailsModal — fiche client en modale centrée (ouvre depuis le header
  * d'une conversation). Réutilise .add-channel-overlay / .add-channel-sheet.
  * ─────────────────────────────────────────────────────────────────────────── */
+.client-details-sheet {
+  background: var(--bg-tint, #f8fafc) !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.15) !important;
+}
 .client-details-head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 .client-details-av {
   flex: none;
@@ -36811,93 +36835,111 @@ button.mfv-model:hover {
   height: 48px;
   border-radius: 50%;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 .client-details-body {
   padding: 4px 18px 18px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 .client-details-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 .client-details-h3 {
   margin: 0;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: #64748b;
 }
 .client-details-dl {
   margin: 0;
   display: grid;
-  grid-template-columns: 110px 1fr;
-  row-gap: 8px;
+  grid-template-columns: 100px 1fr;
+  row-gap: 10px;
   column-gap: 14px;
   font-size: 13px;
 }
 .client-details-dl dt {
-  color: #6b7280;
+  color: #64748b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 .client-details-dl dd {
   margin: 0;
-  color: #10131a;
+  color: var(--ink, #10131a);
   word-break: break-word;
 }
 .client-details-link {
-  color: #4f6cf7;
+  color: var(--info, #4f6cf7);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
+  transition: color 120ms ease;
 }
 .client-details-link:hover {
+  color: #3b5bfa;
   text-decoration: underline;
 }
 .client-details-chans {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 .client-details-chan {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 8px 3px 5px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.05);
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--bg, #ffffff);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   font-size: 12px;
-  color: #344054;
+  font-weight: 500;
+  color: var(--ink, #344054);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 .client-details-chan svg,
 .client-details-chan img {
   width: 14px;
   height: 14px;
+  flex: none;
 }
 .client-details-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 .client-details-stat {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.04);
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg, #ffffff);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.client-details-stat:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
 }
 .client-details-stat-val {
-  font-size: 17px;
-  font-weight: 700;
-  color: #0f172a;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ink, #0f172a);
   letter-spacing: -0.01em;
 }
 .client-details-stat-lbl {
-  font-size: 11.5px;
-  color: #6b7280;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
 }
 .client-details-convs {
   list-style: none;
@@ -36905,28 +36947,32 @@ button.mfv-model:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .client-details-conv {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  border-radius: 12px;
+  background: var(--bg, #ffffff);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.01);
   text-align: left;
   cursor: pointer;
-  transition: background 120ms var(--ease);
+  transition: all 130ms var(--ease);
 }
 .client-details-conv:hover {
-  background: rgba(15, 23, 42, 0.05);
+  background: var(--bg, #ffffff);
+  border-color: rgba(79, 108, 247, 0.2);
+  box-shadow: 0 4px 12px rgba(79, 108, 247, 0.05);
+  transform: translateX(2px);
 }
 .client-details-conv-chan {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
 }
@@ -36939,14 +36985,14 @@ button.mfv-model:hover {
 .client-details-conv-subj {
   font-size: 13px;
   font-weight: 600;
-  color: #10131a;
+  color: var(--ink, #10131a);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .client-details-conv-prev {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--body, #6b7280);
 }
 
 /* ====== FORMAT TOOLBAR ====== */

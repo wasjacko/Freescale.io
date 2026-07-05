@@ -1,9 +1,10 @@
 "use client";
 
-import { isEmailLikeChannel } from "@/lib/channels/registry";
+import { isEmailLikeChannel, channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import { useState } from "react";
+import { ChannelLogo } from "@/components/icons/Icon";
 
 const stroke = {
   fill: "none",
@@ -110,7 +111,10 @@ export function InboxFolders() {
   return (
     <aside className="ibx-folders" aria-label="Navigation Inbox">
       {/* Vues rapides */}
-      {VIEWS.map((v) => {
+      {(inboxMode === "email"
+        ? VIEWS
+        : VIEWS.filter((v) => v.key === null || v.key === "view:starred")
+      ).map((v) => {
         const cnt = v.key == null ? counts.inbox : counts[v.key];
         return (
           <button
@@ -122,6 +126,43 @@ export function InboxFolders() {
             <span className="ibx-folder-ic">{v.icon}</span>
             <span className="ibx-folder-name">{v.label}</span>
             {cnt != null && cnt > 0 && <span className="ibx-folder-count">{cnt}</span>}
+          </button>
+        );
+      })}
+
+      {/* Canaux dynamiques (email ou message selon le mode) */}
+      {Array.from(
+        new Set(
+          conversations
+            .filter((c) => isEmailLikeChannel(c.channel) === (inboxMode === "email"))
+            .map((c) => c.channel)
+        )
+      ).map((chan) => {
+        const count = conversations.filter(
+          (c) => c.channel === chan && !archived.has(c.id)
+        ).length;
+        const label = channelProviderLabel(chan);
+        return (
+          <button
+            key={chan}
+            type="button"
+            className={`ibx-folder ${activeFolderId === `chan:${chan}` ? "active" : ""}`}
+            onClick={() => open(`chan:${chan}`)}
+          >
+            <span
+              className="ibx-folder-ic"
+              style={{
+                width: 17,
+                height: 17,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ChannelLogo channel={chan} />
+            </span>
+            <span className="ibx-folder-name">{label}</span>
+            {count > 0 && <span className="ibx-folder-count">{count}</span>}
           </button>
         );
       })}

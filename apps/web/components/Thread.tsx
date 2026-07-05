@@ -421,7 +421,7 @@ export function Thread({
         <div className="thread-tb-left">
           <button
             type="button"
-            className="thread-tb-btn"
+            className="thread-tb-btn thread-back"
             onClick={() => {
               setView("inbox");
               setActiveConv("");
@@ -485,7 +485,7 @@ export function Thread({
           <button
             ref={tagBtnRef}
             type="button"
-            className={`thread-tb-btn ${(conv.tags?.length ?? 0) > 0 ? "is-on" : ""}`}
+            className={`thread-tb-btn ${tagOpen ? "is-on" : ""}`}
             onClick={() => {
               setTagAnchor(tagBtnRef.current?.getBoundingClientRect() ?? null);
               setTagOpen((v) => !v);
@@ -512,9 +512,6 @@ export function Thread({
             >
               <svg viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <circle cx="12" cy="12" r="9" />
-                {conv.category && (
-                  <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />
-                )}
               </svg>
             </button>
             {catOpen && (
@@ -908,40 +905,42 @@ export function Thread({
           })()}
       </section>
 
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", position: "relative", zIndex: 10 }}>
-        <div className="thread-mue-quick-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
-          <button
-            type="button"
-            className="thread-ai-btn"
-            onClick={() => {
-              setMuePendingAction("Résume ce fil de discussion");
-              setMueOpen(true);
-            }}
-          >
-            <Icon name="i-list" /> Résumer le fil
-          </button>
-          <button
-            type="button"
-            className="thread-ai-btn"
-            onClick={() => {
-              setMuePendingAction(`Quelles sont mes nouvelles tâches pour le client ${conv.name} ?`);
-              setMueOpen(true);
-            }}
-          >
-            <Icon name="i-spark" /> Suggérer des tâches
-          </button>
-          <button
-            type="button"
-            className="thread-ai-btn"
-            onClick={() => {
-              setMuePendingAction("Suggère une réponse à ce fil");
-              setMueOpen(true);
-            }}
-          >
-            <Icon name="i-spark" /> Suggérer une réponse
-          </button>
+      {!isEmail && (
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", position: "relative", zIndex: 10 }}>
+          <div className="thread-mue-quick-actions" style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+            <button
+              type="button"
+              className="thread-ai-btn"
+              onClick={() => {
+                setMuePendingAction("Résume ce fil de discussion");
+                setMueOpen(true);
+              }}
+            >
+              <Icon name="i-list" /> Résumer le fil
+            </button>
+            <button
+              type="button"
+              className="thread-ai-btn"
+              onClick={() => {
+                setMuePendingAction(`Quelles sont mes nouvelles tâches pour le client ${conv.name} ?`);
+                setMueOpen(true);
+              }}
+            >
+              <Icon name="i-spark" /> Suggérer des tâches
+            </button>
+            <button
+              type="button"
+              className="thread-ai-btn"
+              onClick={() => {
+                setMuePendingAction("Suggère une réponse à ce fil");
+                setMueOpen(true);
+              }}
+            >
+              <Icon name="i-spark" /> Suggérer une réponse
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <footer className="composer">
         {isEmail ? (
@@ -1293,8 +1292,8 @@ function EmailCard({
             <span className="email-card-name">{name}</span>
             {email && <span className="email-card-email">&lt;{email}&gt;</span>}
           </div>
-          <div className="email-card-date">{message.dateLong || message.time}</div>
         </div>
+        <div className="email-card-date">{message.dateLong || message.time}</div>
       </header>
       <div className="email-card-body">
         {/* Render BOTH text and html when both exist. The text shows

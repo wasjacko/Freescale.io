@@ -86,19 +86,46 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
           />
         </div>
         {!onMueView && (
-        <button
-          type="button"
-          className={`topbar-actbtn topbar-mue ${mueOpen ? "is-active" : ""}`}
-          aria-label="Panneau Agent Mue"
-          aria-pressed={mueOpen}
-          title="Panneau Agent Mue"
-          onClick={() => setMueOpen(!mueOpen)}
-        >
-          <MueFlower size={16} />
-          <span className="topbar-actbtn-label">
-            Panneau Agent Mue
-          </span>
-        </button>
+          <button
+            type="button"
+            className={`topbar-actbtn topbar-mue ${mueOpen ? "is-active" : ""}`}
+            aria-label="Panneau Agent Mue"
+            aria-pressed={mueOpen}
+            title="Panneau Agent Mue"
+            onClick={() => setMueOpen(!mueOpen)}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              style={{ marginRight: "6px", overflow: "visible" }}
+            >
+              {/* 3D solid shadow layer */}
+              <path
+                d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
+                fill="#5a32fa"
+                transform="translate(2, 2)"
+                opacity="0.8"
+              />
+              {/* Front glass path */}
+              <path
+                d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
+                fill="url(#mue-glass-grad)"
+                stroke="rgba(255, 255, 255, 0.95)"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+              <defs>
+                <linearGradient id="mue-glass-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.85)" />
+                  <stop offset="100%" stopColor="rgba(255, 255, 255, 0.25)" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <span className="topbar-actbtn-label">
+              Assistant Mue
+            </span>
+          </button>
         )}
 
         {/* Compte — avatar en haut à droite ; clic = panneau flottant. */}

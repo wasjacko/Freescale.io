@@ -342,7 +342,7 @@ export function AppShell({
               {/* Colonne dossiers — sous la barre, à l'extrême gauche. */}
               <InboxFolders />
               <div className="conv-shell-main">
-                <div className={`conv-shell-body conv-shell-split inbox-mode-${inboxMode}`}>
+                <div className={`conv-shell-body conv-shell-split inbox-mode-${inboxMode} ${activeConvId ? "has-active-conv" : "no-active-conv"}`}>
                   <Inbox currentUserId={user?.id ?? null} />
                   <Thread
                     currentUser={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
