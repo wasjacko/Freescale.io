@@ -7,7 +7,7 @@ import { ChannelLogo } from "@/components/icons/Icon";
 import type { CurrentUser } from "@/lib/auth";
 import { channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
-import { CREDITS_REMAINING, creditsPct, fmtCredits } from "@/lib/credits";
+import { CREDITS_REMAINING, fmtCredits } from "@/lib/credits";
 import { useApp } from "@/lib/store";
 import { useState } from "react";
 
@@ -128,7 +128,9 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
           </button>
         )}
 
-        {/* Compte — avatar en haut à droite ; clic = panneau flottant. */}
+        {/* Compte — avatar circulaire simple avec un petit chevron en badge
+            bas-droite. Plus de pill, plus d'anneau vert (l'info crédits vit
+            dans le panneau qui s'ouvre au clic). */}
         <div className="topbar-account">
           <button
             type="button"
@@ -137,29 +139,24 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
             aria-haspopup="menu"
             aria-expanded={accountOpen}
             aria-label="Mon compte"
+            title={`${fmtCredits(CREDITS_REMAINING)} crédits restants`}
           >
-            <span
-              className="topbar-avatar-ring"
-              style={{ ["--pct" as string]: `${creditsPct}%` }}
-              title={`${fmtCredits(CREDITS_REMAINING)} crédits restants`}
-            >
-              <span className="topbar-avatar-img">
-                {user?.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
-                ) : (
-                  initials
-                )}
-              </span>
+            <span className="topbar-avatar-img">
+              {user?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
+              ) : (
+                initials
+              )}
             </span>
             <svg
               className="topbar-avatar-caret"
               viewBox="0 0 24 24"
-              width="14"
-              height="14"
+              width="10"
+              height="10"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.4"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden
