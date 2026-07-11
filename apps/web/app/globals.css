@@ -1027,7 +1027,9 @@ button:not(:disabled):active,
   color: #c7c5ff;
 }
 [data-theme="dark"] .copilot::before {
-  opacity: 0.18;
+  --mue-flare-base-op: 0.18;
+  --mue-flare-max-op: 0.6;
+  opacity: var(--mue-flare-base-op);
 }
 [data-theme="dark"] .hero h2,
 [data-theme="dark"] .yuka-cal h2 {
@@ -2754,6 +2756,10 @@ html {
   background: transparent;
   box-shadow: none;
   transition: margin-right 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* Permet au menu de recherche globale de passer par-dessus le workspace */
+  position: relative;
+  z-index: 50;
 }
 .topbar-left,
 .topbar-right {
@@ -13901,7 +13907,9 @@ html {
    Petit écart (6px) entre la carte de contenu et le panneau Mue. */
 @media (min-width: 1101px) {
   .app.mue-open .workspace {
-    margin-right: calc(var(--mue-panel-w) + 12px);
+    display: grid;
+    grid-template-columns: 1fr var(--mue-panel-w);
+    margin-right: 0;
   }
 }
 
@@ -19832,12 +19840,6 @@ button:active:not(:disabled):not(.no-press) {
   background: #e4f5ea;
   color: #2f7a4f;
 }
-.add-channel-tag.is-soon {
-  background: rgba(15, 23, 42, 0.04);
-  color: #8b93a4;
-  font-style: italic;
-  letter-spacing: 0.02em;
-}
 .add-channel-cta {
   height: 32px;
   padding: 0 14px;
@@ -25694,19 +25696,9 @@ button.sidebar-brand {
   place-items: center;
   width: 34px;
   height: 34px;
-  padding: 0;
-  border: 0;
   border-radius: 8px;
   background: transparent;
   box-shadow: none;
-  cursor: pointer;
-  transition: background 120ms var(--ease);
-}
-.topbar-channel:disabled {
-  cursor: default;
-}
-.topbar-channel.is-off:hover {
-  background: rgba(15, 23, 42, 0.05);
 }
 /* Tuile uniforme : même taille + même radius pour tous les logos, le visuel
    est rogné à ce radius (les icônes « app » gardent ainsi un coin homogène). */
@@ -34493,21 +34485,21 @@ button.mfv-model:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 12px;
+  height: 34px;
+  padding: 0 14px;
   border: 0;
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   background: #ffffff;
   color: #1e293b;
-  box-shadow: inset 0 0 0 1.2px rgba(15, 23, 42, 0.15);
+  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.25);
   transition: background 120ms var(--ease), color 120ms var(--ease), box-shadow 120ms var(--ease);
 }
 .mue2-intent:hover {
-  background: #f1f5f9;
-  box-shadow: inset 0 0 0 1.2px rgba(15, 23, 42, 0.2);
+  background: #f8fafc;
+  box-shadow: inset 0 0 0 1.5px rgba(15, 23, 42, 0.4);
 }
 .mue2-intent svg {
   flex: none;
@@ -34519,13 +34511,13 @@ button.mfv-model:hover {
 [data-theme="dark"] .mue2-intent {
   background: #20202a;
   color: #f3f4f6;
-  border-radius: 8px;
-  box-shadow: inset 0 0 0 1.2px rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.25);
 }
 [data-theme="dark"] .mue2-intent:hover {
   background: rgba(122, 162, 255, 0.08);
   color: #7aa2ff;
-  box-shadow: inset 0 0 0 1.2px rgba(122, 162, 255, 0.45);
+  box-shadow: inset 0 0 0 1.5px rgba(122, 162, 255, 0.5);
 }
 [data-theme="dark"] .mue2-intent svg {
   color: #9ca3af;
@@ -37065,4 +37057,568 @@ button.mfv-model:hover {
 [data-theme="dark"] .format-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #f1f5f9;
+}
+
+
+/* ─── TopBar — bouton « Assistant Mue » (droite de la topbar) ─── */
+.topbar-mue {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  height: 36px !important;
+  padding: 0 16px !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+  margin-right: -5px !important; /* Compense le padding: 0 5px de .topbar pour s'aligner sur la marge de 10px de l'app */
+  
+  /* Stroke intense avec gradient Freescale */
+  border: 1.5px solid transparent !important;
+  background-image: linear-gradient(#ffffff, #ffffff), var(--freescale-gradient) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, border-color 150ms ease !important;
+}
+.topbar-mue:hover {
+  /* Pas de surélévation, juste un très léger renforcement de l'ombre de base */
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.06) !important;
+}
+.topbar-mue svg:first-child {
+  color: #7c3aed !important;
+}
+.topbar-mue .topbar-actbtn-label {
+  color: #000000 !important;
+  text-shadow: none !important;
+  letter-spacing: -0.01em !important;
+}
+.topbar-mue-caret {
+  color: #000000 !important;
+  margin-left: 2px !important;
+  transition: transform 200ms ease, color 150ms ease !important;
+}
+
+/* Etat actif */
+.topbar-mue.is-active {
+  box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.04) !important;
+}
+.topbar-mue.is-active .topbar-mue-caret {
+  transform: rotate(90deg) !important;
+  color: #7c3aed !important;
+}
+
+@media (min-width: 1101px) {
+  /* On force le workspace à n'avoir qu'une seule colonne.
+     On évite l'animation de grille qui fait saccader Safari et la TopBar ! */
+  .workspace {
+    grid-template-columns: 1fr !important;
+    position: relative !important; /* Context for absolute positioning of Mue panel */
+  }
+  
+  .app.mue-open .workspace {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Transition fluide (motion design) sur la marge droite du bloc principal */
+  .conv-shell,
+  .calendar-view,
+  .tasks-view {
+    transition: margin-right 500ms cubic-bezier(0.16, 1, 0.3, 1), filter 500ms ease, opacity 500ms ease !important;
+  }
+
+  /* On pousse le bloc principal exactement de la largeur du panneau Mue + de sa marge native de 18px */
+  /* EFFET D'ÉVEIL : On l'assombrit légèrement pour focaliser sur l'IA */
+  .app.mue-open .conv-shell,
+  .app.mue-open .calendar-view,
+  .app.mue-open .tasks-view {
+    margin-right: calc(var(--mue-panel-w, 420px) + 18px) !important;
+    border-top-right-radius: 0 !important;
+    filter: brightness(0.96) contrast(0.98);
+    opacity: 0.85;
+  }
+  
+  /* Le panneau devient absolu pour ne plus déclencher de reflows de grille ! */
+  .copilot, .app.mue-open .copilot {
+    position: absolute !important;
+    top: 4px !important; /* padding-top natif du workspace */
+    bottom: -50px !important; /* Descend profondément sous la ligne de flottaison */
+    right: 18px !important; /* margin-right natif de .conv-shell */
+    
+    margin: 0 !important;
+    width: var(--mue-panel-w, 420px) !important;
+    height: auto !important;
+    
+    /* Fermé : il est masqué par clip-path, ce qui permet de le révéler en parfaite synchronisation avec la marge du bloc principal */
+    clip-path: inset(0 0 0 100%);
+    pointer-events: none;
+    transition: clip-path 500ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms ease !important;
+    
+    /* Collé à gauche et droit en bas (radius 0), arrondi en haut à droite pour finir le layout */
+    border-radius: 0 var(--radius-lg, 20px) 0 0 !important;
+    
+    /* Fond solide */
+    background: #ffffff !important;
+    
+    /* Même stroke externe que le bloc principal */
+    border: none !important;
+    box-shadow: 
+      0 1px 3px rgba(15, 23, 42, 0.05), 
+      0 0 0 1px rgba(15, 23, 42, 0.05) !important;
+    
+    z-index: 10;
+  }
+  
+  /* Variante Dark Mode */
+  [data-theme="dark"] .copilot, [data-theme="dark"] .app.mue-open .copilot {
+    background: #0f172a !important;
+    border: none !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  }
+  
+  .app.mue-open .copilot {
+    clip-path: inset(0 0 0 0);
+    pointer-events: auto !important;
+  }
+  
+  .app.mue-open .copilot:hover {
+    opacity: 1;
+  }
+
+  @keyframes mue-flare {
+    0% {
+      opacity: 0;
+      filter: brightness(1) blur(0px);
+    }
+    40% {
+      opacity: var(--mue-flare-max-op, 1);
+      filter: brightness(1.5) blur(2px);
+    }
+    100% {
+      opacity: var(--mue-flare-base-op, 0.6);
+      filter: brightness(1) blur(0px);
+    }
+  }
+
+  /* Liseré Freescale en pseudo-élément pour ne pas casser le backdrop-filter */
+  .copilot::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit; /* Récupère le radius 0 20px 0 0 */
+    padding: 1.5px; /* Épaisseur de la bordure */
+    background: var(--freescale-gradient, linear-gradient(135deg, #7c3aed, #ef4444, #3b82f6));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    
+    --mue-flare-base-op: 0.6;
+    --mue-flare-max-op: 1;
+    opacity: var(--mue-flare-base-op);
+    
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  .app.mue-open .copilot::before {
+    animation: mue-flare 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Dark mode pour le dock */
+  [data-theme="dark"] .copilot, [data-theme="dark"] .app.mue-open .copilot {
+    background: rgba(15, 23, 42, 0.6) !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+  }
+}
+
+/* ========================================================================= */
+/* 🗂️ ONGLETS (TABS) - Navigation interne                                    */
+/* ========================================================================= */
+.mue2-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px 16px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  margin-bottom: 12px;
+}
+[data-theme="dark"] .mue2-tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.mue2-tab {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+[data-theme="dark"] .mue2-tab {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.mue2-tab:hover {
+  color: rgba(15, 23, 42, 0.9);
+  background: rgba(15, 23, 42, 0.04);
+}
+[data-theme="dark"] .mue2-tab:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mue2-tab.is-active {
+  color: var(--ink, #000);
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+[data-theme="dark"] .mue2-tab.is-active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* On annule le background original du .mue-pane pour le glassmorphism */
+.mue-pane {
+  background: transparent !important;
+}
+
+/* ========================================================================= */
+/* 🔎 BARRE DE RECHERCHE GLOBALE + CTA MUE                                    */
+/* ========================================================================= */
+.topbar-global-search {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  height: 36px;
+  width: 440px; /* Plus large pour la recherche globale */
+  border-radius: 8px;
+  background: #ffffff; /* Recherche entièrement en blanc */
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+  transition: all 200ms ease;
+  padding-left: 12px;
+  padding-right: 4px; /* Petit espace à droite pour le bouton */
+}
+
+[data-theme="dark"] .topbar-global-search {
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) inset;
+}
+
+.topbar-global-search:focus-within {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.15);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .topbar-global-search:focus-within {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.topbar-search-ic {
+  color: rgba(15, 23, 42, 0.4);
+  flex-shrink: 0;
+}
+[data-theme="dark"] .topbar-search-ic {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.topbar-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+}
+.topbar-search-input::placeholder {
+  color: rgba(15, 23, 42, 0.4);
+}
+[data-theme="dark"] .topbar-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Le CTA "Demander à Mue" incrusté dans la barre de recherche */
+.topbar-mue-cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  
+  /* Fond et bordure simple par défaut */
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  color: #7c3aed; /* Violet Mue dominant */
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+[data-theme="dark"] .topbar-mue-cta {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
+  color: #a78bfa;
+}
+
+/* Au hover : on garde le fond clair mais on anime le logo et on affiche la stroke Freescale */
+@keyframes spin-wave {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.topbar-mue-cta:hover {
+  background-image: linear-gradient(#fdfcff, #fdfcff), var(--freescale-gradient);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border-color: transparent; /* Masque la bordure solide pour laisser place au gradient */
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.1);
+}
+[data-theme="dark"] .topbar-mue-cta:hover {
+  background-image: linear-gradient(#334155, #334155), var(--freescale-gradient);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border-color: transparent;
+}
+
+/* Rotation fluide et rapide (vague) du logo au survol */
+.topbar-mue-cta:hover svg {
+  animation: spin-wave 1s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* Etat actif : stroke épaisse avec gradient Freescale */
+.topbar-mue-cta.is-active {
+  background-image: linear-gradient(#ffffff, #ffffff), var(--freescale-gradient);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border: 2px solid transparent; /* Stroke épaisse */
+  color: #0f172a; /* Texte plus sombre pour contraster avec la stroke */
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+[data-theme="dark"] .topbar-mue-cta.is-active {
+  background-image: linear-gradient(#1e293b, #1e293b), var(--freescale-gradient);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.topbar-mue-cta-shortcut {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(124, 58, 237, 0.1);
+  color: inherit;
+  transition: all 150ms ease;
+}
+.topbar-mue-cta.is-active .topbar-mue-cta-shortcut {
+  background: rgba(15, 23, 42, 0.08);
+}
+[data-theme="dark"] .topbar-mue-cta-shortcut {
+  background: rgba(167, 139, 250, 0.2);
+}
+[data-theme="dark"] .topbar-mue-cta.is-active .topbar-mue-cta-shortcut {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* On masque les anciens boutons dans la topbar-actions */
+.topbar-actions .topbar-mue {
+  display: none !important;
+}
+
+/* ========================================================================= */
+/* 🔎 GLOBAL SEARCH DROPDOWN MODAL                                           */
+/* ========================================================================= */
+.global-search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slide-down 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-theme="dark"] .global-search-dropdown {
+  background: #0f172a;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.gsd-filters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+[data-theme="dark"] .gsd-filters {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.gsd-filter-btn {
+  padding: 0 4px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: color 150ms;
+}
+.gsd-filter-btn:hover {
+  color: #0f172a;
+}
+[data-theme="dark"] .gsd-filter-btn { color: #94a3b8; }
+[data-theme="dark"] .gsd-filter-btn:hover { color: #f8fafc; }
+
+/* Active filter uses Freescale */
+.gsd-filter-btn.is-active {
+  color: #0f172a;
+  font-weight: 600;
+}
+[data-theme="dark"] .gsd-filter-btn.is-active {
+  color: #ffffff;
+}
+.gsd-filter-btn.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--freescale-gradient, linear-gradient(135deg, #7c3aed, #ef4444, #3b82f6));
+  border-radius: 2px 2px 0 0;
+}
+
+.gsd-results {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gsd-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.gsd-result-item:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+[data-theme="dark"] .gsd-result-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.gsd-result-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.05);
+  color: #475569;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .gsd-result-icon {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.gsd-result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.gsd-result-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="dark"] .gsd-result-title {
+  color: #f8fafc;
+}
+
+.gsd-result-meta {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="dark"] .gsd-result-meta {
+  color: #94a3b8;
+}
+
+.gsd-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(241, 245, 249, 0.4);
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  font-size: 11px;
+  color: #64748b;
+}
+[data-theme="dark"] .gsd-footer {
+  background: rgba(15, 23, 42, 0.4);
+  border-top-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+.gsd-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 4px;
+  font-family: monospace;
+  margin: 0 4px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+[data-theme="dark"] .gsd-shortcut {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }

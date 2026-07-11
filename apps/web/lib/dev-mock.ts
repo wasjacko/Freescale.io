@@ -81,7 +81,10 @@ const AV = (text: string, bg: string): Conversation["avatar"] => ({
 });
 
 export function mockInboxData(): InboxData {
-  if ((globalThis as any).__mockDb) return (globalThis as any).__mockDb;
+  if ((globalThis as any).__mockDb) {
+    const hasNew = (globalThis as any).__mockDb.conversations.some((c: any) => c.id === "c_new1");
+    if (hasNew) return (globalThis as any).__mockDb;
+  }
 
   const conversations: Conversation[] = [
     {
@@ -140,6 +143,57 @@ export function mockInboxData(): InboxData {
       lastInboundAt: isoAgo({ hours: 6 }),
       lastOutboundAt: isoAgo({ days: 1 }),
       clientTone: "cool",
+      clientLang: "fr",
+    },
+    {
+      id: "c_new1",
+      name: "Lucas Martin",
+      preview: "Bonjour, nous aimerions valider les conditions pour le support technique 2026.",
+      lastAtIso: isoAgo({ minutes: 25 }),
+      avatar: FACE(4),
+      channel: "gmail",
+      unread: true,
+      group: "today",
+      subject: "Devis de maintenance annuel",
+      contactEmail: "lucas.martin@techsolutions.fr",
+      category: "client",
+      tags: ["devis", "urgent"],
+      lastInboundAt: isoAgo({ minutes: 25 }),
+      clientTone: "formal",
+      clientLang: "fr",
+    },
+    {
+      id: "c_new2",
+      name: "Julie Durand",
+      preview: "Suite à notre échange sur LinkedIn, voici mon portfolio à jour.",
+      lastAtIso: isoAgo({ hours: 3 }),
+      avatar: FACE(3),
+      channel: "gmail",
+      unread: true,
+      group: "today",
+      subject: "Candidature UX Designer",
+      contactEmail: "julie.durand@uxdesign.io",
+      category: "prospect",
+      tags: ["recrutement"],
+      lastInboundAt: isoAgo({ hours: 3 }),
+      clientTone: "chaleureux",
+      clientLang: "fr",
+    },
+    {
+      id: "c_new3",
+      name: "Marc Lemaire",
+      preview: "Votre facture d'hébergement cloud a bien été générée pour ce mois.",
+      lastAtIso: isoAgo({ hours: 7 }),
+      avatar: FACE(5),
+      channel: "gmail",
+      unread: true,
+      group: "today",
+      subject: "Facture en attente de règlement",
+      contactEmail: "billing@ovhcloud.com",
+      category: "prestataire",
+      tags: ["facture"],
+      lastInboundAt: isoAgo({ hours: 7 }),
+      clientTone: "formal",
       clientLang: "fr",
     },
     {
@@ -361,7 +415,44 @@ export function mockInboxData(): InboxData {
   const c11m1 = isoAgo({ days: 1, hours: 4 });
   const c12m1 = isoAgo({ days: 3 });
 
+  const cn1m1 = isoAgo({ minutes: 25 });
+  const cn2m1 = isoAgo({ hours: 3 });
+  const cn3m1 = isoAgo({ hours: 7 });
+
   const messagesByConv: Record<string, Message[]> = {
+    c_new1: [
+      {
+        id: "mn1_1",
+        dir: "in",
+        text: "Bonjour, nous aimerions valider les conditions pour le support technique 2026.",
+        time: hm(cn1m1),
+        sentAtIso: cn1m1,
+        senderName: "Lucas Martin",
+        senderEmail: "lucas.martin@techsolutions.fr",
+      }
+    ],
+    c_new2: [
+      {
+        id: "mn2_1",
+        dir: "in",
+        text: "Suite à notre échange sur LinkedIn, voici mon portfolio à jour. Dispo pour en parler !",
+        time: hm(cn2m1),
+        sentAtIso: cn2m1,
+        senderName: "Julie Durand",
+        senderEmail: "julie.durand@uxdesign.io",
+      }
+    ],
+    c_new3: [
+      {
+        id: "mn3_1",
+        dir: "in",
+        text: "Votre facture d'hébergement cloud a bien été générée pour ce mois. Montant: 45.00 €.",
+        time: hm(cn3m1),
+        sentAtIso: cn3m1,
+        senderName: "Marc Lemaire",
+        senderEmail: "billing@ovhcloud.com",
+      }
+    ],
     c1: [
       {
         id: "m1o",
@@ -908,7 +999,7 @@ export function mockInboxData(): InboxData {
 
   // Inbox volontairement resserrée sur les 5 clients principaux — les mêmes
   // que la page Clients (Sarah, Alexandre, Capucine, Thomas, David).
-  const INBOX_CLIENT_IDS = new Set(["c1", "c1b", "c7", "c3", "c2", "c9"]);
+  const INBOX_CLIENT_IDS = new Set(["c1", "c1b", "c7", "c3", "c2", "c9", "c_new1", "c_new2", "c_new3"]);
   const allConversations = [...conversations, ...generatedConversations].filter((c) =>
     INBOX_CLIENT_IDS.has(c.id)
   );
@@ -932,6 +1023,24 @@ export function mockInboxData(): InboxData {
         displayName: "dev@freescale.local",
         conversationCount: allConversations.length,
         unreadCount: allConversations.filter((c) => c.unread).length,
+        status: "active",
+        lastSyncError: null,
+      },
+      {
+        id: "ch-outlook-dev",
+        kind: "outlook",
+        displayName: "dev@outlook.freescale.local",
+        conversationCount: 0,
+        unreadCount: 0,
+        status: "active",
+        lastSyncError: null,
+      },
+      {
+        id: "ch-whatsapp-dev",
+        kind: "whatsapp",
+        displayName: "+33 6 00 00 00 00",
+        conversationCount: 0,
+        unreadCount: 0,
         status: "active",
         lastSyncError: null,
       },

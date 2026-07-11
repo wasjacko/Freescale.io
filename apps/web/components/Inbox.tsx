@@ -71,6 +71,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     inboxFolders,
     activeFolderId,
     inboxMode,
+    mueScanning,
+    mueHighlighted,
   } = useApp();
   const {
     conversations,
@@ -418,11 +420,15 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
               ball === "waiting" && c.lastOutboundAt
                 ? Math.floor((Date.now() - new Date(c.lastOutboundAt).getTime()) / 86400000)
                 : 0;
+
+            const isScanning = mueScanning === "messages" && unread;
+            const isHighlighted = mueHighlighted === `conv:${c.id}`;
+
             return (
               <Fragment key={c.clientId ?? c.id}>
                 <button
                   type="button"
-                  className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""} ${ball ? `conv--${ball}` : ""}`}
+                  className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""} ${ball ? `conv--${ball}` : ""} ${isScanning ? "has-ai-scanning" : ""} ${isHighlighted ? "has-ai-highlighted" : ""}`}
                   title={
                     ball === "toreply"
                       ? "À répondre"

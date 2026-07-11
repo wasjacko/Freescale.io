@@ -67,7 +67,7 @@ const PROPOSED: Proposed[] = [
 ];
 
 export function ClientConfirmModal() {
-  const { clientConfirm, closeClientConfirm } = useApp();
+  const { clientConfirm, closeClientConfirm, mueOpen } = useApp();
   const open = clientConfirm.open;
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -103,7 +103,7 @@ export function ClientConfirmModal() {
   const label = channelProviderLabel(clientConfirm.channel);
 
   return (
-    <div className="ccm-overlay" role="dialog" aria-modal="true" aria-label="Confirmer vos clients">
+    <div className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`} role="dialog" aria-modal="true" aria-label="Confirmer vos clients">
       <button
         type="button"
         className="ccm-backdrop"

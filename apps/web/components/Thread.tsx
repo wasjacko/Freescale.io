@@ -134,6 +134,40 @@ export function Thread({
   // Menus de la toolbar Gmail-like : catégorie + « plus d'actions ».
   const [catOpen, setCatOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [categories, setCategories] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("freescale_custom_tags");
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return [
+      { key: "client", label: "Client", color: "#2563eb" },
+      { key: "prospect", label: "Prospect", color: "#e11d48" },
+      { key: "prestataire", label: "Prestataire", color: "#d97706" },
+      { key: "collaborateur", label: "Équipe", color: "#16a34a" },
+      { key: "other", label: "Non classé", color: "#4b5563" },
+    ];
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const stored = localStorage.getItem("freescale_custom_tags");
+      if (stored) {
+        try {
+          setCategories(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    window.addEventListener("tags-updated", handleUpdate);
+    return () => window.removeEventListener("tags-updated", handleUpdate);
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
   // Live-fetch messages from Gmail on conv open. messagesByConv (server
   // DB cache) used only as an INSTANT fallback for the conv we last
@@ -523,17 +557,7 @@ export function Thread({
                   onClick={() => setCatOpen(false)}
                 />
                 <div className="thread-tb-menu" role="menu">
-                  {(
-                    [
-                      { key: "client", label: "Client", dot: "#4f6cf7" },
-                      { key: "prospect", label: "Prospect", dot: "#8b5cf6" },
-                      { key: "prestataire", label: "Prestataire", dot: "#0891b2" },
-                      { key: "collaborateur", label: "Collaborateur", dot: "#16a34a" },
-                      { key: "promo", label: "Promo", dot: "#d97706" },
-                      { key: "notif", label: "Notification", dot: "#94a3b8" },
-                      { key: "other", label: "Autre", dot: "#6b7280" },
-                    ] as const
-                  ).map((opt) => (
+                  {categories.map((opt) => (
                     <button
                       key={opt.key}
                       type="button"
@@ -544,7 +568,7 @@ export function Thread({
                         push({ kind: "success", text: `Catégorisé : ${opt.label}` });
                       }}
                     >
-                      <span className="thread-tb-menu-dot" style={{ background: opt.dot }} />
+                      <span className="thread-tb-menu-dot" style={{ background: opt.color }} />
                       {opt.label}
                     </button>
                   ))}

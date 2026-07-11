@@ -12,7 +12,7 @@ const TAB_STATUSES = [
   { id: "done", label: "Done" },
 ] as const;
 
-export function TasksView() {
+export function TasksView({ isModal = false }: { isModal?: boolean } = {}) {
   const { tasks, toggleTask } = useData();
   const [activeTab, setActiveTab] = useState<string>("todo");
 
@@ -31,24 +31,28 @@ export function TasksView() {
 
   return (
     <section className="tasks-view" aria-label="Tasks">
-      <header className="tasks-head">
-        <h1>Tasks</h1>
-        <button className="btn-new-task" type="button">
-          <Icon name="i-plus" />
-          New task
-        </button>
-      </header>
+      {!isModal && (
+        <header className="tasks-head">
+          <h1>Tasks</h1>
+          <button className="btn-new-task" type="button">
+            <Icon name="i-plus" />
+            New task
+          </button>
+        </header>
+      )}
 
-      <div className="scan-banner">
-        <span className="scan-icon">
-          <Icon name="i-spark" />
-        </span>
-        <span className="scan-text">Scan and analyze new messages</span>
-        <button className="btn-analyze" type="button">
-          <Icon name="i-spark" className="scan-spark icon" />
-          Analyze now
-        </button>
-      </div>
+      {!isModal && (
+        <div className="scan-banner">
+          <span className="scan-icon">
+            <Icon name="i-spark" />
+          </span>
+          <span className="scan-text">Scan and analyze new messages</span>
+          <button className="btn-analyze" type="button">
+            <Icon name="i-spark" className="scan-spark icon" />
+            Analyze now
+          </button>
+        </div>
+      )}
 
       <div className="task-tabs">
         {TAB_STATUSES.map((tab) => (

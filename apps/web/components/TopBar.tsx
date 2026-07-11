@@ -2,6 +2,7 @@
 
 import { AccountMenu } from "@/components/AccountMenu";
 import { AddChannelModal } from "@/components/AddChannelModal";
+import GlobalSearchDropdown from "@/components/GlobalSearchDropdown";
 import { MueFlower } from "@/components/MueFlower";
 import { ChannelLogo } from "@/components/icons/Icon";
 import type { CurrentUser } from "@/lib/auth";
@@ -12,9 +13,10 @@ import { useApp } from "@/lib/store";
 import { useState } from "react";
 
 /**
- * TopBar — bandeau fin en haut de la zone de contenu : seuls les canaux
- * CONNECTÉS sont affichés (en couleur) + un CTA « Connecter un canal » qui
- * ouvre une modale listant tous les canaux. Boutons Réglages · Mue à droite.
+ * TopBar — bandeau fin en haut de la zone de contenu : TOUS les canaux du
+ * registre sont affichés (connectés en couleur, non connectés en gris,
+ * clic = ouvre la modale de connexion) + un CTA « Connecter un canal ».
+ * Boutons Réglages · Mue à droite.
  */
 export function TopBar({ user }: { user: CurrentUser | null }) {
   const data = useData();
@@ -23,6 +25,7 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
   // EST déjà dans Mue. On masque alors le bouton dans la topbar.
   const onMueView = view === "ai-knowledge";
   const [addOpen, setAddOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const initials =
     user?.name
@@ -36,36 +39,24 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
   return (
     <header className="topbar">
       <div className="topbar-channels" aria-label="Canaux">
-        {/* On affiche TOUS les canaux du registre : connectés en couleur,
-            non connectés en gris (clic = ouvre la modale de connexion). */}
-        {CHANNEL_PROVIDER_REGISTRY.map((p) => {
+        {/* On n'affiche QUE les canaux réellement connectés — pour connecter
+            un nouveau canal, utiliser le CTA « Connecter un canal » à droite. */}
+        {CHANNEL_PROVIDER_REGISTRY.filter((p) => connectedKinds.has(p.kind)).map((p) => {
           const label = channelProviderLabel(p.kind);
-          const isOn = connectedKinds.has(p.kind);
           return (
-            <button
+            <span
               key={p.kind}
-              type="button"
-              className={`topbar-channel ${isOn ? "is-on" : "is-off"}`}
-              aria-label={isOn ? `${label} — connecté` : `${label} — non connecté`}
-              title={
-                isOn
-                  ? `${label} — connecté`
-                  : p.ready
-                    ? `${label} — cliquer pour connecter`
-                    : `${label} — bientôt`
-              }
-              onClick={() => !isOn && setAddOpen(true)}
-              disabled={isOn}
+              className="topbar-channel is-on"
+              aria-label={`${label} — connecté`}
+              title={`${label} — connecté`}
             >
               <ChannelLogo channel={p.kind} className="topbar-channel-logo" />
-            </button>
+            </span>
           );
         })}
-      </div>
-
-      {/* Actions à droite : Connecter un canal · Mue · avatar du compte. */}
-      <div className="topbar-actions">
-        {/* Conteneur relatif : la fenêtre flottante s'ancre sous le bouton. */}
+        {/* Séparateur + CTA « Connecter un canal » : intégrés au même
+            groupe pour former UN composant unifié (cadre partagé). */}
+        <span className="topbar-channels-sep" aria-hidden />
         <div className="topbar-connect">
           <button
             type="button"
@@ -88,7 +79,7 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            Connecter un canal
+            Ajouter un canal
           </button>
           <AddChannelModal
             open={addOpen}
@@ -96,49 +87,50 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
             connectedKinds={connectedKinds}
           />
         </div>
-        {!onMueView && (
+      </div>
+
+      {/* Barre de recherche globale SaaS + Bouton Mue inclus */}
+      {!onMueView && (
+        <div className="topbar-global-search">
+          <svg className="topbar-search-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input 
+            type="text" 
+            placeholder="Rechercher..." 
+            className="topbar-search-input" 
+            onFocus={() => setIsSearchOpen(true)}
+          />
+          
+          {/* CTA "Demander à Mue" incrusté dans la barre de recherche */}
           <button
             type="button"
-            className={`topbar-actbtn topbar-mue ${mueOpen ? "is-active" : ""}`}
-            aria-label="Panneau Agent Mue"
-            aria-pressed={mueOpen}
-            title="Panneau Agent Mue"
+            className={`topbar-mue-cta ${mueOpen ? "is-active" : ""}`}
             onClick={() => setMueOpen(!mueOpen)}
+            aria-label="Ouvrir l'assistant Mue"
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              style={{ marginRight: "6px", overflow: "visible" }}
-            >
-              {/* 3D solid shadow layer */}
-              <path
-                d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
-                fill="#5a32fa"
-                transform="translate(2, 2)"
-                opacity="0.8"
-              />
-              {/* Front glass path */}
-              <path
-                d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
-                fill="url(#mue-glass-grad)"
-                stroke="rgba(255, 255, 255, 0.95)"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <defs>
-                <linearGradient id="mue-glass-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.85)" />
-                  <stop offset="100%" stopColor="rgba(255, 255, 255, 0.25)" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <span className="topbar-actbtn-label">
-              Assistant Mue
-            </span>
+            <MueFlower size={14} />
+            <span className="topbar-mue-cta-label">Demander à Mue</span>
+            <span className="topbar-mue-cta-shortcut">⌘K</span>
           </button>
-        )}
 
+          {isSearchOpen && (
+            <GlobalSearchDropdown onClose={() => setIsSearchOpen(false)} />
+          )}
+        </div>
+      )}
+
+      {/* Backdrop invisible pour fermer le panel de recherche au clic (placé en dehors des éléments avec transform) */}
+      {isSearchOpen && !onMueView && (
+        <div 
+          style={{ position: 'fixed', inset: 0, zIndex: 40 }} 
+          onClick={() => setIsSearchOpen(false)} 
+        />
+      )}
+
+      {/* Actions à droite (Compte, etc.) */}
+      <div className="topbar-actions">
         {/* Compte — avatar circulaire simple avec un petit chevron en badge
             bas-droite. Plus de pill, plus d'anneau vert (l'info crédits vit
             dans le panneau qui s'ouvre au clic). */}

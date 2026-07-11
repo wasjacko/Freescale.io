@@ -3,8 +3,27 @@
 import { isEmailLikeChannel, channelProviderLabel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChannelLogo } from "@/components/icons/Icon";
+
+const PRESET_COLORS = [
+  "#2563eb", // Blue
+  "#e11d48", // Rose/Red
+  "#d97706", // Amber/Orange
+  "#16a34a", // Green
+  "#8b5cf6", // Purple
+  "#0891b2", // Cyan
+  "#ec4899", // Pink
+  "#6366f1", // Indigo
+];
+
+const DEFAULT_TAGS = [
+  { key: "client", label: "Client", color: "#2563eb" },
+  { key: "prospect", label: "Prospect", color: "#e11d48" },
+  { key: "prestataire", label: "Prestataire", color: "#d97706" },
+  { key: "collaborateur", label: "Équipe", color: "#16a34a" },
+  { key: "other", label: "Non classé", color: "#4b5563" },
+];
 
 const stroke = {
   fill: "none",
@@ -81,6 +100,56 @@ export function InboxFolders() {
   const { conversations, archived } = useData();
   const [othersOpen, setOthersOpen] = useState(false);
 
+  const [customTags, setCustomTags] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("freescale_custom_tags");
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return DEFAULT_TAGS;
+  });
+
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0]);
+
+  // Sync with other components via custom event
+  useEffect(() => {
+    const handleUpdate = () => {
+      const stored = localStorage.getItem("freescale_custom_tags");
+      if (stored) {
+        try {
+          setCustomTags(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    window.addEventListener("tags-updated", handleUpdate);
+    return () => window.removeEventListener("tags-updated", handleUpdate);
+  }, []);
+
+  const handleAddTag = () => {
+    const label = newTagName.trim();
+    if (!label) return;
+    const key = label.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    if (customTags.some((t: any) => t.key === key)) return; // duplicate
+
+    const nextTags = [...customTags, { key, label, color: newTagColor }];
+    setCustomTags(nextTags);
+    localStorage.setItem("freescale_custom_tags", JSON.stringify(nextTags));
+    window.dispatchEvent(new Event("tags-updated"));
+
+    // Reset form
+    setNewTagName("");
+    setIsAddingTag(false);
+  };
+
   const open = (id: string | null) => {
     setActiveFolder(id);
     setActiveConv("");
@@ -106,8 +175,6 @@ export function InboxFolders() {
     "view:trash": archived.size,
   };
 
-
-
   return (
     <aside className="ibx-folders" aria-label="Navigation Inbox">
       {/* Vues rapides */}
@@ -130,68 +197,136 @@ export function InboxFolders() {
         );
       })}
 
-      {/* Canaux dynamiques (email ou message selon le mode) */}
-      {Array.from(
-        new Set(
-          conversations
-            .filter((c) => isEmailLikeChannel(c.channel) === (inboxMode === "email"))
-            .map((c) => c.channel)
-        )
-      ).map((chan) => {
-        const count = conversations.filter(
-          (c) => c.channel === chan && !archived.has(c.id)
-        ).length;
-        const label = channelProviderLabel(chan);
+      {/* Canaux Section */}
+      {(() => {
+        const uniqueChannels = Array.from(
+          new Set(
+            conversations
+              .filter((c) => isEmailLikeChannel(c.channel) === (inboxMode === "email"))
+              .map((c) => c.channel)
+          )
+        );
+        if (uniqueChannels.length === 0) return null;
+        return (
+          <>
+            <div className="ibx-folders-sep" />
+            {uniqueChannels.map((chan) => {
+              const count = conversations.filter(
+                (c) => c.channel === chan && !archived.has(c.id)
+              ).length;
+              const label = channelProviderLabel(chan);
+              return (
+                <button
+                  key={chan}
+                  type="button"
+                  className={`ibx-folder ${activeFolderId === `chan:${chan}` ? "active" : ""}`}
+                  onClick={() => open(`chan:${chan}`)}
+                >
+                  <span
+                    className="ibx-folder-ic"
+                    style={{
+                      width: 17,
+                      height: 17,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <ChannelLogo channel={chan} />
+                  </span>
+                  <span className="ibx-folder-name">{label}</span>
+                  {count > 0 && <span className="ibx-folder-count">{count}</span>}
+                </button>
+              );
+            })}
+          </>
+        );
+      })()}
+
+      {/* Tags Section */}
+      <div className="ibx-folders-sep" />
+      
+      {customTags.map((tag: any) => {
+        const key = `cat:${tag.key}`;
+        const count = visibleConvs.filter(c => (c.category || "other") === tag.key).length;
         return (
           <button
-            key={chan}
+            key={tag.key}
             type="button"
-            className={`ibx-folder ${activeFolderId === `chan:${chan}` ? "active" : ""}`}
-            onClick={() => open(`chan:${chan}`)}
+            className={`ibx-folder ${activeFolderId === key ? "active" : ""}`}
+            onClick={() => open(key)}
           >
-            <span
-              className="ibx-folder-ic"
-              style={{
-                width: 17,
-                height: 17,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <ChannelLogo channel={chan} />
-            </span>
-            <span className="ibx-folder-name">{label}</span>
+            <span className="ibx-label-dot" style={{ background: tag.color }} />
+            <span className="ibx-folder-name ibx-label-name">{tag.label}</span>
             {count > 0 && <span className="ibx-folder-count">{count}</span>}
           </button>
         );
       })}
 
-
-      {(
-        [
-          ["cat:client", "Client", "#2563eb"], // Strong Blue
-          ["cat:prospect", "Prospect", "#e11d48"], // Strong Rose/Red
-          ["cat:prestataire", "Prestataire", "#d97706"], // Strong Amber/Orange
-          ["cat:collaborateur", "Équipe", "#16a34a"], // Strong Green
-          ["cat:other", "Non classé", "#4b5563"], // Strong Gray
-        ] as const
-      ).map(([key, label, color]) => {
-        const count = visibleConvs.filter(c => `cat:${c.category ?? "other"}` === key).length;
-        if (count === 0) return null;
-        return (
-          <button
-            key={key}
-            type="button"
-            className={`ibx-folder ${activeFolderId === key ? "active" : ""}`}
-            onClick={() => open(key)}
-          >
-            <span className="ibx-label-dot" style={{ background: color }} />
-            <span className="ibx-folder-name ibx-label-name">{label}</span>
-            <span className="ibx-folder-count">{count}</span>
-          </button>
-        );
-      })}
+      {/* Add tag form */}
+      {!isAddingTag ? (
+        <button
+          type="button"
+          className="ibx-folder"
+          onClick={() => setIsAddingTag(true)}
+          style={{ color: "#4f6cf7", fontWeight: 600, marginTop: 4 }}
+        >
+          <span className="ibx-folder-ic" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>+</span>
+          <span className="ibx-folder-name">Nouveau tag</span>
+        </button>
+      ) : (
+        <div className="ibx-add-tag-form">
+          <input
+            type="text"
+            className="ibx-add-tag-input"
+            placeholder="Nom du tag..."
+            value={newTagName}
+            onChange={(e) => setNewTagName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddTag();
+              } else if (e.key === "Escape") {
+                setIsAddingTag(false);
+                setNewTagName("");
+              }
+            }}
+            autoFocus
+          />
+          <div className="ibx-add-tag-colors">
+            {PRESET_COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                className={`ibx-color-dot ${newTagColor === color ? "is-selected" : ""}`}
+                style={{ backgroundColor: color }}
+                onClick={() => setNewTagColor(color)}
+                title={color}
+              />
+            ))}
+          </div>
+          <div className="ibx-add-tag-actions">
+            <button
+              type="button"
+              className="ibx-add-tag-submit"
+              onClick={handleAddTag}
+              disabled={!newTagName.trim()}
+            >
+              Ajouter
+            </button>
+            <button
+              type="button"
+              className="ibx-add-tag-cancel"
+              onClick={() => {
+                setIsAddingTag(false);
+                setNewTagName("");
+              }}
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

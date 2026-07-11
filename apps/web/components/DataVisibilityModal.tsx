@@ -13,7 +13,7 @@ import { useEffect } from "react";
  * confiance : on ne stocke que tes clients. UI/mock.
  */
 export function DataVisibilityModal() {
-  const { dataViewOpen, setDataViewOpen } = useApp();
+  const { dataViewOpen, setDataViewOpen, mueOpen } = useApp();
   const { conversations, archived, archive, unarchive } = useData();
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export function DataVisibilityModal() {
   const clients = [...byClient.values()];
 
   return (
-    <div className="ccm-overlay" role="dialog" aria-modal="true" aria-label="Ce que Freescale voit">
+    <div className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`} role="dialog" aria-modal="true" aria-label="Ce que Freescale voit">
       <button
         type="button"
         className="ccm-backdrop"

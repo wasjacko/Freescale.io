@@ -18,8 +18,10 @@ import { Sidebar } from "@/components/Sidebar";
 import { TasksBoard } from "@/components/TasksBoard";
 import { Thread } from "@/components/Thread";
 import { TopBar } from "@/components/TopBar";
+import { TasksView } from "@/components/TasksView";
 import { Sprite } from "@/components/icons/Sprite";
 import { OnboardingChips } from "@/components/onboarding/OnboardingChips";
+import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 import { Toaster } from "@/components/ui/Toaster";
 import { createTask } from "@/lib/actions/inbox";
 import type { CurrentUser } from "@/lib/auth";
@@ -44,12 +46,23 @@ export function AppShell({
     setMueOpen,
     theme,
     inboxMode,
+    tasksModalOpen,
+    setTasksModalOpen,
   } = useApp();
   const { conversations, channels, archive, unarchive, addTask } = useData();
-  // Soft profiling: show only when user hasn't been profiled AND has at
-  // least one channel connected (so they've actually seen their inbox
-  // = first value already delivered). Audit-aligned.
-  const showOnboardingChips = !!user && user.onboardedAt === null && channels.length > 0;
+  const [forceOnboarding, setForceOnboarding] = useState(false);
+  useEffect(() => {
+    setForceOnboarding(localStorage.getItem("freescale_debug_force_onboarding") === "true");
+    const handleSync = () => {
+      setForceOnboarding(localStorage.getItem("freescale_debug_force_onboarding") === "true");
+    };
+    window.addEventListener("onboarding-toggle", handleSync);
+    return () => window.removeEventListener("onboarding-toggle", handleSync);
+  }, []);
+
+  const [isOnboarded, setIsOnboarded] = useState(user?.onboardedAt !== null);
+
+  const showOnboardingChips = forceOnboarding || (!!user && user.onboardedAt === null && channels.length > 0);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   // Accord clavier « G puis T/I » (navigation façon Linear).
@@ -299,6 +312,26 @@ export function AppShell({
     .filter(Boolean)
     .join(" ");
 
+  if (user && !isOnboarded) {
+    return (
+      <OnboardingFlow
+        firstName={user.firstName}
+        onFinish={async (answers) => {
+          const { saveOnboardingAnswers, dismissOnboarding } = await import("@/lib/actions/onboarding");
+          if (answers) {
+            await saveOnboardingAnswers({
+              role: answers.role,
+              objective: answers.objective,
+            });
+          } else {
+            await dismissOnboarding();
+          }
+          setIsOnboarded(true);
+        }}
+      />
+    );
+  }
+
   return (
     <>
       <a href="#thread-content" className="skip-link">
@@ -317,7 +350,7 @@ export function AppShell({
       )}
       <div className={appClasses} data-active-conv={activeConvId ? "1" : "0"}>
         <TopBar user={user} />
-        <Sidebar />
+        <Sidebar user={user} />
         <div className="workspace">
           {/* Bandeaux du haut masqués pour l'instant (reconnexion canal + essai).
               Réactiver : décommenter ci-dessous. */}
@@ -355,16 +388,46 @@ export function AppShell({
           <MueFullView />
           {/* Phase 2 — Hub Client/Projet (pilier Centraliser). */}
           <ClientsView />
+          {/* Mue — rail compagnon repliable, 3e colonne de .app : même
+              endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).
+              Le lanceur vit dans le bouton « Agent » de la topbar. */}
+          <MuePanel userName={user?.name ?? null} />
         </div>
-        {/* Mue — rail compagnon repliable, 3e colonne de .app : même
-            endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).
-            Le lanceur vit dans le bouton « Agent » de la topbar. */}
-        <MuePanel userName={user?.name ?? null} />
       </div>
 
       <ClientConfirmModal />
       <DataVisibilityModal />
       <AiTasksReviewModal />
+      {tasksModalOpen && (
+        <div className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`} role="dialog" aria-modal="true" aria-label="Liste des tâches">
+          <button
+            type="button"
+            className="ccm-backdrop"
+            onClick={() => setTasksModalOpen(false)}
+          />
+          <div className="ccm-sheet" style={{ maxWidth: 840, width: "90%", padding: "28px 32px" }}>
+            <header className="ccm-head" style={{ marginBottom: 20 }}>
+              <div>
+                <h2 className="ccm-title" style={{ fontSize: "1.25rem", fontWeight: 700 }}>Liste des tâches</h2>
+                <p className="ccm-sub" style={{ opacity: 0.7, fontSize: "0.875rem" }}>
+                  Tâches actuellement enregistrées dans Freescale.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="ccm-close"
+                onClick={() => setTasksModalOpen(false)}
+                style={{ fontSize: "1.1rem" }}
+              >
+                ✕
+              </button>
+            </header>
+            <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
+              <TasksView isModal={true} />
+            </div>
+          </div>
+        </div>
+      )}
       <Toaster />
       <Suspense>
         <FlashFromUrl />

@@ -1,10 +1,13 @@
 "use client";
 
+import { AccountMenu } from "@/components/AccountMenu";
 import { FreescaleLogo } from "@/components/brand/FreescaleLogo";
 import { FreescaleMark } from "@/components/brand/FreescaleMark";
+import type { CurrentUser } from "@/lib/auth";
 import { useData } from "@/lib/contexts/DataContext";
+import { CREDITS_REMAINING, fmtCredits } from "@/lib/credits";
 import { useApp } from "@/lib/store";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 
 type NavId =
   | "today"
@@ -116,11 +119,20 @@ function NavIcon({ id }: { id: NavId }) {
  * Sidebar — navigation pleine hauteur : logo en haut, sections, et footer
  * « Aide & support » en bas (façon maquette).
  */
-export function Sidebar() {
+export function Sidebar({ user }: { user: CurrentUser | null }) {
   const { view, setView, setActiveConv, toggleSidebar } = useApp();
   const data = useData();
   const conversations = data.conversations ?? [];
   const tasks = data.tasks ?? [];
+  const [accountOpen, setAccountOpen] = useState(false);
+
+  const initials =
+    user?.name
+      .split(" ")
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ?? "?";
 
   // Real counts derived from the live DB
   const counts: Record<NavId, number | null> = {
@@ -176,6 +188,45 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Compte — avatar circulaire avec chevron en badge, au bas de la sidebar */}
+      <div className="sidebar-account">
+        <button
+          type="button"
+          className={`sidebar-avatar ${accountOpen ? "is-open" : ""}`}
+          onClick={() => setAccountOpen((o) => !o)}
+          aria-haspopup="menu"
+          aria-expanded={accountOpen}
+          aria-label="Mon compte"
+          title={`${fmtCredits(CREDITS_REMAINING)} crédits restants`}
+        >
+          <span className="sidebar-avatar-img">
+            {user?.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatarUrl} alt={user.name} referrerPolicy="no-referrer" />
+            ) : (
+              initials
+            )}
+          </span>
+          <span className="sidebar-avatar-caret-wrap">
+            <svg
+              className="sidebar-avatar-caret"
+              viewBox="0 0 24 24"
+              width="9"
+              height="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </span>
+        </button>
+        {accountOpen && <AccountMenu user={user} onClose={() => setAccountOpen(false)} />}
+      </div>
     </aside>
   );
 }

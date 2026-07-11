@@ -47,7 +47,7 @@ function dueMeta(iso: string | null | undefined, fallback: string) {
 export function TasksBoard() {
   const { tasks, conversations, messagesByConv, setTaskStatus, addTask, patchTask, removeTask } =
     useData();
-  const { setView, setActiveConv } = useApp();
+  const { setView, setActiveConv, mueHighlighted } = useApp();
   const [collapsed, setCollapsed] = useState<Set<GroupKey>>(() => new Set());
   // Bascule Tableau ↔ Kanban.
   const [boardView, setBoardView] = useState<"table" | "kanban">("table");
@@ -797,7 +797,7 @@ export function TasksBoard() {
                         }}
                         className={`kcard ${justAdded.has(t.id) ? "is-new" : ""} ${
                           dragId === t.id ? "is-dragging" : ""
-                        }`}
+                        } ${mueHighlighted === `task:${t.id}` ? "has-ai-highlighted" : ""}`}
                         onClick={() => openTask(t)}
                       >
                         <span className="kcard-top">

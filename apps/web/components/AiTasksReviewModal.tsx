@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
  * garder ou ignorer chaque tâche, avec le message source. UI/mock.
  */
 export function AiTasksReviewModal() {
-  const { aiReviewOpen, setAiReviewOpen } = useApp();
+  const { aiReviewOpen, setAiReviewOpen, mueOpen } = useApp();
   const { tasks, conversations, removeTask } = useData();
   const [ignored, setIgnored] = useState<Set<string>>(new Set());
 
@@ -53,7 +53,7 @@ export function AiTasksReviewModal() {
 
   return (
     <div
-      className="ccm-overlay"
+      className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-label="Tâches détectées par Mue"
