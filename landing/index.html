@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Freescale — Gérez votre relation client sans effort</title>
+  <meta name="description" content="Réunissez tous vos échanges clients — email, WhatsApp, Instagram — dans une boîte unique propulsée par l'IA. L'outil de relation client pensé pour les freelances." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=152" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- ambient background layers -->
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="bg-lines" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- multi-layer progressive blur behind the nav (blur ramps up toward the top) -->
+  <div class="nav-blur" aria-hidden="true">
+    <div class="nav-blur__l"></div>
+    <div class="nav-blur__l"></div>
+    <div class="nav-blur__l"></div>
+  </div>
+
+  <!-- ───────────────────────── NAVBAR ───────────────────────── -->
+  <header class="nav" id="nav">
+    <a class="brand" href="#" aria-label="Freescale home">
+      <span class="brand__name">Freescale</span>
+    </a>
+
+    <nav class="nav__links" aria-label="Navigation principale">
+      <a href="#about">À propos</a>
+      <a href="#features">Fonctionnalités</a>
+      <a href="#faqs">FAQ</a>
+    </nav>
+
+    <div class="nav__actions">
+      <a href="#" class="btn btn--ghost">Connexion</a>
+      <a href="#" class="btn-cta btn-cta--mini">
+        <span class="btn-cta__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="btn-cta__label">
+          <span class="btn-cta__word">Commencer</span>
+          <span class="btn-cta__word" aria-hidden="true">Commencer</span>
+        </span>
+      </a>
+    </div>
+
+    <button class="nav__burger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </header>
+
+  <!-- ───────────────────────── HERO ───────────────────────── -->
+  <main>
+    <section class="hero">
+    <!-- LEFT : copy -->
+    <section class="hero__copy">
+      <div class="sparkle reveal" style="--i:0" aria-hidden="true">
+        <img src="assets/logo-freescale.svg" alt="" />
+      </div>
+
+      <h1 class="headline">
+        <span class="line line--serif">Ton copilot IA</span>
+        <span class="line line--bold">pour une relation client</span>
+        <span class="line line--bold">sans effort</span>
+      </h1>
+
+      <p class="subtext reveal" style="--i:4">
+        Réunissez tous vos échanges clients<br />
+        dans une boîte unique, propulsée par l'IA.
+      </p>
+
+      <div class="cta-row reveal" style="--i:5">
+        <a href="#" class="btn-cta">
+          <span class="btn-cta__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="btn-cta__label">
+            <span class="btn-cta__word">Commencer</span>
+            <span class="btn-cta__word" aria-hidden="true">Commencer</span>
+          </span>
+        </a>
+      </div>
+    </section>
+
+    <!-- RIGHT : visual -->
+    <section class="hero__visual">
+      <img src="assets/hero-woman.png?v=2" alt="Une freelance qui regarde vers l'avenir" class="hero__woman" />
+    </section>
+
+    </section>
+
+    <section class="feature" id="features">
+      <div class="screen">
+      <div class="inbox">
+        <!-- top bar -->
+        <header class="appbar">
+          <div class="appbar__brand">
+            <img class="appbar__mark" src="assets/logo-freescale.svg" alt="" />
+            <span class="appbar__name">Freescale</span>
+          </div>
+          <div class="appbar__right">
+            <div class="appbar__chans" aria-hidden="true">
+              <span class="ctile ctile--slot" data-chan="gmail"></span>
+              <span class="ctile ctile--video"><svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="6" width="12" height="12" rx="3" fill="#fff"/><path d="M15 10.5 21 7v10l-6-3.5z" fill="#fff"/><circle cx="8.5" cy="12" r="2.4" fill="#7b5cff"/></svg></span>
+              <span class="ctile ctile--slot" data-chan="insta"></span>
+              <span class="ctile ctile--slot" data-chan="whatsapp"></span>
+              <span class="ctile ctile--li"><svg viewBox="0 0 24 24" fill="#fff"><path d="M6.94 8.5H4.2V19h2.74V8.5ZM5.57 4.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2ZM19.8 19h-2.74v-5.13c0-1.22-.02-2.8-1.7-2.8-1.7 0-1.97 1.33-1.97 2.7V19H10.7V8.5h2.63v1.44h.04c.37-.7 1.26-1.43 2.6-1.43 2.78 0 3.83 1.83 3.83 4.2V19Z"/></svg></span>
+              <span class="ctile ctile--slack"><svg viewBox="0 0 24 24"><path fill="#36C5F0" d="M9 3.2a1.8 1.8 0 1 0 0 3.6h1.8V5A1.8 1.8 0 0 0 9 3.2Z"/><path fill="#2EB67D" d="M20.8 9a1.8 1.8 0 1 0-3.6 0v1.8H19A1.8 1.8 0 0 0 20.8 9Z"/><path fill="#ECB22E" d="M15 20.8a1.8 1.8 0 1 0 0-3.6h-1.8V19A1.8 1.8 0 0 0 15 20.8Z"/><path fill="#E01E5A" d="M3.2 15a1.8 1.8 0 1 0 3.6 0v-1.8H5A1.8 1.8 0 0 0 3.2 15Z"/></svg></span>
+            </div>
+            <button class="appbar__iconbtn" aria-label="Réglages">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.2.6.74 1.05 1.51 1.05H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+            <button class="appbar__mue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>
+              Mue
+            </button>
+          </div>
+        </header>
+
+        <div class="appbody">
+          <!-- sidebar -->
+          <aside class="appside">
+            <nav class="appnav">
+              <a class="appnav__item is-active">
+                <svg class="appnav__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 7 3 3 4-4"/><path d="m3 16 3 3 4-4"/><path d="M13 7h8M13 17h8"/></svg>
+                <span>Tâches</span><span class="appnav__count">6</span>
+              </a>
+              <a class="appnav__item">
+                <svg class="appnav__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h4l2 3h4l2-3h4"/><path d="M4 13 6 5h12l2 8v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+                <span>Inbox</span><span class="appnav__count">36</span>
+              </a>
+              <a class="appnav__item">
+                <svg class="appnav__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>
+                <span>Calendar</span>
+              </a>
+              <a class="appnav__item">
+                <svg class="appnav__ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.5 4.5 3.5 7.5 8 8-4.5.8-7.5 3.5-8 8-.5-4.5-3.5-7.5-8-8 4.5-.8 7.5-3.5 8-8Z"/></svg>
+                <span>AI Knowledge</span>
+              </a>
+            </nav>
+            <div class="appside__user">
+              <span class="appside__avatar" style="--c:#3a3f4a">WA</span>
+              <span class="appside__name">Wacil AIT</span>
+            </div>
+          </aside>
+
+          <!-- main -->
+          <main class="appmain">
+            <div class="muebanner">
+              <div class="muebanner__txt">
+                <h3 class="muebanner__title">Transformez vos messages récents en tâches avec Mue</h3>
+                <p class="muebanner__sub">Mue scanne automatiquement vos conversations en attente sur tous vos canaux (Gmail, Slack, WhatsApp…) pour y détecter des actions clés et vous suggérer de les ajouter comme tâches en un clic !</p>
+              </div>
+              <button class="muebanner__btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.5 4.5 3.5 7.5 8 8-4.5.8-7.5 3.5-8 8-.5-4.5-3.5-7.5-8-8 4.5-.8 7.5-3.5 8-8Z"/></svg> Suggérer des tâches avec Mue</button>
+            </div>
+
+            <section class="tgroup">
+              <div class="tgroup__head"><svg class="tgroup__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg> À FAIRE <span class="tgroup__count">3</span></div>
+              <ul class="tlist">
+                <li class="trow">
+                  <span class="tcheck" aria-hidden="true"></span>
+                  <span class="trow__title">Envoyer la V2 des maquettes à Sarah</span>
+                  <span class="trow__person"><span class="cdot cdot--wa"></span>Sarah Lemoine</span>
+                  <span class="trow__due trow__due--today"><svg class="trow__cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg> Aujourd'hui</span>
+                </li>
+                <li class="trow">
+                  <span class="tcheck" aria-hidden="true"></span>
+                  <span class="trow__title">Planifier le call e-commerce avec Luc</span>
+                  <span class="trow__person"><span class="cdot cdot--gm"></span>Luc Mercier</span>
+                  <span class="trow__due"><svg class="trow__cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg> 16 juin</span>
+                </li>
+                <li class="trow">
+                  <span class="tcheck" aria-hidden="true"></span>
+                  <span class="trow__title">Préparer le brief de la refonte landing page</span>
+                  <span class="trow__person"></span>
+                  <span class="trow__due"><svg class="trow__cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg> Cette semaine</span>
+                </li>
+                <li class="trow trow--add">
+                  <span class="tadd" aria-hidden="true">+</span>
+                  <span class="trow__placeholder">Ajouter une tâche… (Entrée)</span>
+                </li>
+              </ul>
+            </section>
+
+            <section class="tgroup">
+              <div class="tgroup__head"><svg class="tgroup__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg> EN COURS <span class="tgroup__count">2</span></div>
+              <ul class="tlist">
+                <li class="trow">
+                  <span class="tcheck" aria-hidden="true"></span>
+                  <span class="trow__title">Signer + renvoyer le contrat ITWA <span class="trow__sub">1/2</span></span>
+                  <span class="trow__person"><span class="cdot cdot--gm"></span>Thomas Aubry</span>
+                  <span class="trow__due"><svg class="trow__cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg> 15 juin</span>
+                </li>
+                <li class="trow">
+                  <span class="tcheck" aria-hidden="true"></span>
+                  <span class="trow__title">Valider le devis de Capucine</span>
+                  <span class="trow__person"><span class="cdot cdot--li"></span>Capucine Roy</span>
+                  <span class="trow__due trow__due--late"><svg class="trow__cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg> En retard · 2 j</span>
+                </li>
+              </ul>
+            </section>
+          </main>
+        </div>
+      </div>
+      <div class="dock" aria-hidden="true">
+        <figure class="fly" data-target="gmail" data-hx=".82" data-hy=".44" data-rx="-16" data-ry="-24" data-rz="8"><img src="assets/icon-gmail.png" alt="" /></figure>
+        <figure class="fly" data-target="insta" data-hx=".85" data-hy=".66" data-rx="21" data-ry="-31" data-rz="-13"><img src="assets/icon-instagram.png" alt="" /></figure>
+        <figure class="fly" data-target="whatsapp" data-hx=".53" data-hy=".60" data-rx="17" data-ry="27" data-rz="-8"><img src="assets/icon-whatsapp.png" alt="" /></figure>
+      </div>
+      </div><!-- /.screen -->
+    </section>
+
+    <!-- Trust bar : stat + logos clients, juste après le screen -->
+    <section class="statement" aria-label="Notre promesse">
+      <div class="statement__track">
+        <div class="statement__pin">
+          <div class="statement__stage">
+            <span class="pill">Notre promesse</span>
+            <p class="statement__text">Tous vos échanges clients dans une boîte unique, et une IA qui <em>répond pour vous.</em></p>
+          </div>
+        </div>
+      </div>
+      <!-- wordmarks under the promise (the reference puts the logos here) -->
+      <div class="statement__logos">
+        <span class="tlogo tlogo--candle">candle.</span>
+        <span class="tlogo tlogo--arc">
+          <svg class="tlogo__arc" viewBox="0 0 62 32" fill="none" aria-hidden="true"><path d="M6 29 C5 7 30 1 53 9" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/><circle cx="6" cy="29" r="2.5" fill="currentColor"/><path d="M53 9 l-6 -1 M53 9 l-1 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+          arc.
+        </span>
+        <span class="tlogo tlogo--agnost">AGNOST AI</span>
+        <span class="tlogo tlogo--adria">
+          <svg class="tlogo__mark" viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M3 3h8v3.2H6.2V11H3V3Z" fill="currentColor"/><rect x="12.6" y="12.6" width="9" height="9" rx="1.4" fill="currentColor"/><path d="M25 25h-8v-3.2h4.8V17H25v8Z" fill="currentColor"/></svg>
+          Adria
+        </span>
+      </div>
+    </section>
+
+    <!-- Process — 4 étapes : comment ça marche & pourquoi ta vie de freelance change -->
+    <!-- ── Pourquoi Freescale : carte blanche flottante, 4 bénéfices numérotés ── -->
+    <section class="why" aria-label="Pourquoi Freescale">
+      <i class="why__collar" aria-hidden="true"></i>
+      <div class="why__card">
+        <span class="pill">Pourquoi Freescale</span>
+        <h2 class="why__title">Pourquoi c'est <em>trop bien ?</em></h2>
+
+        <div class="why__layout">
+          <div class="why__sticky">
+            <div class="wmorph">
+              <div class="wmorph__spin">
+                <figure class="wmorph__icon is-active" data-i="0" aria-hidden="true"><div class="w3d" data-icon="bubble"></div></figure>
+                <figure class="wmorph__icon" data-i="1" aria-hidden="true"><div class="w3d" data-icon="sparkle"></div></figure>
+                <figure class="wmorph__icon" data-i="2" aria-hidden="true"><img src="assets/step-3-calendar-cut.png" alt="" /></figure>
+                <figure class="wmorph__icon" data-i="3" aria-hidden="true"><img src="assets/step-4-clock-cut.png" alt="" /></figure>
+              </div>
+            </div>
+          </div>
+          <div class="why__list">
+            <article class="wstep" data-i="0">
+              <span class="why__num" aria-hidden="true">/01</span>
+              <h3 class="why__name">Reçois</h3>
+              <p class="why__text">WhatsApp, Instagram, Gmail… toutes les demandes de tes clients arrivent au même endroit.</p>
+            </article>
+            <article class="wstep" data-i="1">
+              <span class="why__num" aria-hidden="true">/02</span>
+              <h3 class="why__name">Transforme</h3>
+              <p class="why__text">Mue lit chaque message et le transforme en tâche claire, prête à traiter.</p>
+            </article>
+            <article class="wstep" data-i="2">
+              <span class="why__num" aria-hidden="true">/03</span>
+              <h3 class="why__name">Planifie</h3>
+              <p class="why__text">Ton calendrier s'agence tout seul : chaque tâche trouve le bon créneau.</p>
+            </article>
+            <article class="wstep" data-i="3">
+              <span class="why__num" aria-hidden="true">/04</span>
+              <h3 class="why__name">Respire</h3>
+              <p class="why__text">Au moins une journée de gagnée chaque semaine — sur ton vrai métier.</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="why__cta">
+          <a href="#" class="btn-cta btn-cta--mini">
+            <span class="btn-cta__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="btn-cta__label">
+              <span class="btn-cta__word">Commencer</span>
+              <span class="btn-cta__word" aria-hidden="true">Commencer</span>
+            </span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Galerie : deux rangées en défilement continu ── -->
+    <section class="gal" aria-label="La communauté Freescale">
+      <div class="gal__panel">
+      <div class="gal__row">
+        <div class="gal__track">
+          <figure class="gtile"><img src="assets/avatar-1.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>WhatsApp · Sophie M.</span></figure>
+          <figure class="gtile gtile--chan gtile--wa"><img src="assets/icon-whatsapp.png" alt="WhatsApp" loading="lazy" /></figure>
+          <figure class="gtile"><img src="assets/avatar-2.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Instagram · DM reçu</span></figure>
+          <div class="gtile gtile--chat">
+            <p class="gtile__bubble">Bonjour ! Le projet avance bien ? 😊</p>
+            <p class="gtile__bubble gtile__bubble--me">Oui — livraison vendredi 🙌</p>
+            <span class="gtile__meta">Mue a répondu pour vous</span>
+          </div>
+          <figure class="gtile"><img src="assets/avatar-3.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Gmail · Devis envoyé</span></figure>
+          <figure class="gtile gtile--chan gtile--ig"><img src="assets/icon-instagram.png" alt="Instagram" loading="lazy" /></figure>
+          <figure class="gtile" aria-hidden="true"><img src="assets/avatar-1.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>WhatsApp · Sophie M.</span></figure>
+          <figure class="gtile gtile--chan gtile--wa" aria-hidden="true"><img src="assets/icon-whatsapp.png" alt="" loading="lazy" /></figure>
+          <figure class="gtile" aria-hidden="true"><img src="assets/avatar-2.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Instagram · DM reçu</span></figure>
+          <div class="gtile gtile--chat" aria-hidden="true">
+            <p class="gtile__bubble">Bonjour ! Le projet avance bien ? 😊</p>
+            <p class="gtile__bubble gtile__bubble--me">Oui — livraison vendredi 🙌</p>
+            <span class="gtile__meta">Mue a répondu pour vous</span>
+          </div>
+          <figure class="gtile" aria-hidden="true"><img src="assets/avatar-3.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Gmail · Devis envoyé</span></figure>
+          <figure class="gtile gtile--chan gtile--ig" aria-hidden="true"><img src="assets/icon-instagram.png" alt="" loading="lazy" /></figure>
+        </div>
+      </div>
+      <div class="gal__row gal__row--b">
+        <div class="gal__track">
+          <div class="gtile gtile--chat">
+            <p class="gtile__bubble">On peut caler un appel demain ?</p>
+            <p class="gtile__bubble gtile__bubble--me">Bien sûr, 14 h ça te va ?</p>
+            <span class="gtile__meta">Relance envoyée ✓</span>
+          </div>
+          <figure class="gtile gtile--top"><img src="assets/hero-woman.png" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Mue a répondu ✓</span></figure>
+          <figure class="gtile gtile--chan gtile--gm"><img src="assets/icon-gmail.png" alt="Gmail" loading="lazy" /></figure>
+          <figure class="gtile gtile--mid"><img src="assets/avatar-2.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Instagram · DM reçu</span></figure>
+          <figure class="gtile gtile--spark"><img src="assets/step-2-sparkle.webp" alt="" loading="lazy" /></figure>
+          <figure class="gtile gtile--mid"><img src="assets/avatar-1.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>WhatsApp · Sophie M.</span></figure>
+          <div class="gtile gtile--chat" aria-hidden="true">
+            <p class="gtile__bubble">On peut caler un appel demain ?</p>
+            <p class="gtile__bubble gtile__bubble--me">Bien sûr, 14 h ça te va ?</p>
+            <span class="gtile__meta">Relance envoyée ✓</span>
+          </div>
+          <figure class="gtile gtile--top" aria-hidden="true"><img src="assets/hero-woman.png" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Mue a répondu ✓</span></figure>
+          <figure class="gtile gtile--chan gtile--gm" aria-hidden="true"><img src="assets/icon-gmail.png" alt="" loading="lazy" /></figure>
+          <figure class="gtile gtile--mid" aria-hidden="true"><img src="assets/avatar-2.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>Instagram · DM reçu</span></figure>
+          <figure class="gtile gtile--spark" aria-hidden="true"><img src="assets/step-2-sparkle.webp" alt="" loading="lazy" /></figure>
+          <figure class="gtile gtile--mid" aria-hidden="true"><img src="assets/avatar-1.jpg" alt="" loading="lazy" /><span class="gtile__chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>WhatsApp · Sophie M.</span></figure>
+        </div>
+      </div>
+          </div>
+    </section>
+
+    <!-- ── Tarifs : 3 forfaits, le Pro en vedette (bordure dégradée) ── -->
+    <section class="pricing" id="tarifs" aria-label="Tarifs">
+      <span class="pill">Tarifs</span>
+      <h2 class="pricing__title">Forfait <em>marche ?</em></h2>
+
+      <div class="pricing__panel">
+        <div class="plans">
+          <article class="plan">
+            <div class="plan__top">
+              <div class="plan__head"><span class="plan__no">01</span><span class="plan__cat">Pour commencer</span><span class="plan__dots" aria-hidden="true">•••</span></div>
+              <h3 class="plan__name">Solo</h3>
+              <p class="plan__sub">Un canal, pour goûter.</p>
+              <div class="plan__row">
+                <a href="#" class="plan__cta">Commencer</a>
+                <div class="plan__pricebox">
+                  <p class="plan__price"><strong>0 €</strong><span>/mois</span></p>
+                  <span class="plan__note">Sans carte bancaire.</span>
+                </div>
+              </div>
+            </div>
+            <ul class="plan__list">
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>1 canal connecté</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Boîte de réception unique</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>20 brouillons Mue / mois</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Rappels de relance</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Démarrage immédiat</li>
+            </ul>
+          </article>
+
+          <article class="plan plan--featured">
+            <span class="plan__flag">Le meilleur rapport qualité-prix</span>
+            <div class="plan__shell">
+              <div class="plan__top">
+                <div class="plan__head"><span class="plan__no">02</span><span class="plan__cat">Le plus choisi</span><span class="plan__dots" aria-hidden="true">•••</span></div>
+                <h3 class="plan__name">Pro</h3>
+                <p class="plan__sub">Ton quotidien en pilote auto.</p>
+                <div class="plan__row">
+                  <a href="#" class="plan__cta plan__cta--grad">Essayer Pro</a>
+                  <div class="plan__pricebox">
+                    <p class="plan__price"><strong>19 €</strong><span>/mois</span></p>
+                    <span class="plan__note">Annulable à tout moment.</span>
+                  </div>
+                </div>
+              </div>
+              <ul class="plan__list">
+                <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Tout le plan Solo</li>
+                <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Canaux illimités</li>
+                <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Mue illimité — brouillons &amp; relances</li>
+                <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Tâches &amp; calendrier automatiques</li>
+                <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Ton de voix personnalisé</li>
+                <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Support prioritaire</li>
+              </ul>
+            </div>
+          </article>
+
+          <article class="plan">
+            <div class="plan__top">
+              <div class="plan__head"><span class="plan__no">03</span><span class="plan__cat">Pour les équipes</span><span class="plan__dots" aria-hidden="true">•••</span></div>
+              <h3 class="plan__name">Studio</h3>
+              <p class="plan__sub">Pour les studios &amp; collectifs.</p>
+              <div class="plan__row">
+                <a href="#" class="plan__cta">Parler à l'équipe</a>
+                <div class="plan__pricebox">
+                  <p class="plan__price"><strong>49 €</strong><span>/mois</span></p>
+                  <span class="plan__note">À partir de, 3 sièges inclus.</span>
+                </div>
+              </div>
+            </div>
+            <ul class="plan__list">
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Tout le plan Pro</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>3 sièges inclus</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Boîtes partagées</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Modèles d'équipe</li>
+              <li><svg class="plan__check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg>Onboarding dédié</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FAQ : onglets + accordéon + carte contact ── -->
+    <section class="faq" id="faqs" aria-label="Questions fréquentes">
+      <div class="faq__inner">
+        <span class="pill">FAQ</span>
+        <h2 class="faq__title">Des <em>questions ?</em></h2>
+
+        <div class="faq__tabs" role="tablist" aria-label="Catégories">
+          <button type="button" class="faq__tab is-on" data-cat="general">Général</button>
+          <button type="button" class="faq__tab" data-cat="mue">Mue &amp; IA</button>
+          <button type="button" class="faq__tab" data-cat="tarifs">Tarifs</button>
+          <button type="button" class="faq__tab" data-cat="secu">Sécurité</button>
+        </div>
+
+        <div class="faq__list">
+          <details class="faq__item" data-cat="general" open>
+            <summary>C'est quoi, Freescale, en une phrase ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Une boîte de réception unique qui réunit WhatsApp, Instagram et Gmail — avec une IA, Mue, qui rédige tes réponses et organise tes tâches.</p>
+          </details>
+          <details class="faq__item" data-cat="general">
+            <summary>Pour qui c'est fait ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Pour les freelances et indépendants qui jonglent entre plusieurs canaux clients : créatifs, développeurs, consultants, coachs…</p>
+          </details>
+          <details class="faq__item" data-cat="general">
+            <summary>Est-ce que mes clients doivent changer leurs habitudes ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Non. Tes clients continuent de t'écrire où ils veulent — toi, tu réponds depuis un seul endroit.</p>
+          </details>
+          <details class="faq__item" data-cat="general">
+            <summary>Combien de temps pour tout brancher ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Moins de deux minutes par canal. Tu connectes ton compte, et c'est tout.</p>
+          </details>
+          <details class="faq__item" data-cat="mue">
+            <summary>Mue répond à ma place ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Mue prépare des brouillons dans ton ton. Rien ne part sans ta validation — tu restes aux commandes.</p>
+          </details>
+          <details class="faq__item" data-cat="mue">
+            <summary>Et si la réponse proposée est à côté ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Tu corriges d'un mot et Mue reformule aussitôt. Elle apprend de chaque ajustement.</p>
+          </details>
+          <details class="faq__item" data-cat="mue">
+            <summary>Mue écrit dans quelle langue ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>La tienne. Français, anglais… Mue reprend ton vocabulaire et ton niveau de formalité.</p>
+          </details>
+          <details class="faq__item" data-cat="tarifs">
+            <summary>Il y a un plan gratuit ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Oui — le plan Solo est gratuit, sans carte bancaire, pour connecter ton premier canal.</p>
+          </details>
+          <details class="faq__item" data-cat="tarifs">
+            <summary>Je peux changer de forfait quand je veux ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>À tout moment, en un clic. Sans engagement, sans frais cachés.</p>
+          </details>
+          <details class="faq__item" data-cat="tarifs">
+            <summary>Une réduction à l'année ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Oui : deux mois offerts sur tous les forfaits annuels.</p>
+          </details>
+          <details class="faq__item" data-cat="secu">
+            <summary>Où vont mes données ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Hébergées en Europe, chiffrées en transit et au repos. Tes conversations restent les tiennes.</p>
+          </details>
+          <details class="faq__item" data-cat="secu">
+            <summary>Quelqu'un lit mes messages ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Seule Mue y accède, pour préparer tes brouillons. Aucun humain ne lit tes conversations.</p>
+          </details>
+          <details class="faq__item" data-cat="secu">
+            <summary>Je peux tout supprimer ?<span class="faq__x" aria-hidden="true"></span></summary>
+            <p>Oui. Tu exportes ou supprimes ton compte et tes données à tout moment, en deux clics.</p>
+          </details>
+        </div>
+
+        <div class="faq__contact">
+          <div class="faq__contact-copy">
+            <span class="faq__hello"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3v3.5L11.5 17H20a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>On discute ?</span>
+            <h3>On répond en vrai. Pas un bot, promis.</h3>
+            <p>Écris-nous, on te répond dans la journée.</p>
+            <a href="mailto:hello@freescale.site" class="btn-cta btn-cta--mini btn-cta--lime">
+              <span class="btn-cta__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span class="btn-cta__label">
+                <span class="btn-cta__word">Nous écrire</span>
+                <span class="btn-cta__word" aria-hidden="true">Nous écrire</span>
+              </span>
+            </a>
+          </div>
+          <figure class="faq__contact-photo"><img src="assets/hero-woman.png" alt="" loading="lazy" /></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Closer : dernier appel, étoile 3D + logos ── -->
+    <section class="closer" aria-label="Commencer avec Freescale">
+      <div class="closer__inner">
+        <h2 class="closer__title">Ta relation client passe en <em>pilote automatique.</em></h2>
+        <div class="closer__grid">
+          <figure class="closer__spark" aria-hidden="true"><img src="assets/step-2-sparkle.webp" alt="" loading="lazy" /></figure>
+          <div class="closer__right">
+            <p class="closer__text">Freescale réunit tes canaux, rédige tes réponses et garde tes clients au chaud — pendant que tu fais ton vrai métier.</p>
+            <div class="closer__ctas">
+              <a href="#" class="btn-cta">
+                <span class="btn-cta__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span class="btn-cta__label">
+                  <span class="btn-cta__word">Commencer</span>
+                  <span class="btn-cta__word" aria-hidden="true">Commencer</span>
+                </span>
+              </a>
+              <a href="mailto:hello@freescale.site" class="closer__ghost">Nous écrire</a>
+            </div>
+            <p class="closer__trusted">/ Déjà adopté par les freelances</p>
+            <div class="closer__logos">
+              <span class="tlogo tlogo--candle">candle.</span>
+              <span class="tlogo tlogo--agnost">AGNOST AI</span>
+              <span class="tlogo tlogo--adria"><svg class="tlogo__mark" viewBox="0 0 28 28" fill="currentColor" aria-hidden="true"><path d="M3 3h8v3.2H6.2V11H3V3Z"/><rect x="12.6" y="12.6" width="9" height="9" rx="1.4"/><path d="M25 25h-8v-3.2h4.8V17H25v8Z"/></svg>Adria</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js?v=69"></script>
+  <script type="module" src="three-icons.js?v=8"></script>
+</body>
+</html>
