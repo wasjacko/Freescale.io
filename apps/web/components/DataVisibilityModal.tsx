@@ -59,7 +59,12 @@ export function DataVisibilityModal() {
   const clients = [...byClient.values()];
 
   return (
-    <div className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`} role="dialog" aria-modal="true" aria-label="Ce que Freescale voit">
+    <div
+      className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Ce que Freescale voit"
+    >
       <button
         type="button"
         className="ccm-backdrop"

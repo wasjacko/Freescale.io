@@ -62,6 +62,8 @@ type State = {
   activeFolderId: string | null;
   setActiveFolder: (id: string | null) => void;
   addFolder: (name: string) => void;
+  inboxFoldersOpen: boolean;
+  setInboxFoldersOpen: (open: boolean) => void;
   setView: (v: ViewId) => void;
   setActiveConv: (id: string) => void;
   setActiveClientId: (id: string) => void;
@@ -129,6 +131,8 @@ export const useApp = create<State>()(
             { id: `f-${Date.now()}`, name: name.trim() || "Nouveau dossier", convIds: [] },
           ],
         })),
+      inboxFoldersOpen: false,
+      setInboxFoldersOpen: (inboxFoldersOpen) => set({ inboxFoldersOpen }),
       setView: (view) => set({ view }),
       setActiveConv: (activeConvId) => set({ activeConvId }),
       setActiveClientId: (activeClientId) => set({ activeClientId }),

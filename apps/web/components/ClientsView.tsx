@@ -237,8 +237,7 @@ export function ClientsView() {
   // ─ Répartition par canal (barre empilée — pas une jauge) ─────────
   const channelDist = useMemo(() => {
     const counts = new Map<ChannelId, number>();
-    for (const c of clients)
-      for (const ch of c.channels) counts.set(ch, (counts.get(ch) ?? 0) + 1);
+    for (const c of clients) for (const ch of c.channels) counts.set(ch, (counts.get(ch) ?? 0) + 1);
     const tot = Math.max(
       1,
       Array.from(counts.values()).reduce((a, b) => a + b, 0)
@@ -314,21 +313,11 @@ export function ClientsView() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
-          <div className="csv-period" role="tablist" aria-label="Période">
-            {PERIODS.map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={period === key}
-                className={`csv-period__btn ${period === key ? "is-on" : ""}`}
-                onClick={() => setPeriod(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className="btn-new-task csv3-add-client" onClick={() => setAddOpen(true)}>
+          <button
+            type="button"
+            className="btn-new-task csv3-add-client"
+            onClick={() => setAddOpen(true)}
+          >
             <svg
               className="icon"
               viewBox="0 0 24 24"
@@ -343,11 +332,68 @@ export function ClientsView() {
             </svg>
             Ajouter un client
           </button>
+          <div className="csv-period" role="tablist" aria-label="Période">
+            {PERIODS.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={period === key}
+                className={`csv-period__btn ${period === key ? "is-on" : ""}`}
+                onClick={() => setPeriod(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
       {addOpen && (
         <AddClientModal open={addOpen} onClose={() => setAddOpen(false)} onCreate={addClient} />
       )}
+
+      {/* ── Filtres rapides (Pills) ── */}
+      <div className="csv3-quickfilters">
+        <button
+          type="button"
+          className={`csv3-qpill ${filter === "all" ? "is-active" : ""}`}
+          onClick={() => setFilter("all")}
+        >
+          Tous <span className="csv3-qpill-count">{total}</span>
+        </button>
+        <button
+          type="button"
+          className={`csv3-qpill csv3-qpill--reply ${filter === "reply" ? "is-active" : ""}`}
+          onClick={() => setFilter("reply")}
+        >
+          À relancer <span className="csv3-qpill-count">{toReplyCount}</span>
+        </button>
+        <button
+          type="button"
+          className={`csv3-qpill csv3-qpill--money ${filter === "money" ? "is-active" : ""}`}
+          onClick={() => setFilter("money")}
+        >
+          Factures{" "}
+          <span className="csv3-qpill-count">
+            {clients.filter((c) => moneySignal(c).dues > 0).length}
+          </span>
+        </button>
+        <button
+          type="button"
+          className={`csv3-qpill csv3-qpill--risk ${filter === "risk" ? "is-active" : ""}`}
+          onClick={() => setFilter("risk")}
+        >
+          À risque{" "}
+          <span className="csv3-qpill-count">
+            {
+              clients.filter((c) => {
+                const h = relationHealth(c);
+                return h.state === "silent" || h.state === "awaiting" || c.stage === "dormant";
+              }).length
+            }
+          </span>
+        </button>
+      </div>
 
       {/* ── Liste des clients EN PREMIER (feature principale) ── */}
       {filteredClients.length === 0 ? (
@@ -605,11 +651,14 @@ function Donut({ parts }: { parts: { value: number; color: string }[] }) {
 
 function MiniClientCard({ client, onOpen }: { client: Client; onOpen: () => void }) {
   const h = relationHealth(client);
+  const money = moneySignal(client);
   const stage = client.stage ? STAGE[client.stage] : null;
   return (
     <button type="button" className="csv-mini" onClick={onOpen}>
       <div className="csv-mini__top">
-        <Avatar avatar={{ ...client.avatar, alt: client.name }} size={32} />
+        <div className={`csv-mini__avatar-wrap csv-mini__avatar-wrap--${stage?.cls || "unknown"}`}>
+          <Avatar avatar={{ ...client.avatar, alt: client.name }} size={32} />
+        </div>
         <div className="csv-mini__id">
           <span className="csv-mini__name">{client.name}</span>
           <span className="csv-mini__meta">
@@ -626,11 +675,34 @@ function MiniClientCard({ client, onOpen }: { client: Client; onOpen: () => void
         </span>
       </div>
 
-      <div className={`csv-mini__rel csv-mini__rel--${h.state}`}>
-        <span className="csv-mini__dot" aria-hidden />
-        <span className="csv-mini__rlbl">{h.label}</span>
-        {client.lastContactLabel && (
-          <span className="csv-mini__last">{client.lastContactLabel}</span>
+      <div className="csv-mini__footer">
+        <div className={`csv-mini__rel csv-mini__rel--${h.state}`}>
+          <span className="csv-mini__dot" aria-hidden />
+          <span className="csv-mini__rlbl">{h.label}</span>
+          {client.lastContactLabel && (
+            <span className="csv-mini__last">{client.lastContactLabel}</span>
+          )}
+        </div>
+
+        {money.dues > 0 && (
+          <span className={`csv-mini__money csv-mini__money--${money.tone}`}>
+            <svg
+              viewBox="0 0 24 24"
+              width={10}
+              height={10}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="csv-mini__money-ico"
+              aria-hidden
+            >
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            <span>{money.label}</span>
+          </span>
         )}
       </div>
     </button>

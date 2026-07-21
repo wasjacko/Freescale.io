@@ -50,7 +50,15 @@ export async function triageHeuristic(): Promise<{
   if (!user) {
     return {
       classified: 0,
-      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      byCategory: {
+        client: 0,
+        prospect: 0,
+        prestataire: 0,
+        collaborateur: 0,
+        promo: 0,
+        notif: 0,
+        other: 0,
+      },
       errors: ["unauthenticated"],
     };
   }
@@ -59,7 +67,15 @@ export async function triageHeuristic(): Promise<{
   if (!workspaceId) {
     return {
       classified: 0,
-      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      byCategory: {
+        client: 0,
+        prospect: 0,
+        prestataire: 0,
+        collaborateur: 0,
+        promo: 0,
+        notif: 0,
+        other: 0,
+      },
       errors: ["no workspace"],
     };
   }
@@ -76,14 +92,30 @@ export async function triageHeuristic(): Promise<{
   if (convErr) {
     return {
       classified: 0,
-      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      byCategory: {
+        client: 0,
+        prospect: 0,
+        prestataire: 0,
+        collaborateur: 0,
+        promo: 0,
+        notif: 0,
+        other: 0,
+      },
       errors: [`SELECT failed: ${convErr.message} (migration 20260517180000 may not be applied)`],
     };
   }
   if (!convs?.length) {
     return {
       classified: 0,
-      byCategory: { client: 0, promo: 0, notif: 0, other: 0 },
+      byCategory: {
+        client: 0,
+        prospect: 0,
+        prestataire: 0,
+        collaborateur: 0,
+        promo: 0,
+        notif: 0,
+        other: 0,
+      },
       errors: [],
     };
   }
@@ -91,6 +123,9 @@ export async function triageHeuristic(): Promise<{
   // Classify in-memory, then bulk-write per category (4 UPDATEs max).
   const byCategory: Record<Category, string[]> = {
     client: [],
+    prospect: [],
+    prestataire: [],
+    collaborateur: [],
     promo: [],
     notif: [],
     other: [],
@@ -126,6 +161,9 @@ export async function triageHeuristic(): Promise<{
     classified,
     byCategory: {
       client: byCategory.client.length,
+      prospect: byCategory.prospect.length,
+      prestataire: byCategory.prestataire.length,
+      collaborateur: byCategory.collaborateur.length,
       promo: byCategory.promo.length,
       notif: byCategory.notif.length,
       other: byCategory.other.length,

@@ -1,7 +1,10 @@
 "use client";
 
 import { type ContextAction, ContextMenu } from "@/components/ContextMenu";
+import { InboxComposeButton } from "@/components/InboxComposeButton";
+import { InboxFilterButton } from "@/components/InboxFilterButton";
 import { InboxSortButton } from "@/components/InboxSortButton";
+import { MobileInboxHeader } from "@/components/MobileInboxHeader";
 import { NoChannelsHero } from "@/components/NoChannelsHero";
 import { ChannelLogo } from "@/components/icons/Icon";
 import { InitialSyncIndicator } from "@/components/onboarding/InitialSyncIndicator";
@@ -9,6 +12,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { channelProviderLabel, isEmailLikeChannel } from "@/lib/channels/registry";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
+import { snoozeTargets } from "@/lib/snooze-targets";
 import { useApp } from "@/lib/store";
 import type { ChannelId } from "@/lib/types";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -73,6 +77,8 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     inboxMode,
     mueScanning,
     mueHighlighted,
+    inboxFoldersOpen,
+    setInboxFoldersOpen,
   } = useApp();
   const {
     conversations,
@@ -91,6 +97,184 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [extraUnread, setExtraUnread] = useState<Set<string>>(new Set());
   const [ctx, setCtx] = useState<{ x: number; y: number; convId: string } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const isPulling = useRef(false);
+  const { setIsSyncing } = useData();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Swipe references tracking
+  const swipeInfo = useRef<{
+    startX: number;
+    startY: number;
+    deltaX: number;
+    isSwiping: boolean;
+    rowEl: HTMLElement | null;
+  }>({ startX: 0, startY: 0, deltaX: 0, isSwiping: false, rowEl: null });
+
+  const handleTouchStart = (e: React.TouchEvent, _id: string) => {
+    if (window.innerWidth >= 1024) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rowEl = e.currentTarget as HTMLElement;
+    swipeInfo.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      deltaX: 0,
+      isSwiping: false,
+      rowEl,
+    };
+    rowEl.style.transition = "none";
+
+    // Clean up any remaining visual states from past swipes
+    const parent = rowEl.parentElement;
+    if (parent) {
+      parent.removeAttribute("data-crossed");
+      const bgEl = parent.querySelector(".conv-swipe-bg") as HTMLElement;
+      const leftAct = parent.querySelector(".conv-swipe-action-left") as HTMLElement;
+      const rightAct = parent.querySelector(".conv-swipe-action-right") as HTMLElement;
+      if (bgEl) bgEl.style.backgroundColor = "transparent";
+      if (leftAct) {
+        leftAct.style.opacity = "0";
+        leftAct.style.transform = "scale(0.8)";
+      }
+      if (bgEl && rightAct) {
+        rightAct.style.opacity = "0";
+        rightAct.style.transform = "scale(0.8)";
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent, _id: string) => {
+    const info = swipeInfo.current;
+    if (!info.rowEl) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const deltaX = touch.clientX - info.startX;
+    const deltaY = touch.clientY - info.startY;
+
+    if (!info.isSwiping) {
+      if (Math.abs(deltaX) > 6 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        info.isSwiping = true;
+      }
+    }
+
+    if (info.isSwiping) {
+      if (e.cancelable) e.preventDefault();
+      let displayX = deltaX;
+      if (Math.abs(deltaX) > 140) {
+        const excess = Math.abs(deltaX) - 140;
+        displayX = (deltaX > 0 ? 140 : -140) + (deltaX > 0 ? 1 : -1) * (excess * 0.2);
+      }
+      info.deltaX = displayX;
+      info.rowEl.style.transform = `translateX(${displayX}px)`;
+
+      const parent = info.rowEl.parentElement;
+      if (parent) {
+        const bgEl = parent.querySelector(".conv-swipe-bg") as HTMLElement;
+        const leftAct = parent.querySelector(".conv-swipe-action-left") as HTMLElement;
+        const rightAct = parent.querySelector(".conv-swipe-action-right") as HTMLElement;
+
+        if (bgEl && leftAct && rightAct) {
+          if (displayX > 0) {
+            bgEl.style.background = "linear-gradient(90deg, #f59e0b, #d97706)";
+            bgEl.style.justifyContent = "flex-start";
+            leftAct.style.opacity = Math.min(1, displayX / 60).toString();
+            leftAct.style.transform = `scale(${Math.min(1.2, 0.8 + displayX / 200)})`;
+            rightAct.style.opacity = "0";
+          } else {
+            bgEl.style.background = "linear-gradient(270deg, #10b981, #059669)";
+            bgEl.style.justifyContent = "flex-end";
+            rightAct.style.opacity = Math.min(1, Math.abs(displayX) / 60).toString();
+            rightAct.style.transform = `scale(${Math.min(1.2, 0.8 + Math.abs(displayX) / 200)})`;
+            leftAct.style.opacity = "0";
+          }
+
+          const thresholdVal = typeof window !== "undefined" && window.innerWidth < 380 ? 60 : 70;
+          const crossedThreshold = Math.abs(displayX) > thresholdVal;
+          const previouslyCrossed = parent.getAttribute("data-crossed") === "true";
+          if (crossedThreshold !== previouslyCrossed) {
+            parent.setAttribute("data-crossed", crossedThreshold ? "true" : "false");
+            if (crossedThreshold && typeof navigator !== "undefined" && navigator.vibrate) {
+              navigator.vibrate(12);
+            }
+          }
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = (_e: React.TouchEvent, id: string) => {
+    const info = swipeInfo.current;
+    const rowEl = info.rowEl;
+    if (!rowEl) return;
+
+    rowEl.style.transition = "transform 250ms cubic-bezier(0.16, 1, 0.3, 1)";
+    const parent = rowEl.parentElement;
+
+    if (parent) {
+      parent.removeAttribute("data-crossed");
+      const bgEl = parent.querySelector(".conv-swipe-bg") as HTMLElement;
+      const leftAct = parent.querySelector(".conv-swipe-action-left") as HTMLElement;
+      const rightAct = parent.querySelector(".conv-swipe-action-right") as HTMLElement;
+
+      const threshold = typeof window !== "undefined" && window.innerWidth < 380 ? 60 : 70;
+      if (info.deltaX < -threshold) {
+        rowEl.style.transform = "translateX(-100%)";
+        setTimeout(() => {
+          parent.style.height = `${parent.offsetHeight}px`;
+          // Force layout reflow
+          parent.offsetHeight;
+          parent.style.height = "0px";
+          parent.style.opacity = "0";
+          parent.style.marginBottom = "0px";
+          setTimeout(() => {
+            onContextAction(id, "archive");
+          }, 250);
+        }, 150);
+      } else if (info.deltaX > threshold) {
+        rowEl.style.transform = "translateX(100%)";
+        setTimeout(() => {
+          parent.style.height = `${parent.offsetHeight}px`;
+          // Force layout reflow
+          parent.offsetHeight;
+          parent.style.height = "0px";
+          parent.style.opacity = "0";
+          parent.style.marginBottom = "0px";
+          setTimeout(() => {
+            const targets = snoozeTargets();
+            const tomorrow = targets[0];
+            if (tomorrow) {
+              onContextAction(id, {
+                kind: "snooze",
+                untilIso: tomorrow.iso,
+                label: tomorrow.label,
+              });
+            }
+          }, 250);
+        }, 150);
+      } else {
+        rowEl.style.transform = "translateX(0)";
+        if (bgEl && leftAct && rightAct) {
+          bgEl.style.backgroundColor = "transparent";
+          leftAct.style.opacity = "0";
+          rightAct.style.opacity = "0";
+          leftAct.style.transform = "scale(0.8)";
+          rightAct.style.transform = "scale(0.8)";
+        }
+      }
+    }
+    swipeInfo.current = { startX: 0, startY: 0, deltaX: 0, isSwiping: false, rowEl: null };
+  };
+
   // « / » = recherche locale éphémère (filtre par nom, Esc pour fermer).
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -307,6 +491,28 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
     setShowSkeletons(false);
   }, [isSyncing, filteredConvs.length]);
 
+  const folderLabel = (() => {
+    if (!activeFolderId) return "Principale";
+    if (activeFolderId === "view:starred") return "Favoris";
+    if (activeFolderId === "view:sent") return "Envoyés";
+    if (activeFolderId === "view:drafts") return "Brouillons";
+    if (activeFolderId === "view:trash") return "Corbeille";
+    if (activeFolderId.startsWith("chan:")) {
+      const parts = activeFolderId.split(":");
+      return parts[1] ? parts[1].toUpperCase() : "Inbox";
+    }
+    if (activeFolderId.startsWith("cat:")) {
+      const parts = activeFolderId.split(":");
+      const catKey = parts[1] || "other";
+      if (catKey === "client") return "Client";
+      if (catKey === "prospect") return "Prospect";
+      if (catKey === "prestataire") return "Prestataire";
+      if (catKey === "collaborateur") return "Équipe";
+      return "Non classé";
+    }
+    return "Inbox";
+  })();
+
   // Nothing connected yet → show the hero instead of an empty conversation
   // list. This is the single most important CTA for a fresh workspace.
   if (channels.length === 0) {
@@ -319,8 +525,43 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
 
   return (
     <section className="inbox">
-      {/* Recherche permanente + bouton de tri (icône) en haut de la liste. */}
+      {/* Header mobile — trois éléments (comptes · titre · dossiers).
+          Masqué en desktop via CSS. */}
+      <MobileInboxHeader folderLabel={folderLabel} />
+      {/* Recherche permanente + bouton de tri (icône) en haut de la liste.
+          Le pill « Principale » a migré vers le hamburger du header mobile ;
+          en desktop il reste disponible via la colonne InboxFolders. */}
       <div className="ibx-search-wrap--list">
+        <button
+          type="button"
+          className="ibx-folder-select-pill"
+          onClick={() => {
+            if (typeof navigator !== "undefined" && navigator.vibrate) {
+              navigator.vibrate(8);
+            }
+            setInboxFoldersOpen(!inboxFoldersOpen);
+          }}
+          aria-label="Ouvrir le tiroir des dossiers"
+          aria-haspopup="dialog"
+          aria-expanded={inboxFoldersOpen}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+            className="ibx-folder-select-ic"
+          >
+            <rect x="3" y="4" width="18" height="16" rx="2.5" />
+            <line x1="9" y1="4" x2="9" y2="20" />
+          </svg>
+          <span>{folderLabel}</span>
+        </button>
         <div className="ibx-search-field">
           <svg
             viewBox="0 0 24 24"
@@ -351,16 +592,111 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
               type="button"
               className="ibx-search-clear"
               aria-label="Effacer"
-              onClick={() => setInboxSearch("")}
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.vibrate) {
+                  navigator.vibrate(5);
+                }
+                setInboxSearch("");
+              }}
             >
               ✕
             </button>
           )}
         </div>
+        {/* Desktop : tri. Mobile : filtre (remplace le tri + le drawer). */}
         <InboxSortButton />
+        <InboxFilterButton />
+        <InboxComposeButton />
       </div>
 
-      <div className="conv-list" id="conv-list">
+      {pullY > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "140px",
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "40px",
+            zIndex: 5,
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            className={`pull-refresh-indicator ${refreshing ? "is-refreshing" : ""}`}
+            style={{
+              background: "#ffffff",
+              boxShadow: "0 2px 8px rgba(15,23,42,0.12)",
+              borderRadius: "50%",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transform: `scale(${Math.min(1, pullY / 40)}) rotate(${pullY * 4}deg)`,
+              transition: refreshing ? undefined : "transform 100ms ease",
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="#4f6cf7"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              className={refreshing ? "animate-spin" : ""}
+            >
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      <div
+        className="conv-list"
+        id="conv-list"
+        onTouchStart={(e) => {
+          const list = e.currentTarget;
+          if (list.scrollTop === 0) {
+            touchStartY.current = e.touches[0]?.clientY ?? 0;
+            isPulling.current = true;
+          } else {
+            isPulling.current = false;
+          }
+        }}
+        onTouchMove={(e) => {
+          if (!isPulling.current) return;
+          const currentY = e.touches[0]?.clientY ?? 0;
+          const diff = currentY - touchStartY.current;
+          if (diff > 0) {
+            const y = Math.min(60, diff * 0.4);
+            setPullY(y);
+            if (e.cancelable) e.preventDefault();
+          }
+        }}
+        onTouchEnd={() => {
+          isPulling.current = false;
+          if (pullY > 40) {
+            setRefreshing(true);
+            setIsSyncing(true);
+            setTimeout(() => {
+              setRefreshing(false);
+              setIsSyncing(false);
+              setPullY(0);
+              push({ kind: "success", text: "Inbox synchronisée avec succès !" });
+            }, 1000);
+          } else {
+            setPullY(0);
+          }
+        }}
+        style={{
+          transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
+          transition: pullY === 0 ? "transform 250ms ease" : undefined,
+        }}
+      >
         {filteredConvs.length === 0 && showSkeletons && (
           <>
             {/* First-sync banner: friendly, honest status. Surfaces ONLY
@@ -389,6 +725,17 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
           !isSyncing &&
           (() => {
             const trulyEmpty = conversations.filter((c) => !archived.has(c.id)).length === 0;
+            const isDrafts = activeFolderId === "view:drafts";
+            const isSent = activeFolderId === "view:sent";
+            const isTrash = activeFolderId === "view:trash";
+            const folderLabel = isDrafts
+              ? "brouillon"
+              : isSent
+                ? "message envoyé"
+                : isTrash
+                  ? "message supprimé"
+                  : null;
+
             return (
               <div className="ibx-noresult">
                 <svg
@@ -406,7 +753,11 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <p className="ibx-noresult-title">
-                  {trulyEmpty ? "Aucune conversation" : "Aucun résultat"}
+                  {folderLabel
+                    ? `Aucun ${folderLabel}`
+                    : trulyEmpty
+                      ? "Aucune conversation"
+                      : "Aucun résultat"}
                 </p>
               </div>
             );
@@ -424,93 +775,193 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
             const isScanning = mueScanning === "messages" && unread;
             const isHighlighted = mueHighlighted === `conv:${c.id}`;
 
+            const convEl = (
+              <button
+                type="button"
+                className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""} ${ball ? `conv--${ball}` : ""} ${isScanning ? "has-ai-scanning" : ""} ${isHighlighted ? "has-ai-highlighted" : ""}`}
+                title={
+                  ball === "toreply"
+                    ? "À répondre"
+                    : ball === "waiting"
+                      ? "En attente d'eux"
+                      : undefined
+                }
+                onClick={() => handleSelect(c.id)}
+                onDoubleClick={() => onContextAction(c.id, unread ? "mark-read" : "mark-unread")}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setCtx({ x: e.clientX, y: e.clientY, convId: c.id });
+                }}
+                onTouchStart={isMobile ? (e) => handleTouchStart(e, c.id) : undefined}
+                onTouchMove={isMobile ? (e) => handleTouchMove(e, c.id) : undefined}
+                onTouchEnd={isMobile ? (e) => handleTouchEnd(e, c.id) : undefined}
+                style={isMobile ? { position: "relative", zIndex: 2 } : undefined}
+              >
+                <span className="conv-avatar">
+                  <Avatar avatar={c.avatar} />
+                  <span
+                    className="conv-channel"
+                    title={`Reçu via ${channelProviderLabel(c.channel)}`}
+                  >
+                    <ChannelLogo channel={c.channel} />
+                  </span>
+                </span>
+                <span className="conv-main">
+                  <span className="conv-top">
+                    <span className="conv-namewrap">
+                      <span className="conv-name">{c.name}</span>
+                      {c.category === "client" && (
+                        <span className="ibx-cat-badge badge-blue">Client</span>
+                      )}
+                      {c.category === "prospect" && (
+                        <span className="ibx-cat-badge badge-rose">Prospect</span>
+                      )}
+                      {c.category === "prestataire" && (
+                        <span className="ibx-cat-badge badge-amber">Prestataire</span>
+                      )}
+                      {c.category === "collaborateur" && (
+                        <span className="ibx-cat-badge badge-green">Équipe</span>
+                      )}
+                      {c.starred && (
+                        <svg
+                          className="conv-star"
+                          viewBox="0 0 24 24"
+                          width={13}
+                          height={13}
+                          fill="currentColor"
+                          stroke="none"
+                          aria-label="Favori"
+                        >
+                          <path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.9 6.2 20.9l1.1-6.47L2.6 9.85l6.5-.95L12 2.5z" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="conv-meta">
+                      {unread && <span className="conv-dot" aria-hidden />}
+                      {/* Temps relatif calculé avec Date.now() → diffère
+                          forcément entre le rendu serveur et le client.
+                          suppressHydrationWarning dit à React d'accepter la
+                          valeur du client sans lever d'erreur d'hydratation. */}
+                      <span
+                        className={`conv-when ${unread ? "is-unread" : ""}`}
+                        suppressHydrationWarning
+                      >
+                        {relAge(c.lastAtIso)}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="conv-preview">{c.preview || "…"}</span>
+                  {hasAttachment(c) && (
+                    <span className="conv-attach" aria-label="Pièce jointe">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width={11}
+                        height={11}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.9}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 1 1-2.83-2.83l8.49-8.49" />
+                      </svg>
+                      1 pièce jointe
+                    </span>
+                  )}
+                  {inboxMode === "email" && waitDays >= 2 && (
+                    <span className="conv-relance">
+                      ⏳ En attente {waitDays} j · <b>Relancer</b>
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+
             return (
               <Fragment key={c.clientId ?? c.id}>
-                <button
-                  type="button"
-                  className={`conv ${isActive ? "active" : ""} ${unread ? "is-unread" : ""} ${ball ? `conv--${ball}` : ""} ${isScanning ? "has-ai-scanning" : ""} ${isHighlighted ? "has-ai-highlighted" : ""}`}
-                  title={
-                    ball === "toreply"
-                      ? "À répondre"
-                      : ball === "waiting"
-                        ? "En attente d'eux"
-                        : undefined
-                  }
-                  onClick={() => handleSelect(c.id)}
-                  onDoubleClick={() => onContextAction(c.id, unread ? "mark-read" : "mark-unread")}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setCtx({ x: e.clientX, y: e.clientY, convId: c.id });
-                  }}
-                >
-                  <span className="conv-avatar">
-                    <Avatar avatar={c.avatar} />
-                    <span
-                      className="conv-channel"
-                      title={`Reçu via ${channelProviderLabel(c.channel)}`}
+                {isMobile ? (
+                  <div
+                    className="conv-swipe-container"
+                    style={{
+                      position: "relative",
+                      overflow: "hidden",
+                      touchAction: "pan-y",
+                      transition: "height 250ms ease, margin-bottom 250ms ease, opacity 250ms ease",
+                    }}
+                  >
+                    {/* Arrière-plan coulissant (Swipe Background) */}
+                    <div
+                      className="conv-swipe-bg"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "0 24px",
+                        zIndex: 1,
+                        color: "#ffffff",
+                        transition: "background-color 200ms ease",
+                      }}
                     >
-                      <ChannelLogo channel={c.channel} />
-                    </span>
-                  </span>
-                  <span className="conv-main">
-                    <span className="conv-top">
-                      <span className="conv-namewrap">
-                        <span className="conv-name">{c.name}</span>
-                        {c.category === "client" && <span className="ibx-cat-badge badge-blue">Client</span>}
-                        {c.category === "prospect" && <span className="ibx-cat-badge badge-rose">Prospect</span>}
-                        {c.category === "prestataire" && <span className="ibx-cat-badge badge-amber">Prestataire</span>}
-                        {c.category === "collaborateur" && <span className="ibx-cat-badge badge-green">Équipe</span>}
-                        {c.starred && (
-                          <svg
-                            className="conv-star"
-                            viewBox="0 0 24 24"
-                            width={13}
-                            height={13}
-                            fill="currentColor"
-                            stroke="none"
-                            aria-label="Favori"
-                          >
-                            <path d="M12 2.5l2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.9 6.2 20.9l1.1-6.47L2.6 9.85l6.5-.95L12 2.5z" />
-                          </svg>
-                        )}
-                      </span>
-                      <span className="conv-meta">
-                        {unread && <span className="conv-dot" aria-hidden />}
-                        <span className={`conv-when ${unread ? "is-unread" : ""}`}>
-                          {relAge(c.lastAtIso)}
-                        </span>
-                      </span>
-                    </span>
-                    <span className="conv-preview">{c.preview || "…"}</span>
-                    {hasAttachment(c) && (
-                      <span className="conv-attach" aria-label="Pièce jointe">
+                      <div
+                        className="conv-swipe-action-left"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          opacity: 0,
+                          transition: "opacity 150ms ease, transform 150ms ease",
+                        }}
+                      >
                         <svg
                           viewBox="0 0 24 24"
-                          width={11}
-                          height={11}
+                          width="18"
+                          height="18"
                           fill="none"
                           stroke="currentColor"
-                          strokeWidth={1.9}
+                          strokeWidth="2.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          aria-hidden
                         >
-                          <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 1 1-2.83-2.83l8.49-8.49" />
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
                         </svg>
-                        1 pièce jointe
-                      </span>
-                    )}
-                    {inboxMode === "email" && waitDays >= 2 && (
-                      <span className="conv-relance">
-                        ⏳ En attente {waitDays} j · <b>Relancer</b>
-                      </span>
-                    )}
-                  </span>
-                  {/* Indicateur multi-canaux retiré : on garde uniquement le
-                      logo du canal sur lequel arrive le message courant
-                      (sur l'avatar, .conv-channel). La fiche client liste
-                      tous les canaux du contact pour ceux qui veulent. */}
-                </button>
+                        <span style={{ fontWeight: 600, fontSize: "13px" }}>Snoozer</span>
+                      </div>
+                      <div
+                        className="conv-swipe-action-right"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          opacity: 0,
+                          transition: "opacity 150ms ease, transform 150ms ease",
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, fontSize: "13px" }}>Archiver</span>
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="21 8 21 21 3 21 3 8" />
+                          <rect x="1" y="3" width="22" height="5" />
+                          <line x1="10" y1="12" x2="14" y2="12" />
+                        </svg>
+                      </div>
+                    </div>
+                    {convEl}
+                  </div>
+                ) : (
+                  convEl
+                )}
               </Fragment>
             );
           });

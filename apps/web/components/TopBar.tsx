@@ -20,12 +20,13 @@ import { useState } from "react";
  */
 export function TopBar({ user }: { user: CurrentUser | null }) {
   const data = useData();
-  const { mueOpen, setMueOpen, view } = useApp();
+  const { mueOpen, setMueOpen, view, sidebarCollapsed, toggleSidebar } = useApp();
   // Sur la page Mue plein-écran, le bouton 'Agent' n'a aucun sens — l'utilisateur
   // EST déjà dans Mue. On masque alors le bouton dans la topbar.
   const onMueView = view === "ai-knowledge";
   const [addOpen, setAddOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [accountOpen, setAccountOpen] = useState(false);
   const initials =
     user?.name
@@ -38,6 +39,29 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
 
   return (
     <header className="topbar">
+      <button
+        type="button"
+        className="topbar-menu-toggle"
+        onClick={toggleSidebar}
+        aria-label={sidebarCollapsed ? "Ouvrir le menu" : "Fermer le menu"}
+        title="Menu"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
       <div className="topbar-channels" aria-label="Canaux">
         {/* On n'affiche QUE les canaux réellement connectés — pour connecter
             un nouveau canal, utiliser le CTA « Connecter un canal » à droite. */}
@@ -79,7 +103,7 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            Ajouter un canal
+            <span className="topbar-connect-text">Ajouter un canal</span>
           </button>
           <AddChannelModal
             open={addOpen}
@@ -92,17 +116,65 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
       {/* Barre de recherche globale SaaS + Bouton Mue inclus */}
       {!onMueView && (
         <div className="topbar-global-search">
-          <svg className="topbar-search-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            className="topbar-search-ic"
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input 
-            type="text" 
-            placeholder="Rechercher..." 
-            className="topbar-search-input" 
+          <input
+            type="text"
+            placeholder="Rechercher..."
+            className="topbar-search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchOpen(true)}
           />
-          
+          {searchQuery && (
+            <button
+              type="button"
+              className="topbar-search-clear"
+              onClick={() => setSearchQuery("")}
+              aria-label="Effacer la recherche"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+          {isSearchOpen && (
+            <button
+              type="button"
+              className="topbar-search-cancel-btn"
+              onClick={() => {
+                setSearchQuery("");
+                setIsSearchOpen(false);
+                (document.querySelector(".topbar-search-input") as HTMLElement | null)?.blur();
+              }}
+            >
+              Annuler
+            </button>
+          )}
+
           {/* CTA "Demander à Mue" incrusté dans la barre de recherche */}
           <button
             type="button"
@@ -115,17 +187,15 @@ export function TopBar({ user }: { user: CurrentUser | null }) {
             <span className="topbar-mue-cta-shortcut">⌘K</span>
           </button>
 
-          {isSearchOpen && (
-            <GlobalSearchDropdown onClose={() => setIsSearchOpen(false)} />
-          )}
+          {isSearchOpen && <GlobalSearchDropdown onClose={() => setIsSearchOpen(false)} />}
         </div>
       )}
 
       {/* Backdrop invisible pour fermer le panel de recherche au clic (placé en dehors des éléments avec transform) */}
       {isSearchOpen && !onMueView && (
-        <div 
-          style={{ position: 'fixed', inset: 0, zIndex: 40 }} 
-          onClick={() => setIsSearchOpen(false)} 
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 40 }}
+          onClick={() => setIsSearchOpen(false)}
         />
       )}
 

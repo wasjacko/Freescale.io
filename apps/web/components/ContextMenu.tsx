@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/icons/Icon";
 import { snoozeTargets } from "@/lib/snooze-targets";
+import type { ConversationCategory } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 
 export type ContextAction =
@@ -12,7 +13,7 @@ export type ContextAction =
   | "unstar"
   | "archive"
   | { kind: "snooze"; untilIso: string | null; label: string }
-  | { kind: "set-category"; category: "client" | "promo" | "notif" | "other" | null };
+  | { kind: "set-category"; category: ConversationCategory };
 
 type Props = {
   x: number;
@@ -21,7 +22,7 @@ type Props = {
   isStarred?: boolean;
   isSnoozed?: boolean;
   /** Current category if set — used to render a check mark next to the active option. */
-  currentCategory?: "client" | "promo" | "notif" | "other" | null;
+  currentCategory?: ConversationCategory;
   onClose: () => void;
   onAction: (action: ContextAction) => void;
 };
@@ -50,10 +51,33 @@ export function ContextMenu({
   const ref = useRef<HTMLDivElement>(null);
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [customTags, setCustomTags] = useState<{ key: string; label: string; color: string }[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("freescale_custom_tags");
+      if (stored) {
+        setCustomTags(JSON.parse(stored));
+      } else {
+        setCustomTags([
+          { key: "prospect", label: "Prospect", color: "#e11d48" },
+          { key: "prestataire", label: "Prestataire", color: "#d97706" },
+          { key: "collaborateur", label: "Équipe", color: "#16a34a" },
+        ]);
+      }
+    } catch (e) {
+      // fallback
+    }
+  }, []);
 
   useEffect(() => {
     if (!ref.current) return;
     const el = ref.current;
+    if (window.innerWidth < 768) {
+      el.style.left = "";
+      el.style.top = "";
+      return;
+    }
     el.style.left = `${Math.min(x, window.innerWidth - 240)}px`;
     el.style.top = `${Math.min(y, window.innerHeight - 280)}px`;
   }, [x, y]);
@@ -76,178 +100,205 @@ export function ContextMenu({
   }, [onClose]);
 
   return (
-    <div ref={ref} className="ctx-menu">
-      <button
-        className="ctx-item"
-        type="button"
-        onClick={() => {
-          onAction("open");
-          onClose();
-        }}
-      >
-        <Icon name="i-inbox" /> Ouvrir
-      </button>
-      <button
-        className="ctx-item"
-        type="button"
-        onClick={() => {
-          onAction(isUnread ? "mark-read" : "mark-unread");
-          onClose();
-        }}
-      >
-        <Icon name="i-check" /> {isUnread ? "Marquer comme lu" : "Marquer comme non lu"}
-      </button>
-      <button
-        className="ctx-item"
-        type="button"
-        onClick={() => {
-          onAction(isStarred ? "unstar" : "star");
-          onClose();
-        }}
-      >
-        <Icon name="i-star" /> {isStarred ? "Retirer l'étoile" : "Étoile"}
-      </button>
-      <button
-        className="ctx-item ctx-item-expand"
-        type="button"
-        onClick={() => setSnoozeOpen((v) => !v)}
-        aria-expanded={snoozeOpen}
-      >
-        <Icon name="i-clock" /> Snooze
-        <span className="ctx-item-chevron" aria-hidden>
-          <svg
-            viewBox="0 0 24 24"
-            width="10"
-            height="10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {snoozeOpen ? (
-              <polyline points="6 15 12 9 18 15" />
-            ) : (
-              <polyline points="9 18 15 12 9 6" />
-            )}
-          </svg>
-        </span>
-      </button>
-      {snoozeOpen && (
-        <div className="ctx-submenu">
-          {snoozeTargets().map((t) => (
-            <button
-              key={t.iso}
-              className="ctx-item ctx-item-sub"
-              type="button"
-              onClick={() => {
-                onAction({ kind: "snooze", untilIso: t.iso, label: t.label });
-                onClose();
-              }}
+    <>
+      <button type="button" className="ctx-backdrop" onClick={onClose} aria-hidden tabIndex={-1} />
+      <div ref={ref} className="ctx-menu">
+        <div className="ctx-drag-handle" aria-hidden="true" />
+        <button
+          className="ctx-item"
+          type="button"
+          onClick={() => {
+            onAction("open");
+            onClose();
+          }}
+        >
+          <Icon name="i-inbox" /> Ouvrir
+        </button>
+        <button
+          className="ctx-item"
+          type="button"
+          onClick={() => {
+            onAction(isUnread ? "mark-read" : "mark-unread");
+            onClose();
+          }}
+        >
+          <Icon name="i-check" /> {isUnread ? "Marquer comme lu" : "Marquer comme non lu"}
+        </button>
+        <button
+          className="ctx-item"
+          type="button"
+          onClick={() => {
+            onAction(isStarred ? "unstar" : "star");
+            onClose();
+          }}
+        >
+          <Icon name="i-star" /> {isStarred ? "Retirer l'étoile" : "Étoile"}
+        </button>
+        <button
+          className="ctx-item ctx-item-expand"
+          type="button"
+          onClick={() => setSnoozeOpen((v) => !v)}
+          aria-expanded={snoozeOpen}
+        >
+          <Icon name="i-clock" /> Snooze
+          <span className="ctx-item-chevron" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width="10"
+              height="10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {t.label}
-            </button>
-          ))}
-          {isSnoozed && (
-            <button
-              className="ctx-item ctx-item-sub"
-              type="button"
-              onClick={() => {
-                onAction({ kind: "snooze", untilIso: null, label: "Annulé" });
-                onClose();
-              }}
-            >
-              Annuler le snooze
-            </button>
-          )}
-        </div>
-      )}
-      <button
-        className="ctx-item ctx-item-expand"
-        type="button"
-        onClick={() => setCategoryOpen((v) => !v)}
-        aria-expanded={categoryOpen}
-      >
-        <Icon name="i-tag" /> Catégorie
-        {currentCategory && (
-          <span className="ctx-item-current" aria-hidden>
-            {CATEGORY_OPTIONS.find((c) => c.id === currentCategory)?.emoji}
+              {snoozeOpen ? (
+                <polyline points="6 15 12 9 18 15" />
+              ) : (
+                <polyline points="9 18 15 12 9 6" />
+              )}
+            </svg>
           </span>
-        )}
-        <span className="ctx-item-chevron" aria-hidden>
-          <svg
-            viewBox="0 0 24 24"
-            width="10"
-            height="10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {categoryOpen ? (
-              <polyline points="6 15 12 9 18 15" />
-            ) : (
-              <polyline points="9 18 15 12 9 6" />
+        </button>
+        {snoozeOpen && (
+          <div className="ctx-submenu">
+            {snoozeTargets().map((t) => (
+              <button
+                key={t.iso}
+                className="ctx-item ctx-item-sub"
+                type="button"
+                onClick={() => {
+                  onAction({ kind: "snooze", untilIso: t.iso, label: t.label });
+                  onClose();
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+            {isSnoozed && (
+              <button
+                className="ctx-item ctx-item-sub"
+                type="button"
+                onClick={() => {
+                  onAction({ kind: "snooze", untilIso: null, label: "Annulé" });
+                  onClose();
+                }}
+              >
+                Annuler le snooze
+              </button>
             )}
-          </svg>
-        </span>
-      </button>
-      {categoryOpen && (
-        <div className="ctx-submenu">
-          {CATEGORY_OPTIONS.map((c) => (
-            <button
-              key={c.id}
-              className={`ctx-item ctx-item-sub ${currentCategory === c.id ? "is-current" : ""}`}
-              type="button"
-              onClick={() => {
-                onAction({ kind: "set-category", category: c.id });
-                onClose();
-              }}
-            >
-              <span aria-hidden style={{ marginRight: 8 }}>
-                {c.emoji}
-              </span>
-              {c.label}
-              {currentCategory === c.id && <span style={{ marginLeft: "auto" }}>✓</span>}
-            </button>
-          ))}
+          </div>
+        )}
+        <button
+          className="ctx-item ctx-item-expand"
+          type="button"
+          onClick={() => setCategoryOpen((v) => !v)}
+          aria-expanded={categoryOpen}
+        >
+          <Icon name="i-tag" /> Catégorie
           {currentCategory && (
-            <button
-              className="ctx-item ctx-item-sub"
-              type="button"
-              onClick={() => {
-                onAction({ kind: "set-category", category: null });
-                onClose();
-              }}
-            >
-              Réinitialiser (laisser Mue trier)
-            </button>
+            <span className="ctx-item-current" aria-hidden>
+              {CATEGORY_OPTIONS.find((c) => c.id === currentCategory)?.emoji}
+            </span>
           )}
-        </div>
-      )}
-      <div className="ctx-divider" />
-      <button
-        className="ctx-item"
-        type="button"
-        onClick={() => {
-          onAction({ kind: "set-category", category: "other" });
-          onAction("archive");
-          onClose();
-        }}
-      >
-        <Icon name="i-user" /> Pas un client
-      </button>
-      <button
-        className="ctx-item is-danger"
-        type="button"
-        onClick={() => {
-          onAction("archive");
-          onClose();
-        }}
-      >
-        <Icon name="i-folder" /> Archiver
-      </button>
-    </div>
+          <span className="ctx-item-chevron" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width="10"
+              height="10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {categoryOpen ? (
+                <polyline points="6 15 12 9 18 15" />
+              ) : (
+                <polyline points="9 18 15 12 9 6" />
+              )}
+            </svg>
+          </span>
+        </button>
+        {categoryOpen && (
+          <div className="ctx-submenu">
+            {CATEGORY_OPTIONS.map((c) => (
+              <button
+                key={c.id}
+                className={`ctx-item ctx-item-sub ${currentCategory === c.id ? "is-current" : ""}`}
+                type="button"
+                onClick={() => {
+                  onAction({ kind: "set-category", category: c.id });
+                  onClose();
+                }}
+              >
+                <span aria-hidden style={{ marginRight: 8 }}>
+                  {c.emoji}
+                </span>
+                {c.label}
+              </button>
+            ))}
+            {customTags.map((tag) => (
+              <button
+                key={tag.key}
+                className={`ctx-item ctx-item-sub ${currentCategory === tag.key ? "is-current" : ""}`}
+                type="button"
+                onClick={() => {
+                  onAction({ kind: "set-category", category: tag.key as any });
+                  onClose();
+                }}
+              >
+                <span
+                  style={{
+                    background: tag.color,
+                    marginRight: 8,
+                    display: "inline-block",
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                  }}
+                />
+                {tag.label}
+                {currentCategory === tag.key && <span style={{ marginLeft: "auto" }}>✓</span>}
+              </button>
+            ))}
+            {currentCategory && (
+              <button
+                className="ctx-item ctx-item-sub"
+                type="button"
+                onClick={() => {
+                  onAction({ kind: "set-category", category: null });
+                  onClose();
+                }}
+              >
+                Réinitialiser (laisser Mue trier)
+              </button>
+            )}
+          </div>
+        )}
+        <div className="ctx-divider" />
+        <button
+          className="ctx-item"
+          type="button"
+          onClick={() => {
+            onAction({ kind: "set-category", category: "other" });
+            onAction("archive");
+            onClose();
+          }}
+        >
+          <Icon name="i-user" /> Pas un client
+        </button>
+        <button
+          className="ctx-item is-danger"
+          type="button"
+          onClick={() => {
+            onAction("archive");
+            onClose();
+          }}
+        >
+          <Icon name="i-folder" /> Archiver
+        </button>
+      </div>
+    </>
   );
 }

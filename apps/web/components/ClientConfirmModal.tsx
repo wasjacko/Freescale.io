@@ -103,7 +103,12 @@ export function ClientConfirmModal() {
   const label = channelProviderLabel(clientConfirm.channel);
 
   return (
-    <div className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`} role="dialog" aria-modal="true" aria-label="Confirmer vos clients">
+    <div
+      className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirmer vos clients"
+    >
       <button
         type="button"
         className="ccm-backdrop"

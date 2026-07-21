@@ -37,9 +37,9 @@ export function OnboardingChips({
   initialObjective,
   initialUsageMode,
 }: {
-  initialRole?: string | null;
-  initialObjective?: string | null;
-  initialUsageMode?: string | null;
+  initialRole?: string | null | undefined;
+  initialObjective?: string | null | undefined;
+  initialUsageMode?: string | null | undefined;
 }) {
   const router = useRouter();
   const push = useToast((s) => s.push);

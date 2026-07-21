@@ -11,10 +11,11 @@ import { FlashFromUrl } from "@/components/FlashFromUrl";
 import { Inbox } from "@/components/Inbox";
 import { InboxFolders } from "@/components/InboxFolders";
 import { InboxToolbar } from "@/components/InboxToolbar";
+import { MueAvatar } from "@/components/MueAvatar";
 import { MueFullView } from "@/components/MueFullView";
 import { MuePanel } from "@/components/MuePanel";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar, NavIcon } from "@/components/Sidebar";
 import { TasksBoard } from "@/components/TasksBoard";
 import { Thread } from "@/components/Thread";
 import { TopBar } from "@/components/TopBar";
@@ -48,6 +49,8 @@ export function AppShell({
     inboxMode,
     tasksModalOpen,
     setTasksModalOpen,
+    inboxFoldersOpen,
+    setInboxFoldersOpen,
   } = useApp();
   const { conversations, channels, archive, unarchive, addTask } = useData();
   const [forceOnboarding, setForceOnboarding] = useState(false);
@@ -62,18 +65,44 @@ export function AppShell({
 
   const [isOnboarded, setIsOnboarded] = useState(user?.onboardedAt !== null);
 
-  const showOnboardingChips = forceOnboarding || (!!user && user.onboardedAt === null && channels.length > 0);
+  const showOnboardingChips =
+    forceOnboarding || (!!user && user.onboardedAt === null && channels.length > 0);
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 1024);
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Block body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (!sidebarCollapsed && isMobile) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarCollapsed, isMobile]);
   // Accord clavier « G puis T/I » (navigation façon Linear).
   const chordRef = useRef<number>(0);
 
-  // Close Mue panel by default on mobile/tablet viewports upon initial mount
+  // Close Mue panel and sidebar drawer by default on mobile/tablet viewports upon initial mount
   useEffect(() => {
-    if (window.innerWidth < 1100) {
+    if (window.innerWidth < 1024) {
       setMueOpen(false);
+      const isCollapsed = useApp.getState().sidebarCollapsed;
+      if (!isCollapsed) {
+        useApp.getState().toggleSidebar();
+      }
     }
-  }, [setMueOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Bootstrap the active conversation ONLY when the persisted id is stale
   // (refers to a conv that no longer exists). We deliberately do NOT
@@ -307,6 +336,7 @@ export function AppShell({
     "app",
     sidebarCollapsed ? "sidebar-collapsed" : "",
     mueOpen ? "mue-open" : "",
+    inboxFoldersOpen ? "ibx-folders-open" : "",
     `view-${viewSuffix}`,
   ]
     .filter(Boolean)
@@ -317,7 +347,9 @@ export function AppShell({
       <OnboardingFlow
         firstName={user.firstName}
         onFinish={async (answers) => {
-          const { saveOnboardingAnswers, dismissOnboarding } = await import("@/lib/actions/onboarding");
+          const { saveOnboardingAnswers, dismissOnboarding } = await import(
+            "@/lib/actions/onboarding"
+          );
           if (answers) {
             await saveOnboardingAnswers({
               role: answers.role,
@@ -348,6 +380,24 @@ export function AppShell({
           aria-hidden="true"
         />
       )}
+      {inboxFoldersOpen && view === "inbox" && (
+        <button
+          type="button"
+          tabIndex={-1}
+          className="ibx-folders-backdrop"
+          onClick={() => setInboxFoldersOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      {isMobile && (
+        <button
+          type="button"
+          tabIndex={-1}
+          className={`sidebar-mobile-backdrop ${!sidebarCollapsed ? "is-open" : ""}`}
+          onClick={toggleSidebar}
+          aria-hidden="true"
+        />
+      )}
       <div className={appClasses} data-active-conv={activeConvId ? "1" : "0"}>
         <TopBar user={user} />
         <Sidebar user={user} />
@@ -375,7 +425,9 @@ export function AppShell({
               {/* Colonne dossiers — sous la barre, à l'extrême gauche. */}
               <InboxFolders />
               <div className="conv-shell-main">
-                <div className={`conv-shell-body conv-shell-split inbox-mode-${inboxMode} ${activeConvId ? "has-active-conv" : "no-active-conv"}`}>
+                <div
+                  className={`conv-shell-body conv-shell-split inbox-mode-${inboxMode} ${activeConvId ? "has-active-conv" : "no-active-conv"}`}
+                >
                   <Inbox currentUserId={user?.id ?? null} />
                   <Thread
                     currentUser={user ? { name: user.name, avatarUrl: user.avatarUrl } : null}
@@ -392,6 +444,7 @@ export function AppShell({
               endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).
               Le lanceur vit dans le bouton « Agent » de la topbar. */}
           <MuePanel userName={user?.name ?? null} />
+          <BottomNav />
         </div>
       </div>
 
@@ -399,16 +452,19 @@ export function AppShell({
       <DataVisibilityModal />
       <AiTasksReviewModal />
       {tasksModalOpen && (
-        <div className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`} role="dialog" aria-modal="true" aria-label="Liste des tâches">
-          <button
-            type="button"
-            className="ccm-backdrop"
-            onClick={() => setTasksModalOpen(false)}
-          />
+        <div
+          className={`ccm-overlay ${mueOpen ? "mue-panel-open" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Liste des tâches"
+        >
+          <button type="button" className="ccm-backdrop" onClick={() => setTasksModalOpen(false)} />
           <div className="ccm-sheet" style={{ maxWidth: 840, width: "90%", padding: "28px 32px" }}>
             <header className="ccm-head" style={{ marginBottom: 20 }}>
               <div>
-                <h2 className="ccm-title" style={{ fontSize: "1.25rem", fontWeight: 700 }}>Liste des tâches</h2>
+                <h2 className="ccm-title" style={{ fontSize: "1.25rem", fontWeight: 700 }}>
+                  Liste des tâches
+                </h2>
                 <p className="ccm-sub" style={{ opacity: 0.7, fontSize: "0.875rem" }}>
                   Tâches actuellement enregistrées dans Freescale.
                 </p>
@@ -442,5 +498,84 @@ export function AppShell({
         aria-hidden
       />
     </>
+  );
+}
+
+function BottomNav() {
+  const { view, setView, setActiveConv, activeConvId } = useApp();
+  const data = useData();
+  const conversations = data.conversations ?? [];
+  const tasks = data.tasks ?? [];
+
+  // Masquer sur bureau ou quand un fil de discussion est actif
+  if (activeConvId) return null;
+
+  const counts: Record<string, number | null> = {
+    today: tasks.filter((t) => t.status !== "done").length,
+    inbox: conversations.filter((c) => c.unread).length,
+    clients: null,
+    "ai-knowledge": null,
+  };
+
+  // Items de la pilule (le contenu) — Mue vit à part dans son cercle mascotte.
+  const items = [
+    { id: "inbox" as const, label: "Inbox" },
+    { id: "today" as const, label: "Tâches" },
+    { id: "clients" as const, label: "Clients" },
+  ];
+  const mueActive = view === "ai-knowledge";
+  // Index de l'item actif dans la pilule (−1 si on est sur Mue) → pilote la
+  // position de la bulle grise glissante.
+  const activeIndex = items.findIndex((i) => i.id === view);
+
+  const tap = (id: (typeof items)[number]["id"] | "ai-knowledge") => {
+    setView(id);
+    if (id === "inbox") setActiveConv("");
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(10);
+  };
+
+  return (
+    <div className="bottom-nav">
+      {/* Pilule blanche : icônes de contenu, la bulle grise glisse d'un item
+          à l'autre. --active-index pilote sa position ; is-empty la masque
+          quand aucun item de la pilule n'est actif (vue Mue). */}
+      <nav
+        className={`bottom-nav-pill ${activeIndex < 0 ? "is-empty" : ""}`}
+        style={{ "--active-index": Math.max(0, activeIndex) } as React.CSSProperties}
+        aria-label="Navigation"
+      >
+        <span className="bottom-nav-indicator" aria-hidden />
+        {items.map((item) => {
+          const count = counts[item.id];
+          const isActive = view === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`bottom-nav-item ${isActive ? "is-active" : ""}`}
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
+              onClick={() => tap(item.id)}
+            >
+              <span className="bottom-nav-ico-wrap">
+                <NavIcon id={item.id} />
+                {count != null && count > 0 && <span className="bottom-nav-badge">{count}</span>}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Cercle mascotte Mue, séparé à droite. */}
+      <button
+        type="button"
+        className={`bottom-nav-mue ${mueActive ? "is-active" : ""}`}
+        aria-label="Mue"
+        aria-current={mueActive ? "page" : undefined}
+        onClick={() => tap("ai-knowledge")}
+      >
+        <MueAvatar className="bottom-nav-mue-face" ariaLabel="Mue" />
+      </button>
+    </div>
   );
 }

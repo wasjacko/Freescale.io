@@ -4,12 +4,11 @@
 // Groupes colorés par statut + colonnes + cellules colorées (priorité / statut).
 // Données mock via useData (mutations locales). Wording/style Freescale.
 
-import { ChannelLogo } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import type { Task } from "@/lib/types";
-import { type CSSProperties, Fragment, useEffect, useRef, useState } from "react";
+import { type CSSProperties, Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type GroupKey = "to-scope" | "todo" | "in-progress" | "awaiting-reply" | "done";
@@ -45,45 +44,41 @@ function dueMeta(iso: string | null | undefined, fallback: string) {
 }
 
 export function TasksBoard() {
-  const { tasks, conversations, messagesByConv, setTaskStatus, addTask, patchTask, removeTask } =
-    useData();
+  const { tasks, conversations, setTaskStatus, addTask, patchTask, removeTask } = useData();
   const { setView, setActiveConv, mueHighlighted } = useApp();
   const [collapsed, setCollapsed] = useState<Set<GroupKey>>(() => new Set());
   // Bascule Tableau ↔ Kanban.
-  const [boardView, setBoardView] = useState<"table" | "kanban">("table");
+  const [boardView, setBoardView] = useState<"table" | "kanban" | "calendar">("table");
   // Tâches dépliées : affichent le message lié juste en dessous.
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const toggleExpand = (id: string) =>
-    setExpanded((prev) => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
+  const [expanded] = useState<Set<string>>(() => new Set());
 
-  // Composer « Nouvelle tâche » — ajout local (mock), la ligne apparaît avec
-  // la lueur de transfert (même mécanique que l'ajout depuis Mue).
-  const [adding, setAdding] = useState(false);
+  // Ajout d'une tâche : une LIGNE inline apparaît en bas du groupe ciblé
+  // (plus de composer flottant en haut). `addingIn` = clé du groupe en cours
+  // d'ajout, ou null. La ligne apparaît avec la lueur de transfert.
+  const [addingIn, setAddingIn] = useState<GroupKey | null>(null);
   const [newTitle, setNewTitle] = useState("");
-  const [newStatus, setNewStatus] = useState<GroupKey>("todo");
   const newInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (adding) requestAnimationFrame(() => newInputRef.current?.focus());
-  }, [adding]);
+    if (addingIn) requestAnimationFrame(() => newInputRef.current?.focus());
+  }, [addingIn]);
 
   const closeComposer = () => {
-    setAdding(false);
+    setAddingIn(null);
+    setNewTitle("");
+  };
+  const openComposer = (status: GroupKey) => {
+    setAddingIn(status);
     setNewTitle("");
   };
   const createTask = () => {
     const title = newTitle.trim();
-    if (!title) return;
+    if (!title || !addingIn) return;
     addTask({
       id: `new-${Date.now()}`,
       title,
       priority: "medium",
       dueLabel: "",
-      status: newStatus,
+      status: addingIn,
       avatar: { kind: "initials", text: "" },
       channel: "gmail",
       sortableIndex: Date.now(),
@@ -92,7 +87,7 @@ export function TasksBoard() {
       createdAtIso: new Date().toISOString(),
     });
     setNewTitle("");
-    // On garde le composer ouvert pour enchaîner — on refocus le champ.
+    // On garde la ligne d'ajout ouverte pour enchaîner — on refocus le champ.
     requestAnimationFrame(() => newInputRef.current?.focus());
   };
 
@@ -188,14 +183,6 @@ export function TasksBoard() {
   // Permet d'agir sur la tâche (changer le statut, ouvrir le fil, dupliquer,
   // supprimer) — la case N'est PAS une simple validation.
   const [actMenu, setActMenu] = useState<{ id: string; x: number; y: number } | null>(null);
-  const openActMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
-    if (actMenu?.id === id) {
-      setActMenu(null);
-      return;
-    }
-    const r = e.currentTarget.getBoundingClientRect();
-    setActMenu({ id, x: r.right + 4, y: r.top });
-  };
   // Menu d'édition du statut (clic sur la pill Statut).
   const [statusMenu, setStatusMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const openStatusMenu = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
@@ -296,6 +283,31 @@ export function TasksBoard() {
               <rect x="17" y="4" width="4" height="13" rx="1" />
             </svg>
             Kanban
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={boardView === "calendar"}
+            className={`tboard-vbtn ${boardView === "calendar" ? "is-on" : ""}`}
+            onClick={() => setBoardView("calendar")}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={15}
+              height={15}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            Calendrier
           </button>
         </div>
         <div className="tboard-tools">
@@ -424,64 +436,16 @@ export function TasksBoard() {
           <button
             type="button"
             className="tboard-tool tboard-tool--new"
-            onClick={() => setAdding((v) => !v)}
-            aria-expanded={adding}
+            onClick={() => (addingIn ? closeComposer() : openComposer("todo"))}
+            aria-expanded={addingIn != null}
           >
-            + Nouvelle tâche
+            + <span className="tboard-new-text">Nouvelle tâche</span>
           </button>
         </div>
       </div>
 
-      {adding && (
-        <div className="tboard-add">
-          <input
-            ref={newInputRef}
-            type="text"
-            className="tboard-add-input"
-            placeholder="Titre de la tâche…"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") createTask();
-              if (e.key === "Escape") closeComposer();
-            }}
-            aria-label="Titre de la nouvelle tâche"
-          />
-          <select
-            className="tboard-add-status"
-            value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value as GroupKey)}
-            aria-label="Statut de la tâche"
-          >
-            {GROUPS.map((g) => (
-              <option key={g.key} value={g.key}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="tboard-add-btn"
-            onClick={createTask}
-            disabled={!newTitle.trim()}
-          >
-            Ajouter
-          </button>
-          <button
-            type="button"
-            className="tboard-add-cancel"
-            onClick={closeComposer}
-            aria-label="Fermer"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {boardView === "table" && (
         <>
-
-
           {GROUPS.map((g) => {
             const rows = displayed.filter((t) => g.match.includes(t.status));
             if (g.key === "done" && rows.length === 0) return null;
@@ -506,40 +470,99 @@ export function TasksBoard() {
                     style={{ background: `color-mix(in srgb, var(--g) 25%, #fff)` }}
                   >
                     {g.key === "to-scope" && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="4 4"><circle cx="12" cy="12" r="9"/></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeDasharray="4 4"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                      </svg>
                     )}
                     {g.key === "todo" && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                      </svg>
                     )}
                     {g.key === "in-progress" && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/><path d="M3 12 A 9 9 0 0 0 21 12 Z" fill="currentColor" /></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M3 12 A 9 9 0 0 0 21 12 Z" fill="currentColor" />
+                      </svg>
                     )}
                     {g.key === "awaiting-reply" && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />
+                      </svg>
                     )}
                     {g.key === "done" && (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M8 12l3 3 5-5" stroke="#fff" /></svg>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <circle cx="12" cy="12" r="9" fill="currentColor" stroke="none" />
+                        <path d="M8 12l3 3 5-5" stroke="#fff" />
+                      </svg>
                     )}
                     <span className="tboard-group-name">{g.label}</span>
                   </button>
                   <span className="tboard-group-count">{rows.length}</span>
-                  <button type="button" className="tboard-group-add" onClick={() => { setNewStatus(g.key); setAdding(true); }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
+                  <button
+                    type="button"
+                    className="tboard-group-add"
+                    onClick={() => openComposer(g.key)}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
                   </button>
                 </div>
 
                 <div className={`tboard-group-wrap ${isCol ? "" : "is-open"}`}>
                   <div className="tboard-group-inner">
                     <div className="tboard-table">
-                      {rows.length === 0 ? (
+                      {rows.length === 0 && addingIn !== g.key ? (
                         <div className="tboard-empty">Rien ici pour l'instant.</div>
                       ) : (
                         rows.map((t) => {
                           const due = dueMeta(t.dueAtIso, t.dueLabel);
                           const sub = subProgressOf(t);
-                          const linkedConv = t.conversationId
-                            ? (conversations.find((c) => c.id === t.conversationId) ?? null)
-                            : null;
                           // Clients de la tâche (un ou plusieurs → avatars empilés).
                           const clientConvs = (
                             t.clientConvIds?.length
@@ -564,191 +587,178 @@ export function TasksBoard() {
                                   isOpen ? "is-open" : ""
                                 } ${dragId === t.id ? "is-dragging" : ""}`}
                               >
-                                <span className="tboard-cell tboard-check">
-                                  <button
-                                    type="button"
-                                    className={`tcheck ${t.status === "done" ? "is-done" : ""}`}
-                                    aria-label="Actions de la tâche"
-                                    aria-haspopup="menu"
-                                    aria-expanded={actMenu?.id === t.id}
-                                    onClick={(e) => openActMenu(t.id, e)}
-                                  >
-                                    {t.status === "done" ? (
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        width={12}
-                                        height={12}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth={3}
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden
-                                      >
-                                        <polyline points="20 6 9 17 4 12" />
-                                      </svg>
-                                    ) : (
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        width={10}
-                                        height={10}
-                                        fill="currentColor"
-                                        aria-hidden
-                                      >
-                                        <circle cx="5" cy="12" r="2" />
-                                        <circle cx="12" cy="12" r="2" />
-                                        <circle cx="19" cy="12" r="2" />
-                                      </svg>
-                                    )}
-                                  </button>
-                                </span>
-
-                                <div className="tboard-cell tboard-task">
-                                  <button
-                                    type="button"
-                                    className="tboard-task-btn"
-                                    onClick={() => openTask(t)}
-                                  >
-                                    <span className="tboard-task-title">{t.title}</span>
-                                    {sub && <span className="tboard-sub">{sub}</span>}
-                                  </button>
-                                  {t.status === "awaiting-reply" && t.conversationId && (
+                                <div className="tboard-row-main">
+                                  <div className="tboard-cell tboard-task">
                                     <button
                                       type="button"
-                                      className="tboard-relance"
+                                      className="tboard-task-btn"
                                       onClick={() => openTask(t)}
                                     >
-                                      Relancer
+                                      <span className="tboard-task-title">{t.title}</span>
+                                      {sub && <span className="tboard-sub">{sub}</span>}
                                     </button>
-                                  )}
+                                    {t.status === "awaiting-reply" && t.conversationId && (
+                                      <button
+                                        type="button"
+                                        className="tboard-relance"
+                                        onClick={() => openTask(t)}
+                                      >
+                                        Relancer
+                                      </button>
+                                    )}
                                   </div>
+                                </div>
 
-                                <button
-                                  type="button"
-                                  className="tboard-cell tboard-client tboard-client-btn"
-                                  title={
-                                    clientConvs.map((c) => c.name).join(", ") ||
-                                    "Aucun client — clique pour en ajouter"
-                                  }
-                                  aria-haspopup="menu"
-                                  aria-expanded={clientMenu?.id === t.id}
-                                  onClick={(e) => openClientMenu(t.id, e)}
-                                >
-                                  {clientConvs.length > 0 ? (
-                                    <span className="tboard-client-stack">
-                                      {clientConvs.slice(0, 3).map((c) => (
-                                        <Avatar
-                                          key={c.id}
-                                          avatar={{ ...c.avatar, alt: c.name }}
-                                          size={28}
-                                        />
-                                      ))}
-                                      {clientConvs.length > 3 && (
-                                        <span className="tboard-client-more">
-                                          +{clientConvs.length - 3}
-                                        </span>
-                                      )}
-                                    </span>
-                                  ) : (
-                                    <span className="tboard-client-none" aria-label="Sans client">
-                                      —
-                                    </span>
-                                  )}
-                                </button>
-
-                                <span className="tboard-cell tboard-status">
+                                <div className="tboard-row-meta">
                                   <button
                                     type="button"
-                                    className={`tstatus tstatus--${t.status}`}
+                                    className="tboard-cell tboard-client tboard-client-btn"
+                                    title={
+                                      clientConvs.map((c) => c.name).join(", ") ||
+                                      "Aucun client — clique pour en ajouter"
+                                    }
                                     aria-haspopup="menu"
-                                    aria-expanded={statusMenu?.id === t.id}
-                                    onClick={(e) => openStatusMenu(t.id, e)}
+                                    aria-expanded={clientMenu?.id === t.id}
+                                    onClick={(e) => openClientMenu(t.id, e)}
                                   >
-                                    <span className="tstatus-dot" />
-                                    {t.status === "to-scope"
-                                      ? "À cadrer"
-                                      : t.status === "todo"
-                                        ? "À faire"
-                                        : t.status === "in-progress"
-                                          ? "En cours"
-                                          : t.status === "awaiting-reply"
-                                            ? "En attente"
-                                            : "Terminé"}
+                                    {clientConvs.length > 0 ? (
+                                      <span className="tboard-client-stack">
+                                        {clientConvs.slice(0, 3).map((c) => (
+                                          <Avatar
+                                            key={c.id}
+                                            avatar={{ ...c.avatar, alt: c.name }}
+                                            size={28}
+                                          />
+                                        ))}
+                                        {clientConvs.length > 3 && (
+                                          <span className="tboard-client-more">
+                                            +{clientConvs.length - 3}
+                                          </span>
+                                        )}
+                                      </span>
+                                    ) : (
+                                      <span className="tboard-client-none" aria-label="Sans client">
+                                        —
+                                      </span>
+                                    )}
                                   </button>
-                                </span>
 
-                                <span className={`tboard-cell tboard-due tboard-due--${due.tone}`}>
-                                  {editCell?.id === t.id && editCell.field === "due" ? (
-                                    <input
-                                      type="date"
-                                      className="tboard-dateedit"
-                                      // biome-ignore lint/a11y/noAutofocus: édition inline ouverte à la demande
-                                      autoFocus
-                                      defaultValue={toDateInput(t.dueAtIso)}
-                                      onBlur={(e) => commitDate(t.id, "due", e.target.value)}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter")
-                                          commitDate(t.id, "due", e.currentTarget.value);
-                                        if (e.key === "Escape") setEditCell(null);
-                                      }}
-                                    />
-                                  ) : (
+                                  <span className="tboard-cell tboard-status">
                                     <button
                                       type="button"
-                                      className="tboard-cellbtn"
-                                      onClick={() => setEditCell({ id: t.id, field: "due" })}
+                                      className={`tstatus tstatus--${t.status}`}
+                                      aria-haspopup="menu"
+                                      aria-expanded={statusMenu?.id === t.id}
+                                      onClick={(e) => openStatusMenu(t.id, e)}
                                     >
-                                      {t.dueAtIso || t.dueLabel ? (
-                                        due.label
-                                      ) : (
-                                        <span className="tboard-cell-add">+ Définir</span>
-                                      )}
+                                      <span className="tstatus-dot" />
+                                      {t.status === "to-scope"
+                                        ? "À cadrer"
+                                        : t.status === "todo"
+                                          ? "À faire"
+                                          : t.status === "in-progress"
+                                            ? "En cours"
+                                            : t.status === "awaiting-reply"
+                                              ? "En attente"
+                                              : "Terminé"}
                                     </button>
-                                  )}
-                                </span>
+                                  </span>
 
-                                <span className="tboard-cell tboard-prio">
-                                  <button
-                                    type="button"
-                                    className={`tprio tprio--${t.priority} tprio-btn`}
-                                    onClick={(e) => openPrioMenu(t.id, e)}
-                                    aria-haspopup="menu"
-                                    aria-expanded={prioMenu?.id === t.id}
+                                  <span
+                                    className={`tboard-cell tboard-due tboard-due--${due.tone}`}
                                   >
-                                    <span className="tprio-dot" />
-                                    {t.priority === "high"
-                                      ? "Haute"
-                                      : t.priority === "low"
-                                        ? "Basse"
-                                        : "Moyenne"}
-                                  </button>
-                                </span>
-
-                                <span className="tboard-cell tboard-source">
-                                  {t.fromAI ? (
-                                    <span className="tsource tsource--ai">
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        width={12}
-                                        height={12}
-                                        fill="currentColor"
-                                        stroke="none"
-                                        aria-hidden
+                                    {editCell?.id === t.id && editCell.field === "due" ? (
+                                      <input
+                                        type="date"
+                                        className="tboard-dateedit"
+                                        // biome-ignore lint/a11y/noAutofocus: édition inline ouverte à la demande
+                                        autoFocus
+                                        defaultValue={toDateInput(t.dueAtIso)}
+                                        onBlur={(e) => commitDate(t.id, "due", e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter")
+                                            commitDate(t.id, "due", e.currentTarget.value);
+                                          if (e.key === "Escape") setEditCell(null);
+                                        }}
+                                      />
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        className="tboard-cellbtn"
+                                        onClick={() => setEditCell({ id: t.id, field: "due" })}
                                       >
-                                        <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
-                                      </svg>
-                                      IA
-                                    </span>
-                                  ) : (
-                                    <span className="tsource tsource--manual">Manuel</span>
-                                  )}
-                                </span>
+                                        {t.dueAtIso || t.dueLabel ? (
+                                          due.label
+                                        ) : (
+                                          <span className="tboard-cell-add">+ Définir</span>
+                                        )}
+                                      </button>
+                                    )}
+                                  </span>
+
+                                  <span className="tboard-cell tboard-prio">
+                                    <button
+                                      type="button"
+                                      className={`tprio tprio--${t.priority} tprio-btn`}
+                                      onClick={(e) => openPrioMenu(t.id, e)}
+                                      aria-haspopup="menu"
+                                      aria-expanded={prioMenu?.id === t.id}
+                                    >
+                                      <span className="tprio-dot" />
+                                      {t.priority === "high"
+                                        ? "Haute"
+                                        : t.priority === "low"
+                                          ? "Basse"
+                                          : "Moyenne"}
+                                    </button>
+                                  </span>
+
+                                  <span className="tboard-cell tboard-source">
+                                    {t.fromAI ? (
+                                      <span className="tsource tsource--ai">
+                                        <svg
+                                          viewBox="0 0 24 24"
+                                          width={12}
+                                          height={12}
+                                          fill="currentColor"
+                                          stroke="none"
+                                          aria-hidden
+                                        >
+                                          <path d="M12 2.5l1.7 4.8 4.8 1.7-4.8 1.7L12 15.5l-1.7-4.8L5.5 9l4.8-1.7L12 2.5z" />
+                                        </svg>
+                                        IA
+                                      </span>
+                                    ) : (
+                                      <span className="tsource tsource--manual">Manuel</span>
+                                    )}
+                                  </span>
+                                </div>
                               </div>
-
-
                             </Fragment>
                           );
                         })
+                      )}
+
+                      {addingIn === g.key && (
+                        <div className="tboard-row tboard-row--add">
+                          <input
+                            ref={newInputRef}
+                            type="text"
+                            className="tboard-add-inline-input"
+                            placeholder={`Ajouter une tâche à « ${g.label} »…`}
+                            value={newTitle}
+                            onChange={(e) => setNewTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") createTask();
+                              if (e.key === "Escape") closeComposer();
+                            }}
+                            onBlur={() => {
+                              if (!newTitle.trim()) closeComposer();
+                            }}
+                            aria-label={`Titre de la nouvelle tâche (${g.label})`}
+                          />
+                          <span className="tboard-add-inline-hint">Entrée pour ajouter · Échap pour annuler</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -765,10 +775,33 @@ export function TasksBoard() {
             const rows = displayed.filter((t) => g.match.includes(t.status));
             return (
               <div key={g.key} className="kcol" style={{ "--g": g.accent } as CSSProperties}>
-                <div className="kcol-head">
-                  <span className="kcol-dot" />
-                  <span className="kcol-name">{g.label}</span>
-                  <span className="kcol-count">{rows.length}</span>
+                <div
+                  className="kcol-head"
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span className="kcol-dot" />
+                    <span className="kcol-name">{g.label}</span>
+                    <span className="kcol-count">{rows.length}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="kcol-add-btn"
+                    onClick={() => openComposer(g.key)}
+                    aria-label="Ajouter une tâche"
+                    title="Ajouter une tâche"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
                 </div>
                 <div
                   className={`kcol-body ${dragOver === g.key ? "is-dragover" : ""}`}
@@ -786,9 +819,13 @@ export function TasksBoard() {
                       ? (conversations.find((c) => c.id === t.conversationId) ?? null)
                       : null;
                     return (
-                      <button
+                      // Div + role="button" plutôt que <button> : la carte contient
+                      // un vrai <button> (statut) et un <button> ne peut pas être
+                      // descendant d'un autre <button> (erreur d'hydration React).
+                      <div
                         key={t.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         draggable
                         onDragStart={() => setDragId(t.id)}
                         onDragEnd={() => {
@@ -799,6 +836,12 @@ export function TasksBoard() {
                           dragId === t.id ? "is-dragging" : ""
                         } ${mueHighlighted === `task:${t.id}` ? "has-ai-highlighted" : ""}`}
                         onClick={() => openTask(t)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openTask(t);
+                          }
+                        }}
                       >
                         <span className="kcard-top">
                           <span className="kcard-title">{t.title}</span>
@@ -825,6 +868,25 @@ export function TasksBoard() {
                           <img className="kcard-cover" src={t.coverImage} alt="" />
                         )}
                         <span className="kcard-foot">
+                          <button
+                            type="button"
+                            className={`kcard-status-btn tstatus tstatus--${t.status}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openStatusMenu(t.id, e);
+                            }}
+                          >
+                            <span className="tstatus-dot" />
+                            {t.status === "to-scope"
+                              ? "À cadrer"
+                              : t.status === "todo"
+                                ? "À faire"
+                                : t.status === "in-progress"
+                                  ? "En cours"
+                                  : t.status === "awaiting-reply"
+                                    ? "En attente"
+                                    : "Terminé"}
+                          </button>
                           <span className="tboard-client-stack">
                             {clientConvs.length > 0 ? (
                               clientConvs
@@ -860,16 +922,39 @@ export function TasksBoard() {
                           )}
                           <span className={`kcard-due tboard-due--${due.tone}`}>{due.label}</span>
                         </span>
-                      </button>
+                      </div>
                     );
                   })}
-                  {rows.length === 0 && <div className="kcol-empty">Rien ici</div>}
+                  {rows.length === 0 && addingIn !== g.key && (
+                    <div className="kcol-empty">Rien ici</div>
+                  )}
+                  {addingIn === g.key && (
+                    <div className="kcard kcard--add">
+                      <input
+                        ref={newInputRef}
+                        type="text"
+                        className="tboard-add-inline-input"
+                        placeholder="Nouvelle tâche…"
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") createTask();
+                          if (e.key === "Escape") closeComposer();
+                        }}
+                        onBlur={() => {
+                          if (!newTitle.trim()) closeComposer();
+                        }}
+                        aria-label={`Titre de la nouvelle tâche (${g.label})`}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+      {boardView === "calendar" && <TasksCalendarView displayed={displayed} openTask={openTask} />}
       {clientMenu &&
         typeof document !== "undefined" &&
         (() => {
@@ -1170,5 +1255,193 @@ export function TasksBoard() {
           );
         })()}
     </section>
+  );
+}
+
+interface TasksCalendarViewProps {
+  displayed: Task[];
+  openTask: (t: Task) => void;
+}
+
+function tcalMondayOf(offset: number) {
+  const now = new Date();
+  const back = (now.getDay() + 6) % 7; // jours depuis lundi
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - back + offset * 7);
+}
+
+interface WeekDayInfo {
+  name: string;
+  date: Date;
+  dateString: string;
+  label: string;
+  isToday: boolean;
+}
+
+function buildTcalWeekDays(offset: number): WeekDayInfo[] {
+  const monday = tcalMondayOf(offset * 4);
+  const weekdays = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+  const days: WeekDayInfo[] = [];
+  for (let w = 0; w < 4; w++) {
+    for (let d = 0; d < 7; d++) {
+      const dateObj = new Date(monday);
+      dateObj.setDate(monday.getDate() + w * 7 + d);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const date = String(dateObj.getDate()).padStart(2, "0");
+      const dateString = `${year}-${month}-${date}`;
+      days.push({
+        name: weekdays[d] ?? "",
+        date: dateObj,
+        dateString,
+        label: dateObj.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }),
+        isToday: dateObj.toDateString() === new Date().toDateString(),
+      });
+    }
+  }
+  return days;
+}
+
+export function TasksCalendarView({ displayed, openTask }: TasksCalendarViewProps) {
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const days = useMemo(() => buildTcalWeekDays(weekOffset), [weekOffset]);
+
+  const rangeLabel = useMemo(() => {
+    const mon = days[0]?.date ?? new Date();
+    const sun = days[27]?.date ?? new Date();
+    const fmt = (d: Date) => d.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
+    return `${fmt(mon)} – ${fmt(sun)}, ${sun.getFullYear()}`;
+  }, [days]);
+
+  // Group tasks by due date
+  const tasksByDay = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    for (const t of displayed) {
+      if (t.dueAtIso) {
+        const dateStr = t.dueAtIso.slice(0, 10);
+        const existing = map.get(dateStr) ?? [];
+        existing.push(t);
+        map.set(dateStr, existing);
+      }
+    }
+    return map;
+  }, [displayed]);
+
+  // Tasks with no due date
+  const noDueTasks = useMemo(() => {
+    return displayed.filter((t) => !t.dueAtIso);
+  }, [displayed]);
+
+  return (
+    <div className="tboard-calview">
+      <header className="tcal-header">
+        <div className="tcal-nav">
+          <button type="button" className="tcal-btn" onClick={() => setWeekOffset(0)}>
+            Aujourd&apos;hui
+          </button>
+          <button
+            type="button"
+            className="tcal-nav-arrow"
+            onClick={() => setWeekOffset((o) => o - 1)}
+            aria-label="Mois précédent"
+          >
+            ‹
+          </button>
+          <span className="tcal-range">{rangeLabel}</span>
+          <button
+            type="button"
+            className="tcal-nav-arrow"
+            onClick={() => setWeekOffset((o) => o + 1)}
+            aria-label="Mois suivant"
+          >
+            ›
+          </button>
+        </div>
+      </header>
+
+      <div className="tcal-grid">
+        {/* En-têtes fixes des jours de la semaine */}
+        {["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"].map((name) => (
+          <div key={name} className="tcal-weekday-header">
+            {name}
+          </div>
+        ))}
+
+        {/* Jours du calendrier (4 semaines = 28 cases) */}
+        {days.map((day: WeekDayInfo) => {
+          const dayTasks = tasksByDay.get(day.dateString) ?? [];
+          return (
+            <div key={day.dateString} className={`tcal-col ${day.isToday ? "is-today" : ""}`}>
+              <div className="tcal-col-head">
+                <span className="tcal-day-num">{day.label}</span>
+                {dayTasks.length > 0 && <span className="tcal-day-count">{dayTasks.length}</span>}
+              </div>
+              <div className="tcal-col-body">
+                {dayTasks.map((t: Task) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`tcal-card ${t.status === "done" ? "is-done" : ""}`}
+                    onClick={() => openTask(t)}
+                  >
+                    <span className="tcal-card-title">{t.title}</span>
+                    <div className="tcal-card-meta">
+                      <span className={`tcal-prio-dot prio-${t.priority}`} />
+                      <span className="tcal-status-lbl">
+                        {t.status === "to-scope"
+                          ? "À cadrer"
+                          : t.status === "todo"
+                            ? "À faire"
+                            : t.status === "in-progress"
+                              ? "En cours"
+                              : t.status === "awaiting-reply"
+                                ? "En entente"
+                                : "Terminé"}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+                {dayTasks.length === 0 && <div className="tcal-empty-day">Aucune tâche</div>}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Colonne Sans échéance */}
+        <div className="tcal-col tcal-col--nodue">
+          <div className="tcal-col-head">
+            <span className="tcal-day-name">Sans échéance</span>
+            {noDueTasks.length > 0 && <span className="tcal-day-count">{noDueTasks.length}</span>}
+          </div>
+          <div className="tcal-col-body">
+            {noDueTasks.map((t: Task) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`tcal-card ${t.status === "done" ? "is-done" : ""}`}
+                onClick={() => openTask(t)}
+              >
+                <span className="tcal-card-title">{t.title}</span>
+                <div className="tcal-card-meta">
+                  <span className={`tcal-prio-dot prio-${t.priority}`} />
+                  <span className="tcal-status-lbl">
+                    {t.status === "to-scope"
+                      ? "À cadrer"
+                      : t.status === "todo"
+                        ? "À faire"
+                        : t.status === "in-progress"
+                          ? "En cours"
+                          : t.status === "awaiting-reply"
+                            ? "En attente"
+                            : "Terminé"}
+                  </span>
+                </div>
+              </button>
+            ))}
+            {noDueTasks.length === 0 && <div className="tcal-empty-day">Aucune tâche</div>}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

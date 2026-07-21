@@ -1,10 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Freescale — Client Communications OS",
   description: "Unified multi-channel inbox with AI copilot Mue",
   metadataBase: new URL("https://freescale.site"),
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 /**
@@ -64,7 +71,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      {/* suppressHydrationWarning : les extensions de navigateur (Grammarly,
+          Dark Reader, gestionnaires de mots de passe…) injectent leurs propres
+          attributs sur <body> avant l'hydratation — sans ça, React lève un
+          « attributes didn't match » à chaque chargement. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

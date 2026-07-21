@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 const ico = {
   fill: "none",
   stroke: "currentColor",

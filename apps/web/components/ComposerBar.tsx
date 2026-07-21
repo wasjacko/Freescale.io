@@ -89,7 +89,14 @@ export function ComposerBar({
         // Petit motif fleur dégradé pour évoquer Mue (sans alourdir l'import).
         <svg {...ico} stroke="none" fill="url(#cbar-grad)">
           <defs>
-            <linearGradient id="cbar-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <linearGradient
+              id="cbar-grad"
+              x1="0"
+              y1="0"
+              x2="24"
+              y2="24"
+              gradientUnits="userSpaceOnUse"
+            >
               <stop offset="0%" stopColor="#78AABF" />
               <stop offset="40%" stopColor="#611C71" />
               <stop offset="80%" stopColor="#FE0045" />
@@ -110,7 +117,14 @@ export function ComposerBar({
       icon: (
         <svg {...ico} stroke="none" fill="url(#cbar-grad-alt)">
           <defs>
-            <linearGradient id="cbar-grad-alt" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <linearGradient
+              id="cbar-grad-alt"
+              x1="0"
+              y1="0"
+              x2="24"
+              y2="24"
+              gradientUnits="userSpaceOnUse"
+            >
               <stop offset="0%" stopColor="#FE0045" />
               <stop offset="100%" stopColor="#611C71" />
             </linearGradient>

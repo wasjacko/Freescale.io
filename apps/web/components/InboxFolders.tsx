@@ -4,6 +4,7 @@ import { isEmailLikeChannel, channelProviderLabel } from "@/lib/channels/registr
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChannelLogo } from "@/components/icons/Icon";
 
 const PRESET_COLORS = [
@@ -88,17 +89,35 @@ const VIEWS: { key: string | null; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-// Palette de couleurs pour les labels (par ordre d'apparition des tags).
-const LABEL_COLORS = ["#e94f8a", "#4f6cf7", "#16a34a", "#d97706", "#8b5cf6", "#0891b2"];
-
 /**
  * InboxFolders — colonne gauche de l'Inbox : vues rapides (Inbox/Favoris/…),
  * Dossiers (rangement custom), et Labels (tags des conversations). UI/mock.
  */
 export function InboxFolders() {
-  const { inboxFolders, activeFolderId, setActiveFolder, setActiveConv, inboxMode } = useApp();
+  const {
+    activeFolderId,
+    setActiveFolder,
+    setActiveConv,
+    inboxMode,
+    inboxFoldersOpen,
+    setInboxFoldersOpen,
+  } = useApp();
   const { conversations, archived } = useData();
-  const [othersOpen, setOthersOpen] = useState(false);
+
+  // Sur mobile/tablette (≤1023px), le panneau devient un tiroir/bottom-sheet en
+  // position: fixed. Rendu tel quel dans l'arbre, il est piégé sous le voile par
+  // le conteneur de défilement iOS (.workspace) → il paraît grisé. On le sort
+  // donc via un PORTAL sur document.body pour qu'il passe bien devant le voile.
+  const [mounted, setMounted] = useState(false);
+  const [isDrawer, setIsDrawer] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const sync = () => setIsDrawer(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   const [customTags, setCustomTags] = useState(() => {
     if (typeof window !== "undefined") {
@@ -151,8 +170,12 @@ export function InboxFolders() {
   };
 
   const open = (id: string | null) => {
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(8);
+    }
     setActiveFolder(id);
     setActiveConv("");
+    setInboxFoldersOpen(false);
   };
 
   // Conversations visibles côté liste : on filtre par mode (Email vs Messages)
@@ -161,7 +184,6 @@ export function InboxFolders() {
   const visibleConvs = conversations.filter(
     (c) => !archived.has(c.id) && isEmailLikeChannel(c.channel) === (inboxMode === "email")
   );
-  const visibleIds = new Set(visibleConvs.map((c) => c.id));
 
   // Compteurs dérivés des conversations VISIBLES — toujours cohérents avec
   // la liste affichée à droite. Sent/Brouillons/Corbeille restent à 0 tant
@@ -175,8 +197,11 @@ export function InboxFolders() {
     "view:trash": archived.size,
   };
 
-  return (
-    <aside className="ibx-folders" aria-label="Navigation Inbox">
+  const aside = (
+    <aside
+      className={`ibx-folders ${isDrawer && inboxFoldersOpen ? "is-open" : ""}`}
+      aria-label="Navigation Inbox"
+    >
       {/* Vues rapides */}
       {(inboxMode === "email"
         ? VIEWS
@@ -245,10 +270,10 @@ export function InboxFolders() {
 
       {/* Tags Section */}
       <div className="ibx-folders-sep" />
-      
+
       {customTags.map((tag: any) => {
         const key = `cat:${tag.key}`;
-        const count = visibleConvs.filter(c => (c.category || "other") === tag.key).length;
+        const count = visibleConvs.filter((c) => (c.category || "other") === tag.key).length;
         return (
           <button
             key={tag.key}
@@ -258,7 +283,7 @@ export function InboxFolders() {
           >
             <span className="ibx-label-dot" style={{ background: tag.color }} />
             <span className="ibx-folder-name ibx-label-name">{tag.label}</span>
-            {count > 0 && <span className="ibx-folder-count">{count}</span>}
+            <span className="ibx-folder-count">{count}</span>
           </button>
         );
       })}
@@ -271,11 +296,28 @@ export function InboxFolders() {
           onClick={() => setIsAddingTag(true)}
           style={{ color: "#4f6cf7", fontWeight: 600, marginTop: 4 }}
         >
-          <span className="ibx-folder-ic" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>+</span>
+          <span
+            className="ibx-folder-ic"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+              fontSize: "14px",
+            }}
+          >
+            +
+          </span>
           <span className="ibx-folder-name">Nouveau tag</span>
         </button>
       ) : (
-        <div className="ibx-add-tag-form">
+        <form
+          className="ibx-add-tag-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAddTag();
+          }}
+        >
           <input
             type="text"
             className="ibx-add-tag-input"
@@ -283,10 +325,7 @@ export function InboxFolders() {
             value={newTagName}
             onChange={(e) => setNewTagName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleAddTag();
-              } else if (e.key === "Escape") {
+              if (e.key === "Escape") {
                 setIsAddingTag(false);
                 setNewTagName("");
               }
@@ -300,24 +339,27 @@ export function InboxFolders() {
                 type="button"
                 className={`ibx-color-dot ${newTagColor === color ? "is-selected" : ""}`}
                 style={{ backgroundColor: color }}
-                onClick={() => setNewTagColor(color)}
+                onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.vibrate) {
+                    navigator.vibrate(5);
+                  }
+                  setNewTagColor(color);
+                }}
                 title={color}
               />
             ))}
           </div>
           <div className="ibx-add-tag-actions">
-            <button
-              type="button"
-              className="ibx-add-tag-submit"
-              onClick={handleAddTag}
-              disabled={!newTagName.trim()}
-            >
+            <button type="submit" className="ibx-add-tag-submit" disabled={!newTagName.trim()}>
               Ajouter
             </button>
             <button
               type="button"
               className="ibx-add-tag-cancel"
               onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.vibrate) {
+                  navigator.vibrate(5);
+                }
                 setIsAddingTag(false);
                 setNewTagName("");
               }}
@@ -325,8 +367,16 @@ export function InboxFolders() {
               Annuler
             </button>
           </div>
-        </div>
+        </form>
       )}
     </aside>
   );
+
+  // Mode tiroir (mobile/tablette) : on porte le panneau sur <body> pour qu'il
+  // sorte du conteneur de défilement iOS et passe devant le voile (rendu, lui,
+  // à la racine par AppShell). Desktop : rendu inline comme colonne de gauche.
+  if (mounted && isDrawer) {
+    return createPortal(aside, document.body);
+  }
+  return aside;
 }

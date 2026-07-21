@@ -2,7 +2,7 @@
 
 import { ChannelLogo } from "@/components/icons/Icon";
 import { MueFlower } from "@/components/MueFlower";
-import { CHANNEL_PROVIDER_REGISTRY, channelProviderLabel } from "@/lib/channels/registry";
+import { channelProviderLabel } from "@/lib/channels/registry";
 import type { ChannelId } from "@/lib/types";
 import { useEffect, useState } from "react";
 
@@ -33,7 +33,7 @@ const SYNC_STAGES = [
 ];
 
 export function OnboardingFlow({
-  firstName = "Wacil",
+  firstName: _firstName = "Wacil",
   onFinish,
   onConnect,
 }: {
@@ -48,17 +48,6 @@ export function OnboardingFlow({
 
   const idx = STEPS.indexOf(step);
   const go = (s: Step) => setStep(s);
-
-  // SVG parameters for common styling
-  const stroke = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    viewBox: "0 0 24 24",
-    "aria-hidden": true,
-  };
 
   return (
     <div className="onb-page">
@@ -99,7 +88,6 @@ export function OnboardingFlow({
               onRole={setRole}
               onObjective={setObjective}
               onFinish={(answers) => onFinish?.(answers)}
-              stroke={stroke}
             />
           )}
         </main>
@@ -120,7 +108,14 @@ export function OnboardingFlow({
 /* ───────────────────────── Étape 1 — Connexion au compte ───────────────────────── */
 function AppleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="currentColor" style={{ color: "#000000" }}>
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      aria-hidden
+      fill="currentColor"
+      style={{ color: "#000000" }}
+    >
       <path d="M17.05 13.04c-.03-2.79 2.28-4.13 2.39-4.2-1.31-1.91-3.34-2.17-4.06-2.2-1.73-.17-3.37 1.02-4.25 1.02-.87 0-2.22-.99-3.65-.96-1.88.03-3.61 1.09-4.58 2.77-1.95 3.4-.5 8.42 1.4 11.18.92 1.35 2.02 2.87 3.46 2.82 1.39-.05 1.91-.9 3.59-.9 1.68 0 2.15.9 3.62.87 1.49-.03 2.43-1.38 3.34-2.74 1.05-1.57 1.49-3.1 1.51-3.17-.03-.02-2.9-1.11-2.93-4.41zM14.43 5.06c.76-.92 1.27-2.2 1.13-3.48-1.09.04-2.42.73-3.21 1.65-.71.81-1.33 2.12-1.17 3.37 1.22.09 2.48-.62 3.25-1.54z" />
     </svg>
   );
@@ -181,19 +176,29 @@ function ConnectStep({
               onClick={() => onPick(p.kind)}
               aria-pressed={on}
             >
-              <span className="onb-option-logo" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <span
+                className="onb-option-logo"
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+              >
                 {p.kind === "gmail" && <ChannelLogo channel="gmail" />}
                 {p.kind === "icloud" && <AppleIcon />}
                 {p.kind === "imap" && <MailIcon />}
               </span>
-              <span className="onb-option-title" style={{ marginLeft: "8px" }}>{p.label}</span>
+              <span className="onb-option-title" style={{ marginLeft: "8px" }}>
+                {p.label}
+              </span>
               <span className="onb-option-tag is-ready">Actif</span>
             </button>
           );
         })}
       </div>
       <div className="onb-actions" style={{ marginTop: "12px" }}>
-        <button type="button" className="onb-btn onb-btn-primary" style={{ width: "100%" }} onClick={onConnect}>
+        <button
+          type="button"
+          className="onb-btn onb-btn-primary"
+          style={{ width: "100%" }}
+          onClick={onConnect}
+        >
           Se connecter avec {currentLabel}
         </button>
       </div>
@@ -216,23 +221,29 @@ function SyncStep({ channel, onDone }: { channel: ChannelId; onDone: () => void 
 
   return (
     <div className="onb-body" style={{ textAlign: "center" }}>
-      <div className="onb-mue" style={{ margin: "0 auto 16px", display: "grid", placeItems: "center" }}>
+      <div
+        className="onb-mue"
+        style={{ margin: "0 auto 16px", display: "grid", placeItems: "center" }}
+      >
         <MueFlower size={64} animated />
       </div>
       {!done ? (
         <>
           <h1 className="onb-title">Je récupère tes messages…</h1>
-          <div className="onb-sync-list" style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            marginTop: "20px",
-            textAlign: "left",
-            background: "rgba(15, 23, 42, 0.02)",
-            padding: "20px",
-            borderRadius: "12px",
-            border: "1px solid rgba(15, 23, 42, 0.05)"
-          }}>
+          <div
+            className="onb-sync-list"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              marginTop: "20px",
+              textAlign: "left",
+              background: "rgba(15, 23, 42, 0.02)",
+              padding: "20px",
+              borderRadius: "12px",
+              border: "1px solid rgba(15, 23, 42, 0.05)",
+            }}
+          >
             {SYNC_STAGES.map((label, i) => (
               <div
                 key={label}
@@ -244,22 +255,24 @@ function SyncStep({ channel, onDone }: { channel: ChannelId; onDone: () => void 
                   color: i === stage ? "#0f172a" : i < stage ? "#16a34a" : "#94a3b8",
                   fontWeight: i === stage ? "600" : "500",
                   opacity: i > stage ? 0.5 : 1,
-                  transition: "all 300ms var(--ease)"
+                  transition: "all 300ms var(--ease)",
                 }}
               >
-                <span style={{
-                  width: "16px",
-                  height: "16px",
-                  borderRadius: "50%",
-                  border: i <= stage ? "none" : "2px solid rgba(15, 23, 42, 0.15)",
-                  background: i < stage ? "#16a34a" : i === stage ? "#4f6cf7" : "transparent",
-                  display: "inline-grid",
-                  placeItems: "center",
-                  color: "#fff",
-                  fontSize: "10px",
-                  fontWeight: "bold",
-                  boxShadow: i === stage ? "0 0 0 4px rgba(79, 108, 247, 0.18)" : "none"
-                }}>
+                <span
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    borderRadius: "50%",
+                    border: i <= stage ? "none" : "2px solid rgba(15, 23, 42, 0.15)",
+                    background: i < stage ? "#16a34a" : i === stage ? "#4f6cf7" : "transparent",
+                    display: "inline-grid",
+                    placeItems: "center",
+                    color: "#fff",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    boxShadow: i === stage ? "0 0 0 4px rgba(79, 108, 247, 0.18)" : "none",
+                  }}
+                >
                   {i < stage ? "✓" : i === stage ? "●" : ""}
                 </span>
                 {label}
@@ -275,7 +288,12 @@ function SyncStep({ channel, onDone }: { channel: ChannelId; onDone: () => void 
             repéré <strong>3 clients</strong> dans ton {channelProviderLabel(channel)}.
           </p>
           <div className="onb-actions onb-actions-end" style={{ marginTop: "24px" }}>
-            <button type="button" className="onb-btn onb-btn-primary" style={{ width: "100%" }} onClick={onDone}>
+            <button
+              type="button"
+              className="onb-btn onb-btn-primary"
+              style={{ width: "100%" }}
+              onClick={onDone}
+            >
               Voir mon inbox
             </button>
           </div>
@@ -289,28 +307,57 @@ function SyncStep({ channel, onDone }: { channel: ChannelId; onDone: () => void 
 function AhaStep({ onNext }: { onNext: () => void }) {
   return (
     <div className="onb-body" style={{ textAlign: "center" }}>
-      <div className="onb-aha-mock" style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "10px",
-        padding: "16px",
-        background: "rgba(15, 23, 42, 0.03)",
-        borderRadius: "12px",
-        marginBottom: "24px",
-        width: "100%",
-        maxWidth: "340px",
-        margin: "0 auto 24px"
-      }}>
-        <div style={{ height: "12px", background: "rgba(15,23,42,0.06)", borderRadius: "6px", width: "70%" }} />
-        <div style={{ height: "12px", background: "rgba(15,23,42,0.04)", borderRadius: "6px", width: "90%" }} />
-        <div style={{ height: "12px", background: "rgba(15,23,42,0.05)", borderRadius: "6px", width: "50%" }} />
+      <div
+        className="onb-aha-mock"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          padding: "16px",
+          background: "rgba(15, 23, 42, 0.03)",
+          borderRadius: "12px",
+          marginBottom: "24px",
+          width: "100%",
+          maxWidth: "340px",
+          margin: "0 auto 24px",
+        }}
+      >
+        <div
+          style={{
+            height: "12px",
+            background: "rgba(15,23,42,0.06)",
+            borderRadius: "6px",
+            width: "70%",
+          }}
+        />
+        <div
+          style={{
+            height: "12px",
+            background: "rgba(15,23,42,0.04)",
+            borderRadius: "6px",
+            width: "90%",
+          }}
+        />
+        <div
+          style={{
+            height: "12px",
+            background: "rgba(15,23,42,0.05)",
+            borderRadius: "6px",
+            width: "50%",
+          }}
+        />
       </div>
       <h1 className="onb-title">Voilà ton inbox unifiée</h1>
       <p className="onb-sub">
         Tous tes canaux, une seule liste. Fini le passage d'une app à l'autre.
       </p>
       <div className="onb-actions onb-actions-end" style={{ marginTop: "16px" }}>
-        <button type="button" className="onb-btn onb-btn-primary" style={{ width: "100%" }} onClick={onNext}>
+        <button
+          type="button"
+          className="onb-btn onb-btn-primary"
+          style={{ width: "100%" }}
+          onClick={onNext}
+        >
           Continuer
         </button>
       </div>
@@ -331,13 +378,34 @@ function ActionStep({ onNext }: { onNext: () => void }) {
       <p className="onb-sub">Choisis une première action. Tu pourras toujours changer d'avis.</p>
       <div className="onb-options" style={{ marginTop: "12px" }}>
         {actions.map((a) => (
-          <button key={a.title} type="button" className="onb-option" onClick={onNext} style={{ display: "flex", gap: "16px", padding: "16px 20px" }}>
-            <span style={{ fontSize: "20px", width: "24px", height: "24px", display: "grid", placeItems: "center" }}>
+          <button
+            key={a.title}
+            type="button"
+            className="onb-option"
+            onClick={onNext}
+            style={{ display: "flex", gap: "16px", padding: "16px 20px" }}
+          >
+            <span
+              style={{
+                fontSize: "20px",
+                width: "24px",
+                height: "24px",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
               {a.icon}
             </span>
             <div>
-              <div className="onb-option-title" style={{ fontSize: "14px", fontWeight: "600" }}>{a.title}</div>
-              <div className="onb-option-desc" style={{ fontSize: "12px", color: "#5b6475", marginTop: "2px" }}>{a.sub}</div>
+              <div className="onb-option-title" style={{ fontSize: "14px", fontWeight: "600" }}>
+                {a.title}
+              </div>
+              <div
+                className="onb-option-desc"
+                style={{ fontSize: "12px", color: "#5b6475", marginTop: "2px" }}
+              >
+                {a.sub}
+              </div>
             </div>
           </button>
         ))}
@@ -353,14 +421,12 @@ function ProfileStep({
   onRole,
   onObjective,
   onFinish,
-  stroke,
 }: {
   role: string | null;
   objective: string | null;
   onRole: (r: string) => void;
   onObjective: (o: string) => void;
   onFinish: (answers?: { role: string | null; objective: string | null }) => void;
-  stroke: any;
 }) {
   return (
     <div className="onb-body">
@@ -405,7 +471,11 @@ function ProfileStep({
         <button type="button" className="onb-btn" onClick={() => onFinish()}>
           Plus tard
         </button>
-        <button type="button" className="onb-btn onb-btn-primary" onClick={() => onFinish({ role, objective })}>
+        <button
+          type="button"
+          className="onb-btn onb-btn-primary"
+          onClick={() => onFinish({ role, objective })}
+        >
           Terminer
         </button>
       </div>

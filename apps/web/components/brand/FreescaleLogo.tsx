@@ -11,13 +11,13 @@ export function FreescaleLogo({
   className?: string;
 }) {
   return (
-    // biome-ignore lint/performance/noImgElement: asset statique simple (logo)
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/logowhitemode.png"
       alt="Freescale"
       height={height}
       className={className}
-      style={{ height, width: "auto", display: "block", flexShrink: 0, maxWidth: "none" }}
+      style={{ height, width: "auto", flexShrink: 0, maxWidth: "none" }}
     />
   );
 }

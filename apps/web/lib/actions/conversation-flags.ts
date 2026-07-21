@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { ConversationCategory } from "@/lib/types";
 
 import { isDevNoAuth } from "@/lib/dev-mock";
 
@@ -82,7 +83,7 @@ export async function snoozeConversation(
  */
 export async function setConversationCategory(
   conversationId: string,
-  category: "client" | "promo" | "notif" | "other" | null
+  category: ConversationCategory
 ): Promise<{ ok: boolean; error: string | null }> {
   const supabase = await createClient();
   const {

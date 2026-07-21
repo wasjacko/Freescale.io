@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
+  // Masque l'indicateur de dev Next.js (pastille « N / X Issues » en bas
+  // à gauche) — on ne veut pas de cette console flottante sur l'aperçu.
+  devIndicators: false,
   async redirects() {
     return [
       // Legacy auth slugs

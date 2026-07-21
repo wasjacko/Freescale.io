@@ -168,7 +168,7 @@ export function mockInboxData(): InboxData {
       preview: "Suite à notre échange sur LinkedIn, voici mon portfolio à jour.",
       lastAtIso: isoAgo({ hours: 3 }),
       avatar: FACE(3),
-      channel: "gmail",
+      channel: "linkedin",
       unread: true,
       group: "today",
       subject: "Candidature UX Designer",
@@ -241,7 +241,7 @@ export function mockInboxData(): InboxData {
         "Peux-tu m'envoyer le contrat signé avant vendredi ? On veut lancer le sprint lundi.",
       lastAtIso: isoAgo({ hours: 2 }),
       avatar: FACE(3),
-      channel: "gmail",
+      channel: "whatsapp",
       unread: true,
       group: "today",
       subject: "Contrat mission — ITWA",
@@ -429,7 +429,7 @@ export function mockInboxData(): InboxData {
         sentAtIso: cn1m1,
         senderName: "Lucas Martin",
         senderEmail: "lucas.martin@techsolutions.fr",
-      }
+      },
     ],
     c_new2: [
       {
@@ -440,7 +440,7 @@ export function mockInboxData(): InboxData {
         sentAtIso: cn2m1,
         senderName: "Julie Durand",
         senderEmail: "julie.durand@uxdesign.io",
-      }
+      },
     ],
     c_new3: [
       {
@@ -451,7 +451,7 @@ export function mockInboxData(): InboxData {
         sentAtIso: cn3m1,
         senderName: "Marc Lemaire",
         senderEmail: "billing@ovhcloud.com",
-      }
+      },
     ],
     c1: [
       {
@@ -945,7 +945,16 @@ export function mockInboxData(): InboxData {
     const channel = channels[i % channels.length] ?? "gmail";
     const subject = subjects[i % subjects.length] ?? "Sujet";
     const preview = previews[i % previews.length] ?? "Aperçu";
-    const category = i % 7 === 0 ? "notif" : i % 7 === 1 ? "prospect" : i % 7 === 2 ? "prestataire" : i % 7 === 3 ? "collaborateur" : "client";
+    const category =
+      i % 7 === 0
+        ? "notif"
+        : i % 7 === 1
+          ? "prospect"
+          : i % 7 === 2
+            ? "prestataire"
+            : i % 7 === 3
+              ? "collaborateur"
+              : "client";
     const group = groups[i % groups.length] ?? "earlier";
     const unread = i % 3 === 0;
 
@@ -999,7 +1008,17 @@ export function mockInboxData(): InboxData {
 
   // Inbox volontairement resserrée sur les 5 clients principaux — les mêmes
   // que la page Clients (Sarah, Alexandre, Capucine, Thomas, David).
-  const INBOX_CLIENT_IDS = new Set(["c1", "c1b", "c7", "c3", "c2", "c9", "c_new1", "c_new2", "c_new3"]);
+  const INBOX_CLIENT_IDS = new Set([
+    "c1",
+    "c1b",
+    "c7",
+    "c3",
+    "c2",
+    "c9",
+    "c_new1",
+    "c_new2",
+    "c_new3",
+  ]);
   const allConversations = [...conversations, ...generatedConversations].filter((c) =>
     INBOX_CLIENT_IDS.has(c.id)
   );

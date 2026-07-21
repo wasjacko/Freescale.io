@@ -37,9 +37,8 @@ export default function GlobalSearchDropdown({ onClose }: { onClose: () => void 
     },
   ];
 
-  const filteredResults = activeFilter === "Tous" 
-    ? dummyResults 
-    : dummyResults.filter(r => r.type === activeFilter);
+  const filteredResults =
+    activeFilter === "Tous" ? dummyResults : dummyResults.filter((r) => r.type === activeFilter);
 
   return (
     <div className="global-search-dropdown" onClick={(e) => e.stopPropagation()}>
@@ -61,9 +60,7 @@ export default function GlobalSearchDropdown({ onClose }: { onClose: () => void 
         {filteredResults.length > 0 ? (
           filteredResults.map((result) => (
             <div key={result.id} className="gsd-result-item" onClick={onClose}>
-              <div className="gsd-result-icon">
-                {result.icon}
-              </div>
+              <div className="gsd-result-icon">{result.icon}</div>
               <div className="gsd-result-content">
                 <div className="gsd-result-title">{result.title}</div>
                 <div className="gsd-result-meta">{result.meta}</div>
@@ -71,7 +68,14 @@ export default function GlobalSearchDropdown({ onClose }: { onClose: () => void 
             </div>
           ))
         ) : (
-          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)', fontSize: '13px' }}>
+          <div
+            style={{
+              padding: "20px",
+              textAlign: "center",
+              color: "var(--muted)",
+              fontSize: "13px",
+            }}
+          >
             Aucun résultat trouvé pour "{activeFilter}"
           </div>
         )}
