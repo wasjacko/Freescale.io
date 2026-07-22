@@ -184,7 +184,12 @@ export function MobileSiteReload() {
     <>
       <div
         className={`mobile-site-reload ${visible ? "is-visible" : ""} ${ready ? "is-ready" : ""} ${reloading ? "is-reloading" : ""}`}
-        style={{ "--reload-progress": progress } as CSSProperties}
+        style={
+          {
+            "--reload-progress": progress,
+            "--reload-dash-offset": 50.27 * (1 - progress),
+          } as CSSProperties
+        }
         role="status"
         aria-live="polite"
         aria-hidden={!visible}
@@ -197,17 +202,10 @@ export function MobileSiteReload() {
         }
       >
         <span className="mobile-site-reload__icon" aria-hidden>
-          {reloading ? (
-            <svg viewBox="0 0 24 24">
-              <path d="M20 11a8 8 0 1 0-2.35 5.65" />
-              <path d="M20 5v6h-6" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 24 24">
-              <path d="M12 4v15" />
-              <path d="m6.5 13.5 5.5 5.5 5.5-5.5" />
-            </svg>
-          )}
+          <svg viewBox="0 0 24 24">
+            <circle className="mobile-site-reload__track" cx="12" cy="12" r="8" />
+            <circle className="mobile-site-reload__progress" cx="12" cy="12" r="8" />
+          </svg>
         </span>
       </div>
       <input
