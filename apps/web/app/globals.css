@@ -38084,11 +38084,6 @@ button.mfv-model:hover {
     gap: 8px !important;
   }
 
-  /* Support du Mode Sombre pour l'indicateur Pull-to-refresh */
-  [data-theme="dark"] .pull-refresh-indicator {
-    background: #272c3d !important;
-  }
-
   /* Masquer complètement la sidebar et son backdrop sur mobile */
   .sidebar,
   .sidebar-mobile-backdrop {

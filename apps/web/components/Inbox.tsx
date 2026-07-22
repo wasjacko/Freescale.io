@@ -98,11 +98,6 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
   const [extraUnread, setExtraUnread] = useState<Set<string>>(new Set());
   const [ctx, setCtx] = useState<{ x: number; y: number; convId: string } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [pullY, setPullY] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
-  const touchStartY = useRef(0);
-  const isPulling = useRef(false);
-  const { setIsSyncing } = useData();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -609,100 +604,13 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
         <InboxComposeButton />
       </div>
 
-      {pullY > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            top: "140px",
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "40px",
-            zIndex: 5,
-            pointerEvents: "none",
-          }}
-        >
-          <div
-            className={`pull-refresh-indicator ${refreshing ? "is-refreshing" : ""}`}
-            style={{
-              background: "#ffffff",
-              boxShadow: "0 2px 8px rgba(15,23,42,0.12)",
-              borderRadius: "50%",
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transform: `scale(${Math.min(1, pullY / 40)}) rotate(${pullY * 4}deg)`,
-              transition: refreshing ? undefined : "transform 100ms ease",
-            }}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-              stroke="#4f6cf7"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              className={refreshing ? "animate-spin" : ""}
-            >
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </svg>
-          </div>
-        </div>
-      )}
-
-      <div
-        className="conv-list"
-        id="conv-list"
-        onTouchStart={(e) => {
-          const list = e.currentTarget;
-          if (list.scrollTop === 0) {
-            touchStartY.current = e.touches[0]?.clientY ?? 0;
-            isPulling.current = true;
-          } else {
-            isPulling.current = false;
-          }
-        }}
-        onTouchMove={(e) => {
-          if (!isPulling.current) return;
-          const currentY = e.touches[0]?.clientY ?? 0;
-          const diff = currentY - touchStartY.current;
-          if (diff > 0) {
-            const y = Math.min(60, diff * 0.4);
-            setPullY(y);
-            if (e.cancelable) e.preventDefault();
-          }
-        }}
-        onTouchEnd={() => {
-          isPulling.current = false;
-          if (pullY > 40) {
-            setRefreshing(true);
-            setIsSyncing(true);
-            setTimeout(() => {
-              setRefreshing(false);
-              setIsSyncing(false);
-              setPullY(0);
-              push({ kind: "success", text: "Inbox synchronisée avec succès !" });
-            }, 1000);
-          } else {
-            setPullY(0);
-          }
-        }}
-        style={{
-          transform: pullY > 0 ? `translateY(${pullY}px)` : undefined,
-          transition: pullY === 0 ? "transform 250ms ease" : undefined,
-        }}
-      >
+      <div className="conv-list" id="conv-list">
         {filteredConvs.length === 0 && showSkeletons && (
           <>
             {/* First-sync banner: friendly, honest status. Surfaces ONLY
                 during the very first sync (when the inbox is empty AND
-                sync is in flight). On subsequent refreshes the existing
-                spinning refresh button in the header is enough. */}
+                sync is in flight). Subsequent synchronisations stay silent
+                because AutoSync keeps the populated inbox up to date. */}
             <InitialSyncIndicator />
             <div
               className="conv-skel-list"
