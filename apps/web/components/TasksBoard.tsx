@@ -12,7 +12,6 @@ import { type CSSProperties, Fragment, useEffect, useMemo, useRef, useState } fr
 import { createPortal } from "react-dom";
 
 type GroupKey = "to-scope" | "todo" | "in-progress" | "awaiting-reply" | "done";
-type PriorityKey = Task["priority"];
 const GROUPS: { key: GroupKey; label: string; accent: string; match: Task["status"][] }[] = [
   { key: "to-scope", label: "À cadrer", accent: "#8b5cf6", match: ["to-scope"] },
   { key: "todo", label: "À faire", accent: "#4f6cf7", match: ["todo"] },
@@ -24,11 +23,6 @@ const GROUPS: { key: GroupKey; label: string; accent: string; match: Task["statu
     match: ["awaiting-reply"],
   },
   { key: "done", label: "Terminé", accent: "#16a34a", match: ["done"] },
-];
-const PRIORITY_GROUPS: { key: PriorityKey; label: string; hint: string }[] = [
-  { key: "high", label: "Haute", hint: "Ce qui ne peut pas attendre" },
-  { key: "medium", label: "Moyenne", hint: "À garder dans le rythme" },
-  { key: "low", label: "Basse", hint: "Pas de précipitation" },
 ];
 
 function dueMeta(iso: string | null | undefined, fallback: string) {
@@ -62,8 +56,6 @@ export function TasksBoard() {
   // (plus de composer flottant en haut). `addingIn` = clé du groupe en cours
   // d'ajout, ou null. La ligne apparaît avec la lueur de transfert.
   const [addingIn, setAddingIn] = useState<GroupKey | null>(null);
-  const [newTaskPriority, setNewTaskPriority] = useState<PriorityKey>("medium");
-  const [mobileCollapsed, setMobileCollapsed] = useState<Set<PriorityKey>>(() => new Set());
   const [newTitle, setNewTitle] = useState("");
   const newInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -74,9 +66,8 @@ export function TasksBoard() {
     setAddingIn(null);
     setNewTitle("");
   };
-  const openComposer = (status: GroupKey, priority: PriorityKey = "medium") => {
+  const openComposer = (status: GroupKey) => {
     setAddingIn(status);
-    setNewTaskPriority(priority);
     setNewTitle("");
   };
   const createTask = () => {
@@ -85,7 +76,7 @@ export function TasksBoard() {
     addTask({
       id: `new-${Date.now()}`,
       title,
-      priority: newTaskPriority,
+      priority: "medium",
       dueLabel: "",
       status: addingIn,
       avatar: { kind: "initials", text: "" },
@@ -166,14 +157,6 @@ export function TasksBoard() {
       if (n.has(k)) n.delete(k);
       else n.add(k);
       return n;
-    });
-
-  const toggleMobilePriority = (priority: PriorityKey) =>
-    setMobileCollapsed((prev) => {
-      const next = new Set(prev);
-      if (next.has(priority)) next.delete(priority);
-      else next.add(priority);
-      return next;
     });
 
   const openTask = (t: Task) => {
@@ -458,141 +441,6 @@ export function TasksBoard() {
           >
             + <span className="tboard-new-text">Nouvelle tâche</span>
           </button>
-        </div>
-      </div>
-
-      <div className="tboard-mobile" aria-label="Tâches classées par priorité">
-        <header className="tboard-mobile-intro">
-          <span className="tboard-mobile-kicker">Aujourd'hui</span>
-          <h1>Mes tâches</h1>
-          <p>Avancez sur l'essentiel, une priorité à la fois.</p>
-        </header>
-
-        <div className="tboard-mobile-priorities">
-          {PRIORITY_GROUPS.map((priorityGroup) => {
-            const rows = displayed.filter(
-              (task) => task.priority === priorityGroup.key && task.status !== "done"
-            );
-            const isCollapsed = mobileCollapsed.has(priorityGroup.key);
-            const isAdding = addingIn === "todo" && newTaskPriority === priorityGroup.key;
-
-            return (
-              <section
-                key={priorityGroup.key}
-                className={`tboard-mobile-priority tboard-mobile-priority--${priorityGroup.key}`}
-              >
-                <div className="tboard-mobile-priority-head">
-                  <button
-                    type="button"
-                    className="tboard-mobile-priority-pill"
-                    onClick={() => toggleMobilePriority(priorityGroup.key)}
-                    aria-expanded={!isCollapsed}
-                  >
-                    <span className="tboard-mobile-priority-mark" aria-hidden />
-                    <span>{priorityGroup.label}</span>
-                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-                      <path d="m7 10 5 5 5-5" />
-                    </svg>
-                  </button>
-                  <span className="tboard-mobile-priority-count">{rows.length}</span>
-                  <button
-                    type="button"
-                    className="tboard-mobile-plus"
-                    onClick={() => openComposer("todo", priorityGroup.key)}
-                    aria-label={`Ajouter une tâche de priorité ${priorityGroup.label.toLowerCase()}`}
-                  >
-                    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden>
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className={`tboard-mobile-priority-body ${isCollapsed ? "" : "is-open"}`}>
-                  <div className="tboard-mobile-priority-inner">
-                    <div className="tboard-mobile-task-list">
-                      {rows.map((task) => {
-                        const due = dueMeta(task.dueAtIso, task.dueLabel);
-                        const client = clientConvsOf(task)[0];
-                        return (
-                          <article className="tboard-mobile-task" key={task.id}>
-                            <button
-                              type="button"
-                              className="tboard-mobile-check"
-                              onClick={() => setTaskStatus(task.id, "done")}
-                              aria-label={`Marquer « ${task.title} » comme terminée`}
-                            >
-                              <span />
-                            </button>
-                            <button
-                              type="button"
-                              className="tboard-mobile-task-content"
-                              onClick={() => openTask(task)}
-                            >
-                              <strong>{task.title}</strong>
-                              <span className="tboard-mobile-task-meta">
-                                {client?.name && <span>{client.name}</span>}
-                                {(task.dueAtIso || task.dueLabel) && (
-                                  <span className={`is-${due.tone}`}>{due.label}</span>
-                                )}
-                              </span>
-                            </button>
-                            <button
-                              type="button"
-                              className={`tboard-mobile-status tboard-mobile-status--${task.status}`}
-                              onClick={(event) => openStatusMenu(task.id, event)}
-                              aria-label={`Changer le statut de « ${task.title} »`}
-                            >
-                              <span />
-                            </button>
-                          </article>
-                        );
-                      })}
-
-                      {isAdding ? (
-                        <div className="tboard-mobile-add is-editing">
-                          <input
-                            ref={newInputRef}
-                            type="text"
-                            placeholder="Nom de la nouvelle tâche…"
-                            value={newTitle}
-                            onChange={(event) => setNewTitle(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") createTask();
-                              if (event.key === "Escape") closeComposer();
-                            }}
-                            onBlur={() => {
-                              if (!newTitle.trim()) closeComposer();
-                            }}
-                            aria-label="Nom de la nouvelle tâche"
-                          />
-                          <button type="button" onClick={createTask} aria-label="Ajouter">
-                            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
-                              <path d="m6 12 4 4 8-9" />
-                            </svg>
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          className="tboard-mobile-add"
-                          onClick={() => openComposer("todo", priorityGroup.key)}
-                        >
-                          <span>
-                            {rows.length === 0 ? priorityGroup.hint : "Ajouter à cette priorité"}
-                          </span>
-                          <span className="tboard-mobile-add-icon" aria-hidden>
-                            <svg viewBox="0 0 24 24" width="22" height="22">
-                              <path d="M12 5v14M5 12h14" />
-                            </svg>
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </section>
-            );
-          })}
         </div>
       </div>
 
