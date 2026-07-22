@@ -41210,20 +41210,24 @@ button.mfv-model:hover {
     background: transparent;
   }
   .mib-btn {
-    flex: 0 0 44px;
-    width: 44px;
-    height: 44px;
+    --mib-btn-bg: #ffffff;
+    flex: 0 0 54px;
+    width: 54px;
+    height: 42px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
     border: 0;
-    border-radius: 50%;
-    background: #ffffff;
+    border-radius: 13px;
+    background: var(--mib-btn-bg);
     color: #0a0a0a;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.06);
     cursor: pointer;
     transition: transform 120ms ease, background 120ms ease;
+  }
+  .mib-stack-card {
+    fill: var(--mib-btn-bg);
   }
   .mib-btn:active {
     transform: scale(0.94);
@@ -41244,12 +41248,13 @@ button.mfv-model:hover {
   }
   /* Spacer droit = même largeur que le bouton gauche → titre centré. */
   .mib-spacer {
-    flex: 0 0 44px;
-    width: 44px;
-    height: 44px;
+    flex: 0 0 54px;
+    width: 54px;
+    height: 42px;
   }
   [data-theme="dark"] .mib-btn {
-    background: #1e2230;
+    --mib-btn-bg: #1e2230;
+    background: var(--mib-btn-bg);
     color: #f4f4f7;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.25);
   }

@@ -20,7 +20,7 @@ export function MobileInboxHeader({ folderLabel }: Props) {
 
   return (
     <>
-      <header className="mib-header" role="banner">
+      <header className="mib-header">
         {/* Gauche — icône « stack » : ouvre la page Comptes */}
         <button
           type="button"
@@ -35,19 +35,21 @@ export function MobileInboxHeader({ folderLabel }: Props) {
         >
           <svg
             viewBox="0 0 24 24"
-            width={20}
-            height={20}
+            width={24}
+            height={24}
             fill="none"
             stroke="currentColor"
-            strokeWidth={2.2}
+            strokeWidth={1.8}
             strokeLinecap="round"
             strokeLinejoin="round"
             aria-hidden
           >
-            {/* Deux cartes superposées légèrement décalées — évoque des
-                boîtes de réception empilées, cohérent avec « Comptes ». */}
-            <rect x="8" y="4" width="12" height="14" rx="2.2" />
-            <path d="M5 8v11a2 2 0 0 0 2 2h10" />
+            {/* Trois cartes strictement carrees, decalees en profondeur. Le
+                fond opaque de chaque carte masque celle qui se trouve dessous
+                et rend la pile lisible plutot qu'une icone de copie. */}
+            <rect className="mib-stack-card" x="3.5" y="9.5" width="10.5" height="10.5" rx="2" />
+            <rect className="mib-stack-card" x="6.75" y="6.25" width="10.5" height="10.5" rx="2" />
+            <rect className="mib-stack-card" x="10" y="3" width="10.5" height="10.5" rx="2" />
           </svg>
         </button>
 
