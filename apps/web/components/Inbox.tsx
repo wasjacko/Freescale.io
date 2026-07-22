@@ -487,7 +487,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
   }, [isSyncing, filteredConvs.length]);
 
   const folderLabel = (() => {
-    if (!activeFolderId) return "Principale";
+    if (!activeFolderId) return "Principal";
     if (activeFolderId === "view:starred") return "Favoris";
     if (activeFolderId === "view:sent") return "Envoyés";
     if (activeFolderId === "view:drafts") return "Brouillons";
@@ -524,7 +524,7 @@ export function Inbox({ currentUserId: _currentUserId }: { currentUserId?: strin
           Masqué en desktop via CSS. */}
       <MobileInboxHeader folderLabel={folderLabel} />
       {/* Recherche permanente + bouton de tri (icône) en haut de la liste.
-          Le pill « Principale » a migré vers le hamburger du header mobile ;
+          Le pill « Principal » a migré vers le hamburger du header mobile ;
           en desktop il reste disponible via la colonne InboxFolders. */}
       <div className="ibx-search-wrap--list">
         <button

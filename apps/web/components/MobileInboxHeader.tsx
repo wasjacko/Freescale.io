@@ -35,8 +35,8 @@ export function MobileInboxHeader({ folderLabel }: Props) {
         >
           <svg
             viewBox="0 0 24 24"
-            width={24}
-            height={24}
+            width={21}
+            height={21}
             fill="none"
             stroke="currentColor"
             strokeWidth={1.8}

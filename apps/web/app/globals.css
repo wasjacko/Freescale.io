@@ -41205,21 +41205,21 @@ button.mfv-model:hover {
   .mib-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: calc(env(safe-area-inset-top) + 10px) 16px 10px;
+    gap: 8px;
+    padding: calc(env(safe-area-inset-top) + 4px) 14px 3px;
     background: transparent;
   }
   .mib-btn {
     --mib-btn-bg: #ffffff;
-    flex: 0 0 54px;
-    width: 54px;
-    height: 42px;
+    flex: 0 0 50px;
+    width: 50px;
+    height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
     border: 0;
-    border-radius: 13px;
+    border-radius: 11px;
     background: var(--mib-btn-bg);
     color: #0a0a0a;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.06);
@@ -41238,8 +41238,8 @@ button.mfv-model:hover {
     min-width: 0;
     margin: 0;
     text-align: center;
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 15px;
+    font-weight: 700;
     color: #0a0a0a;
     letter-spacing: -0.01em;
     white-space: nowrap;
@@ -41248,9 +41248,9 @@ button.mfv-model:hover {
   }
   /* Spacer droit = même largeur que le bouton gauche → titre centré. */
   .mib-spacer {
-    flex: 0 0 54px;
-    width: 54px;
-    height: 42px;
+    flex: 0 0 50px;
+    width: 50px;
+    height: 36px;
   }
   [data-theme="dark"] .mib-btn {
     --mib-btn-bg: #1e2230;
