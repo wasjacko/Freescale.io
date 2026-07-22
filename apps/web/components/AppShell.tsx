@@ -445,9 +445,11 @@ export function AppShell({
               endroit sur toutes les vues (Aujourd'hui / Inbox / Fil…).
               Le lanceur vit dans le bouton « Agent » de la topbar. */}
           <MuePanel userName={user?.name ?? null} />
-          <BottomNav />
         </div>
       </div>
+      {/* Hors de .app pour rester fixe au viewport même lorsque le contenu
+          suit le geste d'actualisation. */}
+      <BottomNav />
 
       <ClientConfirmModal />
       <DataVisibilityModal />
@@ -504,13 +506,10 @@ export function AppShell({
 }
 
 function BottomNav() {
-  const { view, setView, setActiveConv, activeConvId } = useApp();
+  const { view, setView, setActiveConv } = useApp();
   const data = useData();
   const conversations = data.conversations ?? [];
   const tasks = data.tasks ?? [];
-
-  // Masquer sur bureau ou quand un fil de discussion est actif
-  if (activeConvId) return null;
 
   const counts: Record<string, number | null> = {
     today: tasks.filter((t) => t.status !== "done").length,
