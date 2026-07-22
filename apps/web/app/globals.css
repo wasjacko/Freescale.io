@@ -41691,13 +41691,29 @@ button.mfv-model:hover {
     transform: translate3d(0, var(--mobile-pull-offset), 0) !important;
     will-change: transform;
   }
+  /* La navigation est fixed mais imbriquee dans .app : une transformation
+     de l'ancetre la deplacerait avec le contenu. Ce contre-mouvement la garde
+     ancree au bas du viewport pendant toute l'actualisation. */
+  html:where(.is-site-pulling, .is-site-refreshing, .is-site-pull-settling) .bottom-nav {
+    transform: translate3d(0, calc(0px - var(--mobile-pull-offset)), 0);
+    will-change: transform;
+  }
   html.is-site-pulling .app {
+    transition: none !important;
+  }
+  html.is-site-pulling .bottom-nav {
     transition: none !important;
   }
   html.is-site-pull-settling .app {
     transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
+  html.is-site-pull-settling .bottom-nav {
+    transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
   html.is-site-refreshing .app {
+    transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  html.is-site-refreshing .bottom-nav {
     transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   .mobile-site-reload {
