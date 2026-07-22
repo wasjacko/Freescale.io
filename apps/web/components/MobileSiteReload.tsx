@@ -1,10 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 const RELOAD_THRESHOLD = 88;
 const MAX_VISUAL_PULL = 82;
-const PULL_RESISTANCE = 0.72;
+const RESTING_REFRESH_OFFSET = 58;
 
 function isAtTop(target: EventTarget | null) {
   if (window.scrollY > 0) return false;
@@ -23,6 +24,7 @@ function isAtTop(target: EventTarget | null) {
  * keep their automatic data synchronisation and do not own refresh controls.
  */
 export function MobileSiteReload() {
+  const router = useRouter();
   const hapticSwitchRef = useRef<HTMLInputElement>(null);
   const [pullDistance, setPullDistance] = useState(0);
   const [ready, setReady] = useState(false);
@@ -33,8 +35,10 @@ export function MobileSiteReload() {
     let startX = 0;
     let startY = 0;
     let tracking = false;
+    let refreshing = false;
     let shouldReload = false;
-    let reloadTimer: number | undefined;
+    let lastVisualPull = 0;
+    let refreshTimer: number | undefined;
     let settleTimer: number | undefined;
 
     hapticSwitchRef.current?.setAttribute("switch", "");
@@ -44,14 +48,6 @@ export function MobileSiteReload() {
       hapticSwitchRef.current?.click();
     };
 
-    if (root.classList.contains("site-reload-boot")) {
-      window.scrollTo(0, 0);
-      requestAnimationFrame(() => {
-        window.scrollTo(0, 0);
-        requestAnimationFrame(() => root.classList.remove("site-reload-boot"));
-      });
-    }
-
     const setShellOffset = (offset: number) => {
       root.style.setProperty("--mobile-pull-offset", `${offset}px`);
     };
@@ -59,7 +55,9 @@ export function MobileSiteReload() {
     const resetIndicator = () => {
       setPullDistance(0);
       setReady(false);
-      root.classList.remove("is-site-pulling");
+      setReloading(false);
+      lastVisualPull = 0;
+      root.classList.remove("is-site-pulling", "is-site-refreshing");
       root.classList.add("is-site-pull-settling");
       setShellOffset(0);
       if (settleTimer) window.clearTimeout(settleTimer);
@@ -67,7 +65,12 @@ export function MobileSiteReload() {
     };
 
     const onTouchStart = (event: TouchEvent) => {
-      if (window.innerWidth >= 1024 || event.touches.length !== 1 || !isAtTop(event.target)) {
+      if (
+        refreshing ||
+        window.innerWidth >= 1024 ||
+        event.touches.length !== 1 ||
+        !isAtTop(event.target)
+      ) {
         tracking = false;
         return;
       }
@@ -80,6 +83,7 @@ export function MobileSiteReload() {
       shouldReload = false;
       root.classList.remove("is-site-pull-settling");
       root.classList.add("is-site-pulling");
+      lastVisualPull = 0;
       setPullDistance(0);
       setReady(false);
       setShellOffset(0);
@@ -103,7 +107,10 @@ export function MobileSiteReload() {
 
       const wasReady = shouldReload;
       shouldReload = deltaY >= RELOAD_THRESHOLD;
-      const visualPull = Math.min(MAX_VISUAL_PULL, deltaY * PULL_RESISTANCE);
+      // Courbe caoutchouc : proche du doigt au depart, puis resistance douce
+      // en fin de geste. Elle evite l'impression lineaire et robotique.
+      const visualPull = MAX_VISUAL_PULL * (1 - Math.exp(-deltaY / 74));
+      lastVisualPull = visualPull;
       setPullDistance(visualPull);
       setShellOffset(visualPull);
       setReady(shouldReload);
@@ -114,15 +121,32 @@ export function MobileSiteReload() {
     const finishGesture = () => {
       if (tracking && shouldReload) {
         playHaptic([10, 22, 16]);
+        refreshing = true;
         setReloading(true);
-        // Conserver exactement la position atteinte par le pouce. L'ancien
-        // retour anime vers 0 faisait remonter toute la page juste avant que
-        // le navigateur ne la recharge, d'ou le saut visible sur iPhone.
-        root.classList.add("is-site-pulling");
-        sessionStorage.setItem("freescale:pull-reload", "1");
-        window.history.scrollRestoration = "manual";
-        window.scrollTo(0, 0);
-        reloadTimer = window.setTimeout(() => window.location.reload(), 160);
+        root.classList.remove("is-site-pulling");
+        root.classList.add("is-site-refreshing");
+
+        // Rafraichit les Server Components et les donnees sans detruire le
+        // document. Safari ne recalcule donc ni sa barre ni le viewport.
+        router.refresh();
+
+        requestAnimationFrame(() => {
+          setShellOffset(Math.min(lastVisualPull, RESTING_REFRESH_OFFSET));
+        });
+
+        refreshTimer = window.setTimeout(() => {
+          root.classList.remove("is-site-refreshing");
+          root.classList.add("is-site-pull-settling");
+          setShellOffset(0);
+          settleTimer = window.setTimeout(() => {
+            root.classList.remove("is-site-pull-settling");
+            setPullDistance(0);
+            setReady(false);
+            setReloading(false);
+            refreshing = false;
+            lastVisualPull = 0;
+          }, 420);
+        }, 360);
       } else {
         resetIndicator();
       }
@@ -146,14 +170,14 @@ export function MobileSiteReload() {
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", finishGesture);
       document.removeEventListener("touchcancel", cancelGesture);
-      if (reloadTimer) window.clearTimeout(reloadTimer);
+      if (refreshTimer) window.clearTimeout(refreshTimer);
       if (settleTimer) window.clearTimeout(settleTimer);
-      root.classList.remove("is-site-pulling", "is-site-pull-settling");
+      root.classList.remove("is-site-pulling", "is-site-refreshing", "is-site-pull-settling");
       root.style.removeProperty("--mobile-pull-offset");
     };
-  }, []);
+  }, [router]);
 
-  const progress = ready ? 1 : Math.min(1, pullDistance / (RELOAD_THRESHOLD * PULL_RESISTANCE));
+  const progress = ready ? 1 : Math.min(1, pullDistance / RESTING_REFRESH_OFFSET);
   const visible = pullDistance > 4 || reloading;
 
   return (

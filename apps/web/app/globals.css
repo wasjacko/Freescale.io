@@ -38018,7 +38018,9 @@ button.mfv-model:hover {
        bande grise vide de 52px tout en haut. */
     grid-template-rows: minmax(0, 1fr) !important;
     height: 100vh !important;
-    height: 100dvh !important;
+    /* svh reste constant pendant que Safari affiche/masque ses barres.
+       dvh changeait apres le premier paint et decalait toute la page. */
+    height: 100svh !important;
     overflow: hidden !important;
   }
 
@@ -41685,7 +41687,7 @@ button.mfv-model:hover {
   html {
     --mobile-pull-offset: 0px;
   }
-  html:where(.is-site-pulling, .is-site-pull-settling) .app {
+  html:where(.is-site-pulling, .is-site-refreshing, .is-site-pull-settling) .app {
     transform: translate3d(0, var(--mobile-pull-offset), 0) !important;
     will-change: transform;
   }
@@ -41693,15 +41695,10 @@ button.mfv-model:hover {
     transition: none !important;
   }
   html.is-site-pull-settling .app {
-    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+    transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
-  html.site-reload-boot,
-  html.site-reload-boot body {
-    scroll-behavior: auto !important;
-  }
-  html.site-reload-boot .app {
-    transform: translate3d(0, 0, 0) !important;
-    transition: none !important;
+  html.is-site-refreshing .app {
+    transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   .mobile-site-reload {
     --reload-progress: 0;
@@ -41720,7 +41717,13 @@ button.mfv-model:hover {
     opacity: 0;
     pointer-events: none;
     transform: translate(-50%, calc(-62px + (var(--reload-progress) * 68px))) scale(0.92);
-    transition: opacity 100ms ease, transform 90ms linear, background 120ms ease;
+    transition: opacity 140ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease;
+  }
+  html.is-site-pulling .mobile-site-reload {
+    transition: opacity 90ms ease, background 160ms ease;
+  }
+  html.is-site-pulling .mobile-site-reload__icon {
+    transition: color 120ms ease;
   }
   .mobile-site-reload.is-visible {
     opacity: 1;
@@ -41738,7 +41741,7 @@ button.mfv-model:hover {
     height: 100%;
     color: #171717;
     transform: rotate(calc(var(--reload-progress) * 180deg));
-    transition: color 120ms ease, transform 90ms linear;
+    transition: color 160ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .mobile-site-reload.is-ready .mobile-site-reload__icon,
   .mobile-site-reload.is-reloading .mobile-site-reload__icon {

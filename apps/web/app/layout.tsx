@@ -45,20 +45,6 @@ const themeInitScript = `
   } catch (e) {}
   try {
     history.scrollRestoration = 'manual';
-    var pullReload = sessionStorage.getItem('freescale:pull-reload') === '1';
-    var navigation = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-    var browserReload = navigation && navigation.type === 'reload';
-    if (pullReload || browserReload) {
-      sessionStorage.removeItem('freescale:pull-reload');
-      document.documentElement.classList.add('site-reload-boot');
-      scrollTo(0, 0);
-      addEventListener('pageshow', function(){ scrollTo(0, 0); }, { once: true });
-      // Filet de securite : le voile ne peut jamais rester bloque si React
-      // ou une ressource externe met plus de temps que prevu a demarrer.
-      setTimeout(function(){
-        document.documentElement.classList.remove('site-reload-boot');
-      }, 1200);
-    }
   } catch (e) {}
 })();
 `.trim();
