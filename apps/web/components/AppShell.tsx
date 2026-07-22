@@ -14,6 +14,7 @@ import { InboxToolbar } from "@/components/InboxToolbar";
 import { MueAvatar } from "@/components/MueAvatar";
 import { MueFullView } from "@/components/MueFullView";
 import { MuePanel } from "@/components/MuePanel";
+import { MobileSiteReload } from "@/components/MobileSiteReload";
 import { ShortcutsModal } from "@/components/ShortcutsModal";
 import { Sidebar, NavIcon } from "@/components/Sidebar";
 import { TasksBoard } from "@/components/TasksBoard";
@@ -489,6 +490,7 @@ export function AppShell({
         <FlashFromUrl />
       </Suspense>
       <AutoSync />
+      <MobileSiteReload />
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} />
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
