@@ -16,13 +16,6 @@ export default async function LandingPage({
 }) {
   const params = await searchParams;
   const hasFlashIntent = params.signedout !== undefined || params.deleted !== undefined;
-
-  // The hosted Sites build is an interactive product demo: open Freescale
-  // directly instead of showing the temporary marketing placeholder.
-  if (process.env.DEMO_MODE === "1" && !hasFlashIntent) {
-    redirect("/app");
-  }
-
   if (!hasFlashIntent) {
     const supabase = await createClient();
     const {
