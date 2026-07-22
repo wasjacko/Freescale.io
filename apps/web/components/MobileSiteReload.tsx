@@ -36,6 +36,9 @@ export function MobileSiteReload() {
     let shouldReload = false;
     let reloadTimer: number | undefined;
     let settleTimer: number | undefined;
+    let bootTimer: number | undefined;
+    let bootFontTimer: number | undefined;
+    let bootCancelled = false;
 
     hapticSwitchRef.current?.setAttribute("switch", "");
 
@@ -46,9 +49,29 @@ export function MobileSiteReload() {
 
     if (root.classList.contains("site-reload-boot")) {
       window.scrollTo(0, 0);
-      requestAnimationFrame(() => {
+
+      // Safari mobile peut corriger la hauteur du visual viewport et terminer
+      // l'hydratation juste apres le premier paint. On attend une courte
+      // fenetre stable (et les polices si elles sont deja disponibles) avant
+      // de reveler l'app afin qu'aucun frame intermediaire ne soit visible.
+      const minimumBoot = new Promise<void>((resolve) => {
+        bootTimer = window.setTimeout(resolve, 220);
+      });
+      const fontsReady = document.fonts?.ready ?? Promise.resolve();
+      const fontsSettled = Promise.race([
+        fontsReady,
+        new Promise<void>((resolve) => {
+          bootFontTimer = window.setTimeout(resolve, 420);
+        }),
+      ]);
+
+      void Promise.all([minimumBoot, fontsSettled]).then(() => {
+        if (bootCancelled) return;
         window.scrollTo(0, 0);
-        requestAnimationFrame(() => root.classList.remove("site-reload-boot"));
+        requestAnimationFrame(() => {
+          window.scrollTo(0, 0);
+          requestAnimationFrame(() => root.classList.remove("site-reload-boot"));
+        });
       });
     }
 
@@ -148,6 +171,9 @@ export function MobileSiteReload() {
       document.removeEventListener("touchcancel", cancelGesture);
       if (reloadTimer) window.clearTimeout(reloadTimer);
       if (settleTimer) window.clearTimeout(settleTimer);
+      if (bootTimer) window.clearTimeout(bootTimer);
+      if (bootFontTimer) window.clearTimeout(bootFontTimer);
+      bootCancelled = true;
       root.classList.remove("is-site-pulling", "is-site-pull-settling");
       root.style.removeProperty("--mobile-pull-offset");
     };

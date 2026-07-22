@@ -45,11 +45,19 @@ const themeInitScript = `
   } catch (e) {}
   try {
     history.scrollRestoration = 'manual';
-    if (sessionStorage.getItem('freescale:pull-reload') === '1') {
+    var pullReload = sessionStorage.getItem('freescale:pull-reload') === '1';
+    var navigation = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    var browserReload = navigation && navigation.type === 'reload';
+    if (pullReload || browserReload) {
       sessionStorage.removeItem('freescale:pull-reload');
       document.documentElement.classList.add('site-reload-boot');
       scrollTo(0, 0);
       addEventListener('pageshow', function(){ scrollTo(0, 0); }, { once: true });
+      // Filet de securite : le voile ne peut jamais rester bloque si React
+      // ou une ressource externe met plus de temps que prevu a demarrer.
+      setTimeout(function(){
+        document.documentElement.classList.remove('site-reload-boot');
+      }, 1200);
     }
   } catch (e) {}
 })();
@@ -70,13 +78,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=optional"
           rel="stylesheet"
         />
         {/* HK Grotesk (version open source « Hanken Grotesk » du même fondeur) :
             police de toute l'UI, sauf le logo qui garde son serif. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=optional"
           rel="stylesheet"
         />
       </head>

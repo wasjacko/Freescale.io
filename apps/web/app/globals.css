@@ -41699,7 +41699,31 @@ button.mfv-model:hover {
   html.site-reload-boot body {
     scroll-behavior: auto !important;
   }
+  html.site-reload-boot body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 2998;
+    background: #f8f9fa;
+  }
+  html.site-reload-boot body::after {
+    content: "";
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 22px);
+    left: calc(50% - 15px);
+    z-index: 2999;
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(79, 108, 247, 0.16);
+    border-top-color: #4f6cf7;
+    border-radius: 50%;
+    animation: mobile-site-reload-spin 700ms linear infinite;
+  }
+  html[data-theme="dark"].site-reload-boot body::before {
+    background: #12151d;
+  }
   html.site-reload-boot .app {
+    visibility: hidden;
     transform: translate3d(0, 0, 0) !important;
     transition: none !important;
   }
