@@ -41672,8 +41672,37 @@ button.mfv-model:hover {
 .mobile-site-reload {
   display: none;
 }
+.mobile-site-reload__haptic {
+  position: fixed;
+  left: -100px;
+  width: 44px;
+  height: 28px;
+  opacity: 0.001;
+  pointer-events: none;
+}
 
 @media (max-width: 1023px) {
+  html {
+    --mobile-pull-offset: 0px;
+  }
+  html:where(.is-site-pulling, .is-site-pull-settling) .app {
+    transform: translate3d(0, var(--mobile-pull-offset), 0) !important;
+    will-change: transform;
+  }
+  html.is-site-pulling .app {
+    transition: none !important;
+  }
+  html.is-site-pull-settling .app {
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  }
+  html.site-reload-boot,
+  html.site-reload-boot body {
+    scroll-behavior: auto !important;
+  }
+  html.site-reload-boot .app {
+    transform: translate3d(0, 0, 0) !important;
+    transition: none !important;
+  }
   .mobile-site-reload {
     --reload-progress: 0;
     position: fixed;
@@ -41698,7 +41727,7 @@ button.mfv-model:hover {
   }
   .mobile-site-reload.is-visible {
     opacity: 1;
-    transform: translate(-50%, calc(-8px + (var(--reload-progress) * 8px))) scale(1);
+    transform: translate(-50%, calc(-10px + (var(--reload-progress) * 24px))) scale(1);
   }
   .mobile-site-reload.is-ready {
     border-color: rgba(79, 108, 247, 0.3);

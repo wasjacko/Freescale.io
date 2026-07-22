@@ -43,6 +43,15 @@ const themeInitScript = `
     r.setAttribute('data-theme', effective);
     r.style.colorScheme = effective;
   } catch (e) {}
+  try {
+    history.scrollRestoration = 'manual';
+    if (sessionStorage.getItem('freescale:pull-reload') === '1') {
+      sessionStorage.removeItem('freescale:pull-reload');
+      document.documentElement.classList.add('site-reload-boot');
+      scrollTo(0, 0);
+      addEventListener('pageshow', function(){ scrollTo(0, 0); }, { once: true });
+    }
+  } catch (e) {}
 })();
 `.trim();
 
