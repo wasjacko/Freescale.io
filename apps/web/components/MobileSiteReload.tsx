@@ -36,9 +36,6 @@ export function MobileSiteReload() {
     let shouldReload = false;
     let reloadTimer: number | undefined;
     let settleTimer: number | undefined;
-    let bootTimer: number | undefined;
-    let bootFontTimer: number | undefined;
-    let bootCancelled = false;
 
     hapticSwitchRef.current?.setAttribute("switch", "");
 
@@ -49,29 +46,9 @@ export function MobileSiteReload() {
 
     if (root.classList.contains("site-reload-boot")) {
       window.scrollTo(0, 0);
-
-      // Safari mobile peut corriger la hauteur du visual viewport et terminer
-      // l'hydratation juste apres le premier paint. On attend une courte
-      // fenetre stable (et les polices si elles sont deja disponibles) avant
-      // de reveler l'app afin qu'aucun frame intermediaire ne soit visible.
-      const minimumBoot = new Promise<void>((resolve) => {
-        bootTimer = window.setTimeout(resolve, 220);
-      });
-      const fontsReady = document.fonts?.ready ?? Promise.resolve();
-      const fontsSettled = Promise.race([
-        fontsReady,
-        new Promise<void>((resolve) => {
-          bootFontTimer = window.setTimeout(resolve, 420);
-        }),
-      ]);
-
-      void Promise.all([minimumBoot, fontsSettled]).then(() => {
-        if (bootCancelled) return;
+      requestAnimationFrame(() => {
         window.scrollTo(0, 0);
-        requestAnimationFrame(() => {
-          window.scrollTo(0, 0);
-          requestAnimationFrame(() => root.classList.remove("site-reload-boot"));
-        });
+        requestAnimationFrame(() => root.classList.remove("site-reload-boot"));
       });
     }
 
@@ -138,14 +115,14 @@ export function MobileSiteReload() {
       if (tracking && shouldReload) {
         playHaptic([10, 22, 16]);
         setReloading(true);
-        setPullDistance(RELOAD_THRESHOLD * PULL_RESISTANCE);
-        root.classList.remove("is-site-pulling");
-        root.classList.add("is-site-pull-settling");
+        // Conserver exactement la position atteinte par le pouce. L'ancien
+        // retour anime vers 0 faisait remonter toute la page juste avant que
+        // le navigateur ne la recharge, d'ou le saut visible sur iPhone.
+        root.classList.add("is-site-pulling");
         sessionStorage.setItem("freescale:pull-reload", "1");
         window.history.scrollRestoration = "manual";
         window.scrollTo(0, 0);
-        requestAnimationFrame(() => setShellOffset(0));
-        reloadTimer = window.setTimeout(() => window.location.reload(), 360);
+        reloadTimer = window.setTimeout(() => window.location.reload(), 160);
       } else {
         resetIndicator();
       }
@@ -171,9 +148,6 @@ export function MobileSiteReload() {
       document.removeEventListener("touchcancel", cancelGesture);
       if (reloadTimer) window.clearTimeout(reloadTimer);
       if (settleTimer) window.clearTimeout(settleTimer);
-      if (bootTimer) window.clearTimeout(bootTimer);
-      if (bootFontTimer) window.clearTimeout(bootFontTimer);
-      bootCancelled = true;
       root.classList.remove("is-site-pulling", "is-site-pull-settling");
       root.style.removeProperty("--mobile-pull-offset");
     };
@@ -190,6 +164,13 @@ export function MobileSiteReload() {
         role="status"
         aria-live="polite"
         aria-hidden={!visible}
+        aria-label={
+          reloading
+            ? "Actualisation en cours"
+            : ready
+              ? "Relâchez pour actualiser"
+              : "Tirez pour actualiser"
+        }
       >
         <span className="mobile-site-reload__icon" aria-hidden>
           {reloading ? (
@@ -203,16 +184,6 @@ export function MobileSiteReload() {
               <path d="m6.5 13.5 5.5 5.5 5.5-5.5" />
             </svg>
           )}
-        </span>
-        <span className="mobile-site-reload__copy">
-          <strong>
-            {reloading
-              ? "Actualisation…"
-              : ready
-                ? "Relâchez pour actualiser"
-                : "Tirez pour actualiser"}
-          </strong>
-          {!reloading && <small>{ready ? "C'est prêt" : "Recharge toute l’application"}</small>}
         </span>
       </div>
       <input
