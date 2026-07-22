@@ -41,10 +41,7 @@ type ProposedTask = {
 };
 
 // Statuts canoniques (mêmes libellés + accents que le Tableau de tâches).
-const STATUS_META: Record<
-  NonNullable<ProposedTask["status"]>,
-  { label: string; color: string }
-> = {
+const STATUS_META: Record<NonNullable<ProposedTask["status"]>, { label: string; color: string }> = {
   "to-scope": { label: "À cadrer", color: "#8b5cf6" },
   todo: { label: "À faire", color: "#4f6cf7" },
   "in-progress": { label: "En cours", color: "#d97706" },
@@ -68,7 +65,12 @@ function defaultFollowUps(userPrompt?: string): string[] {
     return ["Approfondis le résultat", "Sors-moi les actions à faire", "Rédige une réponse"];
   }
   // Brouillon / réponse -> proposer affinage
-  if (q.includes("répond") || q.includes("repond") || q.includes("brouillon") || q.includes("réponse")) {
+  if (
+    q.includes("répond") ||
+    q.includes("repond") ||
+    q.includes("brouillon") ||
+    q.includes("réponse")
+  ) {
     return ["Reformule en plus formel", "Reformule en plus chaleureux", "Crée une tâche de suivi"];
   }
   // Tâches / planning
@@ -122,8 +124,6 @@ type AskMessage = {
   /** Temps écoulé pendant la réflexion en secondes. */
   thinkingElapsed?: number;
 };
-
-type Mode = "ask" | "agents";
 
 const WEEKDAYS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
@@ -349,6 +349,16 @@ const INTENTIONS: Intent[] = [
     suggestions: [],
   },
   {
+    key: "create",
+    label: "Créer",
+    icon: "plus",
+    suggestions: [
+      "Crée mes tâches à partir des nouveaux messages reçus",
+      "Crée une tâche pour…",
+      "Rédige un devis pour…",
+    ],
+  },
+  {
     key: "find",
     label: "Trouver",
     icon: "search",
@@ -356,7 +366,6 @@ const INTENTIONS: Intent[] = [
       "Trouve mes tâches en retard",
       "Cherche dans mes échanges tout ce qui concerne…",
       "Trouve les fils clients sans réponse",
-      "Retrouve un fichier (devis, contrat, brief)…",
     ],
   },
   {
@@ -367,19 +376,6 @@ const INTENTIONS: Intent[] = [
       "Recherche les tendances récentes de mon secteur",
       "Trouve les actus récentes sur le client…",
       "Comment d'autres freelances facturent ce type de projet ?",
-      "Quelles bonnes pratiques pour relancer sans relancer trop ?",
-    ],
-  },
-  {
-    key: "create",
-    label: "Créer",
-    icon: "plus",
-    suggestions: [
-      "Crée mes tâches à partir des nouveaux messages reçus",
-      "Crée une tâche pour…",
-      "Rédige un devis pour…",
-      "Écris une relance pour…",
-      "Prépare un compte-rendu de call sur…",
     ],
   },
   {
@@ -390,7 +386,6 @@ const INTENTIONS: Intent[] = [
       "Change le statut d'une tâche sur…",
       "Change l'échéance d'une tâche sur…",
       "Définis la priorité d'une tâche sur…",
-      "Reformule mon brouillon en plus chaleureux",
     ],
   },
   {
@@ -401,7 +396,6 @@ const INTENTIONS: Intent[] = [
       "Qu'est-ce que j'ai livré cette semaine ?",
       "Quels clients me doivent une réponse ?",
       "Analyse ma santé client",
-      "Quel client rapporte le plus vs temps passé ?",
     ],
   },
   {
@@ -514,7 +508,6 @@ const stroke = {
   viewBox: "0 0 24 24",
 };
 
-
 // Titre du bloc thinking : cycle entre 3 états (Réfléchit → Comprend → Conçoit)
 // toutes les ~850ms. Reste figé sur le dernier label jusqu'à la fin du thinking.
 // Défini HORS de MuePanel pour ne pas être recréé à chaque render (sinon
@@ -558,9 +551,7 @@ function MueStairSlot({ item, instant }: { item: StairItem; instant: boolean }) 
     const t = setTimeout(() => setReady(true), 650 + Math.random() * 350);
     return () => clearTimeout(t);
   }, [ready]);
-  return (
-    <div className="mue2-stair-item">{ready ? item.node : item.skeleton}</div>
-  );
+  return <div className="mue2-stair-item">{ready ? item.node : item.skeleton}</div>;
 }
 // MueStaircase — RÈGLE D'AFFICHAGE : révèle ses enfants STRICTEMENT un par un,
 // de haut en bas, rien avant son tour. Chaque palier paraît d'abord en
@@ -648,28 +639,61 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     activeConvId,
     mueOpen,
     setMueOpen,
+    muePendingAction,
+    setMuePendingAction,
     suggestTasksOpen,
     setSuggestTasksOpen,
     setActiveConv,
     setActiveClientId,
     setView,
+    setMueScanning,
+    setMueHighlighted,
+    setTasksModalOpen,
   } = useApp();
   const { addTask, createEvent } = useData();
   const push = useToast((s) => s.push);
 
-  const [mode, setMode] = useState<Mode>("ask");
+  const [activeTab, setActiveTab] = useState<"chat" | "memory" | "autopilot">("chat");
   const [askInput, setAskInput] = useState("");
   const [askPending, setAskPending] = useState(false);
   const [askHistoryLoading, setAskHistoryLoading] = useState(false);
   const [askMessages, setAskMessages] = useState<AskMessage[]>([]);
   // Exécution agentique en cours (création multiple en cours, élément par élément).
   const [executing, setExecuting] = useState(false);
+
+  const isScanningNow = askPending || executing;
+  useEffect(() => {
+    setMueScanning(isScanningNow ? "messages" : "none");
+    return () => setMueScanning("none");
+  }, [isScanningNow, setMueScanning]);
   // P5 — modale « Arrêter de générer ? » + annulation de l'exécution en cours.
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const cancelRef = useRef(false);
   // P4 — document (devis) ouvert dans une surface par-dessus le canvas.
   const [openDoc, setOpenDoc] = useState<DevisDoc | null>(null);
   const docsRef = useRef<Record<string, DevisDoc>>({});
+
+  const [recentPrompts, setRecentPrompts] = useState<string[]>([]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("fs:recent_prompts");
+        if (raw) setRecentPrompts(JSON.parse(raw));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const saveToRecentPrompts = (text: string) => {
+    const nextPrompts = [text, ...recentPrompts.filter((p) => p !== text)].slice(0, 3);
+    setRecentPrompts(nextPrompts);
+    try {
+      localStorage.setItem("fs:recent_prompts", JSON.stringify(nextPrompts));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Réflexion Mue : gestion des timers (étapes animées pendant le thinking).
   // Pas d'état d'expansion : une fois la réflexion finie, le bloc disparaît.
@@ -719,19 +743,21 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   // Sélecteur de discussions (popover) : ouverture + recherche.
   const [discOpen, setDiscOpen] = useState(false);
-  // Drawer « Mémoire » — alimente ce que Mue sait de toi.
-  const [memoryOpen, setMemoryOpen] = useState(false);
+  // Popover « Consommation de l'agent » : tokens, crédits, requêtes ce mois.
   // Popover « Consommation de l'agent » : tokens, crédits, requêtes ce mois.
   const [usageOpen, setUsageOpen] = useState(false);
   // Annonces (newsletter) fermées par l'utilisateur.
   const [dismissedNews, setDismissedNews] = useState<Set<string>>(new Set());
-  // Phrase d'accueil tirée au hasard, stable tant que le panneau reste monté.
-  const [heroPrompt] = useState(
-    () => HERO_PROMPTS[Math.floor(Math.random() * HERO_PROMPTS.length)]
-  );
+  // Phrase d'accueil tirée au hasard côté client uniquement (Math.random en
+  // useState initializer casse l'hydratation : server et client tirent des
+  // valeurs différentes). On démarre sur la 1ère phrase et on randomise
+  // après-mount pour préserver la variété sans mismatch SSR.
+  const [heroPrompt, setHeroPrompt] = useState<string>(() => HERO_PROMPTS[0] ?? "");
+  useEffect(() => {
+    setHeroPrompt(HERO_PROMPTS[Math.floor(Math.random() * HERO_PROMPTS.length)] ?? "");
+  }, []);
   const [discQuery, setDiscQuery] = useState("");
   const [currentDisc, setCurrentDisc] = useState<{ id: string; title: string } | null>(null);
-
 
   // P3 — quand Mue ouvre un objet (clic carte), on navigue le canvas SANS
   // recharger/écraser le fil en cours. Ce flag dit à l'effet de sauter le reload.
@@ -821,7 +847,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   // Déclencheur externe (store) → scan inline.
   useEffect(() => {
     if (suggestTasksOpen) {
-      setMode("ask");
       runScan();
       setSuggestTasksOpen(false);
     }
@@ -946,9 +971,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               ...m,
               preview: {
                 ...m.preview,
-                tasks: m.preview.tasks.map((t, idx) =>
-                  idx === taskIdx ? { ...t, status } : t
-                ),
+                tasks: m.preview.tasks.map((t, idx) => (idx === taskIdx ? { ...t, status } : t)),
               },
             }
           : m
@@ -1052,6 +1075,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     );
     cancelRef.current = false;
     setExecuting(false);
+    if (!cancelled) {
+      setTasksModalOpen(true);
+    }
   };
 
   // ── P3 · Ouvre un objet cité dans le canvas SANS fermer Mue ──
@@ -1365,7 +1391,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       id: `ref-${Date.now()}`,
       role: "mue" as const,
       kind: "refusal" as const,
-      content: "là je te suis pas. supprimer en masse c'est sensible et irréversible, je touche pas à ça tout seul.",
+      content:
+        "là je te suis pas. supprimer en masse c'est sensible et irréversible, je touche pas à ça tout seul.",
       refusal: {
         alternative:
           "par contre, sélectionne les éléments dans le Tableau et envoie-les à la Corbeille d'un clic, tu gardes la main.",
@@ -1416,6 +1443,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
   const submit = (raw: string) => {
     const text = raw.trim();
     if (!text || askPending || executing) return;
+
+    saveToRecentPrompts(text);
 
     // Repart d'un état non-annulé (après un reset « Nouvelle discussion »).
     cancelRef.current = false;
@@ -1664,6 +1693,14 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
     submit(askInput);
   };
 
+  useEffect(() => {
+    if (muePendingAction) {
+      if (activeTab !== "chat") setActiveTab("chat");
+      submit(muePendingAction);
+      setMuePendingAction(null);
+    }
+  }, [muePendingAction, activeTab, setMuePendingAction]);
+
   // Actions sur un message Mue : copier / réessayer / feedback.
   const copyText = (text: string) => {
     void navigator.clipboard?.writeText(text);
@@ -1708,10 +1745,8 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
 
   const askInputRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    if (mueOpen && mode === "ask") requestAnimationFrame(() => askInputRef.current?.focus());
-  }, [mueOpen, mode]);
-
-  if (!mueOpen) return null;
+    if (mueOpen && activeTab === "chat") requestAnimationFrame(() => askInputRef.current?.focus());
+  }, [mueOpen, activeTab]);
 
   // On n'inclut PAS askHistoryLoading : sinon le chargement async de
   // l'historique affiche une vue « Chargement… » au lieu du hero à l'ouverture.
@@ -1950,6 +1985,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
       className={`copilot mue-pane mue2 is-open ${askPending || executing ? "is-pending" : ""}`}
       aria-label="Mue copilot"
     >
+      <div className="mue-sheet-handle" aria-hidden />
       <header className="mue2-head">
         {hasChat && (
           <button
@@ -2077,7 +2113,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         {/* Tabs (Demander / Agents) déplacées au-dessus du composer
             pour qu'elles soient visuellement attachées au chat. */}
         <div className="mue2-head-actions">
-          {askMessages.length > 0 && mode === "ask" && (
+          {askMessages.length > 0 && activeTab === "chat" && (
             <button
               type="button"
               className="mue-agent-iconbtn"
@@ -2158,9 +2194,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                         ? `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`
                         : String(n);
                   const fmtEur = (v: number) =>
-                    v < 0.01
-                      ? "€0,00"
-                      : `€${v.toFixed(2).replace(".", ",")}`;
+                    v < 0.01 ? "€0,00" : `€${v.toFixed(2).replace(".", ",")}`;
                   const pct = Math.min(100, Math.round((requests / QUOTA) * 100));
 
                   return (
@@ -2197,23 +2231,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               </>
             )}
           </div>
-          {/* Mémoire — toggle inline (la vue Mémoire s'affiche dans le panel
-              au lieu d'ouvrir un drawer séparé). */}
-          <button
-            type="button"
-            className={`mue2-mem-btn mue2-mem-btn--icon ${memoryOpen ? "is-on" : ""}`}
-            title={memoryOpen ? "Fermer la mémoire" : "Mémoire de Mue"}
-            aria-label="Mémoire de Mue"
-            aria-pressed={memoryOpen}
-            onClick={() => setMemoryOpen((v) => !v)}
-          >
-            <svg {...stroke} width={15} height={15}>
-              <rect x="3" y="5" width="18" height="5" rx="2" />
-              <rect x="3" y="14" width="18" height="5" rx="2" />
-              <line x1="7" y1="7.5" x2="7.01" y2="7.5" />
-              <line x1="7" y1="16.5" x2="7.01" y2="16.5" />
-            </svg>
-          </button>
+
           <button
             type="button"
             className="mue-agent-iconbtn"
@@ -2233,11 +2251,35 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
         </div>
       </header>
 
+      {/* Navigation par onglets */}
+      <nav className="mue2-tabs" aria-label="Navigation Mue">
+        <button
+          type="button"
+          className={`mue2-tab ${activeTab === "chat" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("chat")}
+        >
+          Copilote
+        </button>
+        <button
+          type="button"
+          className={`mue2-tab ${activeTab === "memory" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("memory")}
+        >
+          Mémoire
+        </button>
+        <button
+          type="button"
+          className={`mue2-tab ${activeTab === "autopilot" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("autopilot")}
+        >
+          Autopilote
+        </button>
+      </nav>
+
       {/* Annonces (style newsletter) — sous l'en-tête, chat vide + mémoire
           fermée. Chaque carte est fermable (croix). */}
-      {mode === "ask" &&
+      {activeTab === "chat" &&
         !hasChat &&
-        !memoryOpen &&
         (() => {
           const news = [
             {
@@ -2246,13 +2288,6 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
               title: "Comment Mue protège tes données",
               meta: "Vidéo · 1 min",
               onOpen: runPrivacy,
-            },
-            {
-              id: "channels",
-              eyebrow: "Nouveauté",
-              title: "Connecte WhatsApp & Instagram à ton inbox",
-              meta: "Mise à jour · cette semaine",
-              onOpen: () => push({ kind: "info", text: "Connexion des canaux — bientôt." }),
             },
           ].filter((n) => !dismissedNews.has(n.id));
           if (news.length === 0) return null;
@@ -2287,9 +2322,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     className="mue2-news-close"
                     aria-label="Fermer l'annonce"
                     title="Fermer"
-                    onClick={() =>
-                      setDismissedNews((prev) => new Set(prev).add(n.id))
-                    }
+                    onClick={() => setDismissedNews((prev) => new Set(prev).add(n.id))}
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -2311,11 +2344,11 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
           );
         })()}
 
-      {memoryOpen ? (
+      {activeTab === "memory" ? (
         <div className="mue2-memory-wrap">
           <MueMemory />
         </div>
-      ) : mode === "agents" ? (
+      ) : activeTab === "autopilot" ? (
         <div className="mue2-agents">
           <span className="mue2-agents-orb">
             <svg {...stroke} width={26} height={26}>
@@ -2378,18 +2411,7 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                     // requêtes utilisateur envoyées à Mue (dédupliquées, max 5).
                     let suggestions = it.suggestions;
                     if (it.key === "recent") {
-                      const seen = new Set<string>();
-                      const recents: string[] = [];
-                      for (let i = askMessages.length - 1; i >= 0; i--) {
-                        const m = askMessages[i];
-                        if (!m || m.role !== "user") continue;
-                        const txt = m.content.trim().replace(/\s+/g, " ");
-                        if (!txt || seen.has(txt)) continue;
-                        seen.add(txt);
-                        recents.push(txt);
-                        if (recents.length >= 5) break;
-                      }
-                      suggestions = recents;
+                      suggestions = recentPrompts;
                     }
                     return (
                       <div className={`mue2-intentpanel ${panelOpen ? "is-open" : ""}`}>
@@ -2536,7 +2558,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                           <div className="mue2-prev mue2-prev--single">
                             <div className="mue2-prev-row mue2-prev-row--skeleton" aria-busy="true">
                               <div className="mue2-prev-main">
-                                <span className="mue2-skel-line mue2-skel-line--title" aria-hidden />
+                                <span
+                                  className="mue2-skel-line mue2-skel-line--title"
+                                  aria-hidden
+                                />
                                 <span className="mue2-skel-line mue2-skel-line--meta" aria-hidden />
                               </div>
                               <span className="mue2-skel-badge" aria-hidden />
@@ -2545,7 +2570,13 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                         ),
                         node: (
                           <div className="mue2-prev mue2-prev--single">
-                            <div className="mue2-prev-row">
+                            <div
+                              className="mue2-prev-row"
+                              onMouseEnter={() =>
+                                t.conversationId && setMueHighlighted(`conv:${t.conversationId}`)
+                              }
+                              onMouseLeave={() => setMueHighlighted(null)}
+                            >
                               <div className="mue2-prev-row-content">
                                 <div className="mue2-prev-row-top">
                                   <input
@@ -2572,7 +2603,10 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                                       };
                                       if (!editing) {
                                         return (
-                                          <span className="mue2-prev-status-badge" style={badgeStyle}>
+                                          <span
+                                            className="mue2-prev-status-badge"
+                                            style={badgeStyle}
+                                          >
                                             {st.label}
                                           </span>
                                         );
@@ -2726,7 +2760,9 @@ export function MuePanel({ userName = null }: { userName?: string | null }) {
                               <span className="mue2-cfm-chip-arrow" aria-hidden>
                                 ✎
                               </span>
-                              {editPreviewId === m.id ? "terminer les modifs" : "modifier les tâches"}
+                              {editPreviewId === m.id
+                                ? "terminer les modifs"
+                                : "modifier les tâches"}
                             </button>
                           </div>
                         ),

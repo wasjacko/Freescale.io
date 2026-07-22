@@ -62,14 +62,24 @@ type State = {
   activeFolderId: string | null;
   setActiveFolder: (id: string | null) => void;
   addFolder: (name: string) => void;
+  inboxFoldersOpen: boolean;
+  setInboxFoldersOpen: (open: boolean) => void;
   setView: (v: ViewId) => void;
   setActiveConv: (id: string) => void;
   setActiveClientId: (id: string) => void;
   toggleSidebar: () => void;
   setMueOpen: (open: boolean) => void;
+  muePendingAction: string | null;
+  setMuePendingAction: (action: string | null) => void;
   setMueView: (v: MueView) => void;
   setSuggestTasksOpen: (open: boolean) => void;
   setInboxSort: (s: InboxSort) => void;
+  mueScanning: "messages" | "tasks" | "none";
+  setMueScanning: (v: "messages" | "tasks" | "none") => void;
+  mueHighlighted: string | null;
+  setMueHighlighted: (v: string | null) => void;
+  tasksModalOpen: boolean;
+  setTasksModalOpen: (open: boolean) => void;
   /** Bascule un canal dans la sélection (ajoute/retire). */
   toggleInboxChannel: (kind: string) => void;
   /** Bascule une étiquette dans la sélection. */
@@ -121,14 +131,24 @@ export const useApp = create<State>()(
             { id: `f-${Date.now()}`, name: name.trim() || "Nouveau dossier", convIds: [] },
           ],
         })),
+      inboxFoldersOpen: false,
+      setInboxFoldersOpen: (inboxFoldersOpen) => set({ inboxFoldersOpen }),
       setView: (view) => set({ view }),
       setActiveConv: (activeConvId) => set({ activeConvId }),
       setActiveClientId: (activeClientId) => set({ activeClientId }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setMueOpen: (mueOpen) => set({ mueOpen }),
+      muePendingAction: null,
+      setMuePendingAction: (muePendingAction) => set({ muePendingAction }),
       setMueView: (mueView) => set({ mueView }),
       setSuggestTasksOpen: (suggestTasksOpen) => set({ suggestTasksOpen }),
       setInboxSort: (inboxSort) => set({ inboxSort }),
+      mueScanning: "none",
+      setMueScanning: (mueScanning) => set({ mueScanning }),
+      mueHighlighted: null,
+      setMueHighlighted: (mueHighlighted) => set({ mueHighlighted }),
+      tasksModalOpen: false,
+      setTasksModalOpen: (tasksModalOpen) => set({ tasksModalOpen }),
       toggleInboxChannel: (kind) =>
         set((s) => ({
           inboxChannels: s.inboxChannels.includes(kind)

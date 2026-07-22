@@ -537,7 +537,12 @@ export function CalendarView() {
         </div>
 
         {showEvents && (view === "week" || selectedDay === now.getDay()) && (
-          <div className="cal-now" data-time={nowTime} style={{ top: `${nowTop}px` }} />
+          <div
+            className="cal-now"
+            data-time={nowTime}
+            style={{ top: `${nowTop}px` }}
+            suppressHydrationWarning
+          />
         )}
       </div>
 

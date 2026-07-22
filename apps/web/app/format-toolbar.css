@@ -1,0 +1,61 @@
+.format-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+[data-theme="dark"] .format-toolbar {
+  background: #1c1d22;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.format-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.format-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(15, 23, 42, 0.1);
+  margin: 0 4px;
+}
+
+[data-theme="dark"] .format-divider {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.format-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #64748b;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.format-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+}
+
+[data-theme="dark"] .format-btn {
+  color: #9aa0b0;
+}
+
+[data-theme="dark"] .format-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}

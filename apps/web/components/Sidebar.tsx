@@ -2,11 +2,12 @@
 
 import { FreescaleLogo } from "@/components/brand/FreescaleLogo";
 import { FreescaleMark } from "@/components/brand/FreescaleMark";
+import type { CurrentUser } from "@/lib/auth";
 import { useData } from "@/lib/contexts/DataContext";
 import { useApp } from "@/lib/store";
 import { Fragment } from "react";
 
-type NavId =
+export type NavId =
   | "today"
   | "inbox"
   | "tasks"
@@ -25,12 +26,11 @@ const NAV_ITEMS: NavItem[] = [
   { id: "inbox", label: "Inbox" },
   { id: "today", label: "Tâches" },
   { id: "clients", label: "Clients" },
-  { id: "calendar", label: "Calendar" },
   { id: "ai-knowledge", label: "Mue" },
 ];
 
 /** Icônes outline fines et cohérentes (façon Lucide), une par section. */
-function NavIcon({ id }: { id: NavId }) {
+export function NavIcon({ id }: { id: NavId }) {
   const p = {
     className: "icon",
     viewBox: "0 0 24 24",
@@ -116,8 +116,8 @@ function NavIcon({ id }: { id: NavId }) {
  * Sidebar — navigation pleine hauteur : logo en haut, sections, et footer
  * « Aide & support » en bas (façon maquette).
  */
-export function Sidebar() {
-  const { view, setView, setActiveConv, toggleSidebar } = useApp();
+export function Sidebar({ user: _user }: { user: CurrentUser | null }) {
+  const { view, setView, setActiveConv, toggleSidebar, sidebarCollapsed } = useApp();
   const data = useData();
   const conversations = data.conversations ?? [];
   const tasks = data.tasks ?? [];
@@ -152,11 +152,8 @@ export function Sidebar() {
       <nav className="nav-section">
         {NAV_ITEMS.map((item) => {
           const count = counts[item.id];
-          // Séparateur juste AVANT Mue → isole l'agent du rail Inbox/Tâches/Clients/Calendar.
-          const beforeMue = item.id === "ai-knowledge";
           return (
             <Fragment key={item.id}>
-              {beforeMue && <div className="nav-divider" aria-hidden />}
               <button
                 type="button"
                 className={`nav-item ${view === item.id ? "active" : ""}`}
@@ -164,6 +161,10 @@ export function Sidebar() {
                 onClick={() => {
                   setView(item.id);
                   if (item.id === "inbox") setActiveConv("");
+                  // Auto-close sidebar drawer on mobile/tablet viewports
+                  if (window.innerWidth < 1024 && !sidebarCollapsed) {
+                    toggleSidebar();
+                  }
                 }}
               >
                 <span className="nav-ico">

@@ -27,7 +27,12 @@ export function InboxSortButton() {
         aria-expanded={open}
         title={`Trier : ${current.label}`}
         aria-label={`Trier : ${current.label}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate(8);
+          }
+          setOpen((v) => !v);
+        }}
       >
         <svg
           viewBox="0 0 24 24"
@@ -59,6 +64,9 @@ export function InboxSortButton() {
                 type="button"
                 className={`ibx-tool-item ${inboxSort === s.key ? "is-active" : ""}`}
                 onClick={() => {
+                  if (typeof navigator !== "undefined" && navigator.vibrate) {
+                    navigator.vibrate(6);
+                  }
                   setInboxSort(s.key);
                   setOpen(false);
                 }}

@@ -67,6 +67,7 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
         tabIndex={-1}
       />
       <div className="account-menu" role="menu" aria-label="Menu du compte">
+        <div className="account-menu-drag-handle" aria-hidden="true" />
         <div className="account-menu-head">
           <span className="account-menu-as">Connecté en tant que {user?.name ?? "Compte"}</span>
           <span className="account-menu-email">{user?.email ?? "—"}</span>
@@ -215,6 +216,66 @@ export function AccountMenu({ user, onClose }: { user: CurrentUser | null; onClo
           </svg>
           Corbeille
         </button>
+
+        <div className="account-menu-sep" />
+
+        <div
+          style={{ padding: "8px 14px 10px", display: "flex", flexDirection: "column", gap: "8px" }}
+        >
+          <span
+            style={{
+              fontSize: "10.5px",
+              fontWeight: "700",
+              textTransform: "uppercase",
+              color: "#9aa0aa",
+              letterSpacing: "0.08em",
+              marginBottom: "2px",
+            }}
+          >
+            Onboarding
+          </span>
+          <Link
+            href="/preview/onboarding"
+            className="account-menu-item"
+            style={{ padding: "4px 0", height: "auto", gap: "8px" }}
+            onClick={onClose}
+          >
+            <svg {...stroke} width={15} height={15}>
+              <path d="M12 2l3.5 3.5L12 9" />
+              <path d="M3 11V5a2 2 0 0 1 2-2h10" />
+            </svg>
+            Parcours de bienvenue
+          </Link>
+          <button
+            type="button"
+            className="account-menu-item"
+            style={{ padding: "4px 0", height: "auto", gap: "8px" }}
+            onClick={() => {
+              const active = localStorage.getItem("freescale_debug_force_onboarding") === "true";
+              if (active) {
+                localStorage.removeItem("freescale_debug_force_onboarding");
+              } else {
+                localStorage.setItem("freescale_debug_force_onboarding", "true");
+              }
+              window.dispatchEvent(new Event("onboarding-toggle"));
+              push({
+                kind: active ? "info" : "success",
+                text: active ? "Onboarding Inbox masqué" : "Onboarding Inbox activé !",
+                duration: 2500,
+              });
+              onClose();
+            }}
+          >
+            <svg {...stroke} width={15} height={15}>
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M9 12l2 2 4-4" />
+            </svg>
+            {typeof window !== "undefined" &&
+            localStorage.getItem("freescale_debug_force_onboarding") === "true"
+              ? "Masquer la carte Inbox"
+              : "Afficher la carte Inbox"}
+          </button>
+        </div>
 
         <div className="account-menu-sep" />
 

@@ -41,7 +41,11 @@ export function MueFlower({ size = 56, animated = false }: { size?: number; anim
         {animated && (
           <filter id={`mflw-noise-${uid}`} x="-20%" y="-20%" width="140%" height="140%">
             <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="n" />
-            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0" />
+            <feColorMatrix
+              in="n"
+              type="matrix"
+              values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0"
+            />
             <feComposite operator="in" in2="SourceGraphic" />
           </filter>
         )}

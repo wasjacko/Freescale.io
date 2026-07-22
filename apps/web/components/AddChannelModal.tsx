@@ -48,11 +48,11 @@ export function AddChannelModal({
         className="add-channel-sheet"
         role="dialog"
         aria-modal="false"
-        aria-label="Connecter un canal"
+        aria-label="Ajouter un canal"
       >
         <header className="add-channel-head">
           <div>
-            <h2>Connecter un canal</h2>
+            <h2>Ajouter un canal</h2>
             <p>Branchez une plateforme pour la centraliser dans votre inbox.</p>
           </div>
           <button type="button" className="add-channel-close" aria-label="Fermer" onClick={onClose}>

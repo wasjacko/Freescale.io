@@ -1,10 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Freescale — Client Communications OS",
   description: "Unified multi-channel inbox with AI copilot Mue",
   metadataBase: new URL("https://freescale.site"),
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 /**
@@ -36,6 +43,9 @@ const themeInitScript = `
     r.setAttribute('data-theme', effective);
     r.style.colorScheme = effective;
   } catch (e) {}
+  try {
+    history.scrollRestoration = 'manual';
+  } catch (e) {}
 })();
 `.trim();
 
@@ -54,17 +64,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=optional"
           rel="stylesheet"
         />
         {/* HK Grotesk (version open source « Hanken Grotesk » du même fondeur) :
             police de toute l'UI, sauf le logo qui garde son serif. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=optional"
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      {/* suppressHydrationWarning : les extensions de navigateur (Grammarly,
+          Dark Reader, gestionnaires de mots de passe…) injectent leurs propres
+          attributs sur <body> avant l'hydratation — sans ça, React lève un
+          « attributes didn't match » à chaque chargement. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

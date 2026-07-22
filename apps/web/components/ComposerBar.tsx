@@ -39,7 +39,10 @@ export function ComposerBar({
   onSend,
   onMic,
   canSend,
+  onFormat,
+  formatOpen,
 }: {
+  onFormat?: () => void;
   onAttach?: () => void;
   onMue?: () => void;
   onMention?: () => void;
@@ -49,6 +52,7 @@ export function ComposerBar({
   onSend: () => void;
   onMic?: () => void;
   canSend: boolean;
+  formatOpen?: boolean;
 }) {
   // Ordre des icônes calé sur la maquette : +, sparkle (Mue), mention,
   // paperclip, @, chat bubble, emoji, vidéo, checklist, template, swap.
@@ -65,6 +69,19 @@ export function ComposerBar({
       onClick: onAttach,
     },
     {
+      key: "format",
+      label: "Mise en forme",
+      active: formatOpen,
+      icon: (
+        <svg {...ico} viewBox="0 0 24 24">
+          <path d="M4 20h16" />
+          <path d="m6.9 15 6.9-11L21 15" />
+          <path d="m8.6 11.4 7.6-.2" />
+        </svg>
+      ),
+      onClick: onFormat,
+    },
+    {
       key: "mue",
       label: "Mue — suggérer",
       onClick: onMue,
@@ -72,7 +89,14 @@ export function ComposerBar({
         // Petit motif fleur dégradé pour évoquer Mue (sans alourdir l'import).
         <svg {...ico} stroke="none" fill="url(#cbar-grad)">
           <defs>
-            <linearGradient id="cbar-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <linearGradient
+              id="cbar-grad"
+              x1="0"
+              y1="0"
+              x2="24"
+              y2="24"
+              gradientUnits="userSpaceOnUse"
+            >
               <stop offset="0%" stopColor="#78AABF" />
               <stop offset="40%" stopColor="#611C71" />
               <stop offset="80%" stopColor="#FE0045" />
@@ -93,7 +117,14 @@ export function ComposerBar({
       icon: (
         <svg {...ico} stroke="none" fill="url(#cbar-grad-alt)">
           <defs>
-            <linearGradient id="cbar-grad-alt" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <linearGradient
+              id="cbar-grad-alt"
+              x1="0"
+              y1="0"
+              x2="24"
+              y2="24"
+              gradientUnits="userSpaceOnUse"
+            >
               <stop offset="0%" stopColor="#FE0045" />
               <stop offset="100%" stopColor="#611C71" />
             </linearGradient>

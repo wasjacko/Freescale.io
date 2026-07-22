@@ -13,6 +13,7 @@ import { type EmailTemplate, listEmailTemplates } from "@/lib/actions/email-temp
 import { simulateEmailThread } from "@/lib/simulateEmailThread";
 import { ClientDetailsModal } from "@/components/ClientDetailsModal";
 import { ComposerBar } from "@/components/ComposerBar";
+import { FormatToolbar } from "@/components/FormatToolbar";
 import { createTask, sendEmailReply } from "@/lib/actions/inbox";
 import {
   type ReplySuggestion,
@@ -33,7 +34,7 @@ import { cleanEmailBody } from "@/lib/email-body-clean";
 import { useToast } from "@/lib/hooks/useToast";
 import { MOCK_CLIENTS } from "@/lib/mock-v2";
 import { useApp } from "@/lib/store";
-import type { Message } from "@/lib/types";
+import type { ConversationCategory, Message } from "@/lib/types";
 import { isAwaitingMyReply } from "@/lib/urgency";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -101,13 +102,18 @@ export function Thread({
 }: {
   currentUser?: { name: string; avatarUrl: string | null } | null;
 }) {
-  const { activeConvId, setActiveConv, setView } = useApp();
+  const { activeConvId, setActiveConv, setView, setMueOpen, setMuePendingAction } = useApp();
   const {
     conversations,
     messagesByConv,
     appendOutgoingMessage,
     retryFailedMessage,
     setTags,
+    markUnread,
+    archive,
+    toggleStar,
+    setCategory,
+    snooze,
   } = useData();
   // Section collaboration (notes internes + activité) — désormais inaccessible
   // depuis l'en-tête (icônes retirées) ; on garde l'état au cas où.
@@ -122,9 +128,61 @@ export function Thread({
   const [input, setInput] = useState("");
   const messagesEl = useRef<HTMLElement>(null);
   const sendBtnRef = useRef<HTMLButtonElement>(null);
+  const tagBtnRef = useRef<HTMLButtonElement>(null);
   const [tagOpen, setTagOpen] = useState(false);
-  const [tagAnchor] = useState<DOMRect | null>(null);
+  const [tagAnchor, setTagAnchor] = useState<DOMRect | null>(null);
+  // Menus de la toolbar Gmail-like : catégorie + « plus d'actions ».
+  const [catOpen, setCatOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [categories, setCategories] = useState<
+    { key: ConversationCategory; label: string; color: string }[]
+  >(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("freescale_custom_tags");
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    return [
+      { key: "client", label: "Client", color: "#2563eb" },
+      { key: "prospect", label: "Prospect", color: "#e11d48" },
+      { key: "prestataire", label: "Prestataire", color: "#d97706" },
+      { key: "collaborateur", label: "Équipe", color: "#16a34a" },
+      { key: "other", label: "Non classé", color: "#4b5563" },
+    ];
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const stored = localStorage.getItem("freescale_custom_tags");
+      if (stored) {
+        try {
+          setCategories(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    window.addEventListener("tags-updated", handleUpdate);
+    return () => window.removeEventListener("tags-updated", handleUpdate);
+  }, []);
   const [isLoading, setIsLoading] = useState(false);
+  const [isClientTyping, setIsClientTyping] = useState(false);
+  useEffect(() => {
+    if (!activeConvId || conv?.channel === "gmail") {
+      setIsClientTyping(false);
+      return;
+    }
+    setIsClientTyping(true);
+    const timer = setTimeout(() => {
+      setIsClientTyping(false);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [activeConvId, conv?.channel]);
   // Live-fetch messages from Gmail on conv open. messagesByConv (server
   // DB cache) used only as an INSTANT fallback for the conv we last
   // rendered — never leaks across conv switches (would show the wrong
@@ -225,11 +283,21 @@ export function Thread({
       <section className="thread thread-empty-pane">
         <div className="thread-empty-card">
           <div className="thread-empty-illu" aria-hidden>
-            <svg viewBox="0 0 600 340" fill="none" overflow="visible"
-              xmlns="http://www.w3.org/2000/svg">
+            <svg
+              viewBox="0 0 600 340"
+              fill="none"
+              overflow="visible"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <defs>
-                <linearGradient id="fs-illu-grad" x1="0" y1="0" x2="600" y2="320"
-                  gradientUnits="userSpaceOnUse">
+                <linearGradient
+                  id="fs-illu-grad"
+                  x1="0"
+                  y1="0"
+                  x2="600"
+                  y2="320"
+                  gradientUnits="userSpaceOnUse"
+                >
                   <stop offset="0%" stopColor="#78AABF" />
                   <stop offset="18%" stopColor="#6981B8" />
                   <stop offset="38%" stopColor="#611C71" />
@@ -251,8 +319,13 @@ export function Thread({
                 </radialGradient>
                 {/* Ombre douce pour la boîte (remplace le contour). */}
                 <filter id="fs-illu-shadow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="8" stdDeviation="16"
-                    floodColor="#1a1730" floodOpacity="0.12" />
+                  <feDropShadow
+                    dx="0"
+                    dy="8"
+                    stdDeviation="16"
+                    floodColor="#1a1730"
+                    floodOpacity="0.12"
+                  />
                 </filter>
                 <clipPath id="fs-av-1">
                   <circle cx="160" cy="108" r="34" />
@@ -269,8 +342,15 @@ export function Thread({
               </defs>
 
               {/* Boîte unifiée (au centre) — sans contour, juste une ombre douce */}
-              <rect x="206" y="112" width="188" height="126" rx="22"
-                fill="#ffffff" filter="url(#fs-illu-shadow)" />
+              <rect
+                x="206"
+                y="112"
+                width="188"
+                height="126"
+                rx="22"
+                fill="#ffffff"
+                filter="url(#fs-illu-shadow)"
+              />
               {/* 3 rangées de conversation */}
               <g>
                 <circle cx="234" cy="142" r="9" fill="url(#fs-illu-grad)" />
@@ -289,20 +369,48 @@ export function Thread({
               {/* Avatars réels (photos contacts) + pastille canal — tailles variées,
                   rapprochés de la boîte centrale */}
               <g>
-                <image href="/avatars/1.webp" x="126" y="74" width="68" height="68"
-                  clipPath="url(#fs-av-1)" preserveAspectRatio="xMidYMid slice" />
+                <image
+                  href="/avatars/1.webp"
+                  x="126"
+                  y="74"
+                  width="68"
+                  height="68"
+                  clipPath="url(#fs-av-1)"
+                  preserveAspectRatio="xMidYMid slice"
+                />
                 <circle cx="184" cy="132" r="10" fill="#25D366" stroke="#fff" strokeWidth="3" />
 
-                <image href="/avatars/2.webp" x="423" y="79" width="50" height="50"
-                  clipPath="url(#fs-av-2)" preserveAspectRatio="xMidYMid slice" />
+                <image
+                  href="/avatars/2.webp"
+                  x="423"
+                  y="79"
+                  width="50"
+                  height="50"
+                  clipPath="url(#fs-av-2)"
+                  preserveAspectRatio="xMidYMid slice"
+                />
                 <circle cx="466" cy="122" r="8" fill="#EA4335" stroke="#fff" strokeWidth="3" />
 
-                <image href="/avatars/3.webp" x="136" y="215" width="58" height="58"
-                  clipPath="url(#fs-av-3)" preserveAspectRatio="xMidYMid slice" />
+                <image
+                  href="/avatars/3.webp"
+                  x="136"
+                  y="215"
+                  width="58"
+                  height="58"
+                  clipPath="url(#fs-av-3)"
+                  preserveAspectRatio="xMidYMid slice"
+                />
                 <circle cx="185" cy="264" r="9" fill="#0A66C2" stroke="#fff" strokeWidth="3" />
 
-                <image href="/avatars/4.webp" x="420" y="224" width="44" height="44"
-                  clipPath="url(#fs-av-4)" preserveAspectRatio="xMidYMid slice" />
+                <image
+                  href="/avatars/4.webp"
+                  x="420"
+                  y="224"
+                  width="44"
+                  height="44"
+                  clipPath="url(#fs-av-4)"
+                  preserveAspectRatio="xMidYMid slice"
+                />
                 <circle cx="458" cy="262" r="7.5" fill="#7B5CFF" stroke="#fff" strokeWidth="3" />
               </g>
 
@@ -347,6 +455,9 @@ export function Thread({
   const handleSend = async () => {
     const text = input.trim();
     if (!text) return;
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(15);
+    }
     sendBtnRef.current?.classList.add("is-sending");
     setTimeout(() => sendBtnRef.current?.classList.remove("is-sending"), 500);
     // Clear the input optimistically. If the send fails, the message
@@ -404,87 +515,384 @@ export function Thread({
 
   return (
     <main className="thread">
-      <header className="thread-head">
-        {/* Back-to-inbox button — visible at all viewports now since
-            opening a conv hides the inbox list entirely. Returns the
-            user to the conv list by clearing activeConvId AND forcing
-            view to "inbox" (defensive — in case the user opened a
-            thread via command palette from a non-inbox view). */}
-        <button
-          type="button"
-          className="thread-back"
-          onClick={() => {
-            setView("inbox");
-            setActiveConv("");
-          }}
-          aria-label="Retour à l'inbox"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
+      <header className="thread-head thread-head--toolbar">
+        {/* Barre d'actions Gmail-like : retour + actions rapides à gauche,
+            Fiche client + favori à droite. Contact info retiré (repose sur
+            la ligne d'expéditeur du 1er email pour l'identification). */}
+        <div className="thread-tb-left">
+          <button
+            type="button"
+            className="thread-tb-btn thread-back"
+            onClick={() => {
+              setView("inbox");
+              setActiveConv("");
+            }}
+            aria-label="Retour à l'inbox"
+            title="Retour à l'inbox"
           >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          <span>Inbox</span>
-        </button>
-        <div className="contact">
-          <span className="avatar large">
-            <Avatar avatar={conv.avatar} className="" />
-            <span className="status-dot" />
-          </span>
-          <div>
-            <h1>{conv.name}</h1>
-            <div className="contact-sub">
-              {/* Canal unique, ou sélecteur de canaux si le client en a plusieurs. */}
-              {(() => {
-                const siblings = conv.clientId
-                  ? conversations.filter((x) => x.clientId === conv.clientId)
-                  : [conv];
-                if (siblings.length <= 1) {
-                  return (
-                    <span className="thread-chan-inline">
-                      <ChannelLogo channel={conv.channel} className="" />
-                      {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
-                    </span>
-                  );
-                }
-                return (
-                  <span className="thread-chan-tabs" role="tablist" aria-label="Canaux du client">
-                    {siblings.map((x) => (
+            <svg
+              viewBox="0 0 24 24"
+              width={17}
+              height={17}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => void markUnread(activeConvId)}
+            aria-label="Marquer comme non lu"
+            title="Marquer comme non lu"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={17}
+              height={17}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+              <path d="M4 7l8 6 8-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => {
+              const ordered = [...conversations].sort(
+                (a, b) => new Date(b.lastAtIso).getTime() - new Date(a.lastAtIso).getTime()
+              );
+              const idxNow = ordered.findIndex((c) => c.id === conv.id);
+              const next = ordered.find((c, i) => i > idxNow && c.id !== conv.id);
+              archive(conv.id);
+              push({ kind: "success", text: "Conversation supprimée" });
+              setActiveConv(next ? next.id : "");
+            }}
+            aria-label="Supprimer"
+            title="Supprimer"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={17}
+              height={17}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="thread-tb-btn"
+            onClick={() => {
+              archive(conv.id);
+              push({ kind: "success", text: "Conversation archivée" });
+            }}
+            aria-label="Archiver"
+            title="Archiver"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={17}
+              height={17}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <rect x="3" y="5" width="18" height="4" rx="1" />
+              <path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9" />
+              <line x1="10" y1="13" x2="14" y2="13" />
+            </svg>
+          </button>
+          <button
+            ref={tagBtnRef}
+            type="button"
+            className={`thread-tb-btn ${tagOpen ? "is-on" : ""}`}
+            onClick={() => {
+              setTagAnchor(tagBtnRef.current?.getBoundingClientRect() ?? null);
+              setTagOpen((v) => !v);
+            }}
+            aria-label="Étiquettes"
+            title="Étiquettes"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={17}
+              height={17}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.9}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+          </button>
+          <div className="thread-tb-menu-wrap">
+            <button
+              type="button"
+              className={`thread-tb-btn ${catOpen ? "is-on" : ""}`}
+              onClick={() => {
+                setMoreOpen(false);
+                setCatOpen((v) => !v);
+              }}
+              aria-label="Catégorie"
+              aria-expanded={catOpen}
+              title="Catégorie"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width={17}
+                height={17}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.9}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="9" />
+              </svg>
+            </button>
+            {catOpen && (
+              <>
+                <button
+                  type="button"
+                  className="thread-tb-scrim"
+                  aria-label="Fermer"
+                  onClick={() => setCatOpen(false)}
+                />
+                <div className="thread-tb-menu" role="menu">
+                  {categories.map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      className={`thread-tb-menu-item ${conv.category === opt.key ? "is-active" : ""}`}
+                      onClick={() => {
+                        void setCategory(conv.id, opt.key);
+                        setCatOpen(false);
+                        push({ kind: "success", text: `Catégorisé : ${opt.label}` });
+                      }}
+                    >
+                      <span className="thread-tb-menu-dot" style={{ background: opt.color }} />
+                      {opt.label}
+                    </button>
+                  ))}
+                  {conv.category && (
+                    <>
+                      <div className="thread-tb-menu-sep" />
                       <button
-                        key={x.id}
                         type="button"
-                        role="tab"
-                        aria-selected={x.id === conv.id}
-                        className={`thread-chan-tab ${x.id === conv.id ? "active" : ""}`}
-                        title={x.channel}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveConv(x.id);
+                        className="thread-tb-menu-item"
+                        onClick={() => {
+                          void setCategory(conv.id, null);
+                          setCatOpen(false);
+                          push({ kind: "info", text: "Catégorie retirée" });
                         }}
                       >
-                        <ChannelLogo channel={x.channel} className="" />
+                        <span
+                          className="thread-tb-menu-dot"
+                          style={{
+                            background: "transparent",
+                            boxShadow: "inset 0 0 0 1.5px #94a3b8",
+                          }}
+                        />
+                        Retirer la catégorie
                       </button>
-                    ))}
-                  </span>
-                );
-              })()}
-            </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="thread-tb-menu-wrap">
+            <button
+              type="button"
+              className={`thread-tb-btn ${moreOpen ? "is-on" : ""}`}
+              onClick={() => {
+                setCatOpen(false);
+                setMoreOpen((v) => !v);
+              }}
+              aria-label="Plus d'actions"
+              aria-expanded={moreOpen}
+              title="Plus d'actions"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width={17}
+                height={17}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.9}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="5" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="19" cy="12" r="1.5" />
+              </svg>
+            </button>
+            {moreOpen && (
+              <>
+                <button
+                  type="button"
+                  className="thread-tb-scrim"
+                  aria-label="Fermer"
+                  onClick={() => setMoreOpen(false)}
+                />
+                <div className="thread-tb-menu" role="menu">
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      const t = new Date();
+                      t.setDate(t.getDate() + 1);
+                      t.setHours(9, 0, 0, 0);
+                      void snooze(conv.id, t.toISOString());
+                      setMoreOpen(false);
+                      push({
+                        kind: "info",
+                        text: "En pause jusqu'à demain 9h",
+                        action: { label: "Annuler", fn: () => void snooze(conv.id, null) },
+                      });
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width={15}
+                      height={15}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <polyline points="12 7 12 12 15.5 14" />
+                    </svg>
+                    Reporter (demain 9h)
+                  </button>
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      void setCategory(conv.id, "promo");
+                      setMoreOpen(false);
+                      push({
+                        kind: "info",
+                        text: "Marqué comme promo",
+                        action: {
+                          label: "Annuler",
+                          fn: () => void setCategory(conv.id, null),
+                        },
+                      });
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width={15}
+                      height={15}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2" />
+                    </svg>
+                    Marquer comme promo
+                  </button>
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      if (typeof window !== "undefined") window.print();
+                      setMoreOpen(false);
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width={15}
+                      height={15}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <polyline points="6 9 6 2 18 2 18 9" />
+                      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                      <rect x="6" y="14" width="12" height="8" />
+                    </svg>
+                    Imprimer
+                  </button>
+                  <button
+                    type="button"
+                    className="thread-tb-menu-item"
+                    onClick={() => {
+                      if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        navigator.clipboard
+                          .writeText(conv.name)
+                          .then(() => push({ kind: "success", text: "Nom du contact copié" }))
+                          .catch(() => push({ kind: "error", text: "Copie impossible." }));
+                      }
+                      setMoreOpen(false);
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width={15}
+                      height={15}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copier le nom du contact
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-        <div className="head-actions">
+        <div className="thread-tb-right">
           {linkedClient && (
             <button
               type="button"
               className="thread-client-btn"
-              data-tip="Voir la fiche client"
-              aria-label="Voir la fiche client"
               onClick={() => setClientModalOpen(true)}
+              aria-label="Voir la fiche client"
+              title="Voir la fiche client"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -505,6 +913,27 @@ export function Thread({
               <span>Fiche client</span>
             </button>
           )}
+          <button
+            type="button"
+            className={`thread-tb-btn thread-tb-star ${conv.starred ? "is-on" : ""}`}
+            onClick={() => void toggleStar(conv.id, !conv.starred)}
+            aria-label={conv.starred ? "Retirer des favoris" : "Ajouter aux favoris"}
+            title={conv.starred ? "Retirer des favoris" : "Ajouter aux favoris"}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width={17}
+              height={17}
+              fill={conv.starred ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth={1.7}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <polygon points="12 2 15 9 22 9.3 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.3 9 9 12 2" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -697,7 +1126,74 @@ export function Thread({
               </div>
             );
           })()}
+        {!isEmail && isClientTyping && (
+          <div
+            className="msg-group in typing-indicator-group"
+            style={{ display: "flex", gap: "10px", padding: "10px 14px", alignItems: "flex-end" }}
+          >
+            <span className="msg-avatar">
+              <Avatar avatar={conv?.avatar ?? { kind: "initials", text: "?", bg: "#ccc" }} />
+            </span>
+            <div className="msg-bubble-wrap">
+              <div className="msg-bubble typing-bubble">
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </div>
+            </div>
+          </div>
+        )}
       </section>
+
+      {!isEmail && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "8px",
+            position: "relative",
+            zIndex: 10,
+          }}
+        >
+          <div
+            className="thread-mue-quick-actions"
+            style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}
+          >
+            <button
+              type="button"
+              className="thread-ai-btn"
+              onClick={() => {
+                setMuePendingAction("Résume ce fil de discussion");
+                setMueOpen(true);
+              }}
+            >
+              <Icon name="i-list" /> Résumer le fil
+            </button>
+            <button
+              type="button"
+              className="thread-ai-btn"
+              onClick={() => {
+                setMuePendingAction(
+                  `Quelles sont mes nouvelles tâches pour le client ${conv.name} ?`
+                );
+                setMueOpen(true);
+              }}
+            >
+              <Icon name="i-spark" /> Suggérer des tâches
+            </button>
+            <button
+              type="button"
+              className="thread-ai-btn"
+              onClick={() => {
+                setMuePendingAction("Suggère une réponse à ce fil");
+                setMueOpen(true);
+              }}
+            >
+              <Icon name="i-spark" /> Suggérer une réponse
+            </button>
+          </div>
+        </div>
+      )}
 
       <footer className="composer">
         {isEmail ? (
@@ -726,19 +1222,57 @@ export function Thread({
                   >
                     Cc
                   </button>
+                  <button
+                    type="button"
+                    className="email-composer-mobile-close"
+                    onClick={() => {
+                      (
+                        document.querySelector(".email-composer-body") as HTMLElement | null
+                      )?.blur();
+                      setComposerFocus(false);
+                    }}
+                    aria-label="Réduire le composer"
+                    title="Réduire"
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="composer-via">
-                <ChannelLogo channel={conv.channel} className="" />
-                Réponse via {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
+              <div
+                className="composer-via"
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <ChannelLogo channel={conv.channel} className="" />
+                  Réponse via {conv.channel.charAt(0).toUpperCase() + conv.channel.slice(1)}
+                </div>
+                <button
+                  type="button"
+                  className="email-composer-mobile-close"
+                  onClick={() => {
+                    (document.querySelector(".email-composer-body") as HTMLElement | null)?.blur();
+                    setComposerFocus(false);
+                  }}
+                  aria-label="Réduire le composer"
+                  title="Réduire"
+                >
+                  ✕
+                </button>
               </div>
             )}
             <textarea
               className="email-composer-body"
               placeholder={`Votre réponse à ${firstName}…`}
               value={input}
-              onFocus={() => setComposerFocus(true)}
+              onFocus={() => {
+                setComposerFocus(true);
+                setTimeout(() => {
+                  if (messagesEl.current) {
+                    messagesEl.current.scrollTop = messagesEl.current.scrollHeight;
+                  }
+                }, 100);
+              }}
               onBlur={() => setComposerFocus(false)}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -1049,8 +1583,8 @@ function EmailCard({
             <span className="email-card-name">{name}</span>
             {email && <span className="email-card-email">&lt;{email}&gt;</span>}
           </div>
-          <div className="email-card-date">{message.dateLong || message.time}</div>
         </div>
+        <div className="email-card-date">{message.dateLong || message.time}</div>
       </header>
       <div className="email-card-body">
         {/* Render BOTH text and html when both exist. The text shows
@@ -1108,6 +1642,7 @@ function EmailComposer({
   const [templates, setTemplates] = useState<EmailTemplate[] | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [formatOpen, setFormatOpen] = useState(false);
 
   // Fetch the signature ONCE per component lifecycle. The Composer mounts
   // when the user enters /app and unmounts on sign-out → no cross-user
@@ -1314,6 +1849,9 @@ function EmailComposer({
       push({ text: "Le message est vide." });
       return;
     }
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(15);
+    }
     setSending(true);
     try {
       const fd = new FormData();
@@ -1421,6 +1959,8 @@ function EmailComposer({
         </div>
       )}
 
+      {formatOpen && <FormatToolbar />}
+
       <textarea
         className="email-composer-body"
         placeholder={`Votre réponse à ${toName}…`}
@@ -1455,6 +1995,8 @@ function EmailComposer({
 
       <div className="email-composer-templates-wrap" style={{ position: "relative" }}>
         <ComposerBar
+          onFormat={() => setFormatOpen((prev) => !prev)}
+          formatOpen={formatOpen}
           onAttach={() => fileRef.current?.click()}
           onMue={handleSuggest}
           onTemplate={openTemplates}

@@ -18,7 +18,14 @@
  * Next.js can only export async functions; this is a pure sync helper.
  */
 
-export type Category = "client" | "promo" | "notif" | "other";
+export type Category =
+  | "client"
+  | "prospect"
+  | "prestataire"
+  | "collaborateur"
+  | "promo"
+  | "notif"
+  | "other";
 
 const NOTIF_SENDER_LOCAL =
   /^(no[-_.]?reply|noreply|notification|notifications|alerts?|alert|automated|automated[-_.]?reply|mailer|mailer[-_.]?daemon|postmaster|do[-_.]?not[-_.]?reply|donotreply|system|admin|root|bounce|bounces|robot|bot|webmaster)$/i;

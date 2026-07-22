@@ -37,9 +37,9 @@ export function OnboardingChips({
   initialObjective,
   initialUsageMode,
 }: {
-  initialRole?: string | null;
-  initialObjective?: string | null;
-  initialUsageMode?: string | null;
+  initialRole?: string | null | undefined;
+  initialObjective?: string | null | undefined;
+  initialUsageMode?: string | null | undefined;
 }) {
   const router = useRouter();
   const push = useToast((s) => s.push);
@@ -55,6 +55,10 @@ export function OnboardingChips({
 
   const handleSave = () => {
     setDismissed(true);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("freescale_debug_force_onboarding");
+      window.dispatchEvent(new Event("onboarding-toggle"));
+    }
     startTransition(async () => {
       const res = await saveOnboardingAnswers({
         role,
@@ -73,6 +77,10 @@ export function OnboardingChips({
 
   const handleDismiss = () => {
     setDismissed(true);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("freescale_debug_force_onboarding");
+      window.dispatchEvent(new Event("onboarding-toggle"));
+    }
     startTransition(async () => {
       const res = await dismissOnboarding();
       if (!res.ok) {
