@@ -1,13 +1,7 @@
-import { Sprite } from "@/components/icons/Sprite";
-import { ForgotPasswordScreen } from "@/components/signup/ForgotPasswordScreen";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Mot de passe oublié · Freescale" };
+export const metadata = { title: "Freescale" };
 
 export default function ForgotPasswordPage() {
-  return (
-    <div className="onb-page">
-      <Sprite />
-      <ForgotPasswordScreen />
-    </div>
-  );
+  redirect("/app");
 }

@@ -30,13 +30,9 @@ describe("public App Store compliance surfaces", () => {
   });
 
   it("links compliance routes from public product surfaces", async () => {
-    const [landing, pricing] = await Promise.all([
-      source("../app/page.tsx"),
-      source("../app/pricing/page.tsx"),
-    ]);
+    const pricing = await source("../app/pricing/page.tsx");
 
     for (const path of ["/support", "/privacy", "/terms", "/account-deletion"]) {
-      expect(landing).toContain(path);
       expect(pricing).toContain(path);
     }
   });
@@ -53,8 +49,26 @@ describe("public App Store compliance surfaces", () => {
   it("keeps every compliance page accessible without authentication", async () => {
     const middleware = await source("./supabase/middleware.ts");
 
-    for (const path of ["/support", "/privacy", "/terms", "/account-deletion"]) {
-      expect(middleware).toContain(`pathname === "${path}"`);
+    expect(middleware).not.toContain('url.pathname = "/welcome"');
+    expect(middleware).not.toContain("Anon users on protected routes");
+  });
+
+  it("opens the SaaS directly instead of the removed home/auth screens", async () => {
+    const [root, welcome, signIn, signUp, forgotPassword, resetPassword, middleware] =
+      await Promise.all([
+        source("../app/page.tsx"),
+        source("../app/(public)/welcome/page.tsx"),
+        source("../app/(public)/sign-in/page.tsx"),
+        source("../app/(public)/sign-up/page.tsx"),
+        source("../app/(public)/forgot-password/page.tsx"),
+        source("../app/auth/reset-password/page.tsx"),
+        source("./supabase/middleware.ts"),
+      ]);
+
+    for (const page of [root, welcome, signIn, signUp, forgotPassword, resetPassword]) {
+      expect(page).toContain('redirect("/app")');
     }
+    expect(middleware).toContain("isLegacyAuthScreen");
+    expect(middleware).toContain('url.pathname = "/app"');
   });
 });

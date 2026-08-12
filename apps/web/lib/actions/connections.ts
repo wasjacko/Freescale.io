@@ -78,7 +78,7 @@ export async function syncGmail(channelAccountId: string): Promise<SyncReport> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
 
   const { data: account, error: accountErr } = await supabase
     .from("channel_accounts")
@@ -563,7 +563,7 @@ export async function syncOutlook(channelAccountId: string): Promise<SyncReport>
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
 
   const { data: account, error: accountErr } = await supabase
     .from("channel_accounts")
@@ -828,7 +828,7 @@ export async function disconnectChannel(channelAccountId: string): Promise<void>
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
   await supabase
     .from("channel_accounts")
     .update({ status: "revoked", encrypted_tokens: null })

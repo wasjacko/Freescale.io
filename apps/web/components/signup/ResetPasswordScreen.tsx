@@ -119,7 +119,7 @@ export function ResetPasswordScreen() {
           {!ready && !msg && <p className="onb-fine onb-fine-center">Vérification du lien…</p>}
 
           <p className="onb-fine onb-fine-center">
-            <Link href="/sign-in" className="onb-link">
+            <Link href="/app" className="onb-link">
               Retour à la connexion
             </Link>
           </p>

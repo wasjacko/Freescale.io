@@ -39,7 +39,7 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
   const accountRef = useRef<HTMLDivElement>(null);
 
   const connectedKinds = useMemo(() => new Set(channels.map((c) => c.kind)), [channels]);
-  const canConnect = data.canConnectChannels;
+  const canConnect = Boolean(user) && data.canConnectChannels;
 
   const handleWorkspaceSwitch = async (workspaceId: string) => {
     if (!workspaceId || workspaceId === data.activeWorkspaceId || switchingWorkspace) return;
@@ -105,9 +105,15 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             ))
           )}
         </select>
-        <Link href="/app/settings/team" aria-label="Gérer l'équipe">
-          <Icon name="i-user" />
-        </Link>
+        {user ? (
+          <Link href="/app/settings/team" aria-label="Gérer l'équipe">
+            <Icon name="i-user" />
+          </Link>
+        ) : (
+          <button type="button" aria-label="Mode SaaS local" disabled>
+            <Icon name="i-user" />
+          </button>
+        )}
       </div>
 
       <nav className="nav-section">
@@ -168,8 +174,8 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             disabled={!canConnect}
           >
             <span className="nav-left">
-              <Icon name="i-plus" />
-              <span className="nav-text">Connecter un canal</span>
+              <Icon name={canConnect ? "i-plus" : "i-inbox"} />
+              <span className="nav-text">{canConnect ? "Connecter un canal" : "Aucun canal"}</span>
             </span>
           </button>
         ) : (
@@ -216,8 +222,8 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
           )}
         </span>
         <div className="account-info">
-          <div className="account-name">{user?.firstName ?? "Guest"}</div>
-          <div className="account-role">{user?.email ?? "Not signed in"}</div>
+          <div className="account-name">{user?.firstName ?? "Freescale"}</div>
+          <div className="account-role">{user?.email ?? "Mode SaaS local"}</div>
         </div>
         <button
           className="settings-btn"
@@ -235,36 +241,35 @@ export function Sidebar({ user }: { user: CurrentUser | null }) {
             style={{ position: "absolute", left: 8, bottom: 64, width: 220 }}
             onMouseLeave={() => setAccountMenuOpen(false)}
           >
-            <Link
-              href="/app/settings/profile"
-              className="ctx-item"
-              onClick={() => setAccountMenuOpen(false)}
-            >
-              <Icon name="i-settings" /> Paramètres
-            </Link>
-            <Link
-              href="/app/settings/connections"
-              className="ctx-item"
-              onClick={() => setAccountMenuOpen(false)}
-            >
-              <Icon name="i-globe" /> Connexions
-            </Link>
-            <Link
-              href="/app/settings/team"
-              className="ctx-item"
-              onClick={() => setAccountMenuOpen(false)}
-            >
-              <Icon name="i-user" /> Équipe
-            </Link>
-            <div className="ctx-divider" />
-            <Link href={"/sign-in?switch=1" as never} className="ctx-item">
-              <Icon name="i-spark" /> Changer de compte
-            </Link>
-            <form action="/auth/sign-out" method="post" style={{ margin: 0 }}>
-              <button className="ctx-item is-danger" type="submit" style={{ width: "100%" }}>
-                <Icon name="i-arrow-up" /> Se déconnecter
-              </button>
-            </form>
+            {user ? (
+              <>
+                <Link
+                  href="/app/settings/profile"
+                  className="ctx-item"
+                  onClick={() => setAccountMenuOpen(false)}
+                >
+                  <Icon name="i-settings" /> Paramètres
+                </Link>
+                <Link
+                  href="/app/settings/connections"
+                  className="ctx-item"
+                  onClick={() => setAccountMenuOpen(false)}
+                >
+                  <Icon name="i-globe" /> Connexions
+                </Link>
+                <Link
+                  href="/app/settings/team"
+                  className="ctx-item"
+                  onClick={() => setAccountMenuOpen(false)}
+                >
+                  <Icon name="i-user" /> Équipe
+                </Link>
+              </>
+            ) : (
+              <div className="ctx-item" aria-disabled="true">
+                <Icon name="i-spark" /> Interface SaaS locale
+              </div>
+            )}
           </div>
         )}
       </div>

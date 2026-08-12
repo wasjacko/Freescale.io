@@ -169,8 +169,10 @@ export function TodayView({ user }: { user: CurrentUser | null }) {
         state={briefState}
         data={brief.kind === "result" ? brief.data : null}
         hasChannels={hasChannels}
+        canConnectChannel={Boolean(user)}
         onRequest={() => void loadBrief(true)}
         onConnectChannel={() => setView("inbox")}
+        onOpenTasks={() => setView("tasks")}
       />
 
       <div className="today-grid">

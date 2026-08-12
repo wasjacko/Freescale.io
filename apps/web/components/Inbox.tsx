@@ -507,12 +507,12 @@ export function Inbox({ currentUserId }: { currentUserId?: string | null }) {
     mentions: 0,
   };
 
-  // Nothing connected yet → show the hero instead of an empty conversation
-  // list. This is the single most important CTA for a fresh workspace.
+  // Nothing connected yet → show the app-first empty state instead of an
+  // empty conversation list.
   if (channels.length === 0) {
     return (
       <section className="inbox">
-        <NoChannelsHero />
+        <NoChannelsHero canConnect={Boolean(currentUserId)} />
       </section>
     );
   }

@@ -13,6 +13,7 @@ import {
 } from "@/lib/actions/conversation-flags";
 import {
   archiveConversation as srvArchive,
+  createTask as srvCreateTask,
   markConversationRead as srvMarkRead,
   markConversationUnread as srvMarkUnread,
   sendMessage as srvSend,
@@ -42,6 +43,59 @@ function currentWeekStartIso(): string {
   const sun = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
   sun.setHours(0, 0, 0, 0);
   return sun.toISOString();
+}
+
+const LOCAL_TASKS_KEY = "fs:local-tasks";
+
+function readLocalTasks(): Task[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LOCAL_TASKS_KEY) ?? "[]") as unknown;
+    return Array.isArray(parsed) ? (parsed as Task[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalTasks(tasks: Task[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_TASKS_KEY, JSON.stringify(tasks));
+  } catch {
+    /* localStorage can be unavailable in private contexts. */
+  }
+}
+
+function localDueLabel(due?: string | null) {
+  if (!due) return "Aujourd'hui";
+  const date = new Date(due);
+  if (Number.isNaN(date.getTime())) return "À planifier";
+  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(date);
+}
+
+function makeLocalTask(input: {
+  title: string;
+  priority?: "urgent" | Task["priority"];
+  due?: string | null;
+  parentTaskId?: string | null;
+}): Task {
+  const priority = input.priority === "urgent" ? "high" : (input.priority ?? "medium");
+  const dueDate = input.due ? new Date(input.due) : null;
+  const dueAtIso = dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toISOString() : null;
+  return {
+    id: `local-${crypto.randomUUID()}`,
+    title: input.title,
+    priority,
+    dueLabel: localDueLabel(input.due),
+    dueAtIso,
+    isToday: !dueAtIso,
+    isDone: false,
+    avatar: { kind: "initials", text: "FS", bg: "#EEF2FF" },
+    channel: "imap",
+    status: "todo",
+    parentTaskId: input.parentTaskId ?? null,
+    sortableIndex: Date.now(),
+  };
 }
 
 type Ctx = {
@@ -84,6 +138,14 @@ type Ctx = {
     durationMinutes?: number;
   }) => Promise<{ ok: boolean; error: string | null }>;
   deleteEvent: (id: string) => Promise<{ ok: boolean; error: string | null }>;
+  createTask: (input: {
+    title: string;
+    description?: string | null;
+    priority?: "urgent" | Task["priority"];
+    conversationId?: string | null;
+    due?: string | null;
+    parentTaskId?: string | null;
+  }) => Promise<{ ok: boolean; taskId: string | null; error: string | null }>;
 };
 
 const DataCtx = createContext<Ctx | null>(null);
@@ -103,6 +165,7 @@ export function DataProvider({
   const [events, setEvents] = useState<CalEvent[]>(initial.events);
   const [archived, setArchived] = useState<Set<string>>(new Set());
   const [isSyncing, setIsSyncing] = useState(false);
+  const [localTasksLoaded, setLocalTasksLoaded] = useState(Boolean(initial.activeWorkspaceId));
 
   // Re-sync local state whenever the server pushes a new payload (e.g.
   // after router.refresh()'s following an action). Without this useEffect,
@@ -111,9 +174,20 @@ export function DataProvider({
   useEffect(() => {
     setConversations(initial.conversations);
     setMessagesByConv(initial.messagesByConv);
-    setTasks(initial.tasks);
+    setTasks(initial.activeWorkspaceId ? initial.tasks : readLocalTasks());
     setEvents(initial.events);
-  }, [initial.conversations, initial.messagesByConv, initial.tasks, initial.events]);
+    setLocalTasksLoaded(true);
+  }, [
+    initial.activeWorkspaceId,
+    initial.conversations,
+    initial.messagesByConv,
+    initial.tasks,
+    initial.events,
+  ]);
+
+  useEffect(() => {
+    if (!initial.activeWorkspaceId && localTasksLoaded) writeLocalTasks(tasks);
+  }, [initial.activeWorkspaceId, localTasksLoaded, tasks]);
 
   const markRead = useCallback(async (id: string) => {
     setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: false } : c)));
@@ -244,37 +318,66 @@ export function DataProvider({
     }
   }, []);
 
-  const toggleTask = useCallback(async (taskId: string, done: boolean) => {
-    // Mirror the server-side cascade exactly: checking a parent also
-    // marks all its currently-open children as done (no half-completed
-    // parents on screen). Un-checking is non-cascading on both sides —
-    // some subtasks might legitimately be done while the parent isn't,
-    // so we don't second-guess the user.
-    let previousTasks: Task[] = [];
-    setTasks((prev) => {
-      previousTasks = prev;
-      return prev.map((t) => {
-        if (t.id === taskId) {
-          return { ...t, isDone: done, status: done ? "done" : "todo" };
-        }
-        if (done && t.parentTaskId === taskId && !t.isDone) {
-          return { ...t, isDone: true, status: "done" };
-        }
-        return t;
+  const toggleTask = useCallback(
+    async (taskId: string, done: boolean) => {
+      // Mirror the server-side cascade exactly: checking a parent also
+      // marks all its currently-open children as done (no half-completed
+      // parents on screen). Un-checking is non-cascading on both sides —
+      // some subtasks might legitimately be done while the parent isn't,
+      // so we don't second-guess the user.
+      let previousTasks: Task[] = [];
+      setTasks((prev) => {
+        previousTasks = prev;
+        return prev.map((t) => {
+          if (t.id === taskId) {
+            return { ...t, isDone: done, status: done ? "done" : "todo" };
+          }
+          if (done && t.parentTaskId === taskId && !t.isDone) {
+            return { ...t, isDone: true, status: "done" };
+          }
+          return t;
+        });
       });
-    });
-    try {
-      const result = await srvToggleTask(taskId, done);
-      if (!result.ok) {
-        setTasks(previousTasks);
-        return result;
+      if (!initial.activeWorkspaceId || taskId.startsWith("local-")) {
+        return { ok: true, error: null };
       }
-      return result;
-    } catch (err) {
-      setTasks(previousTasks);
-      return { ok: false, error: err instanceof Error ? err.message : "Mise à jour impossible." };
-    }
-  }, []);
+      try {
+        const result = await srvToggleTask(taskId, done);
+        if (!result.ok) {
+          setTasks(previousTasks);
+          return result;
+        }
+        return result;
+      } catch (err) {
+        setTasks(previousTasks);
+        return { ok: false, error: err instanceof Error ? err.message : "Mise à jour impossible." };
+      }
+    },
+    [initial.activeWorkspaceId]
+  );
+
+  const createTask = useCallback(
+    async (input: {
+      title: string;
+      description?: string | null;
+      priority?: "urgent" | Task["priority"];
+      conversationId?: string | null;
+      due?: string | null;
+      parentTaskId?: string | null;
+    }) => {
+      const title = input.title.trim();
+      if (!title) return { ok: false, taskId: null, error: "Title is required." };
+
+      if (!initial.activeWorkspaceId) {
+        const task = makeLocalTask({ ...input, title });
+        setTasks((prev) => [task, ...prev]);
+        return { ok: true, taskId: task.id, error: null };
+      }
+
+      return srvCreateTask({ ...input, title });
+    },
+    [initial.activeWorkspaceId]
+  );
 
   const toggleStar = useCallback(async (convId: string, starred: boolean) => {
     // Optimistic flip — UI updates instantly, server catches up.
@@ -426,6 +529,7 @@ export function DataProvider({
       createEvent,
       updateEvent,
       deleteEvent,
+      createTask,
     }),
     [
       conversations,
@@ -451,6 +555,7 @@ export function DataProvider({
       createEvent,
       updateEvent,
       deleteEvent,
+      createTask,
       snooze,
       setTags,
       setCategory,

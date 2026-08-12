@@ -35,11 +35,19 @@ export function MobileMoreView({ user }: { user: CurrentUser | null }) {
           <span>AI Knowledge</span>
           <small>Beta</small>
         </button>
-        <Link href="/app/settings/connections" className="mobile-more-row">
-          <Icon name="i-globe" />
-          <span>Canaux connectes</span>
-          <small>{channels.length}</small>
-        </Link>
+        {user ? (
+          <Link href="/app/settings/connections" className="mobile-more-row">
+            <Icon name="i-globe" />
+            <span>Canaux connectes</span>
+            <small>{channels.length}</small>
+          </Link>
+        ) : (
+          <button type="button" className="mobile-more-row" onClick={() => setView("inbox")}>
+            <Icon name="i-globe" />
+            <span>Canaux connectes</span>
+            <small>{channels.length}</small>
+          </button>
+        )}
         <button type="button" className="mobile-more-row" onClick={() => setView("calendar")}>
           <Icon name="i-cal" />
           <span>Calendriers</span>
@@ -48,11 +56,19 @@ export function MobileMoreView({ user }: { user: CurrentUser | null }) {
       </div>
 
       <div className="mobile-more-list" role="list">
-        <Link href="/app/settings/profile" className="mobile-more-row">
-          <Icon name="i-settings" />
-          <span>Parametres</span>
-          <small>Compte</small>
-        </Link>
+        {user ? (
+          <Link href="/app/settings/profile" className="mobile-more-row">
+            <Icon name="i-settings" />
+            <span>Parametres</span>
+            <small>Compte</small>
+          </Link>
+        ) : (
+          <button type="button" className="mobile-more-row" onClick={() => setView("tasks")}>
+            <Icon name="i-settings" />
+            <span>Parametres</span>
+            <small>Local</small>
+          </button>
+        )}
         <Link href="/support" className="mobile-more-row">
           <Icon name="i-info" />
           <span>Aide et support</span>
@@ -66,10 +82,10 @@ export function MobileMoreView({ user }: { user: CurrentUser | null }) {
       </div>
 
       <div className="mobile-more-account">
-        <span className="mobile-more-avatar">{user?.firstName?.[0] ?? "?"}</span>
+        <span className="mobile-more-avatar">{user?.firstName?.[0] ?? "F"}</span>
         <span>
-          <strong>{user?.firstName ?? "Compte"}</strong>
-          <small>{user?.email ?? "Non connecte"}</small>
+          <strong>{user?.firstName ?? "Freescale"}</strong>
+          <small>{user?.email ?? "Mode SaaS local"}</small>
         </span>
       </div>
     </section>

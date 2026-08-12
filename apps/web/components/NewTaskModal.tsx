@@ -1,6 +1,6 @@
 "use client";
 
-import { createTask } from "@/lib/actions/inbox";
+import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -20,6 +20,7 @@ export function NewTaskModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const { createTask } = useData();
   const push = useToast((s) => s.push);
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
@@ -49,7 +50,7 @@ export function NewTaskModal({
       push({ text: "Tâche créée.", duration: 2200 });
       reset();
       onClose();
-      router.refresh();
+      if (!res.taskId?.startsWith("local-")) router.refresh();
     });
   };
 

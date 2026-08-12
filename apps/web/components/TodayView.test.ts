@@ -58,4 +58,20 @@ describe("Today operational home", () => {
     expect(tasksView).toContain("suggestedTasks");
     expect(tasksView).toContain("Créer cette tâche");
   });
+
+  it("keeps task capture usable in app-only local mode", async () => {
+    const [dataContext, quickCapture, newTaskModal, tasksView] = await Promise.all([
+      source("../lib/contexts/DataContext.tsx"),
+      source("./QuickTaskCapture.tsx"),
+      source("./NewTaskModal.tsx"),
+      source("./TasksView.tsx"),
+    ]);
+
+    expect(dataContext).toContain("LOCAL_TASKS_KEY");
+    expect(dataContext).toContain("makeLocalTask");
+    expect(dataContext).toContain("!initial.activeWorkspaceId");
+    expect(quickCapture).toContain("useData()");
+    expect(newTaskModal).toContain("useData()");
+    expect(tasksView).toContain("toggleTask, createTask");
+  });
 });

@@ -63,7 +63,7 @@ export function ForgotPasswordScreen() {
                 >
                   Changer d&apos;email
                 </button>
-                <Link href="/sign-in" className="onb-btn onb-btn-primary">
+                <Link href="/app" className="onb-btn onb-btn-primary">
                   Retour à la connexion
                 </Link>
               </div>
@@ -100,7 +100,7 @@ export function ForgotPasswordScreen() {
               {msg && <div className={`auth-msg auth-msg-${msg.kind}`}>{msg.text}</div>}
 
               <p className="onb-fine onb-fine-center">
-                <Link href="/sign-in" className="onb-link">
+                <Link href="/app" className="onb-link">
                   Retour à la connexion
                 </Link>
               </p>

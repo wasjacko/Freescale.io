@@ -7,7 +7,7 @@ export const metadata = {
   description: "Plans Freescale Solo, Pro et Team pour l'inbox client avec Mue.",
 };
 
-const START_HREF = "/welcome?next=%2Fapp%2Fsettings%2Fbilling" as never;
+const START_HREF = "/app" as never;
 
 export default function PricingPage() {
   return (
@@ -24,7 +24,7 @@ export default function PricingPage() {
           <nav className="land-links" aria-label="Pricing navigation">
             <Link href="/">Produit</Link>
             <Link href="/pricing">Pricing</Link>
-            <Link href="/welcome">Login</Link>
+            <Link href="/app">App</Link>
           </nav>
           <div className="land-cta">
             <Link href={START_HREF} className="land-btn land-btn-pill-dark">

@@ -19,8 +19,8 @@ export function PublicPolicyPage({ policy }: { policy: PublicPolicy }) {
         <nav aria-label="Informations">
           <Link href="/privacy">Confidentialité</Link>
           <Link href="/support">Support</Link>
-          <Link href="/welcome" className="policy-nav-action">
-            Se connecter
+          <Link href="/app" className="policy-nav-action">
+            Ouvrir l'app
           </Link>
         </nav>
       </header>

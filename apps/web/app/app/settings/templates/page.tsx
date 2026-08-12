@@ -10,7 +10,7 @@ export default async function TemplatesSettingsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
 
   const templates = await listEmailTemplates();
   return <TemplatesManager initial={templates} />;

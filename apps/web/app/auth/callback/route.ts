@@ -78,15 +78,13 @@ export async function GET(request: NextRequest) {
   const next =
     rawNext.startsWith("/") && rawNext !== "/" && !rawNext.startsWith("//") ? rawNext : "/app";
 
-  if (!code) {
-    return NextResponse.redirect(`${origin}/welcome?error=missing_code`);
-  }
+  if (!code) return NextResponse.redirect(`${origin}/app?auth_error=missing_code`);
 
   const supabase = await createClient();
   const { data: sessionData, error: exchangeErr } =
     await supabase.auth.exchangeCodeForSession(code);
   if (exchangeErr || !sessionData.session) {
-    return NextResponse.redirect(`${origin}/welcome?error=auth_callback`);
+    return NextResponse.redirect(`${origin}/app?auth_error=auth_callback`);
   }
 
   const session = sessionData.session;

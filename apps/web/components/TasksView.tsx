@@ -5,7 +5,7 @@ import { NewTaskModal } from "@/components/NewTaskModal";
 import { ChannelLogo, Icon } from "@/components/icons/Icon";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { createTask, reorderTasks } from "@/lib/actions/inbox";
+import { reorderTasks } from "@/lib/actions/inbox";
 import { dailyBriefing } from "@/lib/actions/mue";
 import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
@@ -54,7 +54,7 @@ type SuggestedTask = {
 export function TasksView() {
   const router = useRouter();
   const push = useToast((s) => s.push);
-  const { tasks, toggleTask } = useData();
+  const { tasks, toggleTask, createTask } = useData();
   const [activeTab, setActiveTab] = useState<string>("todo");
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -128,7 +128,7 @@ export function TasksView() {
       current.filter((suggestion) => suggestion.conversationId !== item.conversationId)
     );
     push({ kind: "info", text: "Tâche créée.", duration: 2200 });
-    router.refresh();
+    if (!result.taskId?.startsWith("local-")) router.refresh();
   };
 
   const counts = {
@@ -229,7 +229,7 @@ export function TasksView() {
       });
       if (res.ok) {
         push({ kind: "info", text: "Sous-tâche ajoutée" });
-        router.refresh();
+        if (!res.taskId?.startsWith("local-")) router.refresh();
         setSubtaskFor(null);
         setSubtaskTitle("");
       } else {

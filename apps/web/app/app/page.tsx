@@ -4,14 +4,9 @@ import { DataProvider } from "@/lib/contexts/DataContext";
 import { getInboxData } from "@/lib/data/queries";
 
 /**
- * /app — the dashboard. After the auth-first onboarding refactor this
- * page no longer blocks on an "onboarded_at" flag. New users land here
- * directly after auth; if they have no inbox connected yet, the inbox
- * panel renders the NoChannelsHero CTA inline (single decision per
- * screen, audit-aligned).
- *
- * The middleware already gates the route behind a valid session, so
- * we don't need an extra redirect here.
+ * /app — the product. Freescale now opens directly on the SaaS surface:
+ * authenticated users get live workspace data, while anonymous/local sessions
+ * get an app-ready empty state instead of an auth wall.
  */
 export default async function HomePage() {
   const [authUser, data] = await Promise.all([getCurrentUser(), getInboxData()]);

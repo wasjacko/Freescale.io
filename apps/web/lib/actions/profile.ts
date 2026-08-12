@@ -19,7 +19,7 @@ export async function savePersonalProfile(input: ProfileUpdate) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
 
   // Trim the signature but preserve internal newlines — the user often
   // formats their sig with explicit line breaks (name / role / company).
@@ -76,7 +76,7 @@ export async function uploadAvatar(form: FormData): Promise<string | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
 
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) return null;
@@ -119,7 +119,7 @@ export async function removeAvatar() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
 
   // Best-effort: list & delete the user's folder; ignore failures.
   const { data: list } = await supabase.storage.from("avatars").list(user.id);

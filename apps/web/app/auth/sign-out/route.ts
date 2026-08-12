@@ -16,9 +16,8 @@ import { type NextRequest, NextResponse } from "next/server";
  *  1. Call supabase.auth.signOut() so the server invalidates the session.
  *  2. Walk every cookie that starts with `sb-` and explicitly delete it
  *     on the outgoing redirect response.
- *  3. Redirect to /sign-in?signedout=1 so the next page is a clean login
- *     form, not the marketing landing where the user might miss the
- *     "you're signed out" feedback.
+ *  3. Redirect to /app so Freescale stays app-only after the session is
+ *     cleared.
  */
 async function handleSignOut(request: NextRequest) {
   const cookieStore = await cookies();
@@ -49,10 +48,7 @@ async function handleSignOut(request: NextRequest) {
     // Network blip — fall through to local cookie purge regardless.
   }
 
-  // Bounce to the marketing landing, not the auth modal — signing out
-  // is "I'm done", not "I want to log in again right now". The landing
-  // shows a small confirmation banner via the ?signedout=1 query.
-  const response = NextResponse.redirect(new URL("/?signedout=1", request.url), { status: 303 });
+  const response = NextResponse.redirect(new URL("/app", request.url), { status: 303 });
 
   // Hard-delete every sb-* cookie on the response. This is the fix for the
   // "I signed out but still see the old account" bug.

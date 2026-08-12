@@ -1,12 +1,13 @@
 "use client";
 
-import { createTask } from "@/lib/actions/inbox";
+import { useData } from "@/lib/contexts/DataContext";
 import { useToast } from "@/lib/hooks/useToast";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 export function QuickTaskCapture() {
   const router = useRouter();
+  const { createTask } = useData();
   const push = useToast((state) => state.push);
   const [title, setTitle] = useState("");
   const [pending, startTransition] = useTransition();
@@ -22,7 +23,7 @@ export function QuickTaskCapture() {
       }
       setTitle("");
       push({ kind: "info", text: "Tâche ajoutée.", duration: 2200 });
-      router.refresh();
+      if (!result.taskId?.startsWith("local-")) router.refresh();
     });
   };
 

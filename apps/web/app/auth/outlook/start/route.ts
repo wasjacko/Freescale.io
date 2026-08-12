@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/sign-in";
-    url.searchParams.set("next", "/app/settings/connections");
+    url.pathname = "/app";
+    url.search = "";
     return NextResponse.redirect(url);
   }
   if (!(await currentUserCanConnectChannels())) {

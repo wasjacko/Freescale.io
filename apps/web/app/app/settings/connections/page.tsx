@@ -17,7 +17,7 @@ export default async function ConnectionsPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/app");
 
   const { workspace } = await resolveActiveWorkspace(supabase, user.id);
 

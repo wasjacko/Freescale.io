@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/sign-in", request.url));
+  if (!user) return NextResponse.redirect(new URL("/app", request.url));
 
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
